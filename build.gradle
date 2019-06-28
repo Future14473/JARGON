@@ -1,0 +1,42 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.21'
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext.kotlin_version = '1.3.21'
+ext.junit_version = '4.12'
+//sourceSets {
+//    integrationTest {
+//        java {
+//            compileClasspath += main.output + test.output
+//            runtimeClasspath += main.output + test.output
+//            srcDir file('src/integrationTest/kotlin')
+//        }
+//        resources.srcDir file('src/integrationTest/resources')
+//    }
+//}
+//configurations {
+//    integrationTestCompile.extendsFrom testCompile
+//    integrationTestRuntime.extendsFrom testRuntime
+//    integrationTestImplementation.extendsFrom testImplementation
+//}
+def kotlinOptions = [compileKotlin, compileTestKotlin/*, compileIntegrationTestKotlin*/]*.kotlinOptions
+kotlinOptions*.jvmTarget = "1.8"
+//kotlinOptions*.freeCompilerArgs += ['-Xjvm-default=compatibility'/*,"-XXLanguage:+InlineClasses"*/]
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    testCompile "junit:junit:$junit_version"
+    testImplementation "org.knowm.xchart:xchart:3.5.4"
+}
+//task integrationTest(type: Test) {
+//    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+//    classpath = sourceSets.integrationTest.runtimeClasspath
+//    useJUnitPlatform()
+//    outputs.upToDateWhen { false }
+//}
