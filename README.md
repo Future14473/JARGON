@@ -1,56 +1,68 @@
-##Hi!
+## Hi!
 
-This is a robotics library (originally for FTC, theoretically beyond that)
- I've been working on for the past month or so (and will continue to work on).
- This is still a work in progress, but I have now made it public.
+This very work in progress repository is a robotics library that is originally for FTC but could 
+theoretically could work beyond that.
+
+
+
+This is simply public so that other people know what I am working on and can provide earlier feedback.
+Nothing in this repository is final (yet)
+
+_This may possibly be de-branded from future robotics in the future._ No pun intended.
  
 Planned features include:
-
--   Robotics motion planning, with paths, trajectories, graphs, with lots of room for extensibility and customization to 
-    be able to apply to everyone and complex-ish systems.
-    -   Planned experiment: trajectories using only constraints on WHEEL velocity and acceleration, for example
--   Better control for motors and servos and buttons etc
--   Coordinating hardware into Systems so you can say "extend arm" instead of "set target position 3000",
-    and arms never collide into each other
--   Easy (enough) to use simple specialized concurrency frameworks for robotics
--   OpenCV things
+- Robotics motion planning, with paths, trajectories, graphs, with lots of room for extensibility and customization
+    -   Planned experiment: trajectories using only constraints on WHEEL velocity/acceleration/torque/voltage
+- Throw the full power of linear algebra and control theory at yourself to create control systems
+- Coordinating hardware into Systems so you can say "extend arm" instead of "set target position 3000 degrees", and other
+  relations
+- Convenience things for better control for motors and servos and buttons etc
+- Easy (enough) to use concurrency frameworks for robotics
+- OpenCV pipelines and frameworks
 
 Principles of design:
 -   User friendly
--   Extensible and customizable, no requirement to adhere to one implementation
--   Strict adherence to SOLID
+-   Extensible and customizable, no requirement to adhere to one implementation and/or create your own
+-   Adherence to SOLID
 
-This library is inspired by the following:
-- [ACME robotics's roadrunner](https://github.com/acmerobotics/road-runner)
-- A little bit from [calcmogul's state-space-guide](https://github.com/calcmogul/state-space-guide)
-- I enjoy programming things that aren't textbook questions
+This project is inspired by the following:
+- Class structure inspired by [ACME robotics's roadrunner](https://github.com/acmerobotics/road-runner)
+- The decision to include control-theory stuff comes from [calcmogul's state-space-guide](https://github.com/calcmogul/state-space-guide)
+- Motion profile/trajectory generation adapted from <http://www2.informatik.uni-freiburg.de/~lau/students/Sprunk2008.pdf>
 
-This is still a work in progress, and I plan to eventually make this publicly available and supported.
 I plan to have working prototypes (or better) before the "real" start of next FTC season.
-You can feel free to experiment with whats currently there (not much usable right now except test as of 7/30/2019).
+
+See TODO.md (maybe to be migrated into github issues) for a list of current todo items
 
 PFAQ (predicted frequently asked questions):
 -
-#####1. If there already exists several robotics libraries and things on the internet publicly available now. Why do you want to go through the trouble of making your own version that might not be as great?
+##### 1. If there already exists several robotics libraries and things on the internet publicly available now. Why do you want to go through the trouble of making your own version that might not be as great?
 
 A few reasons:
    - This is a personal project as much as it is a team/public project. I like designing things my own way and seeing 
-        how they turn out and learning from the experience, and there's not quite the same satisfaction from stealing
+        how they turn out and learning from the experience, and its not the same experience as stealing
         someone else's code off the internet.
-   - I try to do something new and learn things from scratch rather than imitate whats already there. 
+   - I try to invent new things and learn things from scratch rather than imitate whats already there. 
     Therefore, my version is subjectively better.
-   - Friendly competition: I obviously want this library to be better than everyone else's...
-   - Bragging rights
+   - Many of the libraries do not have features that I want and/or don't quite work
+   - One of the goals is to also try to clarify some of the complexity to make it more understandable, so to inspire more interest
+     in some of these subjects to others
+   - Friendly competition and bragging rights
    
-#####2. There's quite a few similarities to [ACME robotics's roadrunner](https://github.com/acmerobotics/road-runner)...
-I borrowed several concepts/names from roadrunner, but I did not directly copy code. Copying code is no fun. 
-I implemented everything from scratch, using my own guidline on how it should world.
+##### 2. There are a few similarities to [ACME robotics's roadrunner](https://github.com/acmerobotics/road-runner)...
+I borrowed several concepts/names from roadrunner, but I did not copy code. Copying code is no fun. 
+I implemented everything from scratch, trying to use my own judgment on how things should be structured
 
-Where I did do some light "Copying", I make myself understand first and then implement it from scratch, with no copying,
-and I try to improve what I see.
+Where I did do some light "Copying", I make myself understand first and then implement it from scratch, 
+and I try to improve on works
  
 It's under a MIT licence anyways...
 
-#####3. Can I use this in my own project/robot?
-Yes, but keep in mind before the first "release" anything is subject change. Feedback is appreciated (open an issue)!
-Does my documentation suck? Tell me at least
+##### 3. Can I use this in my own projects and endeavours?
+Yes! Please do. 
+But keep in mind before the first "release" anything is subject change.
+Feedback is appreciated (open an issue).
+
+##### 4. Will this be open-source/available for contribution?
+Possibly, after things have settled down and the design/structure is mostly fixed so collaboration does not become a 
+    nightmare.
