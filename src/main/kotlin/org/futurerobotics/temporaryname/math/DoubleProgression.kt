@@ -10,7 +10,7 @@ import kotlin.math.ceil
  * @property first The first value of this progression.
  * @property last
  * @property step
- * @property segments The number of "fences", not fenceposts, of this double progression; equal to the number of values
+ * @property segments The number of "fences", not fencePosts, of this double progression; equal to the number of values
  *                      - 1.
  */
 class DoubleProgression
@@ -21,19 +21,22 @@ private constructor( //see factory methods
     /** @return if this progression is empty or not */
     fun isEmpty(): Boolean = segments < 0
 
-    fun reversed() = DoubleProgression(last, first, -step, segments)
+    /**
+     * Returns a new DoubleProgression that is this progression but reversed.
+     */
+    fun reversed(): DoubleProgression = DoubleProgression(last, first, -step, segments)
 
     override operator fun iterator(): DoubleIterator = object : DoubleIterator() {
-        private val stepper = IntProgression.fromClosedRange(0, segments, 1).iterator()
-        override fun hasNext() = stepper.hasNext()
+        private val intIt = IntProgression.fromClosedRange(0, segments, 1).iterator()
+        override fun hasNext() = intIt.hasNext()
 
-        override fun nextDouble() = first + stepper.nextInt() * step.notNaNOrElse { 0.0 }
+        override fun nextDouble() = first + intIt.nextInt() * step.notNaNOrElse { 0.0 }
     }
 
     override fun equals(other: Any?): Boolean =
         this === other || (other is DoubleProgression && (isEmpty() && other.isEmpty() || first == other.first && last == other.last && step == other.step))
 
-    override fun hashCode() = throw UnsupportedOperationException()
+    override fun hashCode(): Nothing = throw UnsupportedOperationException()
 
     companion object {
         /**

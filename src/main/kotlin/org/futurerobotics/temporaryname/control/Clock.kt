@@ -1,7 +1,7 @@
 package org.futurerobotics.temporaryname.control
 
 /**
- * A interface to represent a Time-keeping device.
+ * A interface to represent a something that keeping device.
  * Has one function [nanoTime] that returns the current relative time in nanoseconds.
  *
  * Default implementation simply uses [System.nanoTime].
@@ -12,7 +12,7 @@ interface Clock {
     fun nanoTime(): Long
 
     /** Default clock implementation that uses [System.nanoTime] */
-    object Default : org.futurerobotics.temporaryname.control.Clock {
+    object Default : Clock {
         override fun nanoTime(): Long = System.nanoTime()
     }
 }
@@ -23,8 +23,7 @@ interface Clock {
  *
  * This can be useful to make sure multiple systems are running with the same time info.
  */
-class TickClock(private val referenceClock: org.futurerobotics.temporaryname.control.Clock = org.futurerobotics.temporaryname.control.Clock.Default) :
-    org.futurerobotics.temporaryname.control.Clock {
+class TickClock(private val referenceClock: Clock = Clock.Default) : Clock {
     //    @Volatile
     private var time = referenceClock.nanoTime()
 
@@ -42,6 +41,6 @@ class TickClock(private val referenceClock: org.futurerobotics.temporaryname.con
  *
  * @property time the time returned by [nanoTime]
  */
-class ManualClock(var time: Long = 0) : org.futurerobotics.temporaryname.control.Clock {
+class ManualClock(var time: Long = 0) : Clock {
     override fun nanoTime(): Long = time
 }

@@ -3,7 +3,6 @@ package org.futurerobotics.temporaryname.control
 import org.futurerobotics.temporaryname.math.Vector2d
 import org.futurerobotics.temporaryname.math.coerceLengthAtMost
 
-
 /**
  * _Experimental_ PID controller that works with [Vector2d] values instead of 1d values, for holonomic drives, so
  * derivative, integral, and output bounds work together.
@@ -14,8 +13,7 @@ import org.futurerobotics.temporaryname.math.coerceLengthAtMost
  * @param clock the [Clock] that I and D coefficients are calculated with.
  */
 class PIDController2d(
-    private val coefficients: org.futurerobotics.temporaryname.control.PIDCoefficients,
-    private val clock: org.futurerobotics.temporaryname.control.Clock = org.futurerobotics.temporaryname.control.Clock.Default
+    private val coefficients: PIDCoefficients, private val clock: Clock = Clock.Default
 ) {
     private var hasPrevTime = false
     private var prevTime = 0L
@@ -30,9 +28,8 @@ class PIDController2d(
      * Updates internal state given the current [input], and returns this PIDController's output, as a Vector2d
      */
     fun getOutput(input: Vector2d = Vector2d.ZERO): Vector2d {
-        val input = input.coerceLengthAtMost(coefficients.inputBounds.b)
 
-        val curError = setPoint - input
+        val curError = setPoint - input.coerceLengthAtMost(coefficients.inputBounds.b)
         val curTime = clock.nanoTime()
 
         if (!hasPrevTime) {

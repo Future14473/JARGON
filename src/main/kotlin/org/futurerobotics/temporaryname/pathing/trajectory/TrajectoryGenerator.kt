@@ -1,12 +1,11 @@
 package org.futurerobotics.temporaryname.pathing.trajectory
 
 import org.futurerobotics.temporaryname.motionprofile.MotionProfileGenerator
+import org.futurerobotics.temporaryname.pathing.Path
 import org.futurerobotics.temporaryname.pathing.constraint.MotionConstraintSet
-import org.futurerobotics.temporaryname.pathing.path.Path
-import org.futurerobotics.temporaryname.pathing.trajectory.TrajectoryGenerator.generateTrajectory
 
 /**
- * Generates [Trajectory] from [Path] and [MotionConstraintSet] via [generateTrajectory]
+ * Generates [Trajectory] from a [Path] and a [MotionConstraintSet] via [MotionProfileGenerator]
  */
 object TrajectoryGenerator {
     /**
@@ -24,7 +23,7 @@ object TrajectoryGenerator {
         segmentSize: Double = 0.01
     ): Trajectory {
         val profileConstraint = TrajectoryConstraint(path, constraints)
-        val profile = MotionProfileGenerator.generateProfile( //checks done here...
+        val profile = MotionProfileGenerator.generateDynamicProfile( //checks done here...
             profileConstraint, path.length, targetStartVel, targetEndVel, segmentSize
         )
         return Trajectory(path, profile)

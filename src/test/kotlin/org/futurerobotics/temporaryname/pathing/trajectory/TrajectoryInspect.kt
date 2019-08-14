@@ -4,11 +4,11 @@ import org.futurerobotics.temporaryname.Debug
 import org.futurerobotics.temporaryname.math.errorTo
 import org.futurerobotics.temporaryname.math.function.QuinticSpline
 import org.futurerobotics.temporaryname.math.randomVectorDerivatives
+import org.futurerobotics.temporaryname.pathing.MultiplePath
+import org.futurerobotics.temporaryname.pathing.TangentHeading
+import org.futurerobotics.temporaryname.pathing.addHeading
 import org.futurerobotics.temporaryname.pathing.constraint.*
-import org.futurerobotics.temporaryname.pathing.path.Path
-import org.futurerobotics.temporaryname.pathing.path.TangentHeading
-import org.futurerobotics.temporaryname.pathing.path.addHeading
-import org.futurerobotics.temporaryname.pathing.path.reparam.reparamByIntegration
+import org.futurerobotics.temporaryname.pathing.reparam.reparamByIntegration
 import org.futurerobotics.temporaryname.reportError
 import org.junit.Assert
 import org.junit.Test
@@ -24,11 +24,11 @@ class TrajectoryInspect(private val trajectory: Trajectory) {
         reportError {
             stepT { i, t ->
                 val time = t * duration
-                val direct = trajectory.getByTime(time)
+                val direct = trajectory.atTime(time)
                 val approx =
-                    (trajectory.getByTime(time + epsilon).pose - trajectory.getByTime(time - epsilon).pose) / (2 * epsilon)
-                addError(approx errorTo direct.velocity) {
-                    "at $i, approx deriv was $approx, returned was ${direct.velocity}"
+                    (trajectory.atTime(time + epsilon).pose - trajectory.atTime(time - epsilon).pose) / (2 * epsilon)
+                addError(approx errorTo direct.vel) {
+                    "at $i, approx deriv was $approx, returned was ${direct.vel}"
                 }
                 //                addError((deriv.poseDeriv errorTo getDirect.poseSecondDeriv)) {
                 //                    "at $i, approx second deriv was ${deriv.poseDeriv}, returned was ${getDirect.poseSecondDeriv}"
@@ -48,12 +48,12 @@ class TrajectoryInspect(private val trajectory: Trajectory) {
         reportError {
             stepT { i, t ->
                 val dist = t * length
-                val direct = trajectory.getByDist(dist)
+                val direct = trajectory.atDistance(dist)
                 val approx =
-                    (trajectory.getByDist(dist + epsilon).pose - trajectory.getByDist(dist - epsilon).pose) / //dp/ds
-                            (2 * epsilon) * trajectory.profile.getByDistance(dist).v //ds/dt
-                addError(approx errorTo direct.velocity) {
-                    "at $i, approx deriv was $approx, returned was ${direct.velocity}"
+                    (trajectory.atDistance(dist + epsilon).pose - trajectory.atDistance(dist - epsilon).pose) / //dp/ds
+                            (2 * epsilon) * trajectory.profile.atDistance(dist).v //ds/dt
+                addError(approx errorTo direct.vel) {
+                    "at $i, approx deriv was $approx, returned was ${direct.vel}"
                 }
                 //                addError((deriv.poseDeriv errorTo getDirect.poseSecondDeriv)) {
                 //                    "at $i, approx second deriv was ${deriv.poseDeriv}, returned was ${getDirect.poseSecondDeriv}"
@@ -80,7 +80,7 @@ class TrajectoryInspect(private val trajectory: Trajectory) {
         private const val range = 12.0
         private const val maxError = 0.005
         private val random = Random(23934827)
-        private val constraints = MotionConstraintSet.of(
+        private val constraints = MotionConstraintSet(
             TangentVelocityConstraint(2.0),
             PathAngularVelocityConstraint(1.5),
             CentripetalAccelConstraint(0.9),
@@ -91,15 +91,21 @@ class TrajectoryInspect(private val trajectory: Trajectory) {
 
         @JvmStatic
         @Parameterized.Parameters
-        fun getTrajectories(): List<Array<Trajectory>> {
+        fun trajectories(): List<Array<Trajectory>> {
             return List(30) {
-                List(6) { randomVectorDerivatives(random, range) }
-                    .zipWithNext { a, b ->
-                        QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(TangentHeading)
-                    }
-                    .let { Path(it) }
-                    .let { TrajectoryGenerator.generateTrajectory(it, constraints) }
-                    .let { arrayOf(it) }
+                List(6) {
+                    randomVectorDerivatives(random, range)
+                }.zipWithNext { a, b ->
+                    QuinticSpline.fromDerivatives(a, b)
+                        .reparamByIntegration()
+                        .addHeading(TangentHeading)
+                }.let {
+                    MultiplePath(it)
+                }.let {
+                    TrajectoryGenerator.generateTrajectory(it, constraints)
+                }.let {
+                    arrayOf(it)
+                }
             }
         }
     }

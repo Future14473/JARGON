@@ -1,7 +1,10 @@
-@file:Suppress("NOTHING_TO_INLINE", "KDocMissingDocumentation", "unused")
+@file:Suppress("KDocMissingDocumentation")
 
 package org.futurerobotics.temporaryname.math
 
+import koma.extensions.set
+import koma.matrix.Matrix
+import koma.zeros
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -13,42 +16,9 @@ import kotlin.random.Random
  * There exists [Vector2d.ZERO] for people who don't like garbage, like me.
  */
 data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
+
     /**@see Vector2d */
     constructor(x: Int, y: Int) : this(x.toDouble(), y.toDouble())
-
-    operator fun plus(v: Vector2d): Vector2d = Vector2d(x + v.x, y + v.y)
-
-    operator fun minus(v: Vector2d): Vector2d = Vector2d(x - v.x, y - v.y)
-
-    operator fun times(v: Double): Vector2d = Vector2d(x * v, y * v)
-
-    operator fun times(v: Int): Vector2d = Vector2d(x * v, y * v)
-
-    operator fun div(v: Double): Vector2d = Vector2d(x / v, y / v)
-
-    operator fun div(v: Int): Vector2d = Vector2d(x / v, y / v)
-
-    operator fun unaryMinus(): Vector2d = Vector2d(-x, -y)
-
-    infix fun dot(v: Vector2d): Double = x * v.x + y * v.y
-
-    /** `|| this - v ||` */
-    infix fun distTo(v: Vector2d): Double = hypot(x - v.x, y - v.y)
-
-    /**
-     * Returns the z component of the cross product between `this` and [v], with `this` and `v`
-     *  interpreted as 3d vectors with a z component of 0.
-     */
-    infix fun cross(v: Vector2d): Double = x * v.y - y * v.x
-
-    /**
-     * Returns the cross product of (this interpreted as a 3d vector with a z component of 0), and the 3d vector
-     *  <0,0,[z]>`, as a 2d vector, ignoring the resulting z-component of 0.
-     *
-     *  This is mainly used to chain cross products while still in the context of 2d.
-     *  @see [cross]
-     */
-    infix fun crossz(z: Double): Vector2d = Vector2d(y * z, -x * z)
 
     /**
      * @return `||this||`, or the length of this vector
@@ -65,11 +35,6 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
      *  @see norm
      */
     val lengthSquared: Double get() = x * x + y * y
-
-    /**
-     * @return `||this||^[power]: the length of this vector to the specified power.
-     */
-    fun lengthPow(power: Double): Double = lengthSquared.pow(power / 2)
     /**
      *  `atan2(y,x)`, or the angle this vector makes with the positive x-axis from [-PI,PI]
      */
@@ -77,6 +42,37 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
 
     /** If both components are finite */
     val isFinite: Boolean get() = x.isFinite() && y.isFinite()
+
+    operator fun plus(v: Vector2d): Vector2d = Vector2d(x + v.x, y + v.y)
+    operator fun minus(v: Vector2d): Vector2d = Vector2d(x - v.x, y - v.y)
+    operator fun times(v: Double): Vector2d = Vector2d(x * v, y * v)
+    operator fun times(v: Int): Vector2d = Vector2d(x * v, y * v)
+    operator fun div(v: Double): Vector2d = Vector2d(x / v, y / v)
+    operator fun div(v: Int): Vector2d = Vector2d(x / v, y / v)
+    operator fun unaryMinus(): Vector2d = Vector2d(-x, -y)
+    infix fun dot(v: Vector2d): Double = x * v.x + y * v.y
+    /** `|| this - v ||` */
+    infix fun distTo(v: Vector2d): Double = hypot(x - v.x, y - v.y)
+
+    /**
+     * Returns the z component of the cross product between `this` and [v],
+     *  interpreted as 3d vectors with a z component of 0.
+     */
+    infix fun cross(v: Vector2d): Double = x * v.y - y * v.x
+
+    /**
+     * Returns the cross product of (this interpreted as a 3d vector with a z component of 0), and the 3d vector
+     *  <0,0,[z]>`, as a 2d vector, ignoring the resulting z-component of 0.
+     *
+     *  This is mainly used to chain 3d - cross products while still only using 2d vectors.
+     *  @see [cross]
+     */
+    infix fun crossz(z: Double): Vector2d = Vector2d(y * z, -x * z)
+
+    /**
+     * @return `||this||^[power]: the length of this vector to the specified power.
+     */
+    fun lengthPow(power: Double): Double = lengthSquared.pow(power / 2)
 
     /** `this / ||this||', or this vector normalized */
     fun normalized(): Vector2d = this / norm
@@ -89,11 +85,10 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
     }
 
     /**
-     * If this vector equals [other] with a leniency of [EPSILON]. See [epsEq]
+     * If this vector equals [other] with a leniency of [EPSILON].
+     * @see [epsEq]
      */
     infix fun epsEq(other: Vector2d): Boolean = x epsEq other.x && y epsEq other.y
-
-    override fun equals(other: Any?): Boolean = this === other || (other is Vector2d && x == other.x && y == other.y)
 
     /** Gets by component. [index] must only be 0 or 1 */
     operator fun get(index: Int): Double = when (index) {
@@ -102,7 +97,18 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
         else -> throw IndexOutOfBoundsException("Vector index must be 0 or 1, instead got $index")
     }
 
-    override fun hashCode(): Nothing = throw UnsupportedOperationException()
+    /** Returns a new column vector matrix with this vector's data. */
+    fun toColumnVector(): Matrix<Double> = zeros(2, 1).apply {
+        this[0] = x
+        this[1] = y
+    }
+
+    /** Returns a new row vector matrix with this vector's data. */
+    fun toRowVector(): Matrix<Double> = zeros(1, 2).apply {
+        this[0] = x
+        this[1] = y
+    }
+
     override fun toString(): String = "Vector2d(%.6f, %.6f)".format(x, y)
 
     companion object {
@@ -141,23 +147,21 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
     }
 }
 
-inline operator fun Double.times(v: Vector2d): Vector2d = v * this
-inline operator fun Int.times(v: Vector2d): Vector2d = v * this
+operator fun Double.times(v: Vector2d): Vector2d = v * this
+operator fun Int.times(v: Vector2d): Vector2d = v * this
 /**
  * Is [Vector2d.crossz] but with operands switched.
- * Equivalent to [v] crossz -[this]
  */
-inline infix fun Double.zcross(v: Vector2d): Vector2d = v crossz -this
+infix fun Double.zcross(v: Vector2d): Vector2d = v crossz -this
 
-/** Convenience extention function for [Vector2d.random] */
+/** Convenience extension function for [Vector2d.random] */
 fun Random.nextVector2d(range: Double = 1.0): Vector2d = Vector2d.random(this, range)
 
 /**
  * Ensure's a [Vector2d]'s length is less than or equal to [maximumLength].
  */
 fun Vector2d.coerceLengthAtMost(maximumLength: Double): Vector2d {
-    require(maximumLength >= 0.0)
-    { "maximumLength ($maximumLength) must be >= 0 as negative vector lengths are impossible" }
+    require(maximumLength >= 0.0) { "maximumLength ($maximumLength) must be >= 0 as negative vector lengths are impossible" }
     return when {
         maximumLength == 0.0 -> Vector2d.ZERO
         length > maximumLength -> this * (maximumLength / length)

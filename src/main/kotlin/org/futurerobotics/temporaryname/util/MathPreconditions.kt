@@ -1,13 +1,5 @@
 package org.futurerobotics.temporaryname.util
 
-
-/**
- * [require]s the [value] to not be NaN, else throws an [IllegalArgumentException] with the [lazyMessage]
- */
-inline fun requireNotNaN(value: Double, lazyMessage: () -> String = { "A double value was NaN" }) {
-    if (value.isNaN()) throw IllegalArgumentException(lazyMessage())
-}
-
 /**
  * [require]s the [value] to be Finite, else throws an [IllegalArgumentException] with the [lazyMessage]
  */
@@ -20,6 +12,7 @@ inline fun requireFinite(
 /**
  * Shorthand for [requireFinite] with a simple message using [name]
  */
+@Suppress("NOTHING_TO_INLINE")
 inline fun requireFiniteNamed(value: Double, name: String) {
     requireFinite(value) { "$name ($it) should be finite" }
 }

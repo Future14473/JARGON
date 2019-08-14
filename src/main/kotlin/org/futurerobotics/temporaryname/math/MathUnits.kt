@@ -1,7 +1,9 @@
+@file:Suppress("KDocMissingDocumentation", "MemberVisibilityCanBePrivate", "unused")
+
 package org.futurerobotics.temporaryname.math
 
 /**
- * Used for fluent conversion/expression of units. USE ME.
+ * Used for fluent conversion/expression of units. PLS USE ME.
  *
  * Standard units are SI units.
  */

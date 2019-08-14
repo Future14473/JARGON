@@ -1,19 +1,22 @@
-package org.futurerobotics.temporaryname.pathing.path.reparam
+@file:Suppress("DEPRECATION")
+
+package org.futurerobotics.temporaryname.pathing.reparam
 
 import org.futurerobotics.temporaryname.math.Vector2d
 import org.futurerobotics.temporaryname.math.avg
 import org.futurerobotics.temporaryname.math.epsEq
 import org.futurerobotics.temporaryname.math.function.VectorFunction
 import org.futurerobotics.temporaryname.math.maxDiff
-import org.futurerobotics.temporaryname.pathing.path.reparam.ArcDivisionsReparamer.Companion.reparam
+import org.futurerobotics.temporaryname.pathing.reparam.ArcDivisionsReparamer.Companion.reparam
 import kotlin.math.asin
 
 /**
  * Builder class that reparameterizes an Curve by subdividing it into arcs. Very similar to ACME Robotic's version.
  * The function that actually does the reparameterization is [reparam]
  *
- * This has experimentally been determined to not be as great as [IntegrationReparamer]
+ * This has experimentally been determined to not be as great as [ArcDivisionsReparamer]
  */
+@Deprecated("ArcDivisionsReparamer works a lot better")
 class ArcDivisionsReparamer private constructor(
     private val curve: VectorFunction,
     private val maxDeltaK: Double,
@@ -28,7 +31,9 @@ class ArcDivisionsReparamer private constructor(
 
     private fun doReparam(): ReparamCurve {
         reparamOn(0.0, 1.0)
-        return ReparamCurve(curve, ReparamMapping.fromSTSamples(sSamples, tSamples))
+        return ReparamCurve(
+            curve, SamplesReparamMapping.fromPointSamples(sSamples, tSamples)
+        )
     }
 
     private fun reparamOn(
@@ -73,7 +78,7 @@ class ArcDivisionsReparamer private constructor(
         } else {
             val e1 = v1.lengthSquared
             val e2 = v2.lengthSquared
-            //center of circle simpleFrom 3 points, times 2.
+            //center of circle from 3 points, times 2.
             val center2 = Vector2d(e1 * v2.y - e2 * v1.y, -(e1 * v2.x - e2 * v1.x)) / det
             //radius * 2
             val radius2 = center2.length //since one of the points is (0,0)
@@ -85,7 +90,6 @@ class ArcDivisionsReparamer private constructor(
             //== 2 * radius * asin(chordLen / 2 / radius)
         }
     }
-
 
     companion object {
         /** Default maxDeltaK used for [ArcDivisionsReparamer] for overloads/default parameters. */
@@ -109,11 +113,17 @@ class ArcDivisionsReparamer private constructor(
             maxDeltaK: Double = defaultMaxDeltaK,
             maxSegmentLength: Double = defaultMaxSegmentLength,
             curvatureTolerance: Double = defaultCurvatureTolerance
-        ): ReparamCurve = ArcDivisionsReparamer(func, maxDeltaK, maxSegmentLength, curvatureTolerance).doReparam()
+        ): ReparamCurve = ArcDivisionsReparamer(
+            func, maxDeltaK, maxSegmentLength, curvatureTolerance
+        ).doReparam()
     }
 }
 
 /** Convenience extension function for [ArcDivisionsReparamer.reparam] */
+@Deprecated(
+    "ArcDivisionsReparamer works a lot better.",
+    ReplaceWith("reparamByIntegration()", "org.futurerobotics.temporaryname.pathing.reparam.reparamByIntegration")
+)
 fun VectorFunction.reparamByArcSubdivisions(
     maxDeltaK: Double = ArcDivisionsReparamer.defaultMaxDeltaK,
     maxSegmentLength: Double = ArcDivisionsReparamer.defaultMaxSegmentLength,

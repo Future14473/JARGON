@@ -1,4 +1,6 @@
-package org.futurerobotics.temporaryname.math
+package org.futurerobotics.temporaryname.util
+
+import org.futurerobotics.temporaryname.math.avg
 
 /**
  * Assuming that [partition] will return true for values higher than `x` and false for values lower (`x` is a partition
@@ -64,10 +66,9 @@ inline fun extendingDoubleSearch(
  * This works the same as [extendingDoubleSearch] of which whose documentation you should probably read., but starts at the upper endpoint and works down.
  * Heuristic/runtime is flipped for the upper end instead.
  *
- * _This has not been tested with extreme values (where excessive rounding may occur). It is the user's responsibility
- * to make sure that the Double values provided are in close enough of magnitude._
+ * _This has not been tested with extreme values (where excessive rounding may occur)._
  */
-inline fun extendingDownDoubleSearch(
+/*inline*/ fun extendingDownDoubleSearch(
     rangeMin: Double,
     rangeMax: Double,
     initialStep: Double,
@@ -108,8 +109,7 @@ inline fun extendingDownDoubleSearch(
  *
  * If, however, the partition point does not exist within the given range, one of the endpoints will be returned instead.
  *
- * _This has not been tested with extreme values (where excessive rounding may occur). It is the user's responsibility
- * to make sure that the Double values provided are in close enough of magnitude._
+ * _This has not been tested with extreme values (where excessive rounding may occur)._
  *
  * This is done using binary search.
  */
@@ -140,8 +140,6 @@ inline fun doubleBinarySearch(
  * If both endpoints returns false (`x` is not in this interval), this then looks at another interval from the end of the
  * old interval and a step double the size. This is repeated until an interval switches [partition] is found (`x` is in
  * the interval), then performs normal binary search on the new interval.
- *
- * _This has not been tested with extreme values (close to integer overflow)_.
  *
  * This takes `O(log(x-initialValue))`
  * @see extendingDownDoubleSearch

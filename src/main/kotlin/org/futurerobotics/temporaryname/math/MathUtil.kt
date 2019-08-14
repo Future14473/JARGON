@@ -32,35 +32,34 @@ fun Double.epsEq(that: Double, epsilon: Double = EPSILON): Boolean = abs(this - 
 inline fun Double.notNaNOrElse(alternate: () -> Double): Double = if (isNaN()) alternate() else this
 
 /** Returns the average of [a] and [b] */
-inline fun avg(a: Double, b: Double): Double = (a + b) / 2
-
+fun avg(a: Double, b: Double): Double = (a + b) / 2
 
 /** Returns the average of [a], [b], and [c] */
-inline fun avg(a: Double, b: Double, c: Double): Double = (a + b + c) / 3
+fun avg(a: Double, b: Double, c: Double): Double = (a + b + c) / 3
 
 /** Returns the greatest of [a], [b], and [c]. If any value is `NaN`, the result is `NaN` */
-inline fun max(a: Double, b: Double, c: Double): Double = max(max(a, b), c)
+fun max(a: Double, b: Double, c: Double): Double = max(max(a, b), c)
 
 /** Returns the greatest of [a], [b], [c], and [d]. If any value is `NaN`, the result is `NaN` */
-inline fun max(a: Double, b: Double, c: Double, d: Double): Double = max(max(a, b), max(c, d))
+fun max(a: Double, b: Double, c: Double, d: Double): Double = max(max(a, b), max(c, d))
 
 /** Returns the maximum difference between [a], [b] and [c]. If any value is `NaN`, the result is 'NaN` */
-inline fun maxDiff(a: Double, b: Double, c: Double): Double = max(abs((a - b)), abs((b - c)), abs((c - a)))
+fun maxDiff(a: Double, b: Double, c: Double): Double = max(abs((a - b)), abs((b - c)), abs((c - a)))
 
 /** [this] value squared.*/
-inline fun Double.squared(): Double = this * this
+fun Double.squared(): Double = this.pow(2)
 
 /** [this] value squared.*/
-inline fun Int.squared(): Int = this * this
+fun Int.squared(): Int = this * this
 
 /** [this] value cubed.*/
-inline fun Double.cubed(): Double = this.pow(3)
+fun Double.cubed(): Double = this.pow(3)
 
 /** The distance from this value to another value. Equal to `abs(this-v)` */
-inline infix fun Double.distTo(v: Double): Double = abs((this - v))
+infix fun Double.distTo(v: Double): Double = abs(this - v)
 
 /** The distance from this value to another value. Equal to `abs(this-v)` */
-inline infix fun Int.distTo(v: Int): Int = abs((this - v))
+infix fun Int.distTo(v: Int): Int = abs(this - v)
 
 /** Normalizes an angle value to be between `-PI` and `PI` */
 fun angleNorm(angle: Double): Double = angle - TAU * floor((angle + PI) / TAU)

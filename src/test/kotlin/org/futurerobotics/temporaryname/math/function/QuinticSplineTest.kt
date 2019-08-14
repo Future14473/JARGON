@@ -59,3 +59,6 @@ internal class QuinticSplineTest(
         }
     }
 }
+
+/** Convenience extension function for [QuinticSpline.random] */
+fun Random.nextQuinticSpline(range: Double = 1.0): QuinticSpline = QuinticSpline.random(this, range)

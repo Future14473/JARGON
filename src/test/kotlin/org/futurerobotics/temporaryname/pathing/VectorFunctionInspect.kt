@@ -1,4 +1,4 @@
-package org.futurerobotics.temporaryname.pathing.path
+package org.futurerobotics.temporaryname.pathing
 
 import org.futurerobotics.temporaryname.Debug
 import org.futurerobotics.temporaryname.math.Vector2d
@@ -89,9 +89,7 @@ internal class VectorFunctionInspect(private val curve: QuinticSpline) {
         @JvmStatic
         @Parameterized.Parameters
         fun vecs(): List<Array<Any>> {
-            return List(30) {
-                arrayOf<Any>(random.nextQuinticSpline(range))
-            }
+            return List(30) { arrayOf(random.nextQuinticSpline(range)) }
         }
     }
 }

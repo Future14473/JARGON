@@ -2,23 +2,21 @@ package org.futurerobotics.temporaryname.pathing.trajectory
 
 import org.futurerobotics.temporaryname.math.epsEq
 import org.futurerobotics.temporaryname.motionprofile.MotionProfile
+import org.futurerobotics.temporaryname.motionprofile.MotionProfiled
 import org.futurerobotics.temporaryname.motionprofile.MotionState1d
-import org.futurerobotics.temporaryname.pathing.path.Path
-import org.futurerobotics.temporaryname.pathing.path.pose
-import org.futurerobotics.temporaryname.pathing.path.poseDeriv
+import org.futurerobotics.temporaryname.motionprofile.PoseMotionState
+import org.futurerobotics.temporaryname.pathing.Path
+import org.futurerobotics.temporaryname.pathing.PathPoint
+import org.futurerobotics.temporaryname.pathing.pose
+import org.futurerobotics.temporaryname.pathing.poseDeriv
+import org.futurerobotics.temporaryname.util.Stepper
 
 /**
- * Represents a trajectory; that is a Path paired with time/velocity info on traversal (a [MotionProfile]).
+ * Represents a trajectory; that is a Path paired with time/velocity info on traversal (a [MotionProfiled]).
  *
  * @see TrajectoryGenerator
  */
-class Trajectory(private val path: Path, internal val profile: MotionProfile) {
-
-    init {
-        require(path.length epsEq profile.length) {
-            "Path length ${path.length} and profile length ${profile.length} must match"
-        }
-    }
+class Trajectory(private val path: Path, internal val profile: MotionProfile) : MotionProfiled<PoseMotionState> {
 
     /**
      * The duration of time to traverse this [Trajectory] (ideally)
@@ -27,30 +25,56 @@ class Trajectory(private val path: Path, internal val profile: MotionProfile) {
      * point errors and capacitance and noise and delay and approximation errors and internal resistance and
      * dampening and time and space don't exist._
      * */
-    val duration: Double get() = profile.duration
-
+    override val duration: Double get() = profile.duration
     /**
      * The total length of this Trajectory
      * @see [Path]
      */
-    val length: Double get() = path.length
+    override val length: Double get() = path.length
 
-    /**
-     * Gets the [FieldMotion] at the specified [time] traversing this trajectory.
-     */
-    fun getByTime(time: Double): FieldMotion {
-        return getByState(profile.getByTime(time))
+    init {
+        require(path.length epsEq profile.length) {
+            "Path length ${path.length} and profile length ${profile.length} must match"
+        }
     }
 
     /**
-     * Gets the the [FieldMotion] at the specified [distance] along this trajectory.
+     * Gets the [PoseMotionState] after the specified [time] traversing this trajectory.
      */
-    fun getByDist(distance: Double): FieldMotion {
-        return getByState(profile.getByDistance(distance))
+    override fun atTime(time: Double): PoseMotionState {
+        return stateFrom(profile.atTime(time))
     }
 
-    private fun getByState(state: MotionState1d): FieldMotion {
-        val point = path.getPointInfo(state.x)
-        return FieldMotion(point.pose, point.poseDeriv * state.v)
+    /**
+     * Gets the the [PoseMotionState] at the specified [distance] along this trajectory.
+     */
+    override fun atDistance(distance: Double): PoseMotionState {
+        return stateFrom(profile.atDistance(distance))
+    }
+
+    override fun timeStepper(): Stepper<Double, PoseMotionState> {
+        return stepperFrom(profile.timeStepper())
+    }
+
+    override fun distanceStepper(): Stepper<Double, PoseMotionState> {
+        return stepperFrom(profile.distanceStepper())
+    }
+
+    private fun stepperFrom(profileStepper: Stepper<Double, MotionState1d>): Stepper<Double, PoseMotionState> {
+        val pathStepper = path.stepper()
+        return Stepper {
+            val state = profileStepper.stepTo(it)
+            val point = pathStepper.stepTo(state.x)
+            getState(state, point)
+        }
+    }
+
+    private fun stateFrom(state: MotionState1d): PoseMotionState {
+        val point = path.pointAt(state.x)
+        return getState(state, point)
+    }
+
+    private fun getState(state: MotionState1d, point: PathPoint): PoseMotionState {
+        return PoseMotionState(point.pose, point.poseDeriv * state.v)
     }
 }

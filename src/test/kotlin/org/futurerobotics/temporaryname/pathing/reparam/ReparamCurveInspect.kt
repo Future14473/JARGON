@@ -1,12 +1,9 @@
-package org.futurerobotics.temporaryname.pathing.path
+package org.futurerobotics.temporaryname.pathing.reparam
 
 import org.futurerobotics.temporaryname.GraphUtil
 import org.futurerobotics.temporaryname.math.*
 import org.futurerobotics.temporaryname.math.function.QuinticSpline
 import org.futurerobotics.temporaryname.math.function.VectorFunction
-import org.futurerobotics.temporaryname.pathing.path.reparam.ReparamCurve
-import org.futurerobotics.temporaryname.pathing.path.reparam.reparamByArcSubdivisions
-import org.futurerobotics.temporaryname.pathing.path.reparam.reparamByIntegration
 import org.futurerobotics.temporaryname.reportError
 import org.futurerobotics.temporaryname.saveTest
 import org.futurerobotics.temporaryname.util.getCallerStackFrame
@@ -23,23 +20,8 @@ internal class ReparamCurveInspect(private val func: VectorFunction, private val
 
     @Test
     fun `report samples`() {
-        println("Num samples: ${curve.numSamples}")
+        println("Num samples: ${(curve.mapping as SamplesReparamMapping).numSamples}")
     }
-
-    private fun trueVec(t: Double) = func.vec(t)
-
-    private fun trueDeriv(t: Double) = func.vecDeriv(t).normalized()
-
-    private fun trueSecondDeriv(t: Double): Vector2d {
-        val deriv = func.vecDeriv(t)
-        val secondDeriv = func.vecSecondDeriv(t)
-        return deriv crossz (secondDeriv cross deriv) / deriv.lengthSquared.squared()
-    }
-
-    private fun trueCurvature(t: Double) = func.curvature(t)
-
-    private fun trueCurvatureDeriv(t: Double) = func.curvatureDeriv(t) / func.vecDeriv(t).length
-
 
     @Test
     fun `reparameterization inspect`() {
@@ -48,32 +30,60 @@ internal class ReparamCurveInspect(private val func: VectorFunction, private val
 
     @Test
     fun `position inspect`() {
-        testVector(func::vec, curve::position, 0.001, 0.0)
+        testVector({ func.vec(it) }, { curve.pointAt(it).position }, 0.001, 0.0)
     }
 
     @Test
     fun `positionDeriv inspect`() {
-        testVector(::trueDeriv, curve::positionDeriv, 0.002, 0.001)
+        testVector({ func.vecDeriv(it).normalized() }, { curve.pointAt(it).positionDeriv }, 0.002, 0.001)
     }
 
     @Test
     fun `positionSecondDeriv inspect`() {
-        testVector(::trueSecondDeriv, curve::positionSecondDeriv, 0.005, 0.001)
+        testVector({
+            val deriv = func.vecDeriv(it)
+            val secondDeriv = func.vecSecondDeriv(it)
+            val z = (secondDeriv cross deriv) / deriv.lengthSquared.squared()
+            Vector2d(deriv.y * z, -deriv.x * z)
+        }, { curve.pointAt(it).positionSecondDeriv }, 0.005, 0.001)
     }
 
     @Test
     fun `tanAngle inspect`() {
-        testAngle({ func.vecDeriv(it).angle }, curve::tanAngle, 0.001, 0.0)
+        testAngle({ func.vecDeriv(it).angle }, { curve.pointAt(it).tanAngle }, 0.001, 0.0)
     }
 
     @Test
     fun `tanAngleDeriv inspect`() {
-        testValue(::trueCurvature, curve::tanAngleDeriv, 0.002, 0.001)
+        testValue({ func.curvature(it) }, { curve.pointAt(it).tanAngleDeriv }, 0.002, 0.001)
     }
 
     @Test
     fun `tanAngleSecondDeriv inspect`() {
-        testValue(::trueCurvatureDeriv, curve::tanAngleSecondDeriv, 0.05, 0.001)
+        testValue(
+            { func.curvatureDeriv(it) / func.vecDeriv(it).length },
+            { curve.pointAt(it).tanAngleSecondDeriv },
+            0.05,
+            0.001
+        )
+    }
+
+    private fun testVector(
+        trueValT: (Double) -> Vector2d, testValS: (Double) -> Vector2d, maxError: Double, offset: Double
+    ) {
+        testStep(trueValT, testValS, { this distTo it }, offset, maxError)
+    }
+
+    private fun testValue(
+        trueValT: (Double) -> Double, testValS: (Double) -> Double, maxError: Double, offset: Double
+    ) {
+        testStep(trueValT, testValS, { this distTo it }, offset, maxError)
+    }
+
+    private fun testAngle(
+        trueValT: (Double) -> Double, testValS: (Double) -> Double, maxError: Double, offset: Double
+    ) {
+        testStep(trueValT, testValS, { angleNorm(distTo(it)) }, offset, maxError)
     }
 
     private fun <T> testStep(
@@ -101,24 +111,6 @@ internal class ReparamCurveInspect(private val func: VectorFunction, private val
         }
     }
 
-    private fun testVector(
-        trueValT: (Double) -> Vector2d, testValS: (Double) -> Vector2d, maxError: Double, offset: Double
-    ) {
-        testStep(trueValT, testValS, { this distTo it }, offset, maxError)
-    }
-
-    private fun testValue(
-        trueValT: (Double) -> Double, testValS: (Double) -> Double, maxError: Double, offset: Double
-    ) {
-        testStep(trueValT, testValS, { this distTo it }, offset, maxError)
-    }
-
-    private fun testAngle(
-        trueValT: (Double) -> Double, testValS: (Double) -> Double, maxError: Double, offset: Double
-    ) {
-        testStep(trueValT, testValS, { angleNorm(distTo(it)) }, offset, maxError)
-    }
-
     companion object {
         const val steps = 100_000
         private const val seed = 34226
@@ -132,8 +124,12 @@ internal class ReparamCurveInspect(private val func: VectorFunction, private val
 
             repeat(30) {
 
-                val p0 = random.nextVector2d(minDiff)
-                val diff = random.nextDouble(minDiff, maxDiff)
+                val p0 = random.nextVector2d(
+                    minDiff
+                )
+                val diff = random.nextDouble(
+                    minDiff, maxDiff
+                )
                 val angle = random.nextDouble() * TAU
 
                 val p5 = p0 + Vector2d.polar(diff, angle)
@@ -154,7 +150,6 @@ internal class ReparamCurveInspect(private val func: VectorFunction, private val
                 val func = QuinticSpline.fromControlPoints(p0, p1, p2, p3, p4, p5)
 
                 list.add(arrayOf(func, func.reparamByIntegration()))
-                list.add(arrayOf(func, func.reparamByArcSubdivisions())) //much less accurate...
             }
             return list
         }

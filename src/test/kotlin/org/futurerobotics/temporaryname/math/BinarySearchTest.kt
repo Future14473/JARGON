@@ -1,5 +1,8 @@
 package org.futurerobotics.temporaryname.math
 
+import org.futurerobotics.temporaryname.util.doubleBinarySearch
+import org.futurerobotics.temporaryname.util.extendingDoubleSearch
+import org.futurerobotics.temporaryname.util.extendingDownDoubleSearch
 import org.junit.Test
 import kotlin.random.Random
 
@@ -15,7 +18,9 @@ internal class BinarySearchTest {
             val lowerExtend = random.nextDouble(300.0)
             val lower = partitionPoint - lowerExtend
             val upper = partitionPoint + upperExtend
-            val binarySearchVal = doubleBinarySearch(lower, upper, tolerance) { it > partitionPoint }
+            val binarySearchVal = doubleBinarySearch(
+                lower, upper, tolerance
+            ) { it > partitionPoint }
             assert(binarySearchVal distTo partitionPoint <= tolerance)
         }
     }
@@ -30,7 +35,9 @@ internal class BinarySearchTest {
             val lowerExtend = random.nextDouble(300.0)
             val lower = partitionPoint - lowerExtend
             val upper = partitionPoint + upperExtend
-            val binarySearchVal = extendingDoubleSearch(lower, upper, tolerance) { it > partitionPoint }
+            val binarySearchVal = extendingDoubleSearch(
+                lower, upper, tolerance
+            ) { it > partitionPoint }
             assert(binarySearchVal distTo partitionPoint <= tolerance)
         }
     }
@@ -45,7 +52,9 @@ internal class BinarySearchTest {
             val lowerExtend = random.nextDouble(300.0)
             val lower = partitionPoint - lowerExtend
             val upper = partitionPoint + upperExtend
-            val binarySearchVal = extendingDownDoubleSearch(lower, upper, tolerance) { it > partitionPoint }
+            val binarySearchVal = extendingDownDoubleSearch(
+                lower, upper, tolerance
+            ) { it > partitionPoint }
             assert(binarySearchVal distTo partitionPoint <= tolerance)
         }
     }

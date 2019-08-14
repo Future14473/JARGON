@@ -1,26 +1,31 @@
 package org.futurerobotics.temporaryname.motionprofile
 
 import org.futurerobotics.temporaryname.math.*
+import org.futurerobotics.temporaryname.util.extendingDownDoubleSearch
 import org.futurerobotics.temporaryname.util.localMap
+import org.futurerobotics.temporaryname.util.stepToAll
 import kotlin.math.ceil
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
 
 private const val MAX_VEL = 10000.0
 
 /**
- * Generates approximate optimal [MotionProfile]
+ * Generates approximate optimal [MotionProfiled]
  */
 object MotionProfileGenerator {
+
+    private const val BINARY_SEARCH_INITIAL_STEP_RATIO = 2
     /**
-     * Calculates an numerically approximated optimal [MotionProfile], given [ProfileConstraint].
+     * Calculates an numerically approximated optimal [MotionProfiled], given [MotionProfileConstrainer].
      *
      * [targetStartVel] and [targetEndVel] specify the target start and end velocities, respectively, however, if this
      * results in a profile not within constraints, the actual start and end velocities may be lower.
      *
      * [segmentSize] specifies the size of the segments used in the profile generation algorithm.
      *
-     * [nonIntersectSearchTolerance] specifies the tolerance in which the maximum velocities due to
+     * [maxVelDueToAccelsSearchTolerance] specifies the tolerance in which the maximum velocities due to
      * satisfying acceleration constraints will be searched for, if needed. (heavy heuristic
      * binary search). If constraints are "non demanding", binary search will not happen.
      *
@@ -38,91 +43,91 @@ object MotionProfileGenerator {
      *
      *  I will write a paper someday.
      */
-    fun generateProfile(
-        constraint: ProfileConstraint,
+    fun generateDynamicProfile(
+        constrainer: MotionProfileConstrainer,
         distance: Double,
         targetStartVel: Double = 0.0,
         targetEndVel: Double = 0.0,
         segmentSize: Double = 0.01,
-        nonIntersectSearchTolerance: Double = 0.01 //may introduce a class if start to have too many parameters
+        maxVelDueToAccelsSearchTolerance: Double = 0.01
+        //may introduce a class if start to have too many parameters
     ): MotionProfile {
-        val segments = getNumSegmentsAndCheck(distance, segmentSize)
+        require(distance > 0) { "distance ($distance) must be > 0" }
         require(targetStartVel >= 0) { "targetStartVel ($targetStartVel) must be >= 0" }
-        require(targetEndVel >= 0) { "targetStartVel ($targetEndVel) must be >= 0" }
-        val progression = DoubleProgression.fromNumSegments(0.0, distance, segments)
-        val points = progression.toList()
-        val (rawVels, accelGetters) = constraint.getAllVelsAndAccels(points)
-        require(rawVels.size == points.size) {
-            "Max velocities returned by constraint has size (${rawVels.size}) not equal to the points given's size${points.size}"
-        }
-        require(accelGetters.size == points.size) {
-            "Acceleration getters  returned constraint has size (${accelGetters.size}) not equal to the points given's size${points.size}"
-        }
-        require(rawVels.all { it >= 0 }) { "All maximum velocities should be >= 0" }
-        val maxVels = rawVels.toMutableList()
+        require(targetEndVel >= 0) { "targetEndVel ($targetEndVel) must be >= 0" }
+        require(segmentSize > 0) { "segmentSize ($segmentSize) must be > 0" }
+        require(segmentSize <= distance) { "segmentSize ($$segmentSize) must be <= dist ($distance)" }
+        require(maxVelDueToAccelsSearchTolerance > 0) { "nonIntersectSearchTolerance ($maxVelDueToAccelsSearchTolerance) must be > 0" }
+
+        val segments = ceil(distance / segmentSize).toInt()
+        val points = DoubleProgression.fromNumSegments(0.0, distance, segments).toList()
+        val pointConstraints = constrainer.stepToAll(points)
+
+        val maxVels = pointConstraints.mapTo(ArrayList(points.size)) { it.maxVelocity }
+        require(maxVels.all { it >= 0 }) { "All maximum velocities given by constrainer should be >= 0" }
 
         maxVels[0] = min(maxVels[0], targetStartVel)
-        maxVels.lastIndex.let { maxVels[it] = min(maxVels[it], targetEndVel) }
+        maxVels.lastIndex.let {
+            maxVels[it] = min(maxVels[it], targetEndVel)
+        }
         maxVels.localMap { min(it, MAX_VEL) }
 
-        accelerationPass(maxVels, accelGetters, points, false, nonIntersectSearchTolerance)
+        accelerationPass(maxVels, pointConstraints, points, maxVelDueToAccelsSearchTolerance, false)
         accelerationPass( //reverse
-            maxVels.asReversed(), accelGetters.asReversed(), points.asReversed(), true, nonIntersectSearchTolerance
+            maxVels.asReversed(),
+            pointConstraints.asReversed(),
+            points.asReversed(),
+            maxVelDueToAccelsSearchTolerance,
+            true
         )
 
         val pointVelPairs = points.zip(maxVels)
-        return MotionProfile.fromPointVelPairs(pointVelPairs)
+        return SegmentsMotionProfile.fromPointVelPairs(pointVelPairs)
     }
 
-    private fun getNumSegmentsAndCheck(dist: Double, segmentSize: Double): Int {
-        require(dist > 0) { "distance ($dist) must be > 0" }
-        require(segmentSize > 0) { "segmentSize ($segmentSize) must be > 0" }
-        require(segmentSize <= dist) { "segmentSize ($$segmentSize) must be <= dist ($dist)" }
-        return ceil(dist / segmentSize).toInt()
-    }
-
-    private const val BINARY_SEARCH_INITIAL_STEP_RATIO = 3
     private fun accelerationPass(
         maxVels: MutableList<Double>,
-        accelGetters: List<MaxAccelGetter>,
+        accelGetters: List<PointConstraint>,
         points: List<Double>,
-        reversed: Boolean,
-        binarySearchTolerance: Double
+        binarySearchTolerance: Double,
+        reversed: Boolean
     ) {
-        val size = points.size
-        repeat(size - 1) {
+        repeat(points.size - 1) {
             var v0 = maxVels[it]
-            val dx = points[it + 1] distTo points[it] //works for backwards
             val accelGetter = accelGetters[it]
+            val dx = points[it] distTo points[it + 1] //works for backwards
 
             var aMax = getAMaxOrNaN(dx, v0, accelGetter, reversed)
             if (aMax.isNaN()) {
-                val tolerance = v0 * binarySearchTolerance
+                if (v0 == 0.0) throwBadAccelAt0Vel()
+                val tolerance = max(v0 * binarySearchTolerance, EPSILON)
                 val initialStep = tolerance * BINARY_SEARCH_INITIAL_STEP_RATIO
                 //OH NO, ITS BINARY SEARCH!
-                // typically < 10 iterations, and happens < 1% of the time, and only occurs when nessecary
-                val newV0 = extendingDownDoubleSearch(
-                    0.0,
-                    v0 - tolerance,
-                    initialStep,
-                    tolerance,
-                    searchingFor = false
-                ) { v ->
-                    getAMaxOrNaN(dx, v, accelGetter, reversed).isNaN()
-                }
-                v0 = newV0
-                maxVels[it] = newV0
-                aMax = getAMaxOrNaN(dx, v0, accelGetter, reversed)
+                // heuristic search, typically < 10 iterations, and only occurs when necessary,
+                // and typically happens < 1% of the time
+                v0 = extendingDownDoubleSearch(
+                    0.0, v0 - tolerance, initialStep, tolerance, searchingFor = false
+                ) { v -> getAMaxOrNaN(dx, v, accelGetter, reversed).isNaN() }
+
+                aMax = getAMaxOrNaN(dx, v0, accelGetter, reversed).notNaNOrElse(::throwBadAccelAt0Vel)
+                maxVels[it] = v0 //is new
             }
-            val v1 = sqrt(v0.squared() + 2 * aMax * dx).notNaNOrElse { 0.0 } //>=0
+            val v1 = sqrt(v0.squared() + 2 * aMax * dx).notNaNOrElse { 0.0 }
             val actualV1 = min(v1, maxVels[it + 1])
             maxVels[it + 1] = actualV1
         }
     }
 
-    private fun getAMaxOrNaN(dx: Double, v: Double, accelGetter: MaxAccelGetter, reversed: Boolean): Double {
+    private fun throwBadAccelAt0Vel(): Nothing =
+        throw RuntimeException(
+            "Unsatisfiable constraints: The current constraints's acceleration did not return a non-empty interval" +
+                    "even at a given velocity of 0.0."
+        )
+
+    private fun getAMaxOrNaN(dx: Double, v: Double, accelGetter: PointConstraint, reversed: Boolean): Double {
         val aMin = -v.squared() / 2 / dx
-        val aMaxMaybe = accelGetter.getMaxAccel(v, reversed)
+        val interval = accelGetter.accelRange(v)
+        val aMaxMaybe = if (reversed) -interval.a else interval.b
         return if (aMaxMaybe > aMin) aMaxMaybe else Double.NaN
     }
 }

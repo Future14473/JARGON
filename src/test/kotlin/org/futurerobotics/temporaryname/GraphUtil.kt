@@ -9,24 +9,13 @@ import org.knowm.xchart.style.markers.SeriesMarkers
 import java.io.File
 import java.nio.file.Paths
 
-const val GRAPH_DIR = "./graphs/"
+const val GRAPH_DIR: String = "./graphs/"
 
 fun XYChart.saveTest(name: String) {
     val file = File(Paths.get(GRAPH_DIR, name).toString())
     file.parentFile.mkdirs()
     BitmapEncoder.saveBitmap(this, file.absolutePath, BitmapEncoder.BitmapFormat.PNG)
 }
-
-//class ColorGradient(vararg colors: Color) {
-//    val colors = if (colors.isNotEmpty()) colors else arrayOf<Color>(Color.BLACK)
-//
-//    operator fun getByTime(s: Double): Color {
-//        val s = s.coerceIn(0.0, 1.0)
-//        val prog = s * colors.size
-//        val t = s % 1
-//        return colors[t.toInt()]
-//    }
-//}
 
 object GraphUtil {
     private val labels = "p0,p1,p2,p3,p4,p5".split(',').toTypedArray()

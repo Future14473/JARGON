@@ -46,13 +46,13 @@ class QuinticSpline(x: QuinticPolynomial, y: QuinticPolynomial) : ComponentVecto
                 start.y, startDeriv.y, startSecondDeriv.y, end.y, endDeriv.y, endSecondDeriv.y
             )
         )
-//            val p0 = start
-//            val p1 = p0 + startDeriv / 5
-//            val p2 = startSecondDeriv / 20 + 2 * p1 - p0
-//            val p5 = end
-//            val p4 = p5 - endDeriv / 5
-//            val p3 = endSecondDeriv / 20 + 2 * p4 - p5
-//            return fromControlPoints(p0, p1, p2, p3, p4, p5)
+        //            val p0 = start
+        //            val p1 = p0 + startDeriv / 5
+        //            val p2 = startSecondDeriv / 20 + 2 * p1 - p0
+        //            val p5 = end
+        //            val p4 = p5 - endDeriv / 5
+        //            val p3 = endSecondDeriv / 20 + 2 * p4 - p5
+        //            return fromControlPoints(p0, p1, p2, p3, p4, p5)
         /**
          * Creates a quintic spline given the value, and first and second derivatives of each of the
          * end points.
@@ -79,6 +79,3 @@ class QuinticSpline(x: QuinticPolynomial, y: QuinticPolynomial) : ComponentVecto
         )
     }
 }
-
-/** Convienence extention function for [QuinticSpline.random] */
-fun Random.nextQuinticSpline(range: Double = 1.0): QuinticSpline = QuinticSpline.random(this, range)

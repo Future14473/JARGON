@@ -12,26 +12,16 @@ import kotlin.math.abs
  * @param b The upper bound of this interval. Can be [Double.POSITIVE_INFINITY]
  */
 class Interval private constructor(val a: Double, val b: Double) {
+
     init {
-        assert(isEmpty || a <= b) { "Invalid interval!! No cookie for the developer!" }
+        assert(isEmpty() || a <= b) { "Invalid interval!! No cookie for the developer!" }
     }
 
     /** If this interval is empty (contains no values) */
-    val isEmpty: Boolean get() = a.isNaN() || b.isNaN()
+    fun isEmpty(): Boolean = a.isNaN() || b.isNaN()
 
     /** If this interval consists of a single point. */
-    val isPoint: Boolean get() = a == b
-
-    override fun hashCode(): Nothing = throw UnsupportedOperationException()
-    /**
-     * Returns the lower bound [a]
-     */
-    operator fun component1(): Double = a
-
-    /**
-     * Returns the upper bound [b]
-     */
-    operator fun component2(): Double = b
+    fun isPoint(): Boolean = a == b
 
     /**
      * Gets a bound by [index], which must be 0 or 1.
@@ -50,16 +40,15 @@ class Interval private constructor(val a: Double, val b: Double) {
 
     /** @return if [v] is contained in this interval, with leniency at the endpoints. */
     fun epsContains(v: Double): Boolean {
-        return !isEmpty && v in (a - EPSILON)..(b + EPSILON)
+        return !isEmpty() && v in (a - EPSILON)..(b + EPSILON)
     }
 
-    override fun equals(other: Any?): Boolean = (this === other) || (other is Interval && a == other.a && b == other.b)
     /** @return if this interval epsilon equals the other via endpoints */
-    infix fun epsEq(other: Interval): Boolean = this.isEmpty && other.isEmpty || a epsEq other.a && b epsEq other.b
+    infix fun epsEq(other: Interval): Boolean = this.isEmpty() && other.isEmpty() || a epsEq other.a && b epsEq other.b
 
     /** @return the intersection of this interval with another. */
     fun intersect(that: Interval): Interval {
-        if (this.isEmpty || that.isEmpty || that.a > this.b || this.a > that.b) return EMPTY
+        if (this.isEmpty() || that.isEmpty() || that.a > this.b || this.a > that.b) return EMPTY
         val gta: Interval
         val lta: Interval
         if (this.a < that.a) {
@@ -71,6 +60,17 @@ class Interval private constructor(val a: Double, val b: Double) {
         }
         if (gta.b <= lta.b) return gta //lta[ gta(--) ]
         return gta.a intervalTo lta.b  //lta[ gta(--] )
+    }
+
+    override fun equals(other: Any?): Boolean = other is Interval && (a == other.a && b == other.b)
+
+    override fun hashCode(): Int = 31 * a.hashCode() + b.hashCode()
+
+    override fun toString(): String {
+        return when {
+            isEmpty() -> "Interval [Empty]"
+            else -> "Interval [$a, $b]"
+        }
     }
 
     companion object {
@@ -106,7 +106,7 @@ class Interval private constructor(val a: Double, val b: Double) {
         }
 
         /**
-         * Returns an interval with a [center] and a [radius].
+         * Returns an interval using a [center] and a [radius].
          *
          * Will return an empty interval if radius < 0,
          *
@@ -121,7 +121,7 @@ class Interval private constructor(val a: Double, val b: Double) {
         }
 
         /**
-         * Returns an interval with a [center] and a [radius].
+         * Returns an interval using a [center] and a [radius].
          *
          * Radius will be interpreted as absolute value.
          *
@@ -137,22 +137,27 @@ class Interval private constructor(val a: Double, val b: Double) {
  * Constructs an [Interval] from [this] to [b].
  * @see Interval.of
  */
-inline infix fun Double.intervalTo(b: Double): Interval = Interval.of(this, b)
+infix fun Double.intervalTo(b: Double): Interval = Interval.of(this, b)
 
 /**
  * Constructs an regular [Interval] from [this] to [b].
  * @see Interval.ofRegular
  */
-inline infix fun Double.regularIntervalTo(b: Double): Interval = Interval.ofRegular(this, b)
+infix fun Double.regularIntervalTo(b: Double): Interval = Interval.ofRegular(this, b)
 
 /**
  * @return if [this] is contained in this interval, with leniency at the endpoints.
  * @see Interval.epsContains
  */
-inline infix fun Double.epsIn(i: Interval): Boolean = i.epsContains(this)
+infix fun Double.epsIn(i: Interval): Boolean = i.epsContains(this)
 
 /**
  * Ensures that this value lies in the specified [Interval] i.
  * Will return [Double.NaN] if the interval is empty.
  */
-inline infix fun Double.coerceIn(i: Interval) = coerceIn(i.a, i.b)
+infix fun Double.coerceIn(i: Interval): Double = coerceIn(i.a, i.b)
+
+/**
+ * Returns this Double range as an interval.
+ */
+fun ClosedFloatingPointRange<Double>.asInterval(): Interval = Interval.of(this.start, this.endInclusive)

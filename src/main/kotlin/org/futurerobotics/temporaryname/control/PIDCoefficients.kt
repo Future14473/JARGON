@@ -8,6 +8,9 @@ import org.futurerobotics.temporaryname.util.replaceIf
  * PID coefficients with more options,
  * Like some regulation on that pesky integral term ([integralActivationThreshold], [integralActivationThreshold])
  *
+ * @property p the proportional gain
+ * @property i the integral gain
+ * @property d the derivative gain
  * @property inputBounds the bounds on the input; used to avoid wild p-terms
  * @property outputBounds the bounds on the output; used to avoid wild outputs. Sometimes you don't want to use this...
  * @property integralActivationThreshold The maximum error that the integral term can activate on.

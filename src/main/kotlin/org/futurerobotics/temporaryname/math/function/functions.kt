@@ -47,6 +47,9 @@ interface VectorFunction {
 
 /**
  * A vector function defined by separate [x] and [y] component functions.
+ *
+ * @property x the x component function
+ * @property y the y component function
  */
 open class ComponentVectorFunction(protected val x: MathFunction, protected val y: MathFunction) : VectorFunction {
 

@@ -1,48 +1,45 @@
 package org.futurerobotics.temporaryname.pathing.trajectory
 
 import org.futurerobotics.temporaryname.math.Interval
-import org.futurerobotics.temporaryname.motionprofile.MaxAccelGetter
-import org.futurerobotics.temporaryname.motionprofile.ProfileConstraint
+import org.futurerobotics.temporaryname.motionprofile.MotionProfileConstrainer
+import org.futurerobotics.temporaryname.motionprofile.PointConstraint
+import org.futurerobotics.temporaryname.pathing.Path
+import org.futurerobotics.temporaryname.pathing.PathPoint
 import org.futurerobotics.temporaryname.pathing.constraint.MotionConstraintSet
-import org.futurerobotics.temporaryname.pathing.path.Path
-import org.futurerobotics.temporaryname.pathing.path.PathPointInfo
+import org.futurerobotics.temporaryname.util.Stepper
 
 /**
- * Provides the bridge between [MotionConstraintSet] and [ProfileConstraint], by applying the constraints on a path.
+ * The bridge between [MotionConstraintSet] and [MotionProfileConstrainer],
+ * by applying the constraints on a path.
+ *
+ * This is separate from [MotionConstraintSet] since the path can differ along the same constraints.
+ *
  * Used in [TrajectoryGenerator]
  */
 class TrajectoryConstraint(
     private val path: Path, motionConstraintSet: MotionConstraintSet
-) : ProfileConstraint {
+) : MotionProfileConstrainer {
     private val velConstraints = motionConstraintSet.velocityConstraints
     private val accelConstrains = motionConstraintSet.accelConstraints
-    override fun getMaxVelocity(x: Double): Double {
-        return getMaxVelBy(path.getPointInfo(x))
+
+    private fun getMaxVel(point: PathPoint): Double {
+        return velConstraints.map { it.maxVelocity(point) }.min()!!
     }
 
-    override fun getMaxAccel(x: Double, curVelocity: Double, reversed: Boolean): Double {
-        return getMaxAccelBy(path.getPointInfo(x), curVelocity, reversed)
+    private fun getMaxAccelBy(point: PathPoint, curVelocity: Double): Interval {
+        return accelConstrains.map {
+            it.maxAccelRange(point, curVelocity)
+        }.reduce(Interval::intersect)
     }
 
-    override fun getAllVelsAndAccels(allX: List<Double>): Pair<List<Double>, List<MaxAccelGetter>> {
-        val points = path.getAllPointInfo(allX)
-        val vels = points.map { getMaxVelBy(it) }
-        val accels = points.map {
-            MaxAccelGetter { curVelocity, reversed ->
-                getMaxAccelBy(it, curVelocity, reversed)
+    override fun stepper(): Stepper<Double, PointConstraint> {
+        val pathStepper = path.stepper()
+        return Stepper { x ->
+            val point = pathStepper.stepTo(x)
+            val maxVel = getMaxVel(point)
+            return@Stepper PointConstraint(maxVel) { curVel ->
+                getMaxAccelBy(point, curVel)
             }
         }
-        return vels to accels
-    }
-
-    private fun getMaxVelBy(point: PathPointInfo) = velConstraints.map { it.maxVelocity(point) }.min()!!
-
-    private fun getMaxAccelBy(point: PathPointInfo, curVelocity: Double, reversed: Boolean): Double {
-        val interval = accelConstrains.map {
-            it.maxAccelRange(
-                point, curVelocity, reversed
-            )
-        }.reduce(Interval::intersect)
-        return if (reversed) -interval.a else interval.b
     }
 }

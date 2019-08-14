@@ -1,16 +1,22 @@
-package org.futurerobotics.temporaryname.pathing.path.reparam
+package org.futurerobotics.temporaryname.pathing.reparam
 
 import org.futurerobotics.temporaryname.math.function.VectorFunction
-import org.futurerobotics.temporaryname.pathing.path.reparam.IntegrationReparamer.reparam
+import org.futurerobotics.temporaryname.pathing.reparam.IntegrationReparamer.reparam
 
 /**
  * Reparameterization by numerical integration using midpoint Riemann sums.
  * The function that actually does this is [reparam]
  */
 object IntegrationReparamer {
+
+    /** The default stepsPerSample used in [IntegrationReparamer]'s overloads/default parameters. */
+    const val defaultStepsPerSample: Int = 5
+    /** Default maxDeltaK used for [ArcDivisionsReparamer] for overloads/default parameters. */
+    const val defaultNumSamples: Int = 500
+
     /**
      * Reparameterizes a [VectorFunction] [func] by using a midpoint Riemann sum integration.
-     * This will result in a [ReparamCurve] with [numSamples] of evenly spaced samples along [t],
+     * This will result in a [ReparamCurve] with [numSamples] of evenly spaced samples along the function's parameter,
      * and each sample will use [stepsPerSample] subdivisions in the Riemann sum integration.
      */
     @JvmStatic
@@ -38,15 +44,11 @@ object IntegrationReparamer {
                 i++
             }
         }
-        return ReparamCurve(func, ReparamMapping.fromSTSamples(sSamples, tSamples))
+        return ReparamCurve(
+            func, SamplesReparamMapping.fromPointSamples(sSamples, tSamples)
+        )
     }
-
-    /** The default stepsPerSample used in [IntegrationReparamer]'s overloads/default parameters. */
-    const val defaultStepsPerSample: Int = 5
-    /** Default maxDeltaK used for [ArcDivisionsReparamer] for overloads/default parameters. */
-    const val defaultNumSamples: Int = 500
 }
-
 
 /** Convenience Extension method for [IntegrationReparamer.reparam] */
 fun VectorFunction.reparamByIntegration(

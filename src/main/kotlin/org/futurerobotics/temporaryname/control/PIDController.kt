@@ -10,8 +10,7 @@ import org.futurerobotics.temporaryname.math.coerceIn
  * @param clock the [Clock] that I and D coefficients are calculated with.
  */
 class PIDController(
-    private val coefficients: org.futurerobotics.temporaryname.control.PIDCoefficients,
-    private val clock: org.futurerobotics.temporaryname.control.Clock = org.futurerobotics.temporaryname.control.Clock.Default
+    private val coefficients: PIDCoefficients, private val clock: Clock = Clock.Default
 ) {
     private var hasPrevTime = false
     private var prevTime = clock.nanoTime()
@@ -26,9 +25,8 @@ class PIDController(
      * Updates internal state given the current [input], and returns this PIDController's Output.
      */
     fun getOutput(input: Double = 0.0): Double {
-        val input = input.coerceIn(coefficients.inputBounds)
 
-        val curError = setPoint - input
+        val curError = setPoint - input.coerceIn(coefficients.inputBounds)
         val curTime = clock.nanoTime()
 
         if (!hasPrevTime) {

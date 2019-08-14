@@ -1,8 +1,6 @@
-@file:Suppress("KDocMissingDocumentation")
-
 package org.futurerobotics.temporaryname.math
 
-/** Used to convey information about value and first and second derivatives of a numerical value. */
+/** Used to convey information about value, first, and second derivatives of a numerical value. */
 interface Derivatives {
     /** The value */
     val value: Double
@@ -18,7 +16,7 @@ class ValueDerivatives(
 ) : Derivatives
 
 /**
- * Used to convey information about value and first and second derivatives of a [Vector2d] value
+ * Used to convey information about value, first, and second derivatives of a [Vector2d] value
  */
 interface VectorDerivatives {
     /** The vector */
@@ -35,7 +33,7 @@ class ValueVectorDerivatives(
 ) : VectorDerivatives
 
 /**
- * Used to convey information about value and first and second derivatives of a [Pose2d] value
+ * Used to convey information about value, first, and second derivatives of a [Pose2d] value
  */
 interface PoseDerivatives {
     /** The pose */
@@ -50,20 +48,3 @@ interface PoseDerivatives {
 class ValuePoseDerivatives(
     override val pose: Pose2d, override val poseDeriv: Pose2d, override val poseSecondDeriv: Pose2d
 ) : PoseDerivatives
-
-
-operator fun PoseDerivatives.plus(d: PoseDerivatives): ValuePoseDerivatives =
-    ValuePoseDerivatives(pose + d.pose, poseDeriv + d.poseDeriv, poseSecondDeriv + d.poseSecondDeriv)
-
-operator fun PoseDerivatives.minus(d: PoseDerivatives): ValuePoseDerivatives =
-    ValuePoseDerivatives(pose - d.pose, poseDeriv - d.poseDeriv, poseSecondDeriv - d.poseSecondDeriv)
-
-operator fun PoseDerivatives.times(
-    v: Double
-): ValuePoseDerivatives = ValuePoseDerivatives(pose * v, poseDeriv * v, poseSecondDeriv * v)
-
-operator fun PoseDerivatives.times(v: Int): ValuePoseDerivatives = this * v.toDouble()
-operator fun PoseDerivatives.div(v: Double): ValuePoseDerivatives =
-    ValuePoseDerivatives(pose / v, poseDeriv / v, poseSecondDeriv / v)
-
-operator fun PoseDerivatives.div(v: Int): ValuePoseDerivatives = this / v.toDouble()

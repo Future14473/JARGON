@@ -1,3 +1,5 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
 package org.futurerobotics.temporaryname
 
 import kotlin.math.abs
@@ -31,8 +33,7 @@ class ErrorReporter {
     }
 
     fun report(): String {
-        return if (errorPointCount == 0) "No errors recorded" else
-            """
+        return if (errorPointCount == 0) "No errors recorded" else """
             Max Error: ${"%6f".format(maxError)}: ${maxErrorMessage ?: ""}
             Total Error: ${"%6f".format(totalError)}
             Average Error: ${"%6f".format(averageError)}
@@ -41,4 +42,4 @@ class ErrorReporter {
     }
 }
 
-fun reportError(block: ErrorReporter.() -> Unit) = ErrorReporter().apply(block)
+fun reportError(block: ErrorReporter.() -> Unit): ErrorReporter = ErrorReporter().apply(block)

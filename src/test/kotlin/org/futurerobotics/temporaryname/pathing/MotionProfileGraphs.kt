@@ -8,12 +8,10 @@ import org.futurerobotics.temporaryname.math.randomVectorDerivatives
 import org.futurerobotics.temporaryname.motionprofile.MotionProfile
 import org.futurerobotics.temporaryname.motionprofile.MotionProfileGenerator
 import org.futurerobotics.temporaryname.pathing.constraint.*
-import org.futurerobotics.temporaryname.pathing.path.Path
-import org.futurerobotics.temporaryname.pathing.path.TangentHeading
-import org.futurerobotics.temporaryname.pathing.path.addHeading
-import org.futurerobotics.temporaryname.pathing.path.reparam.reparamByIntegration
+import org.futurerobotics.temporaryname.pathing.reparam.reparamByIntegration
 import org.futurerobotics.temporaryname.pathing.trajectory.TrajectoryConstraint
 import org.futurerobotics.temporaryname.saveTest
+import org.futurerobotics.temporaryname.util.stepToAll
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -25,7 +23,7 @@ import kotlin.random.Random
 import kotlin.system.measureNanoTime
 
 @RunWith(Parameterized::class)
-class `Motion Profile Graphs`(
+class MotionProfileGraphs(
     private val path: Path,
     private val constraints: MotionConstraintSet,
     private val pathNumber: Int,
@@ -36,14 +34,12 @@ class `Motion Profile Graphs`(
     private lateinit var profile: MotionProfile
     @Before
     fun generateAndTimeProfile() {
-        //        println("Begin Traj Generation")
         generationTime = measureNanoTime {
-            val trajConstraints = TrajectoryConstraint(path, constraints)
-            profile = MotionProfileGenerator.generateProfile(
-                trajConstraints, path.length, targetStartVel = 0.0, targetEndVel = 0.0, segmentSize = 0.01
+            val constraints = TrajectoryConstraint(path, constraints)
+            profile = MotionProfileGenerator.generateDynamicProfile(
+                constraints, path.length, targetStartVel = 0.0, targetEndVel = 0.0, segmentSize = 0.01
             )
         }
-        //        println("End Traj Generation")
     }
 
     @Test
@@ -59,8 +55,7 @@ class `Motion Profile Graphs`(
 
     @Test
     fun `Generate profile graph`() {
-
-        val points = path.getAllPointInfo(xs)
+        val points = path.stepToAll(xs)
         //profile
         val chart: XYChart = with(XYChartBuilder()) {
             title("Motion Profile and Constraints")
@@ -81,7 +76,7 @@ class `Motion Profile Graphs`(
                 lineWidth = 1f
             }
         }
-        val profileSpeeds = xs.map { profile.getByDistance(it).v }
+        val profileSpeeds = xs.map { profile.atDistance(it).v }
         chart.addSeries("Final Profile", xs, profileSpeeds).apply {
             marker = None()
             lineWidth = 1f
@@ -99,7 +94,7 @@ class `Motion Profile Graphs`(
             height(400)
             width(600)
         }.build()
-        val pts = path.getAllPointInfo(xs).map { it.position }
+        val pts = path.stepToAll(xs).map { it.position }
         pathChart.styler.apply {
             //            isToolTipsEnabled = true
             //            isToolTipsAlwaysVisible = true
@@ -119,8 +114,8 @@ class `Motion Profile Graphs`(
         private const val yMax = 5.5
         private var totalRatio = 0.0
         private var totalCount = 0
-        private val constraintSets = mutableListOf(
-            MotionConstraintSet.of(
+        private val constantConstraints = mutableListOf(
+            MotionConstraintSet(
                 TangentVelocityConstraint(5.0),
                 PathAngularVelocityConstraint(1.5),
                 CentripetalAccelConstraint(0.9),
@@ -129,16 +124,20 @@ class `Motion Profile Graphs`(
                 RobotAngularAccelConstraint(0.3)
             )
         ).also {
-            it += List(3) {
-                MotionConstraintSet.of(
-                    TangentVelocityConstraint(random.nextDouble(3.0, 5.0)),
-                    PathAngularVelocityConstraint(random.nextDouble(0.3, 3.0)),
-                    CentripetalAccelConstraint(random.nextDouble(1.0, 3.0)),
-                    TangentAccelConstraint(random.nextDouble(1.0, 3.0)),
-                    TotalAccelConstraint(random.nextDouble(1.0, 3.0)),
-                    RobotAngularAccelConstraint(random.nextDouble(0.5, 2.0))
-                )
+            it += List(2) {
+                randomConstraints()
             }
+        }
+
+        private fun randomConstraints(): MotionConstraintSet {
+            return MotionConstraintSet(
+                TangentVelocityConstraint(random.nextDouble(3.0, 5.0)),
+                PathAngularVelocityConstraint(random.nextDouble(0.3, 3.0)),
+                CentripetalAccelConstraint(random.nextDouble(1.0, 3.0)),
+                TangentAccelConstraint(random.nextDouble(1.0, 3.0)),
+                TotalAccelConstraint(random.nextDouble(1.0, 3.0)),
+                RobotAngularAccelConstraint(random.nextDouble(0.5, 2.0))
+            )
         }
 
         private val paths: List<Path> = List(10) {
@@ -148,7 +147,7 @@ class `Motion Profile Graphs`(
                     .zipWithNext { a, b ->
                         QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(TangentHeading)
                     }
-                path = Path(segs)
+                path = MultiplePath(segs)
             }.also { println("Path generation took ${it / 1e6} millis") }
             path!!
         }
@@ -158,7 +157,8 @@ class `Motion Profile Graphs`(
         fun `paths and constraints`(): List<Array<Any>> {
             val list = mutableListOf<Array<Any>>()
             paths.forEachIndexed { pathNum, path ->
-                constraintSets.forEachIndexed { setNum, set ->
+                val thisConstraints = constantConstraints + List(2) { randomConstraints() }
+                thisConstraints.forEachIndexed { setNum, set ->
                     list += arrayOf(path, set, pathNum, setNum)
                 }
             }

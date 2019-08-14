@@ -2,14 +2,45 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project (will eventually) adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+Until a version that makes sense, everything will be version [Early#]
 
 
-## [Unreleased]
-
-
-## [0.1.0-alpha] - 8/14/2019
+## [Early2] 8/21/2019
 ### Added
+- `Stepper`s for "stepping" over paths and trajectories, similar to iterators
+- `ReverseCurve`/`ReversePath`
+- `MultipleCurve/Path`
+- `PointTurn` Path
+- `PointConstraint` interface: return of `MotionProfileConstraint`
+- `MotionProfiled` interface, in preparation for anything motion profiled control
+- [Koma](http://koma.kyonifer.com/) kotlin linear algebra library dependency
+
+### Changed
+- Change versioning since it doesn't make sense, and every change will likely be breaking
+until some point in the future when things settle down. Since this is mostly practice in
+trying to keep good version control.
+- Change package structure
+- Curve is now a typealias of GenericCurve, Path is a extension of GenericCurve. Only solution
+for implement same interface different generics I can find.
+- PathSegment is now Path, Path is now MultiplePath
+- Realized that the JIT compiler is a rather good optimizer and removed some confusing local optimizations
+- AccelConstraint no longer takes `reversed` as a parameter...
+- Refactor ProfileConstraint interface to use the introduced PointConstraint, make ProfileConstraint a stepper.
+- Path and Curve have had most of their methods removed to be minimal.
+- CurvePoint now includes length info
+- HeadingProviders now only take CurvePoint (only use for original Curve is length)
+- Random fixes/improvements/small changes
+- Some renaming of functions
+
+### Removed
+- Currently useless `QuickCurve`
+
+
+## [Early1] - 8/14/2019
+### Added
+IN A REALLY TIGHT NUTSHELL:
 - Make public
 - Skeletal structure for control/hardware interfaces/classes
 - Paths, reparameterization, motion profiles, trajectories, and generation

@@ -5,6 +5,13 @@ import org.futurerobotics.temporaryname.math.Derivatives
 /**
  * A Quintic Polynomial Math function, specified by coefficients,
  * in the form at^5+bt^4+ct^3+dt^2+et+f
+ *
+ * @property a the t^5 coefficient
+ * @property b the t^4 coefficient
+ * @property c the t^3 coefficient
+ * @property d the t^2 coefficient
+ * @property e the t^1 coefficient
+ * @property f the constant coefficient
  */
 class QuinticPolynomial(
     @JvmField val a: Double, @JvmField val b: Double, @JvmField val c: Double, @JvmField val d: Double, @JvmField val e: Double, @JvmField val f: Double
@@ -30,6 +37,7 @@ class QuinticPolynomial(
     }
 
     companion object {
+        @Suppress("UnnecessaryVariable")
         internal fun fromControlPoints(
             p0: Double, p1: Double, p2: Double, p3: Double, p4: Double, p5: Double
         ): QuinticPolynomial {
@@ -45,6 +53,7 @@ class QuinticPolynomial(
         /**
          * Creates a Quintic polynomial defined by the value and first and second derivatives of endpoints.
          */
+        @Suppress("UnnecessaryVariable")
         @JvmStatic
         fun fromDerivatives(
             start: Double,
@@ -54,9 +63,9 @@ class QuinticPolynomial(
             endDeriv: Double,
             endSecondDeriv: Double
         ): QuinticPolynomial {
-//            val a = -s+5*(s+s_1/5)-10*(s_2/20+2*(s+s_1/5)-s)+10*(f_2/20+2*(f-f_1/5)-f)-5*(f-f_1/5)+f
-//            val b = 5*s-20*(s+s_1/5)+30*(s_2/20+2*(s+s_1/5)-s)-20*(f_2/20+2*(f-f_1/5)-f)+5*(f-f_1/5)
-//            val c = -10*s+30*(s+s_1/5)-30*(s_2/20+2*(s+s_1/5)-s)+10*(f_2/20+2*(f-f_1/5)-f)
+            //            val a = -s+5*(s+s_1/5)-10*(s_2/20+2*(s+s_1/5)-s)+10*(f_2/20+2*(f-f_1/5)-f)-5*(f-f_1/5)+f
+            //            val b = 5*s-20*(s+s_1/5)+30*(s_2/20+2*(s+s_1/5)-s)-20*(f_2/20+2*(f-f_1/5)-f)+5*(f-f_1/5)
+            //            val c = -10*s+30*(s+s_1/5)-30*(s_2/20+2*(s+s_1/5)-s)+10*(f_2/20+2*(f-f_1/5)-f)
             //equation solvers was used.
             val a = -6 * start - 3 * startDeriv - 0.5 * startSecondDeriv + 6 * end - 3 * endDeriv + 0.5 * endSecondDeriv
             val b = 15 * start + 8 * startDeriv + 1.5 * startSecondDeriv - 15 * end + 7 * endDeriv - endSecondDeriv

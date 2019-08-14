@@ -2,13 +2,13 @@ package org.futurerobotics.temporaryname.math
 
 import kotlin.math.abs
 
-const val ADJUST_THRESH = 10
+const val ADJUST_THRESH: Int = 10
 
 infix fun Vector2d.errorTo(that: Vector2d): Double {
-    val thislen = this.length
-    val otherlen = that.length
+    val thisLen = this.length
+    val otherLen = that.length
     val err = this distTo that
-    val totalLen = thislen + otherlen
+    val totalLen = thisLen + otherLen
     return when {
         totalLen < ADJUST_THRESH -> err
         else -> err / totalLen * ADJUST_THRESH
@@ -24,5 +24,5 @@ infix fun Double.errorTo(that: Double): Double {
     }
 }
 
-infix fun Pose2d.errorTo(that: Pose2d) =
+infix fun Pose2d.errorTo(that: Pose2d): Double =
     kotlin.math.max(vec errorTo that.vec, angleNorm(heading distTo that.heading) / 3)
