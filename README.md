@@ -1,19 +1,18 @@
 ## Hi!
 
-This very work in progress repository is a robotics library that is originally for FTC but could 
-theoretically could work beyond that.
+This is a very work in progress extra-pre-alpha robotics library that is originally for FTC but could 
+theoretically be used beyond that.
 
+This is currently public so that other people know what I am working on and can provide earlier feedback.
+Nothing in here is in any way final (yet).
 
-
-This is simply public so that other people know what I am working on and can provide earlier feedback.
-Nothing in this repository is final (yet)
-
-_This may possibly be de-branded from future robotics in the future._ No pun intended.
+_This may possibly be de-branded from Future robotics in the future._ No pun intended.
  
 Planned features include:
 - Robotics motion planning, with paths, trajectories, graphs, with lots of room for extensibility and customization
     -   Planned experiment: trajectories using only constraints on WHEEL velocity/acceleration/torque/voltage
-- Throw the full power of linear algebra and control theory at yourself to create control systems
+- Throw the full power of linear algebra and control theory at yourself to create control systems, or do something
+  simpler
 - Coordinating hardware into Systems so you can say "extend arm" instead of "set target position 3000 degrees", and other
   relations
 - Convenience things for better control for motors and servos and buttons etc
@@ -22,7 +21,7 @@ Planned features include:
 
 Principles of design:
 -   User friendly
--   Extensible and customizable, no requirement to adhere to one implementation and/or create your own
+-   Extensible and customizable, no requirement to adhere to one implementation; create your own
 -   Adherence to SOLID
 
 This project is inspired by the following:
@@ -44,9 +43,9 @@ A few reasons:
         someone else's code off the internet.
    - I try to invent new things and learn things from scratch rather than imitate whats already there. 
     Therefore, my version is subjectively better.
-   - Many of the libraries do not have features that I want and/or don't quite work
-   - One of the goals is to also try to clarify some of the complexity to make it more understandable, so to inspire more interest
-     in some of these subjects to others
+   - Many of the libraries do not have features that I want and/or don't quite work the way I want
+   - One of the goals is to also try to clarify some of the complexity in these systems to make it more understandable,
+    so to inspire more interest in some of these subjects to others
    - Friendly competition and bragging rights
    
 ##### 2. There are a few similarities to [ACME robotics's roadrunner](https://github.com/acmerobotics/road-runner)...
