@@ -6,6 +6,12 @@ and this project (will eventually) adheres to [Semantic Versioning](https://semv
 
 Until a version that makes sense, everything will be version [Early#]
 
+## [Unreleased]
+### Changed
+- Pathing things are refactored into their own module. Control will be the emphasis of the core module. (not final)
+### Added
+- Control system frameworks, implementation with Trajectories
+- Beginnings of Systems.
 
 ## [Early2] 8/21/2019
 ### Added
