@@ -4,9 +4,9 @@ import org.futurerobotics.temporaryname.math.Vector2d
 
 /** A [Curve] that represents traveling along a Line, starting at [startPos] and ending at endPos */
 class Line(private val startPos: Vector2d, endPos: Vector2d) : Curve {
+
     override val length: Double = startPos distTo endPos
     private val diffNorm = (endPos - startPos).normalized()
-
     override fun atLength(s: Double): CurvePoint = object :
         CurvePoint {
         override val length: Double get() = this@Line.length

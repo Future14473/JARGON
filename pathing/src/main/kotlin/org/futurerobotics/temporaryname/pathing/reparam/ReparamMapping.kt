@@ -9,6 +9,7 @@ import org.futurerobotics.temporaryname.util.replaceIf
  * Represents a mapping of s values (arc length) to t value (parameter on a parametric func).
  */
 interface ReparamMapping : Steppable<Double, Double> {
+
     /** The total length of this mapping; i.e. the last sample's s value. */
     val length: Double
 
@@ -34,7 +35,6 @@ private constructor(
     override val length: Double get() = sSamples.last()
     /** The total number of samples. */
     val numSamples: Int get() = sSamples.size
-
     private inline val lastT get() = tSamples.last()
 
     init {
@@ -71,7 +71,6 @@ private constructor(
             if (i >= numSamples - 1) return lastT
             val sBefore = sSamples[i]
             val tBefore = tSamples[i]
-
             val sAfter = sSamples[i + 1]
             val tAfter = tSamples[i + 1]
             val progress = (s - sBefore) / (sAfter - sBefore)
@@ -82,7 +81,6 @@ private constructor(
     override fun stepper(): Stepper<Double, Double> = object :
         Stepper<Double, Double> {
         private var i = -2
-
         override fun stepTo(step: Double): Double {
             if (i == -2) i = when {
                 step <= 0 -> -1
@@ -96,7 +94,6 @@ private constructor(
             if (i < 0) return 0.0
             val sBefore = sSamples[i]
             val tBefore = tSamples[i]
-
             val sAfter = sSamples[i + 1]
             val tAfter = tSamples[i + 1]
             val progress = (step - sBefore) / (sAfter - sBefore)

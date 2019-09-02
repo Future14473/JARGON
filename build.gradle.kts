@@ -5,6 +5,10 @@ buildscript {
     val junitVersion by extra("4.12")
     val xchartVersion by extra("3.5.4")
     val komaVersion by extra("0.12")
+    val junit by extra("junit:junit:$junitVersion")
+    val xchart by extra("org.knowm.xchart:xchart:$xchartVersion")
+    val koma by extra("com.kyonifer:koma-core-ejml:$komaVersion")
+    val dokka by extra("org.jetbrains.dokka")
     repositories {
         mavenCentral()
     }
@@ -12,24 +16,40 @@ buildscript {
         classpath(kotlin("gradle-plugin", version = kotlinVersion))
     }
 }
-val javaVersion = 8
+
+plugins {
+    //    `build-scan`
+    id("org.jetbrains.dokka") version "0.9.18" apply false
+}
+//
+//buildScan {
+//    termsOfServiceUrl = "https://gradle.com/terms-of-service"
+//    termsOfServiceAgree = "yes"
+//
+//}
 subprojects {
+    group = "org.futurerobotics.temporaryname"
+    version = "0.1.0-SNAPSHOT"
     repositories {
-        mavenCentral()
+        //        mavenCentral()
+        jcenter()
         maven {
             url = uri("https://dl.bintray.com/kyonifer/maven")
         }
-        jcenter()
     }
     plugins.withId("org.jetbrains.kotlin.jvm") {
-        println("configuring kotlin on project $name")
+        println("doing the configuring of the kotlin on project $path")
         dependencies {
             // <3 contextual String.invoke
-            "implementation"(kotlin("stdlib-jdk$javaVersion"))
+            "implementation"(kotlin("stdlib-jdk8"))
         }
         tasks.withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = "1.$javaVersion"
+            kotlinOptions.jvmTarget = "1.8"
+        }
+    }
+    tasks.getting(Test::class) {
+        useJUnit {
+            excludeCategories("org.futurerobotics.temporaryname.NotARealTest")
         }
     }
 }
-

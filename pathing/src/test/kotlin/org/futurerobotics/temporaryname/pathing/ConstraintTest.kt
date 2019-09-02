@@ -32,7 +32,6 @@ internal class ConstraintTest {
     )
     private val constraint = TrajectoryConstraint(path, motionConstraints)
     private val steps = 1_000
-
     @Test
     fun `Something Fishy About Angular Accel Constraint`() {
         val points = DoubleProgression.fromNumSegments(0.0, path.length, steps).toList()

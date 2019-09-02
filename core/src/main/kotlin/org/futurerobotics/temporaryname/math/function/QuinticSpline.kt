@@ -1,7 +1,7 @@
 package org.futurerobotics.temporaryname.math.function
 
+import org.futurerobotics.temporaryname.math.Derivatives
 import org.futurerobotics.temporaryname.math.Vector2d
-import org.futurerobotics.temporaryname.math.VectorDerivatives
 import org.futurerobotics.temporaryname.math.nextVector2d
 import kotlin.random.Random
 
@@ -9,6 +9,7 @@ import kotlin.random.Random
  * Represents a Quintic Spline, defined by two quintic polynomials for the x and y components.
  */
 class QuinticSpline(x: QuinticPolynomial, y: QuinticPolynomial) : ComponentVectorFunction(x, y) {
+
     override fun toString(): String {
         return "QuinticSpline(x: $x, y: $y)"
     }
@@ -58,9 +59,9 @@ class QuinticSpline(x: QuinticPolynomial, y: QuinticPolynomial) : ComponentVecto
          * end points.
          */
         fun fromDerivatives(
-            start: VectorDerivatives, end: VectorDerivatives
+            start: Derivatives<Vector2d>, end: Derivatives<Vector2d>
         ): QuinticSpline = fromDerivatives(
-            start.vec, start.vecDeriv, start.vecSecondDeriv, end.vec, end.vecDeriv, end.vecSecondDeriv
+            start.value, start.deriv, start.secondDeriv, end.value, end.deriv, end.secondDeriv
         )
 
         /**

@@ -44,7 +44,6 @@ sealed class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>(
     }
 
     private inline val maxInd get() = paths.size - 1
-
     /** Gets a [Point] for a point [s] units along this path. */
     override fun atLength(s: Double): Point {
         val i = startLengths.binarySearch(s)
@@ -57,10 +56,9 @@ sealed class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>(
         Stepper<Double, Point> {
         private var i = -1
         private lateinit var curStepper: Stepper<Double, Point>
-
         override fun stepTo(step: Double): Point = step.let { s ->
             val pastI = i
-            if (i==-1) {
+            if (i == -1) {
                 i = startLengths.binarySearch(s)
                     .replaceIf({ it < 0 }) { -it - 2 }
                     .coerceIn(0, maxInd)
@@ -123,12 +121,12 @@ class MultipleCurve(paths: Iterable<Curve>, checkContinuity: Boolean = true) :
 class MultiplePath(paths: Iterable<Path>, checkContinuity: Boolean = true) :
     MultipleGeneric<Path, PathPoint>(paths, checkContinuity),
     Path {
+
     override val isPointTurn: Boolean = paths.all { it.isPointTurn }
 
     constructor(checkContinuity: Boolean = true, vararg paths: Path) : this(paths.asList(), checkContinuity)
 
     override fun List<GenericPath<*>>.filterIsPath(): Iterable<Path> = filterIsInstance<Path>()
-
     override fun checkPointContinuity(prev: PathPoint, cur: PathPoint) {
         checkCont("Position", prev.position, cur.position)
         checkCont("PositionDeriv", prev.positionDeriv, cur.positionDeriv)

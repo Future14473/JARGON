@@ -13,6 +13,7 @@ import kotlin.random.Random
 
 @RunWith(Parameterized::class)
 internal class VectorFunctionInspect(private val curve: QuinticSpline) {
+
     @Test
     fun `deriv inspect`() {
         testVecDeriv(curve::vec, curve::vecDeriv)
@@ -55,7 +56,6 @@ internal class VectorFunctionInspect(private val curve: QuinticSpline) {
             val errorOk = it.maxError < maxError
             Debug.breakIf(!errorOk)
             Assert.assertTrue(errorOk)
-
         }
     }
 
@@ -74,7 +74,6 @@ internal class VectorFunctionInspect(private val curve: QuinticSpline) {
             val errorOk = it.maxError < maxError
             Debug.breakIf(!errorOk)
             Assert.assertTrue(errorOk)
-
         }
     }
 
@@ -88,10 +87,12 @@ internal class VectorFunctionInspect(private val curve: QuinticSpline) {
         @JvmStatic
         @Parameterized.Parameters
         fun vecs() =
-            List(30) { arrayOf(
-                QuinticSpline.random(
-                    random, range
+            List(30) {
+                arrayOf(
+                    QuinticSpline.random(
+                        random, range
+                    )
                 )
-            ) }
+            }
     }
 }

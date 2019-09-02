@@ -5,8 +5,8 @@ import org.futurerobotics.temporaryname.util.Stepper
 
 /** A path that combines a [Curve] with a [HeadingProvider], to create a Path. */
 class ComponentPath(private val curve: Curve, private val heading: HeadingProvider) : Path {
-    override val length: Double get() = curve.length
 
+    override val length: Double get() = curve.length
     override fun atLength(s: Double): PathPoint {
         val point = curve.atLength(s)
         return ComponentPathPoint(
@@ -27,11 +27,12 @@ class ComponentPath(private val curve: Curve, private val heading: HeadingProvid
     }
 
     private class ComponentPathPoint(
-        private val curvePoint: CurvePoint, private val headingVal: Derivatives
+        private val curvePoint: CurvePoint, private val headingVal: Derivatives<Double>
     ) : PathPoint, CurvePoint by curvePoint {
+
         override val heading: Double get() = headingVal.value
-        override val headingDeriv: Double get() = headingVal.valueDeriv
-        override val headingSecondDeriv: Double get() = headingVal.valueSecondDeriv
+        override val headingDeriv: Double get() = headingVal.deriv
+        override val headingSecondDeriv: Double get() = headingVal.secondDeriv
     }
 }
 

@@ -6,12 +6,15 @@ and this project (will eventually) adheres to [Semantic Versioning](https://semv
 
 Until a version that makes sense, everything will be version [Early#]
 
-## [Unreleased]
+## [Early3] 9/14/2019
 ### Changed
-- Pathing things are refactored into their own module. Control will be the emphasis of the core module. (not final)
+- Path planning related are refactored into their own module. Control will be the emphasis of the core module. (not final)
+- Updated readme
+- Begin proper git habits
+- Improve TODO.md
 ### Added
-- Control system frameworks, implementation with Trajectories
-- Beginnings of Systems.
+- Control system frameworks. This is an entire subject in it of itself; read everything in the 'control' package
+- Mechanics package for models and common physics calculations
 
 ## [Early2] 8/21/2019
 ### Added

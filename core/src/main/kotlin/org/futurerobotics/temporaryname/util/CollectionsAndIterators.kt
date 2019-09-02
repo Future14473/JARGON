@@ -38,12 +38,22 @@ inline fun <T, V : Comparable<V>> Iterable<T>.isSortedBy(which: (T) -> V): Boole
 }
 
 /**
+ * Iterates over all
+ */
+inline fun <T> List<T>.forEachReversed(action: (T) -> Unit) {
+    val listIt = listIterator(size)
+    while (listIt.hasPrevious()) {
+        action(listIt.previous())
+    }
+}
+
+/**
  * Runs forEach on each of the iterables [p1], [p2], zipped.
  */
-inline fun <T, V> forEachZipped(p1: Iterable<T>, p2: Iterable<V>, block: (T, V) -> Unit) {
+inline fun <T, V> forEachZipped(p1: Iterable<T>, p2: Iterable<V>, action: (T, V) -> Unit) {
     let(p1.iterator(), p2.iterator()) { it1, it2 ->
         while (it1.hasNext() && it2.hasNext()) {
-            block(it1.next(), it2.next())
+            action(it1.next(), it2.next())
         }
     }
 }
@@ -51,11 +61,11 @@ inline fun <T, V> forEachZipped(p1: Iterable<T>, p2: Iterable<V>, block: (T, V) 
 /**
  * Runs forEach on each of the iterables [p1], [p2], zipped, and indexed.
  */
-inline fun <T, V> forEachZippedIndexed(p1: Iterable<T>, p2: Iterable<V>, block: (index: Int, T, V) -> Unit) {
+inline fun <T, V> forEachZippedIndexed(p1: Iterable<T>, p2: Iterable<V>, action: (index: Int, T, V) -> Unit) {
     var i = 0
     let(p1.iterator(), p2.iterator()) { it1, it2 ->
         while (it1.hasNext() && it2.hasNext()) {
-            block(i++, it1.next(), it2.next())
+            action(i++, it1.next(), it2.next())
             if (i < 0) throw ArithmeticException("Index overflow")
         }
     }
@@ -64,14 +74,14 @@ inline fun <T, V> forEachZippedIndexed(p1: Iterable<T>, p2: Iterable<V>, block: 
 /**
  * Runs forEach on each of the iterables [this], [p2], zipped.
  */
-inline fun <T, V> Iterable<T>.zipForEach(p2: Iterable<V>, block: (T, V) -> Unit): Unit =
-    forEachZipped(this, p2, block)
+inline fun <T, V> Iterable<T>.zipForEach(p2: Iterable<V>, action: (T, V) -> Unit): Unit =
+    forEachZipped(this, p2, action)
 
 /**
  * Runs forEach on each of the iterables [this], [p2], zipped.
  */
-inline fun <T, V> Iterable<T>.zipForEachIndexed(p2: Iterable<V>, block: (index: Int, T, V) -> Unit): Unit =
-    forEachZippedIndexed(this, p2, block)
+inline fun <T, V> Iterable<T>.zipForEachIndexed(p2: Iterable<V>, action: (index: Int, T, V) -> Unit): Unit =
+    forEachZippedIndexed(this, p2, action)
 
 /**
  * Returns a list of all possible pairs of elements from the lists.
@@ -102,16 +112,16 @@ inline fun <A, B, R> allPairs(listA: List<A>, listB: List<B>, mapping: (A, B) ->
 }
 
 /**
- * Runs the [block] on all possible pairs of elements from the lists.
+ * Runs the [action] on all possible pairs of elements from the lists.
  */
 //@ExperimentalContracts
-inline fun <A, B> onAllPairs(listA: List<A>, listB: List<B>, block: (A, B) -> Unit) {
+inline fun <A, B> onAllPairs(listA: List<A>, listB: List<B>, action: (A, B) -> Unit) {
 //    contract {
 //        callsInPlace(block, InvocationKind.UNKNOWN)
 //    }
     listA.forEach { a ->
         listB.forEach { b ->
-            block(a, b)
+            action(a, b)
         }
     }
 }

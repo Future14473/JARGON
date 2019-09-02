@@ -10,10 +10,11 @@
 .idea/**/dictionaries
 .idea/**/shelf
 .idea/.name
+.idea/**/compiler.xml
 
 # Generated files
 .idea/**/contentModel.xml
-
+.idea/misc.xml
 # Sensitive or high-churn files
 .idea/**/dataSources/
 .idea/**/dataSources.ids
@@ -111,4 +112,4 @@ gradle-app.setting
 # # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
 # gradle/wrapper/gradle-wrapper.properties
 
-/graphs/
+**/graphs/

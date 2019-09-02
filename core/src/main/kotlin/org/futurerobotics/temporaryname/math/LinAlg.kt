@@ -4,6 +4,9 @@ import koma.extensions.*
 import koma.matrix.Matrix
 import koma.zeros
 
+/** Shorthand for [Matrix]<Double> */
+typealias Mat = Matrix<Double>
+
 /**
  * Makes a diagonal matrix with the supplied [elements]
  */
@@ -40,10 +43,20 @@ fun create(elements: List<Double>): Matrix<Double> {
 /**
  * Sets the first [elements].size elements of [this] matrix to the supplied [elements]
  */
-fun Matrix<Double>.setAllTo(elements: List<Double>): Matrix<Double> {
+fun Matrix<Double>.setTo(elements: List<Double>): Matrix<Double> {
     require(this.size >= elements.size) { "Matrix needs at least as many elements as supplied" }
     elements.forEachIndexed { i, d ->
         this[i] = d
     }
     return this
 }
+
+/**
+ * Returns true if this is a vector.
+ */
+fun Matrix<*>.isVector(): Boolean = this.numCols() == 1 || this.numRows() == 1
+
+/**
+ * The total of elements in this matrix.
+ */
+fun Matrix<*>.numElements(): Int = numCols() * numRows()

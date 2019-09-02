@@ -32,8 +32,14 @@ data class Pose2d(val vec: Vector2d, val heading: Double) {
     operator fun times(v: Int): Pose2d = Pose2d(vec * v, heading * v)
     operator fun div(v: Double): Pose2d = Pose2d(vec / v, heading / v)
     operator fun div(v: Int): Pose2d = Pose2d(vec / v, heading / v)
+    /** Returns a new [Pose2d] with the vector rotated by [angle] */
+    fun vecRotated(angle: Double): Pose2d = Pose2d(vec.rotated(angle), this.heading)
+
+    /** Returns a new [Pose2d] with the heading normalized. */
+    fun normalizeAngle(): Pose2d = copy(heading = angleNorm(heading))
+
     /** Returns if this pose is equal to another with epsilon leniency. */
-    fun epsEq(other: Pose2d): Boolean {
+    infix fun epsEq(other: Pose2d): Boolean {
         return vec epsEq other.vec && heading epsEq other.heading
     }
 

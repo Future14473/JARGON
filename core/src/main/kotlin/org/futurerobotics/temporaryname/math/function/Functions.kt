@@ -8,6 +8,7 @@ import org.futurerobotics.temporaryname.math.calcCurvatureDeriv
  * Represents a Function in math with first, second, and third derivatives.
  */
 interface MathFunction {
+
     /** The function's output at [t] */
     operator fun invoke(t: Double): Double
 
@@ -26,6 +27,7 @@ interface MathFunction {
  *  Includes curvature (with default implementations) too.
  */
 interface VectorFunction {
+
     /** The function's vector output at [t] */
     fun vec(t: Double): Vector2d
 
@@ -54,13 +56,9 @@ interface VectorFunction {
 open class ComponentVectorFunction(protected val x: MathFunction, protected val y: MathFunction) : VectorFunction {
 
     override fun vec(t: Double): Vector2d = Vector2d(x(t), y(t))
-
     override fun vecDeriv(t: Double): Vector2d = Vector2d(x.deriv(t), y.deriv(t))
-
     override fun vecSecondDeriv(t: Double): Vector2d = Vector2d(x.secondDeriv(t), y.secondDeriv(t))
-
     override fun vecThirdDeriv(t: Double): Vector2d = Vector2d(x.thirdDeriv(t), y.thirdDeriv(t))
-
     override fun toString(): String {
         return "ComponentVecFunc(x: $x, y: %y)"
     }

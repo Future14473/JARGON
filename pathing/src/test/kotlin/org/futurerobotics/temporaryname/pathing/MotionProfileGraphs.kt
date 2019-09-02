@@ -5,11 +5,11 @@ package org.futurerobotics.temporaryname.pathing
 import org.futurerobotics.temporaryname.math.DoubleProgression
 import org.futurerobotics.temporaryname.math.function.QuinticSpline
 import org.futurerobotics.temporaryname.math.randomVectorDerivatives
-import org.futurerobotics.temporaryname.motionprofile.MotionProfile
-import org.futurerobotics.temporaryname.motionprofile.MotionProfileGenerator
 import org.futurerobotics.temporaryname.pathing.constraint.*
 import org.futurerobotics.temporaryname.pathing.reparam.reparamByIntegration
 import org.futurerobotics.temporaryname.pathing.trajectory.TrajectoryConstraint
+import org.futurerobotics.temporaryname.profile.MotionProfile
+import org.futurerobotics.temporaryname.profile.MotionProfileGenerator
 import org.futurerobotics.temporaryname.saveTest
 import org.futurerobotics.temporaryname.util.stepToAll
 import org.junit.Assume
@@ -31,6 +31,7 @@ class MotionProfileGraphs(
     private val pathNumber: Int,
     private val profileNumber: Int
 ) {
+
     private val xs = DoubleProgression.fromNumSegments(0.0, path.length, 1000).toList()
     private var generationTime: Long = 0L
     private lateinit var profile: MotionProfile

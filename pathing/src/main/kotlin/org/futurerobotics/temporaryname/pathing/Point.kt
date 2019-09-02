@@ -17,9 +17,9 @@ import org.futurerobotics.temporaryname.math.Vector2d
  * @see PathPoint
  */
 interface CurvePoint {
+
     /** The length of the curve/path that this came from */
     val length: Double
-
     /** The position of this point, in the global coordinate frame. */
     val position: Vector2d
     /**
@@ -36,7 +36,6 @@ interface CurvePoint {
      *  if [curvature] is positive, else facing to the right.
      */
     val positionSecondDeriv: Vector2d
-
     /**
      * The tangent angle of the curve at this point
      */
@@ -58,7 +57,6 @@ interface CurvePoint {
 /** The curvature at this point, which is exactly equal to [CurvePoint.tanAngleDeriv]*/
 inline val CurvePoint.curvature: Double
     get() = tanAngleDeriv
-
 /**
  * The curvature's derivative w/rt arc length at this point, which is exactly equal
  * to [CurvePoint.tanAngleSecondDeriv]
@@ -80,6 +78,7 @@ inline val CurvePoint.curvatureDeriv: Double
  * @see CurvePoint
  */
 interface PathPoint : CurvePoint {
+
     /** The heading at this point along the path */
     val heading: Double
     /** The [heading]'s derivative w/rt arc length at this point along the path */
@@ -97,14 +96,12 @@ interface PathPoint : CurvePoint {
  */
 val PathPoint.pose: Pose2d
     get() = Pose2d(position, heading)
-
 /**
  * The pose's derivative w/rt arc length at this point along the path, which includes both
  * [positionDeriv][PathPoint.positionDeriv] and [headingDeriv][PathPoint.headingDeriv]
  */
 val PathPoint.poseDeriv: Pose2d
     get() = Pose2d(positionDeriv, headingDeriv)
-
 /**
  * The pose's derivative w/rt arc length at this point along the path, which includes both
  * [positionSecondDeriv][PathPoint.positionSecondDeriv] and [headingSecondDeriv][PathPoint.headingSecondDeriv]

@@ -4,9 +4,7 @@ import koma.extensions.*
 import koma.matrix.Matrix
 import koma.sign
 import koma.zeros
-import org.futurerobotics.temporaryname.control.MotorVoltages
 import org.futurerobotics.temporaryname.math.*
-import org.futurerobotics.temporaryname.math.MathUnits.degrees
 import org.futurerobotics.temporaryname.util.zipForEachIndexed
 
 /**
@@ -15,6 +13,7 @@ import org.futurerobotics.temporaryname.util.zipForEachIndexed
  * For a simpler model, these assume that the center of gravity correspond with the center of the robot (position 0,0)
  */
 interface DriveModel {
+
     /**
      * The mass of this body
      */
@@ -27,8 +26,6 @@ interface DriveModel {
      * @return true if this robot can move in any direction AND rotate, else only move in one direction and rotate.
      */
     val isHolonomic: Boolean
-
-    //TODO: What else goes here
 }
 
 /**
@@ -42,6 +39,7 @@ abstract class FixedWheelDriveModel(
     final override val moi: Double,
     val wheels: List<FixedWheelModel>
 ) : DriveModel {
+
     init {
         require(mass >= 0) { "mass ($mass) should be >= 0" }
         require(moi >= 0) { "moi ($moi) should be >= 0" }
@@ -55,11 +53,9 @@ abstract class FixedWheelDriveModel(
 
     init {
         //remember: a matrix is simply a linear transformation.
-
         //turnContribution * bot ang vel = wheel tangent speed
         //turnContribution * wheel's force = wheel's contribution to bot torque. Yes, the other way around.
         val turnContributionVector = wheels.map { it.position cross it.orientation }
-
         val botForceToBotAccel = createDiag(1 / mass, 1 / mass, 1 / moi)
         val wheelForceToBotForce = zeros(3, wheels.size).also {
             wheels.zipForEachIndexed(turnContributionVector) { i, wheel, c ->
@@ -70,42 +66,38 @@ abstract class FixedWheelDriveModel(
                 it[2, i] = c
             }
         }
-
         val voltsToWheelForce = createDiag(wheels.map { it.voltsPerForce })
         val voltsToBotAccel = botForceToBotAccel * wheelForceToBotForce * voltsToWheelForce
 
         botAccelToVolts = voltsToBotAccel.pinv() //least squares
-
         assert(botAccelToVolts.shape() == listOf(wheels.size, 3))
-
         val botVelToWheelVel = wheelForceToBotForce.transpose() //turns out to be the same
-        val wheelVelToVolts =
-            createDiag(wheels.map { 1 / it.voltsPerVelocity })
+        val wheelVelToVolts = createDiag(wheels.map { 1 / it.voltsPerVelocity })
 
         botVelToVolts = wheelVelToVolts * botVelToWheelVel
 
         assert(botVelToVolts.shape() == listOf(wheels.size, 3))
-
         val motorVelToWheelVel = createDiag(wheels.map {
             it.motorAngVelPerVelocity
         })
-
         val wheelVelToBotVel = botVelToWheelVel.pinv()
         motorVelToBotVel = wheelVelToBotVel * motorVelToWheelVel
 
-        stallVolts = create(wheels.map { it.transmission.stallVolts }).asColVector()
+        stallVolts = create(wheels.map { it.transmission.voltsForFriction }).asColVector()
     }
-    //todo: state-space stuff.
+
     /**
-     * Gets the motor voltages corresponding modeled to drive at the given [velocity] and [acceleration]
+     * Gets the motor voltages corresponding modeled to drive at the given [PoseMotion].
+     * Used for a (partially) _open_ controller.
      */
-    fun getModeledVoltages(velocity: Pose2d, acceleration: Pose2d): MotorVoltages {
-        val vels = botVelToVolts * velocity.toColumnVector()
-        val accels = botAccelToVolts * acceleration.toColumnVector()
+    fun getModeledVoltages(motion: PoseMotion): MotorVoltages {
+        val (v, a) = motion
+        val vels = botVelToVolts * v.toColumnVector()
+        val accels = botAccelToVolts * a.toColumnVector()
         return MotorVoltages((vels + accels + sign(vels) emul stallVolts).toList())
     }
 
-    private val cachedMotorPosisitons: Matrix<Double> = zeros(wheels.size, 1)
+    private val cachedMotorPositions: Matrix<Double> = zeros(wheels.size, 1)
     /**
      * Gets the estimated velocity based on the velocity in [motorPositions].
      *
@@ -115,7 +107,7 @@ abstract class FixedWheelDriveModel(
         require(motorPositions.size == motorVelToBotVel.numCols()) {
             "motorPositions should have same number of positions as this's wheels."
         }
-        return Pose2d(motorVelToBotVel * cachedMotorPosisitons.setAllTo(motorPositions))
+        return Pose2d(motorVelToBotVel * cachedMotorPositions.setTo(motorPositions))
     }
 }
 
@@ -129,6 +121,7 @@ open class HolonomicDriveModel(
     moi: Double,
     wheels: List<FixedWheelModel>
 ) : FixedWheelDriveModel(mass, moi, wheels) {
+
     override val isHolonomic: Boolean get() = true
 }
 
@@ -136,18 +129,18 @@ open class HolonomicDriveModel(
  * A drive model that can only move at a heading of 0 (Vector <1, 0>).
  * (Use the North-West-Up coordinate frame), but can still turn too.
  *
- * Making sure that the wheel configurations actually do this is left to the user.
+ * Making sure that the wheel configurations are actually non-holonomic do this is left to the user,
+ * or else the model may perform better than expected.
  */
 open class NonHolonomicDriveModel(
     mass: Double,
     moi: Double,
     wheels: List<FixedWheelModel>
 ) : FixedWheelDriveModel(mass, moi, wheels) {
+
     override val isHolonomic: Boolean get() = false
 }
-
 //TODO: Swerve
-
 object DriveModels {
     /**
      * Creates a drive model for a mecanum-like drive, with transmissions supplied in

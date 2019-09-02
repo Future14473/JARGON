@@ -1,13 +1,14 @@
 package org.futurerobotics.temporaryname.pathing.trajectory
 
-import org.futurerobotics.temporaryname.motionprofile.MotionProfileGenerator
 import org.futurerobotics.temporaryname.pathing.Path
 import org.futurerobotics.temporaryname.pathing.constraint.MotionConstraintSet
+import org.futurerobotics.temporaryname.profile.MotionProfileGenerator
 
 /**
  * Generates [Trajectory] from a [Path] and a [MotionConstraintSet] via [MotionProfileGenerator]
  */
 object TrajectoryGenerator {
+
     /**
      * Generates a approximate-time optimal trajectory given the [path] and [constraints].
      * [targetStartVel] and [targetEndVel] indicate the endpoints

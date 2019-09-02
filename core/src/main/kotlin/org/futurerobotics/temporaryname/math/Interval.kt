@@ -11,14 +11,10 @@ import kotlin.math.abs
  * @param a The lower bound of this interval.
  * @param b The upper bound of this interval. Can be [Double.POSITIVE_INFINITY]
  */
-class Interval private constructor(val a: Double, val b: Double) {
-
-    init {
-        assert(isEmpty() || a <= b) { "Invalid interval!! No cookie for the developer!" }
-    }
+data class Interval(val a: Double, val b: Double) {
 
     /** If this interval is empty (contains no values) */
-    fun isEmpty(): Boolean = a.isNaN() || b.isNaN()
+    fun isEmpty(): Boolean = a.isNaN() || b.isNaN() || a > b
 
     /** If this interval consists of a single point. */
     fun isPoint(): Boolean = a == b
@@ -47,24 +43,20 @@ class Interval private constructor(val a: Double, val b: Double) {
     infix fun epsEq(other: Interval): Boolean = this.isEmpty() && other.isEmpty() || a epsEq other.a && b epsEq other.b
 
     /** @return the intersection of this interval with another. */
-    fun intersect(that: Interval): Interval {
-        if (this.isEmpty() || that.isEmpty() || that.a > this.b || this.a > that.b) return EMPTY
+    fun intersect(other: Interval): Interval {
+        if (this.isEmpty() || other.isEmpty() || other.a > this.b || this.a > other.b) return EMPTY
         val gta: Interval
         val lta: Interval
-        if (this.a < that.a) {
-            gta = that
+        if (this.a < other.a) {
+            gta = other
             lta = this
         } else {
             gta = this
-            lta = that
+            lta = other
         }
         if (gta.b <= lta.b) return gta //lta[ gta(--) ]
         return gta.a intervalTo lta.b  //lta[ gta(--] )
     }
-
-    override fun equals(other: Any?): Boolean = other is Interval && (a == other.a && b == other.b)
-
-    override fun hashCode(): Int = 31 * a.hashCode() + b.hashCode()
 
     override fun toString(): String {
         return when {

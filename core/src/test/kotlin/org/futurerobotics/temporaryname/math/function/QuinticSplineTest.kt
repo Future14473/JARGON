@@ -18,6 +18,7 @@ internal class QuinticSplineTest(
     private val p2SecondDeriv: Vector2d,
     private val spline: QuinticSpline
 ) {
+
     @Test
     fun `test point deriv`() {
         println(p1)

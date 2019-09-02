@@ -1,2 +1,2 @@
 rootProject.name = "robotics-lib"
-include(":core", ":pathing", ":testUtils")
+include(":core", ":pathing", ":test-util")

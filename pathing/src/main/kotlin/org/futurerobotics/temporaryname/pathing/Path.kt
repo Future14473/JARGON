@@ -11,6 +11,7 @@ import org.futurerobotics.temporaryname.util.Stepper
  * so that a [Path] is-a [Curve] while implementing interfaces with different generics.
  */
 interface GenericPath<out Point : CurvePoint> : Steppable<Double, Point> {
+
     /**
      * The total (arc) length of this curve/path, and the maximum `s` value the functions
      * of this interface can take and return something that makes sense.
@@ -68,7 +69,6 @@ interface Path : GenericPath<PathPoint> {
      */
     val isPointTurn: Boolean get() = false
 }
-
 //fun test() {
 //    val path: Path? = null
 //    val curve: Curve? = path //path is-A Curve!!! YES

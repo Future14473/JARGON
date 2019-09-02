@@ -1,9 +1,9 @@
 package org.futurerobotics.temporaryname.pathing.trajectory
 
 import org.futurerobotics.temporaryname.Debug
-import org.futurerobotics.temporaryname.errorTo
 import org.futurerobotics.temporaryname.math.function.QuinticSpline
 import org.futurerobotics.temporaryname.math.randomVectorDerivatives
+import org.futurerobotics.temporaryname.mechanics.PoseMotionState
 import org.futurerobotics.temporaryname.pathing.MultiplePath
 import org.futurerobotics.temporaryname.pathing.TangentHeading
 import org.futurerobotics.temporaryname.pathing.addHeading
@@ -18,17 +18,18 @@ import kotlin.random.Random
 
 @RunWith(Parameterized::class)
 class TrajectoryInspect(private val trajectory: Trajectory) {
+
     @Test
     fun `time deriv inspect`() {
         val duration = trajectory.duration
         reportError {
             stepT { i, t ->
                 val time = t * duration
-                val direct = trajectory.atTime(time)
+                val direct: PoseMotionState = trajectory.atTime(time)
                 val approx =
-                    (trajectory.atTime(time + epsilon).pose - trajectory.atTime(time - epsilon).pose) / (2 * epsilon)
-                addError(approx errorTo direct.vel) {
-                    "at $i, approx deriv was $approx, returned was ${direct.vel}"
+                    (trajectory.atTime(time + epsilon).s - trajectory.atTime(time - epsilon).s) / (2 * epsilon)
+                addError(approx errorTo direct.v) {
+                    "at $i, approx deriv was $approx, returned was ${direct.v}"
                 }
                 //                addError((deriv.poseDeriv errorTo getDirect.poseSecondDeriv)) {
                 //                    "at $i, approx second deriv was ${deriv.poseDeriv}, returned was ${getDirect.poseSecondDeriv}"
@@ -80,7 +81,8 @@ class TrajectoryInspect(private val trajectory: Trajectory) {
                 }.let {
                     MultiplePath(it)
                 }.let {
-                    TrajectoryGenerator.generateTrajectory(it,
+                    TrajectoryGenerator.generateTrajectory(
+                        it,
                         constraints
                     )
                 }.let {

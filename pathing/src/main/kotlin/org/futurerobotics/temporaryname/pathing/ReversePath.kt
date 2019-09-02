@@ -5,6 +5,7 @@ import org.futurerobotics.temporaryname.util.Stepper
 
 private sealed class ReverseGeneric<Path : GenericPath<Point>, Point : CurvePoint>(internal val path: Path) :
     GenericPath<Point> {
+
     final override val length: Double get() = path.length
     final override fun atLength(s: Double): Point {
         return mapPoint(path.atLength(length - s))
@@ -31,6 +32,7 @@ private typealias ReverseCurvePoint = ReversePoint<CurvePoint>
 
 private class ReversePathPoint(point: PathPoint) : ReversePoint<PathPoint>(point),
     PathPoint {
+
     override val heading: Double
         get() = point.heading
     override val headingDeriv: Double
@@ -41,14 +43,17 @@ private class ReversePathPoint(point: PathPoint) : ReversePoint<PathPoint>(point
 
 private class ReverseCurve(curve: Curve) : ReverseGeneric<Curve, CurvePoint>(curve),
     Curve {
+
     override fun mapPoint(point: CurvePoint): CurvePoint =
         ReverseCurvePoint(point)
 }
 
 private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path),
     Path {
+
     override fun mapPoint(point: PathPoint): PathPoint =
         ReversePathPoint(point)
+
     override val isPointTurn: Boolean
         get() = path.isPointTurn
 }

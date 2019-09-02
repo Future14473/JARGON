@@ -47,7 +47,8 @@ internal class CurveTest(private val curve: Curve, private val allS: List<Double
                     it += Line(
                         random.nextVector2d(range), random.nextVector2d(
                             range
-                        ))
+                        )
+                    )
                 }
             }
             val progressions = List(10) {

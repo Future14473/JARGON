@@ -78,3 +78,11 @@ fun sinc(x: Double): Double = when {
     x epsEq 0.0 -> 1 - x.squared() / 6
     else -> sin(x) / x
 }
+
+/**
+ * Performs the common operation (1-cos([x]))/`x`
+ */
+fun cosc(x: Double): Double = when {
+    x epsEq 0.0 -> x / 2
+    else -> (1 - cos(x)) / x
+}

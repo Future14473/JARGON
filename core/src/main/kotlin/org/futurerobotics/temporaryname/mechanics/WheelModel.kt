@@ -6,6 +6,7 @@ import org.futurerobotics.temporaryname.math.epsEq
 /**
  * A wheel model for a wheel on a bot that cannot change location or direction.
  *
+ * @param transmission the transmission model
  * @param position where the wheel is located on a bot relative to the center of the bot
  * @param radius the wheel's radius
  * @param orientation a unit vector in the direction the wheel is facing, such that a positive transmission torque results
@@ -53,7 +54,7 @@ data class FixedWheelModel(
      */
     val voltsPerVelocity: Double get() = transmission.voltsPerAngVel / radius
     /**
-     * @see [TransmissionModel.stallVolts]
+     * @see [TransmissionModel.voltsForFriction]
      */
-    val stallVolts: Double get() = transmission.stallVolts
+    val stallVolts: Double get() = transmission.voltsForFriction
 }

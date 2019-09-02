@@ -34,7 +34,7 @@ internal class ReparamMappingTest(private val mapping: SamplesReparamMapping, pr
         @Parameterized.Parameters
         fun getMappings(): List<Array<Any>> {
             val mappings = List(15) {
-                QuinticSpline.random(random,range)
+                QuinticSpline.random(random, range)
             }.flatMap {
                 listOf(
                     it.reparamByIntegration(),

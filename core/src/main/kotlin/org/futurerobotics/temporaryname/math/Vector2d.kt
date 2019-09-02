@@ -53,6 +53,7 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
      *  interpreted as 3d vectors with a z component of 0.
      */
     infix fun cross(v: Vector2d): Double = x * v.y - y * v.x
+
     /** `|| this - v ||` */
     infix fun distTo(v: Vector2d): Double = hypot(x - v.x, y - v.y)
 
@@ -159,7 +160,7 @@ fun Random.nextVector2d(range: Double = 1.0): Vector2d = Vector2d.random(this, r
 /**
  * Ensure's a [Vector2d]'s length is less than or equal to [maximumLength].
  */
-fun Vector2d.coerceLengthAtMost(maximumLength: Double): Vector2d {
+infix fun Vector2d.coerceLengthAtMost(maximumLength: Double): Vector2d {
     require(maximumLength >= 0.0) { "maximumLength ($maximumLength) must be >= 0 as negative vector lengths are impossible" }
     return when {
         maximumLength == 0.0 -> Vector2d.ZERO

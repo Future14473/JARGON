@@ -16,6 +16,7 @@ sealed class MotionConstraint
  * Common superclass of both VelocityConstraint and AccelConstraint, but not MultipleConstraint.
  */
 sealed class SingleConstraint : MotionConstraint() {
+
     /**
      * Compares motion constraints, to remove redundant ones if multiple are added.
      *
@@ -35,6 +36,7 @@ sealed class SingleConstraint : MotionConstraint() {
  * Represents a constraint on velocity (in arc length) for any point on a path, given the data provided in [PathPoint].
  */
 abstract class VelocityConstraint : SingleConstraint() {
+
     /**
      * Returns the maximum possible velocity given by this constraint, given the current path [point] info.
      * Maximum velocity must be >= 0.
@@ -47,6 +49,7 @@ abstract class VelocityConstraint : SingleConstraint() {
  * the current velocity (of arc length) along this path.
  */
 abstract class AccelConstraint : SingleConstraint() {
+
     /**
      * Returns an [Interval] of position accelerations (both positive and negative) given by this constraint,
      * given the current path [point] info and [curVelocity].
@@ -61,6 +64,7 @@ abstract class AccelConstraint : SingleConstraint() {
  * Represents a constraint that needs to be represented by both one or more of [VelocityConstraint] and [AccelConstraint] together.
  */
 abstract class MultipleConstraint : MotionConstraint() {
+
     /** The [VelocityConstraint] components of this multiple constraint */
     abstract val velocityConstraints: Collection<VelocityConstraint>
     /** Th [AccelConstraint] components of this multiple constraint */

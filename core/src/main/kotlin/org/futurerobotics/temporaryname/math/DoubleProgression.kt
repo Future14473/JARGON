@@ -28,7 +28,6 @@ private constructor( //see factory methods
     override operator fun iterator(): DoubleIterator = object : DoubleIterator() {
         private val intIt = IntProgression.fromClosedRange(0, segments, 1).iterator()
         override fun hasNext() = intIt.hasNext()
-
         override fun nextDouble() = first + intIt.nextInt() * step.notNaNOrElse { 0.0 }
     }
 
@@ -54,7 +53,7 @@ private constructor( //see factory methods
 
         /**
          * Creates a [DoubleProgression] from a closed range, and a given number of segments.
-         * The progression will have [segments + 1] values.
+         * The progression will have [segments] + 1 values.
          */
         @JvmStatic
         fun fromNumSegments(start: Double, endInclusive: Double, segments: Int): DoubleProgression {

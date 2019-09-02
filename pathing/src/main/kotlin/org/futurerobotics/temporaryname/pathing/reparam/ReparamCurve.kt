@@ -36,29 +36,22 @@ class ReparamCurve(private val func: VectorFunction, internal val mapping: Repar
         private val a: Vector2d = func.vecSecondDeriv(t)
         private val j: Vector2d = func.vecThirdDeriv(t)
         override val length: Double get() = this@ReparamCurve.length
-
         override val position: Vector2d get() = p
-
         private var _positionDeriv: Vector2d? = null
         override val positionDeriv: Vector2d
             get() = _positionDeriv ?: v.normalized()
                 .also { _positionDeriv = it }
-
         override val positionSecondDeriv: Vector2d
             get() = tanAngleDeriv zcross positionDeriv
-
         override val tanAngle: Double
             get() = v.angle
-
         private var _tanAngleDeriv = Double.NaN
         override val tanAngleDeriv: Double
             get() = _tanAngleDeriv.notNaNOrElse {
                 (v cross a / v.lengthPow(3.0))
                     .also { _tanAngleDeriv = it }
             }
-
         private var _tanAngleSecondDeriv = Double.NaN
-
         override val tanAngleSecondDeriv: Double
             get() = _tanAngleSecondDeriv.notNaNOrElse {
                 ((v cross j) / v.lengthSquared.squared() - 3 * tanAngleDeriv * (v dot a) / v.lengthPow(3.0)).also {

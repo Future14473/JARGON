@@ -1,139 +1,118 @@
 package org.futurerobotics.temporaryname.control
 
-import org.futurerobotics.temporaryname.control.reference.DerivRefProvider
-import org.futurerobotics.temporaryname.control.reference.GenericReferenceProvider
-import org.futurerobotics.temporaryname.math.MathUnits.nanoseconds
-import org.futurerobotics.temporaryname.math.MathUnits.seconds
-import org.futurerobotics.temporaryname.motionprofile.MotionProfiled
-import org.futurerobotics.temporaryname.util.Steppable
+import org.futurerobotics.temporaryname.profile.MotionProfiled
 import org.futurerobotics.temporaryname.util.Stepper
+import org.futurerobotics.temporaryname.util.replaceIf
 import org.futurerobotics.temporaryname.util.value
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-//command states
-private object IDLE
-
-private inline val NONE get() = null
-//run states
 /**
- * A base implementation of a [GenericReferenceProvider] that follows a [MotionProfiled] object.
+ * A base implementation of a [ReferenceProvider] that follows a [MotionProfiled] object.
  *
  * The abstract function [getNextTime] dictates what time is fed into the [MotionProfiled] object.
  *
  * The base implementation is also thread safe.
- *
- * @param initialState is the initial reference this outputs before following any [MotionProfiled]
- * @param zeroDeriv the value for the reference deriv when not following any [MotionProfiled]
  */
-abstract class MotionProfileFollower<ProfileState, State : Any, StateDeriv : Any>(
-    initialState: State, private val zeroDeriv: StateDeriv? = null
-) : DerivRefProvider<State, StateDeriv> {
-    //  null -> nothing
-    //  REQUEST_IDLE -> stop
-    //  else -> new Profiled
-    private val command = AtomicReference<Any?>()
-    //if is holding reference; someday possibly update to state instead of only checking currentStepper.
-    private val holdingReference = AtomicBoolean(false)
+abstract class MotionProfileFollower<State : Any, Reference : Any> :
+    ReferenceTracker<State, Reference> {
 
+    private var _reference: Reference? = null
+    final override val reference: Reference
+        get() = _reference ?: throw IllegalStateException("reference was accessed before function update was called.")
+    private val newProfiled = AtomicReference<MotionProfiled<Reference>?>()
+    //if is holding reference; someday possibly update to state instead of only checking currentStepper.
+    private val following = AtomicBoolean(false)
     private val updateLock = ReentrantLock()
     // ^ guards the following:
-    private var currentStepper: Stepper<Double, ProfileState>? = null
-    private var currentDuration: Double = 0.0
-    private var currentTime: Double = Double.NaN
-    private var pastOutput: Pair<State, StateDeriv?> = initialState to zeroDeriv
-    private var pastState: State? = null
+    private var currentStepper: Stepper<Double, Reference>? = null
+    private var currentDuration = 0.0
+    private var currentTime = Double.NaN
+    protected var pastState: State? = null
+        private set
+    private var needIdleRef = true
+    final override fun update(currentState: State, elapsedSeconds: Double) {
+        _reference = updateLock.withLock getRef@{
+            processCommand()
+            val pastState = pastState
+            this.pastState = currentState
+            val currentStepper =
+                currentStepper ?: return@getRef if (needIdleRef) {
+                    needIdleRef = false
+                    getIdleReference(
+                        _reference,
+                        currentState
+                    )
+                } else _reference
 
-    final override fun update(currentState: State, elapsedNanos: Long): Pair<State, StateDeriv?> = updateLock.withLock {
-        processCommand()
-
-        val currentStepper = currentStepper
-            ?: return pastOutput.also { pastState = currentState }
-        //holdReference == false
-
-        if (currentTime.isNaN()) { //just started
-            currentTime = 0.0
-        } else if (elapsedNanos != -1L) {
-            currentTime = getNextTime(
-                pastOutput,
-                pastState!!,
-                currentState,
-                currentTime,
-                elapsedNanos
-            )
+            if (currentTime.isNaN()) { //just started
+                currentTime = 0.0
+            } else if (!elapsedSeconds.isNaN() && pastState != null) {
+                currentTime = getNextTime(
+                    pastState,
+                    currentState,
+                    reference,
+                    currentTime,
+                    elapsedSeconds
+                ).replaceIf({ it >= currentDuration }) {
+                    following.value = false
+                    this.currentStepper = null
+                    needIdleRef = true
+                    currentDuration
+                }
+            } //else keep as is
+            return@getRef currentStepper.stepTo(currentTime)
         }
-        pastState = currentState
-        val output = if (currentTime >= currentDuration) {
-            holdingReference.value = true //vwrite
-            this.currentStepper = null
-            mapState(currentStepper.stepTo(currentDuration)).first to zeroDeriv
-        } else {
-            mapState(currentStepper.stepTo(currentTime))
-        }
-        return output.also { pastOutput = it }
     }
 
     private fun processCommand() {
-        when (val command = command.value) {
-            NONE -> {}
-            IDLE -> {
-                this.command.compareAndSet(command, NONE) //otherwise, pickup on next loop.
-                if (holdingReference.compareAndSet(false, true)) {
-                    currentStepper = null
-                    pastOutput = pastOutput.first to zeroDeriv
-                }
-            }
-            else -> { //follow profiled.
-                this.command.compareAndSet(command, NONE)
-                holdingReference.value = false
-                @Suppress("UNCHECKED_CAST")
-                command as MotionProfiled<ProfileState>
-                currentDuration = command.duration
-                currentStepper = command.stepper()
-                currentTime = Double.NaN
-            }
+        val command = newProfiled.value
+        if (command != null) {
+            this.newProfiled.compareAndSet(command, null)
+            following.value = true
+            currentDuration = command.duration
+            currentTime = Double.NaN
+            currentStepper = command.stepper()
         }
     }
 
     /**
      * Sets this reference provider to follow the current [profiled] object.
      */
-    fun follow(profiled: MotionProfiled<ProfileState>) {
+    fun follow(profiled: MotionProfiled<Reference>) {
         beforeFollow()
-        command.set(profiled)
-    }
-
-    /**
-     * Stops following any [Steppable] and instead holds the reference at the last outputted state.
-     */
-    fun stopFollowing() {
-        command.set(IDLE)
+        newProfiled.set(profiled)
     }
 
     /**
      * If this reference is currently still following a [MotionProfiled]
      */
     fun isFollowing(): Boolean {
-        return !holdingReference.value
+        return following.value
     }
 
     override fun stop(): Unit = updateLock.withLock {
         currentStepper = null
+        pastState = null
+        _reference = null
+        needIdleRef = true
     }
 
     override fun start() {
-        currentStepper = null
+        stop()
     }
+
     /**
      * What is run before [follow] is called; do any reset-before-following-profile here.
      */
-    protected open fun beforeFollow(){}
+    protected open fun beforeFollow() {}
+
     /**
      * Gets the "virtual" next time to go to on a [MotionProfiled] object, based on the supplied
      * [pastOutput], [pastState], [currentState], [pastVirtualTime],
-     * and the real elapsed time in nanoseconds [elapsedNanos].
+     * and the real [elapsedSeconds].
      *
      * This time will be used to progress through [MotionProfiled] object.
      * A returned time of Double.NAN or greater than the current [MotionProfiled]'s profile duration
@@ -142,35 +121,38 @@ abstract class MotionProfileFollower<ProfileState, State : Any, StateDeriv : Any
      * For example, if motors were under-actuated, this can account for it by not stepping time up as fast.
      */
     protected abstract fun getNextTime(
-        pastOutput: Pair<State, StateDeriv?>,
         pastState: State,
         currentState: State,
+        pastOutput: Reference,
         pastVirtualTime: Double,
-        elapsedNanos: Long
+        elapsedSeconds: Double
     ): Double
 
     /**
-     * Maps the profile's State ([profileState]) to a reference state.
-     * @see update
+     * Gets a reference to output when no motion profile is being followed.
+     *
+     * If [pastReference] is null, [update] had been called on the very first iteration of the control loop, and
+     * [currentState] will be the very first estimate of the state.
+     *
+     * Otherwise, [pastReference] is the last reference obtained at the end of the last motion profiled followed,
+     * and currentState is the measured state right after.
      */
-    protected abstract fun mapState(profileState: ProfileState): Pair<State, StateDeriv?>
+    protected abstract fun getIdleReference(
+        pastReference: Reference?,
+        currentState: State
+    ): Reference
 }
 
 /**
- * A simple implementation of [MotionProfileFollower] that only uses a Clock/timer.
- *
- * Still needs [mapState] implementation.
+ * A simple implementation of [MotionProfileFollower] that only uses time.
  */
-abstract class TimeOnlyProfileFollower<ProfileState, State : Any, StateDeriv : Any>(
-    initialState: State,
-    zeroDeriv: StateDeriv?
-) : MotionProfileFollower<ProfileState, State, StateDeriv>(initialState, zeroDeriv) {
+abstract class TimeOnlyProfileFollower<State : Any, Reference : Any> : MotionProfileFollower<State, Reference>() {
 
     final override fun getNextTime(
-        pastOutput: Pair<State, StateDeriv?>,
         pastState: State,
         currentState: State,
+        pastOutput: Reference,
         pastVirtualTime: Double,
-        elapsedNanos: Long
-    ): Double = pastVirtualTime + elapsedNanos * seconds / nanoseconds
+        elapsedSeconds: Double
+    ): Double = pastVirtualTime + elapsedSeconds
 }

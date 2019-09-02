@@ -1,9 +1,11 @@
 package org.futurerobotics.temporaryname.mechanics
 
+import kotlin.math.sign
+
 /**
  * A not-involving-complex-calculus first-order approximation of a model of a DC brushed motor following:
  *
- * V = torque/[kt]*[r] + ang.vel/[kv]
+ * V = torque/[kt]*[r] + angvel/[kv] + sign(angvel) * [i0] * r
  *
  * All units should be SI units; convert units first!
  *
@@ -19,7 +21,12 @@ package org.futurerobotics.temporaryname.mechanics
  * @param r the r term; see [DcMotorModel]
  * @param kv the kv term; see [DcMotorModel]
  */
-class DcMotorModel private constructor(val kt: Double, val r: Double, val kv: Double) {
+class DcMotorModel private constructor(
+    private val kt: Double,
+    private val r: Double,
+    private val kv: Double,
+    val i0: Double = 0.0
+) {
 
     /**
      * Gets the expected amount of volts per output torque, assuming that the motor isn't moving.
@@ -29,6 +36,10 @@ class DcMotorModel private constructor(val kt: Double, val r: Double, val kv: Do
      * Gets the expected amount of volts per angVel needed to maintain a constant speed, assuming no output torque.
      */
     val voltsPerAngVel: Double get() = 1 / kv
+    /**
+     * The number of volts needed to add to overcome frictional forces.
+     */
+    val voltsForFriction: Double get() = i0 * r
 
     init {
         require(kt > 0) { "kt ($kt) must be > 0" }
@@ -42,8 +53,7 @@ class DcMotorModel private constructor(val kt: Double, val r: Double, val kv: Do
      * May be negative.
      */
     fun getVoltage(torque: Double, angVel: Double): Double {
-        return torque * voltsPerTorque + angVel * voltsPerAngVel
-        //TODO: I Dont think I need this
+        return torque * voltsPerTorque + angVel * voltsPerAngVel + sign(angVel) * voltsForFriction
     }
 
     companion object {
@@ -51,8 +61,8 @@ class DcMotorModel private constructor(val kt: Double, val r: Double, val kv: Do
          * Constructs a [DcMotorModel] with the given coefficients.
          */
         @JvmStatic
-        fun fromCoefficients(kt: Double, r: Double, kv: Double): DcMotorModel {
-            return DcMotorModel(kt, r, kv)
+        fun fromCoefficients(kt: Double, r: Double, kv: Double, i0: Double = 0.0): DcMotorModel {
+            return DcMotorModel(kt, r, kv, i0)
         }
 
         /**
@@ -66,18 +76,18 @@ class DcMotorModel private constructor(val kt: Double, val r: Double, val kv: Do
             freeAngularVelocity: Double,
             freeCurrent: Double
         ): DcMotorModel {
-            val r = voltage / stallCurrent
             return DcMotorModel(
                 stallTorque / stallCurrent,
-                r,
-                freeAngularVelocity / (voltage * 1 - r * freeCurrent)
+                voltage / stallCurrent,
+                freeAngularVelocity / voltage,
+                freeCurrent
             )
         }
     }
 }
 
 /**
- * Extends a [motor] with transmission [gearRatio], and accounts for frictional forces.
+ * Extends a [motor] with transmission [gearRatio], and accounts for additional frictional forces.
  *
  * This is a simple yet good enough model for most use cases.
  *
@@ -102,7 +112,6 @@ class TransmissionModel private constructor(
 ) {
     //outSpeed = inSpeed * gearRatio
     //outTorque = inTorque * ratioFrictionalTorque / gearRatio
-
     /**
      * Gets the ratio of the motor's torque to the outputTorque.
      */
@@ -124,7 +133,7 @@ class TransmissionModel private constructor(
      *
      * This is slightly more useful than stall current.
      */
-    val stallVolts: Double get() = motor.voltsPerTorque * constantTorqueLoss
+    val voltsForFriction: Double get() = motor.voltsPerTorque * constantTorqueLoss + motor.voltsForFriction
 
     init {
         require(gearRatio.isFinite()) { "gearRatio ($gearRatio) must be finite" }
@@ -145,20 +154,6 @@ class TransmissionModel private constructor(
             ratioTorqueLoss: Double = 1.0
         ): TransmissionModel {
             return TransmissionModel(motor, gearRatio, constantTorqueLoss, ratioTorqueLoss)
-        }
-
-        /**
-         * Constructs a [TransmissionModel], using stallCurrent instead of constantTorqueLoss.
-         */
-        @JvmStatic
-        @JvmOverloads
-        fun fromStallCurrent(
-            motor: DcMotorModel,
-            gearRatio: Double,
-            stallCurrent: Double = 0.0,
-            ratioTorqueLoss: Double = 1.0
-        ): TransmissionModel {
-            return TransmissionModel(motor, gearRatio, stallCurrent * motor.r * motor.voltsPerTorque, ratioTorqueLoss)
         }
     }
 }

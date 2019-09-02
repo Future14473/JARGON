@@ -16,6 +16,7 @@ import org.futurerobotics.temporaryname.math.Derivatives
 class QuinticPolynomial(
     @JvmField val a: Double, @JvmField val b: Double, @JvmField val c: Double, @JvmField val d: Double, @JvmField val e: Double, @JvmField val f: Double
 ) : MathFunction {
+
     override fun invoke(t: Double): Double {
         return ((((a * t + b) * t + c) * t + d) * t + e) * t + f
     }
@@ -82,9 +83,9 @@ class QuinticPolynomial(
          */
         @JvmStatic
         fun fromDerivatives(
-            start: Derivatives, end: Derivatives
+            start: Derivatives<Double>, end: Derivatives<Double>
         ): QuinticPolynomial = fromDerivatives(
-            start.value, start.valueDeriv, start.valueSecondDeriv, end.value, end.valueDeriv, end.valueSecondDeriv
+            start.value, start.deriv, start.secondDeriv, end.value, end.deriv, end.secondDeriv
         )
     }
 }

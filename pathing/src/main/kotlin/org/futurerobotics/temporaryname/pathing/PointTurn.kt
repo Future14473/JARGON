@@ -7,10 +7,10 @@ import org.futurerobotics.temporaryname.math.Vector2d
  */
 class PointTurn(private val point: Vector2d, private val startAngle: Double, endAngle: Double) :
     Path {
+
     private val diff = endAngle - startAngle
     override val length: Double get() = 1.0
     override val isPointTurn: Boolean = true
-
     override fun atLength(s: Double): PathPoint = object :
         PathPoint {
         private val theHeading = startAngle + s * diff

@@ -1,11 +1,11 @@
 package org.futurerobotics.temporaryname.pathing.trajectory
 
 import org.futurerobotics.temporaryname.math.Interval
-import org.futurerobotics.temporaryname.motionprofile.MotionProfileConstrainer
-import org.futurerobotics.temporaryname.motionprofile.PointConstraint
 import org.futurerobotics.temporaryname.pathing.Path
 import org.futurerobotics.temporaryname.pathing.PathPoint
 import org.futurerobotics.temporaryname.pathing.constraint.MotionConstraintSet
+import org.futurerobotics.temporaryname.profile.MotionProfileConstrainer
+import org.futurerobotics.temporaryname.profile.PointConstraint
 import org.futurerobotics.temporaryname.util.Stepper
 
 /**
@@ -19,9 +19,9 @@ import org.futurerobotics.temporaryname.util.Stepper
 class TrajectoryConstraint(
     private val path: Path, motionConstraintSet: MotionConstraintSet
 ) : MotionProfileConstrainer {
+
     private val velConstraints = motionConstraintSet.velocityConstraints
     private val accelConstrains = motionConstraintSet.accelConstraints
-
     private fun getMaxVel(point: PathPoint): Double {
         return velConstraints.map { it.maxVelocity(point) }.min()!!
     }

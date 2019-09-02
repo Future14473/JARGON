@@ -23,12 +23,12 @@ class ArcDivisionsReparamer private constructor(
     private val maxSegmentLength: Double,
     private val curvatureTolerance: Double
 ) {
+
     /** current length */
     private var curLength: Double = 0.0
     /** currently being built samples */
     private val sSamples = mutableListOf(0.0)
     private val tSamples = mutableListOf(0.0)
-
     private fun doReparam(): ReparamCurve {
         reparamOn(0.0, 1.0)
         return ReparamCurve(

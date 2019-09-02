@@ -13,6 +13,7 @@ import org.futurerobotics.temporaryname.pathing.trajectory.TrajectoryConstraint
 class MotionConstraintSet(
     velocityConstraints: Iterable<VelocityConstraint>, accelConstraints: Iterable<AccelConstraint>
 ) {
+
     private val _velocityConstraints: List<VelocityConstraint>
     private val _accelConstraints: List<AccelConstraint>
     /** This set's velocity constraints */

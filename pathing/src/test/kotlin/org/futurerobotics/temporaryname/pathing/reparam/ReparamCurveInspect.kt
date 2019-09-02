@@ -123,7 +123,6 @@ internal class ReparamCurveInspect(private val func: VectorFunction, private val
             val list = mutableListOf<Array<Any>>()
 
             repeat(30) {
-
                 val p0 = random.nextVector2d(
                     minDiff
                 )
@@ -132,7 +131,6 @@ internal class ReparamCurveInspect(private val func: VectorFunction, private val
                     maxDiff
                 )
                 val angle = random.nextDouble() * TAU
-
                 val p5 = p0 + Vector2d.polar(diff, angle)
                 val p0Deriv =
                     Vector2d.polar(diff * random.nextDouble(0.2, 1.0), angle + random.nextDouble(-PI / 3, PI / 3))
@@ -140,14 +138,12 @@ internal class ReparamCurveInspect(private val func: VectorFunction, private val
                 val p5Deriv =
                     Vector2d.polar(diff * random.nextDouble(0.2, 1.0), angle + random.nextDouble(-PI / 3, PI / 3))
                 val p5SecondDeriv = Vector2d.ZERO
-
                 val p1 = p0 + p0Deriv / 5
                 val p2 = p0SecondDeriv / 20 + 2 * p1 - p0
                 val p4 = p5 - p5Deriv / 5
                 val p3 = p5SecondDeriv / 20 + 2 * p4 - p5
 
                 GraphUtil.getSplineGraph(30, p0, p1, p2, p3, p4, p5).saveTest("RandomSpline/$it")
-
                 val func = QuinticSpline.fromControlPoints(p0, p1, p2, p3, p4, p5)
 
                 list.add(arrayOf(func, func.reparamByIntegration()))
