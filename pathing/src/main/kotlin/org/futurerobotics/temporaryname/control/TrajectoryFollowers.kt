@@ -1,16 +1,17 @@
 package org.futurerobotics.temporaryname.control
 
 import org.futurerobotics.temporaryname.math.Pose2d
-import org.futurerobotics.temporaryname.mechanics.PoseMotionState
+import org.futurerobotics.temporaryname.mechanics.State
+import org.futurerobotics.temporaryname.mechanics.ValueState
 
 /**
  * Base implementation of a Trajectory follower, that uses [tolerances] to estimate if done.
  */
 abstract class BaseTrajectoryFollower(var tolerances: PoseTolerance = PoseTolerance.NONE) :
-    MotionProfileFollower<Pose2d, PoseMotionState>() {
+    MotionProfileFollower<Pose2d, State<Pose2d>>() {
 
-    override fun getIdleReference(pastReference: PoseMotionState?, currentState: Pose2d): PoseMotionState =
-        pastReference ?: PoseMotionState(currentState, Pose2d.ZERO)
+    override fun getIdleReference(pastReference: State<Pose2d>?, currentState: Pose2d): State<Pose2d> =
+        pastReference ?: ValueState(currentState, Pose2d.ZERO, Pose2d.ZERO)
 
     override val isDone: Boolean
         get() = pastState.let { it != null && tolerances.areSatisifed(it, reference.s) }
@@ -27,7 +28,7 @@ class TimeOnlyTrajectoryFollower(tolerances: PoseTolerance = PoseTolerance.NONE)
     override fun getNextTime(
         pastState: Pose2d,
         currentState: Pose2d,
-        pastOutput: PoseMotionState,
+        pastOutput: State<Pose2d>,
         pastVirtualTime: Double,
         elapsedSeconds: Double
     ): Double {
@@ -52,7 +53,7 @@ private class AdaptiveTrajectoryFollower(
     override fun getNextTime(
         pastState: Pose2d,
         currentState: Pose2d,
-        pastOutput: PoseMotionState,
+        pastOutput: State<Pose2d>,
         pastVirtualTime: Double,
         elapsedSeconds: Double
     ): Double {

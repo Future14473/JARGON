@@ -7,7 +7,7 @@ import org.futurerobotics.temporaryname.math.coerceLengthAtMost
 import org.futurerobotics.temporaryname.mechanics.*
 
 /**
- * A controller for [LinearMotionState] that uses PID for positional error,
+ * A controller for [LinearState] that uses PID for positional error,
  * and passes velocity and acceleration feed forwards to its output.
  *
  * The correction is added to the output's velocity.
@@ -18,12 +18,12 @@ import org.futurerobotics.temporaryname.mechanics.*
  * @see [VecPIDPassController]
  */
 class PIDPassController(private val coefficients: PIDCoefficients) :
-    BaseController<LinearMotionState, Double, LinearMotion>() {
+    BasePassingMotionController<Double>() {
 
     private inline val zero get() = 0.0
     private var prevError = zero
     private var errorSum = zero
-    override fun getSignal(reference: LinearMotionState, currentState: Double, elapsedSeconds: Double): LinearMotion {
+    override fun getSignal(reference: State<Double>, currentState: Double, elapsedSeconds: Double): Motion<Double> {
         val (x, v, a) = reference
         val pid = processPID(currentState, elapsedSeconds, x)
         return LinearMotion(v + pid, a)
@@ -66,15 +66,19 @@ class PIDPassController(private val coefficients: PIDCoefficients) :
  * TODO FINISH DOC
  */
 class VecPIDPassController(private val coefficients: PIDCoefficients) :
-    BaseController<VectorMotionState, Vector2d, VectorMotion>() {
+    BasePassingMotionController<Vector2d>() {
 
     private inline val zero get() = Vector2d.ZERO
     private var prevError = zero
     private var errorSum = zero
-    override fun getSignal(reference: VectorMotionState, currentState: Vector2d, elapsedSeconds: Double): VectorMotion {
+    override fun getSignal(
+        reference: State<Vector2d>,
+        currentState: Vector2d,
+        elapsedSeconds: Double
+    ): Motion<Vector2d> {
         val (x, v, a) = reference
         val pid = processPID(currentState, elapsedSeconds, x)
-        return VectorMotion(v + pid, a)
+        return ValueMotion(v + pid, a)
     }
 
     private fun processPID(current: Vector2d, elapsedSeconds: Double, x: Vector2d): Vector2d {
@@ -119,15 +123,14 @@ class VecPIDPassController(private val coefficients: PIDCoefficients) :
 class TwoPartPIDPassController(
     translationalCoeff: PIDCoefficients,
     headingCoeff: PIDCoefficients
-) : BaseController<PoseMotionState, Pose2d, PoseMotion>() {
+) : BasePassingMotionController<Pose2d>() {
 
     private val translational = VecPIDPassController(translationalCoeff)
     private val rotational = PIDPassController(headingCoeff)
-    override fun getSignal(reference: PoseMotionState, currentState: Pose2d, elapsedSeconds: Double): PoseMotion {
-        return PoseMotion(
-            translational.updateAndGetSignal(reference.vec(), currentState.vec, elapsedSeconds),
-            rotational.updateAndGetSignal(reference.heading(), currentState.heading, elapsedSeconds)
-        )
+    override fun getSignal(reference: State<Pose2d>, currentState: Pose2d, elapsedSeconds: Double): Motion<Pose2d> {
+        val (vv, va) = translational.updateAndGetSignal(reference.vec(), currentState.vec, elapsedSeconds)
+        val (hv, ha) = rotational.updateAndGetSignal(reference.heading(), currentState.heading, elapsedSeconds)
+        return ValueMotion(Pose2d(vv, hv), Pose2d(va, ha))
     }
 
     override fun start() {
@@ -155,17 +158,16 @@ class ThreePartPIDPassController(
     axialCoeff: PIDCoefficients,
     lateralCoeff: PIDCoefficients,
     headingCoeff: PIDCoefficients
-) : BaseController<PoseMotionState, Pose2d, PoseMotion>() {
+) : BasePassingMotionController<Pose2d>() {
 
     private val axial = PIDPassController(axialCoeff) //x
     private val lateral = PIDPassController(lateralCoeff) //y
     private val heading = PIDPassController(headingCoeff)
-    override fun getSignal(reference: PoseMotionState, currentState: Pose2d, elapsedSeconds: Double): PoseMotion {
-        return PoseMotion(
-            axial.updateAndGetSignal(reference.x(), currentState.x, elapsedSeconds),
-            lateral.updateAndGetSignal(reference.y(), currentState.y, elapsedSeconds),
-            heading.updateAndGetSignal(reference.heading(), currentState.heading, elapsedSeconds)
-        )
+    override fun getSignal(reference: State<Pose2d>, currentState: Pose2d, elapsedSeconds: Double): Motion<Pose2d> {
+        val (xv, xa) = axial.updateAndGetSignal(reference.x(), currentState.x, elapsedSeconds)
+        val (yv, ya) = lateral.updateAndGetSignal(reference.y(), currentState.y, elapsedSeconds)
+        val (hv, ha) = heading.updateAndGetSignal(reference.heading(), currentState.heading, elapsedSeconds)
+        return ValueMotion(Pose2d(xv, yv, hv), Pose2d(xa, ya, ha))
     }
 
     override fun start() {

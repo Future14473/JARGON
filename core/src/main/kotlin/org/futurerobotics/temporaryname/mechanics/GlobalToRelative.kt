@@ -23,7 +23,7 @@ object GlobalToRelative {
     /**
      * Converts a _expected_ [globalMotion] in poses to relative [globalMotion], given the true [globalHeading]
      */
-    fun motion(globalMotion: PoseMotion, globalHeading: Double): PoseMotion {
+    fun motion(globalMotion: Motion<Pose2d>, globalHeading: Double): Motion<Pose2d> {
         val (v, a) = globalMotion
         val rv = v.vecRotated(-globalHeading)
         val ra = Pose2d(
@@ -31,14 +31,14 @@ object GlobalToRelative {
                     v.vec.rotated(-globalHeading + PI / 2) * -v.heading,
             a.heading
         )
-        return PoseMotion(rv, ra)
+        return ValueMotion(rv, ra)
     }
 
     /**
      * Converts a global [reference] PoseMotionState to a relative reference (to where the relative current state is
      * Pose2d.Zero), given the current [globalPose]
      */
-    fun reference(reference: PoseMotionState, globalPose: Pose2d): PoseMotionState {
+    fun reference(reference: State<Pose2d>, globalPose: Pose2d): State<Pose2d> {
         val (s, v, a) = reference
         val rs = (s - globalPose).vecRotated(-globalPose.heading)
         val rv = v.vecRotated(-globalPose.heading)
@@ -47,6 +47,6 @@ object GlobalToRelative {
                     v.vec.rotated(-globalPose.heading + PI / 2) * -v.heading,
             a.heading
         )
-        return PoseMotionState(rs, rv, ra)
+        return ValueState(rs, rv, ra)
     }
 }

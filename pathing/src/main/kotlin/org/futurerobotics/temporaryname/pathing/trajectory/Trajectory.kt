@@ -1,8 +1,10 @@
 package org.futurerobotics.temporaryname.pathing.trajectory
 
+import org.futurerobotics.temporaryname.math.Pose2d
 import org.futurerobotics.temporaryname.math.epsEq
-import org.futurerobotics.temporaryname.mechanics.LinearMotionState
-import org.futurerobotics.temporaryname.mechanics.PoseMotionState
+import org.futurerobotics.temporaryname.mechanics.LinearState
+import org.futurerobotics.temporaryname.mechanics.State
+import org.futurerobotics.temporaryname.mechanics.ValueState
 import org.futurerobotics.temporaryname.pathing.Path
 import org.futurerobotics.temporaryname.pathing.PathPoint
 import org.futurerobotics.temporaryname.pathing.pose
@@ -16,7 +18,7 @@ import org.futurerobotics.temporaryname.util.Stepper
  *
  * @see TrajectoryGenerator
  */
-class Trajectory(private val path: Path, private val profile: MotionProfile) : MotionProfiled<PoseMotionState> {
+class Trajectory(private val path: Path, private val profile: MotionProfile) : MotionProfiled<State<Pose2d>> {
 
     /**
      * The duration of time to traverse this [Trajectory] (ideally)
@@ -41,13 +43,13 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
     /**
      * Gets the [PoseMotionState] after the specified [time] traversing this trajectory.
      */
-    override fun atTime(time: Double): PoseMotionState {
+    override fun atTime(time: Double): State<Pose2d> {
         val state = profile.atTime(time)
         val point = path.atLength(state.s)
         return getState(state, point)
     }
 
-    override fun stepper(): Stepper<Double, PoseMotionState> {
+    override fun stepper(): Stepper<Double, State<Pose2d>> {
         val pathStepper = path.stepper()
         val profileStepper = profile.stepper()
         return Stepper {
@@ -57,7 +59,7 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
         }
     }
 
-    private fun getState(state: LinearMotionState, point: PathPoint): PoseMotionState {
-        return PoseMotionState(point.pose, point.poseDeriv * state.v) //second derivative probably not necessary?
+    private fun getState(state: LinearState, point: PathPoint): State<Pose2d> {
+        return ValueState(point.pose, point.poseDeriv * state.v, TODO())
     }
 }

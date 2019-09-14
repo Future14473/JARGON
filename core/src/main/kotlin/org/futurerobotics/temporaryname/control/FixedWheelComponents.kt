@@ -2,10 +2,7 @@ package org.futurerobotics.temporaryname.control
 
 import koma.matrix.Matrix
 import org.futurerobotics.temporaryname.math.Pose2d
-import org.futurerobotics.temporaryname.mechanics.FixedWheelDriveModel
-import org.futurerobotics.temporaryname.mechanics.MotorPositions
-import org.futurerobotics.temporaryname.mechanics.MotorVelocities
-import org.futurerobotics.temporaryname.mechanics.MotorVoltages
+import org.futurerobotics.temporaryname.mechanics.*
 
 /**
  * A open-loop controller [FixedWheelDriveModel]; holonomic or non-holonomic,
@@ -15,9 +12,9 @@ import org.futurerobotics.temporaryname.mechanics.MotorVoltages
  */
 class FixedWheelDriveOpenController(
     private val model: FixedWheelDriveModel
-) : OpenController<PoseMotion, MotorVoltages>() {
+) : OpenController<Motion<Pose2d>, MotorVoltages>() {
 
-    override fun getSignal(reference: PoseMotion, elapsedSeconds: Double): MotorVoltages {
+    override fun getSignal(reference: Motion<Pose2d>, elapsedSeconds: Double): MotorVoltages {
         return model.getModeledVoltages(reference)
     }
 
@@ -32,11 +29,11 @@ class FixedWheelDriveOpenController(
  * Maybe pass through a filter first.
  */
 class FixedWheelPositionToVelocityObserver(private val model: FixedWheelDriveModel) :
-    BaseObserver<MotorPositions, Any, PoseMotion>() {
+    BaseObserver<MotorPositions, Any, Motion<Pose2d>>() {
 
     private var lastPositions: MotorPositions? = null
     private val cachedCurrentPositions: Matrix<Double>? = null
-    override fun getState(measurement: MotorPositions, lastSignal: Any, elapsedSeconds: Double): PoseMotion {
+    override fun getState(measurement: MotorPositions, lastSignal: Any, elapsedSeconds: Double): Motion<Pose2d> {
         val lastPositions = lastPositions
         val velocity = if (lastPositions == null || elapsedSeconds.isNaN()) {
             this.lastPositions = measurement
@@ -45,7 +42,7 @@ class FixedWheelPositionToVelocityObserver(private val model: FixedWheelDriveMod
             val diff = measurement.zip(lastPositions) { cur, past -> (cur - past) / elapsedSeconds }
             model.getEstimatedVelocity(diff)
         }
-        return PoseMotion(velocity)
+        return ValueMotion(velocity,Pose2d.ZERO)
     }
 
     override fun start() {
@@ -63,11 +60,11 @@ class FixedWheelPositionToVelocityObserver(private val model: FixedWheelDriveMod
  * Maybe pass through a filter first.
  */
 class FixedWheelVelocityToVelocityObserver(private val model: FixedWheelDriveModel) :
-    BaseObserver<MotorVelocities, Any, PoseMotion>() {
+    BaseObserver<MotorVelocities, Any, Motion<Pose2d>>() {
 
     private val cachedCurrentPositions: Matrix<Double>? = null
-    override fun getState(measurement: MotorVelocities, lastSignal: Any, elapsedSeconds: Double): PoseMotion {
-        return PoseMotion(model.getEstimatedVelocity(measurement))
+    override fun getState(measurement: MotorVelocities, lastSignal: Any, elapsedSeconds: Double): Motion<Pose2d> {
+        return ValueMotion(model.getEstimatedVelocity(measurement),Pose2d.ZERO)
     }
 
     override fun start() {

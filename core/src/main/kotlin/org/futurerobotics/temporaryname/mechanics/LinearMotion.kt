@@ -28,17 +28,17 @@ open class LinearMotion constructor(
 }
 
 /**
- * Represents a [MotionState] in [Double], with position [s], velocity [v], and acceleration [a].
+ * Represents a [State] in [Double], with position [s], velocity [v], and acceleration [a].
  * @param s position of this state
  * @param v velocity of this state
  * @param a acceleration of this state
  */
-class LinearMotionState constructor(override val s: Double, v: Double, a: Double = 0.0) : LinearMotion(v, a),
-    MotionState<Double> {
+class LinearState constructor(override val s: Double, v: Double, a: Double = 0.0) : LinearMotion(v, a),
+    State<Double> {
 
     /** Returns the new state after time [t], assuming constant acceleration. */
-    override fun afterTime(t: Double): LinearMotionState =
-        LinearMotionState(s + v * t + a * t.squared() / 2, v + a * t, a)
+    override fun afterTime(t: Double): LinearState =
+        LinearState(s + v * t + a * t.squared() / 2, v + a * t, a)
 
     /**
      * Returns the state, the case with positive velocity, after moving a displacement
@@ -46,8 +46,8 @@ class LinearMotionState constructor(override val s: Double, v: Double, a: Double
      *
      * This may return a velocity of NaN if this state will never reach a displacement of [s]
      */
-    override fun afterForwardDist(s: Double): LinearMotionState =
-        LinearMotionState(this.s + s, sqrt(v.squared() + 2 * a * s), a)
+    override fun afterForwardDist(s: Double): LinearState =
+        LinearState(this.s + s, sqrt(v.squared() + 2 * a * s), a)
 
     /**
      * Returns the state, the case with positive velocity, when this state reaches a displacement of [s] relative
@@ -55,6 +55,6 @@ class LinearMotionState constructor(override val s: Double, v: Double, a: Double
      *
      * This may return a velocity of NaN if this state will never reach a displacement of [s]
      */
-    fun atDist(s: Double): LinearMotionState =
-        LinearMotionState(s, sqrt(v.squared() + 2 * a * (s - this.s)), a)
+    fun atDist(s: Double): LinearState =
+        LinearState(s, sqrt(v.squared() + 2 * a * (s - this.s)), a)
 }

@@ -4,7 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (will eventually) adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Until a version that makes sense, everything will be version [Early#]
+Until a version that makes sense, everything will be version [Early#].
+At that point, a new changelog will be made and this will be renamed to old_changelog.
+
+## [Unreleased]
+### Changed
+- MotionState is now State; and an interface; ValueMotion and ValueState are implementations.
 
 ## [Early3] 9/14/2019
 ### Changed

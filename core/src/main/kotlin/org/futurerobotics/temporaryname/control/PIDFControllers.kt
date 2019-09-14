@@ -4,14 +4,11 @@ import org.futurerobotics.temporaryname.math.Pose2d
 import org.futurerobotics.temporaryname.math.Vector2d
 import org.futurerobotics.temporaryname.math.coerceIn
 import org.futurerobotics.temporaryname.math.coerceLengthAtMost
-import org.futurerobotics.temporaryname.mechanics.LinearMotionState
-import org.futurerobotics.temporaryname.mechanics.component1
-import org.futurerobotics.temporaryname.mechanics.component2
-import org.futurerobotics.temporaryname.mechanics.component3
+import org.futurerobotics.temporaryname.mechanics.*
 
 /**
  * Simple PIDF [Controller], with some extra bells and whistles defined in [PIDFCoefficients].
- * Setpoint (measurement) is a double, reference is [LinearMotionState], output signal is also a Double in the direction
+ * Setpoint (measurement) is a double, reference is [LinearState], output signal is also a Double in the direction
  * that the measurement needs to move.
  *
  * Considering using the [PIDPassController] family instead, as it passes on velocity/acceleration feedfowards,
@@ -21,13 +18,13 @@ import org.futurerobotics.temporaryname.mechanics.component3
  */
 class PIDFController(
     private val coefficients: PIDFCoefficients
-) : BaseController<LinearMotionState, Double, Double>() {
+) : BaseStandardController<Double, Double>() {
 
     private var prevError = 0.0
     private var errorSum = 0.0
-    override fun getSignal(reference: LinearMotionState, currentState: Double, elapsedSeconds: Double): Double {
-        val (x, v, a) = reference
-        val curError = (x - currentState) coerceIn coefficients.errorBounds
+    override fun getSignal(reference: State<Double>, currentState: Double, elapsedSeconds: Double): Double {
+        val (s, v, a) = reference
+        val curError = (s - currentState) coerceIn coefficients.errorBounds
 
         if (elapsedSeconds.isNaN()) {
             prevError = curError
@@ -73,13 +70,13 @@ class PIDFController(
  */
 class VecPIDFController(
     private val coefficients: PIDFCoefficients
-) : BaseController<VectorMotionState, Vector2d, Vector2d>() {
+) : BaseStandardController<Vector2d, Vector2d>() {
 
     private var prevError = Vector2d.ZERO
     private var errorSum = Vector2d.ZERO
-    override fun getSignal(reference: VectorMotionState, currentState: Vector2d, elapsedSeconds: Double): Vector2d {
-        val (x, v, a) = reference
-        val curError = (x - currentState) coerceLengthAtMost coefficients.errorBounds.b
+    override fun getSignal(reference: State<Vector2d>, currentState: Vector2d, elapsedSeconds: Double): Vector2d {
+        val (s, v, a) = reference
+        val curError = (s - currentState) coerceLengthAtMost coefficients.errorBounds.b
 
         if (elapsedSeconds.isNaN()) {
             prevError = curError
@@ -125,11 +122,11 @@ class VecPIDFController(
 class TwoPartPIDFController(
     translationalCoeff: PIDFCoefficients,
     headingCoef: PIDFCoefficients
-) : BaseController<PoseMotionState, Pose2d, Pose2d>() {
+) : BaseStandardController<Pose2d, Pose2d>() {
 
     private val translational = VecPIDFController(translationalCoeff)
     private val rotational = PIDFController(headingCoef)
-    override fun getSignal(reference: PoseMotionState, currentState: Pose2d, elapsedSeconds: Double): Pose2d {
+    override fun getSignal(reference: State<Pose2d>, currentState: Pose2d, elapsedSeconds: Double): Pose2d {
         return Pose2d(
             translational.updateAndGetSignal(reference.vec(), currentState.vec, elapsedSeconds),
             rotational.updateAndGetSignal(reference.heading(), currentState.heading, elapsedSeconds)
@@ -148,6 +145,7 @@ class TwoPartPIDFController(
     }
 }
 
+
 /**
  * A PIDF controller for [Pose2d]'s that uses separate [PIDFController]s for axial, lateral, and heading components of a pose.
  *
@@ -162,12 +160,12 @@ class ThreePartPIDFController(
     axialCoeff: PIDFCoefficients,
     lateralCoeff: PIDFCoefficients,
     headingCoeff: PIDFCoefficients
-) : BaseController<PoseMotionState, Pose2d, Pose2d>() {
+) : BaseStandardController<Pose2d, Pose2d>() {
 
     private val axial = PIDFController(axialCoeff) //x
     private val lateral = PIDFController(lateralCoeff) //y
     private val heading = PIDFController(headingCoeff)
-    override fun getSignal(reference: PoseMotionState, currentState: Pose2d, elapsedSeconds: Double): Pose2d {
+    override fun getSignal(reference: State<Pose2d>, currentState: Pose2d, elapsedSeconds: Double): Pose2d {
         return Pose2d(
             axial.updateAndGetSignal(reference.x(), currentState.x, elapsedSeconds),
             lateral.updateAndGetSignal(reference.y(), currentState.y, elapsedSeconds),
@@ -187,4 +185,21 @@ class ThreePartPIDFController(
         lateral.stop()
         heading.stop()
     }
+}
+
+//TODO: move me to proper place.
+fun State<Pose2d>.vec(): State<Vector2d> {
+    return ValueState(s.vec, v.vec, a.vec)
+}
+
+fun State<Pose2d>.heading(): LinearState {
+    return LinearState(s.heading, v.heading, a.heading)
+}
+
+fun State<Pose2d>.x(): LinearState {
+    return LinearState(s.x, v.x, a.x)
+}
+
+fun State<Pose2d>.y(): LinearState {
+    return LinearState(s.y, v.y, a.y)
 }

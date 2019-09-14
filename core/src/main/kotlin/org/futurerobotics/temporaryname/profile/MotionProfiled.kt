@@ -1,6 +1,6 @@
 package org.futurerobotics.temporaryname.profile
 
-import org.futurerobotics.temporaryname.mechanics.LinearMotionState
+import org.futurerobotics.temporaryname.mechanics.LinearState
 import org.futurerobotics.temporaryname.util.Steppable
 import org.futurerobotics.temporaryname.util.Stepper
 
@@ -24,9 +24,9 @@ interface MotionProfiled<out State> : Steppable<Double, State> {
 }
 
 /**
- * A [MotionProfiled] for one-dimensional motion (state type [LinearMotionState])
+ * A [MotionProfiled] for one-dimensional motion (state type [LinearState])
  */
-interface MotionProfile : MotionProfiled<LinearMotionState> {
+interface MotionProfile : MotionProfiled<LinearState> {
 
     /**
      * the total distance an object travels on this profile.
@@ -36,6 +36,6 @@ interface MotionProfile : MotionProfiled<LinearMotionState> {
     /**
      * Returns the [State] of this motion profile after traveling a distance of [distance]
      */
-    fun atDistance(distance: Double): LinearMotionState
+    fun atDistance(distance: Double): LinearState
 }
 

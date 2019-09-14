@@ -90,7 +90,7 @@ abstract class FixedWheelDriveModel(
      * Gets the motor voltages corresponding modeled to drive at the given [PoseMotion].
      * Used for a (partially) _open_ controller.
      */
-    fun getModeledVoltages(motion: PoseMotion): MotorVoltages {
+    fun getModeledVoltages(motion: Motion<Pose2d>): MotorVoltages {
         val (v, a) = motion
         val vels = botVelToVolts * v.toColumnVector()
         val accels = botAccelToVolts * a.toColumnVector()

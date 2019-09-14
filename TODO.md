@@ -5,7 +5,7 @@ General
 - equals, hashCode, and toString
 - Double check SOLID, DRY, YAGNI (about the last one...)
 - typealiases or subclassing to consolidate types? (sorry java peeps)
-- Motion and MotionState interfaces/implementations
+- What to do about path is-a curve
 
 Simulations
 -

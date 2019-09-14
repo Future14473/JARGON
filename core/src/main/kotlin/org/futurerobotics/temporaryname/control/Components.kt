@@ -1,5 +1,7 @@
 package org.futurerobotics.temporaryname.control
 
+import org.futurerobotics.temporaryname.mechanics.Motion
+import org.futurerobotics.temporaryname.mechanics.State
 import org.futurerobotics.temporaryname.system.StartStoppable
 
 /**
@@ -42,6 +44,10 @@ interface ReferenceTracker<in State : Any, out Reference : Any> : StartStoppable
     fun update(currentState: State, elapsedSeconds: Double)
 }
 
+/** The standard reference tracker; takes a value to update and outputs [State] of that value. */
+interface StandardReferenceTracker<Value : Any> : ReferenceTracker<Value, State<Value>>
+
+
 /**
  * Base implementation of a [ReferenceTracker] where only a [getReference] function that returns reference is needed;
  * automatically stores reference.
@@ -72,6 +78,14 @@ abstract class BaseReferenceTracker<State : Any, Reference : Any> : ReferenceTra
         _reference = getReference(currentState, elapsedSeconds)
     }
 }
+
+/**
+ * A base implementation of [StandardReferenceTracker]; only here for convenience of naming.
+ *
+ * @see BaseReferenceTracker
+ */
+abstract class BaseStandardReferenceTracker<Value : Any> :
+    BaseReferenceTracker<Value, State<Value>>(), StandardReferenceTracker<Value>
 
 /**
  * A [ReferenceTracker] in which the user sets reference manually,
@@ -165,6 +179,17 @@ fun <Reference : Any, State : Any, Signal : Any> Controller<Reference, State, Si
     return signal
 }
 
+/** The the standard controller; that works with the [State] of a value as it's reference. */
+interface StandardController<Value : Any, Signal : Any> : Controller<State<Value>, Value, Signal>
+
+/**
+ * A pass through controller; which is usually used in chained control systems;
+ *
+ * It's output is a [Motion] which is the controller's corrective measure operating only on the current
+ * position AND the reference's motion combined.
+ */
+interface PassingMotionController<Value : Any> : StandardController<Value, Motion<Value>>
+
 /**
  * Base implementation of a [Controller] where only a [getSignal] function that returns a signal is needed;
  * automatically stores signal.
@@ -201,6 +226,22 @@ abstract class BaseController<in Reference : Any, in State : Any, Signal : Any> 
         invalidateSignal()
     }
 }
+
+/**
+ * Base implementation of the [StandardController]. Only here for convenience of naming.
+ *
+ * @see [BaseController]
+ */
+abstract class BaseStandardController<Value : Any, Signal : Any> :
+    BaseController<State<Value>, Value, Signal>(), StandardController<Value, Signal>
+
+/**
+ * Base implementation of the [PassingMotionController]. Only here for convenience of naming.
+ *
+ * @see [BaseController]
+ */
+abstract class BasePassingMotionController<Value : Any> :
+    BaseController<State<Value>, Value, Motion<Value>>(), PassingMotionController<Value>
 
 /**
  * A [Controller] that does not take into account the current state; i.e. a open loop control system.
