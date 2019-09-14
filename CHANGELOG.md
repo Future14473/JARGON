@@ -10,6 +10,7 @@ At that point, a new changelog will be made and this will be renamed to old_chan
 ## [Unreleased]
 ### Changed
 - MotionState is now State; and an interface; ValueMotion and ValueState are implementations.
+- Replace `Stopwatch` with `LoopRegulator`
 
 ## [Early3] 9/14/2019
 ### Changed

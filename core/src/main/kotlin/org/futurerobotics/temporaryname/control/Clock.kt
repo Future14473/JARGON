@@ -1,7 +1,9 @@
 package org.futurerobotics.temporaryname.control
 
+import kotlin.math.roundToLong
+
 /**
- * A interface to represent a something that keepins time.
+ * Represents a time keeping device. This can use real time or be manually set.
  * Has one function [nanoTime] that returns the current relative time in nanoseconds.
  *
  * Default implementation simply uses [System.nanoTime].
@@ -20,70 +22,77 @@ interface Clock {
 }
 
 /**
- * A [Clock] does not change its the time returned by [nanoTime] until [tick] is called, in which it will update
- * its internal time to the [referenceClock]'s time.
+ * A [Clock] where the [nanoTime] can be set directly.
  *
- * This can be useful to make sure multiple systems are running with the same time info.
+ * @property nanoTime the time returned by [nanoTime]
  */
-class TickClock(private val referenceClock: Clock = Clock.Default) : Clock {
+class ManualClock(var nanoTime: Long = 0) : Clock {
 
-    //    @Volatile
-    private var time = referenceClock.nanoTime()
+    override fun nanoTime(): Long = nanoTime
+}
 
-    override fun nanoTime(): Long = time
+/**
+ * A [LoopRegulator] is used in control systems to control how the control loop is run.
+ *
+ * It both keeps track of elapsed time per cycle, and possibly enforces a cycle to be run at a certain speed.
+ *
+ * Every control system has exactly one of these.
+ */
+interface LoopRegulator {
     /**
-     * "ticks" the clock; sets the internal time to the [referenceClock]'s time.
+     * Indicates the start of a cycle.
      */
-    fun tick() {
-        time = referenceClock.nanoTime()
+    fun start()
+
+
+    /**
+     * Possibly pauses the current thread so that the time between the last call to [start] is
+     * controlled to this [LoopRegulator]'s liking; and then returns the elapsed time in nanoseconds.
+     */
+    fun syncAndTime(): Long
+}
+
+/**
+ * Possibly pauses the current thread so that the time between the last call to [start] is
+ * controlled to this [LoopRegulator]'s liking; and then returns the elapsed time in _seconds_.
+ */
+fun LoopRegulator.syncAndTimeSeconds(): Double = syncAndTime() / 1e9
+
+/**
+ * A [LoopRegulator] that runs its cycle as fast as possible; timing using the given [clock].
+ */
+class LoopAsFastAsPossible(private val clock: Clock = Clock.Default) : LoopRegulator {
+    private var lastNanos = clock.nanoTime()
+    override fun start() {
+        lastNanos = clock.nanoTime()
+    }
+
+    override fun syncAndTime(): Long {
+        val nanos = clock.nanoTime()
+        return (nanos - lastNanos).also {
+            lastNanos = nanos
+        }
     }
 }
 
 /**
- * A manual clock where the [time] can be set directly.
+ * A [LoopRegulator] that limits its maximum speed to a certain number of cycles per second;
+ * otherwise will stop thread.
  *
- * @property time the time returned by [nanoTime]
+ * @param maxHertz the maximum hertz to run the loop at.
  */
-class ManualClock(var time: Long = 0) : Clock {
-
-    override fun nanoTime(): Long = time
-}
-
-/**
- * A Stopwatch to time events that uses the given [clock]
- */
-class Stopwatch(private val clock: Clock = Clock.Default) {
-
-    private var lastTimeStamp = clock.nanoTime()
-    /**
-     * Starts this stopwatch.
-     */
-    fun start() {
-        lastTimeStamp = clock.nanoTime()
+class LoopAtMaximumHertz(maxHertz: Double, private val clock: Clock = Clock.Default) : LoopRegulator {
+    private var lastNanos = clock.nanoTime()
+    private val minPeriod = (1e9 / maxHertz).roundToLong()
+    override fun start() {
+        lastNanos = clock.nanoTime()
     }
 
-    /**
-     * Returns the elapsed time since the last call to [start] in nanoseconds.
-     */
-    fun nanos(): Long = clock.nanoTime() - lastTimeStamp
+    override fun syncAndTime(): Long {
+        val elapsed = clock.nanoTime() - lastNanos
+        if (elapsed >= minPeriod) return elapsed
+        Thread.sleep((minPeriod - elapsed) / 1000000)
+        return minPeriod
+    }
 
-    fun seconds(): Double = nanos() / 1e9
-}
-
-/**
- * Measures the time to run the block in milliseconds
- */
-inline fun Stopwatch.measureTimeMillis(block: () -> Unit): Double {
-    start()
-    block()
-    return nanos() / 1e3
-}
-
-/**
- * Measures the time to run the block in nanoseconds.
- */
-inline fun Stopwatch.measureTimeNanos(block: () -> Unit): Long {
-    start()
-    block()
-    return nanos()
 }

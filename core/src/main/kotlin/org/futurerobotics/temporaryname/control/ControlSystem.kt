@@ -8,11 +8,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Base implementation of a ControlSystem.
  *
- * @param stopwatch the [Stopwatch] to use
+ * @param loopManager the [LoopRegulator] to use
  * @property reference the [ReferenceTracker] to use
  */
 abstract class AbstractControlSystem<Tracker : ReferenceTracker<*, *>>(
-    private val stopwatch: Stopwatch,
+    private val loopManager: LoopRegulator,
     val reference: Tracker
 ) : LoopBasedSystem {
 
@@ -24,14 +24,14 @@ abstract class AbstractControlSystem<Tracker : ReferenceTracker<*, *>>(
         private set
 
     override fun tick(): Boolean {
-        stopwatch.start()
+        loopManager.start()
         feedBack()
         if (reference.isDone) {
             elapsedSeconds = Double.NaN
             return false
         }
         signalForward()
-        elapsedSeconds = stopwatch.seconds()
+        elapsedSeconds = loopManager.syncAndTimeSeconds()
         return true
     }
 
@@ -60,12 +60,12 @@ abstract class AbstractControlSystem<Tracker : ReferenceTracker<*, *>>(
  * then the [reference] is polled, [controller] is updated, and [plant] is signaled.
  */
 class SimpleControlSystem<State : Any, Reference : Any, Signal : Any, Measurement : Any, Tracker : ReferenceTracker<State, Reference>>(
-    stopwatch: Stopwatch,
+    loopManager: LoopRegulator,
     referenceTracker: Tracker,
     private val plant: Plant<Signal, Measurement>,
     private val controller: Controller<Reference, State, Signal>,
     private val observer: Observer<Measurement, Signal, State>
-) : AbstractControlSystem<Tracker>(stopwatch, referenceTracker) {
+) : AbstractControlSystem<Tracker>(loopManager, referenceTracker) {
 
     /**
      * The current state monitored by this control system;
@@ -181,11 +181,11 @@ internal class ControlChainLink<State : Any, Reference : Any, Signal : Any, Meas
  */
 class ChainedControlSystem<State : Any, Reference : Any, Signal : Any, Measurement : Any, Tracker : ReferenceTracker<State, Reference>>
 internal constructor(
-    stopwatch: Stopwatch,
+    loopManager: LoopRegulator,
     referenceTracker: Tracker,
     private val plant: Plant<Signal, Measurement>,
     private val links: List<ControlChainLink<*, *, *, *>>
-) : AbstractControlSystem<Tracker>(stopwatch, referenceTracker) {
+) : AbstractControlSystem<Tracker>(loopManager, referenceTracker) {
 
     /**
      * Get's the current state at the corresponding [link]; or null if the system has never been run.
@@ -241,7 +241,7 @@ internal constructor(
  */
 class ChainedControlSystemBuilder<State : Any, Reference : Any, Tracker : ReferenceTracker<State, Reference>>
 private constructor(
-    private val stopwatch: Stopwatch,
+    private val loopManager: LoopRegulator,
     private val referenceTracker: Tracker
 ) {
 
@@ -282,7 +282,7 @@ private constructor(
         infix fun end(plant: Plant<Signal, Measurement>):
                 ChainedControlSystem<State, Reference, Signal, Measurement, Tracker> {
             check(appended.compareAndSet(false, true)) { "Chain end already appended" }
-            return ChainedControlSystem(stopwatch, referenceTracker, plant, links)
+            return ChainedControlSystem(loopManager, referenceTracker, plant, links)
         }
     }
 
@@ -293,10 +293,10 @@ private constructor(
         @Suppress("RemoveRedundantQualifierName")
         @JvmStatic
         fun <State : Any, Reference : Any, Tracker : ReferenceTracker<State, Reference>> start(
-            stopwatch: Stopwatch,
+            loopManager: LoopRegulator,
             referenceTracker: Tracker
         ): ChainedControlSystemBuilder<State, Reference, Tracker>.ControlChainEnd<Reference, State> =
-            ChainedControlSystemBuilder(stopwatch, referenceTracker)
+            ChainedControlSystemBuilder(loopManager, referenceTracker)
                 .ControlChainEnd()
     }
 }
