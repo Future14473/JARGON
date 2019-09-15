@@ -12,7 +12,6 @@ Control systems
     - Kalman filter
     - Automated Augmentation, maybe
 - Better control chain links
-    - Global to relative wrapper, with GlobalPoseTracker
     - StateSpace 
     - Wrap pass
 - Other localization support

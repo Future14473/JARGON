@@ -138,6 +138,17 @@ interface ControlLink<State : Any, Reference : Any, Signal : Any, Measurement : 
 }
 
 /**
+ * A implementation of [ControlLink] that simply holds values in fields; like a [Pair] but etter.
+ *
+ * @see [ControlLink]
+ */
+class ValueControlLink<State : Any, Reference : Any, Signal : Any, Measurement : Any>(
+    override val controller: Controller<Reference, State, Signal>,
+    override val observer: Observer<Measurement, Signal, State>
+) : ControlLink<State, Reference, Signal, Measurement>
+
+
+/**
  * A control chain link used in [ChainedControlSystem].
  * Internal due to unchecked casts.
  */
@@ -305,7 +316,7 @@ private constructor(
 
     /**
      * Represents an end of a control chain currently being built.
-     * Add links using [addLink], or close the chain with a plant using [end]
+     * Add links using [add], or close the chain with a plant using [end]
      */
     inner class ControlChainEnd<Signal : Any, Measurement : Any> internal constructor() {
 
@@ -313,9 +324,9 @@ private constructor(
         /**
          * Adds another link to this control chain; given compatible [controller] and [observer].
          *
-         * A link can only be [addLink]ed or [end]ed once.
+         * A link can only be [add]ed or [end]ed once.
          */
-        fun <NewSignal : Any, NewMeasurement : Any> addLink(
+        fun <NewSignal : Any, NewMeasurement : Any> add(
             controller: Controller<Signal, Measurement, NewSignal>,
             observer: Observer<NewMeasurement, NewSignal, Measurement>
         ): ControlChainEnd<NewSignal, NewMeasurement> {
@@ -328,22 +339,22 @@ private constructor(
         /**
          * Adds a compatible [ControlLink] to this control chain.
          *
-         * A link can only be [addLink]ed or [end]ed once.
+         * A link can only be [add]ed or [end]ed once.
          */
-        infix fun <NewSignal : Any, NewMeasurement : Any> addLink(
+        infix fun <NewSignal : Any, NewMeasurement : Any> add(
             link: ControlLink<Measurement, Signal, NewSignal, NewMeasurement>
-        ): ControlChainEnd<NewSignal, NewMeasurement> = addLink(link.controller, link.observer)
+        ): ControlChainEnd<NewSignal, NewMeasurement> = add(link.controller, link.observer)
 
 
         /**
          * Adds the compatible pair of a [Controller] and an [Observer] to this control chain.
          *
-         * A link can only be [addLink]ed or [end]ed once.
+         * A link can only be [add]ed or [end]ed once.
          */
-        infix fun <NewSignal : Any, NewMeasurement : Any> addLink(
+        infix fun <NewSignal : Any, NewMeasurement : Any> add(
             link: Pair<Controller<Signal, Measurement, NewSignal>,
                     Observer<NewMeasurement, NewSignal, Measurement>>
-        ): ControlChainEnd<NewSignal, NewMeasurement> = addLink(link.first, link.second)
+        ): ControlChainEnd<NewSignal, NewMeasurement> = add(link.first, link.second)
 
 
         /**
@@ -365,6 +376,18 @@ private constructor(
         @Suppress("RemoveRedundantQualifierName")
         @JvmStatic
         fun <State : Any, Reference : Any, Tracker : ReferenceTracker<State, Reference>> start(
+            loopManager: LoopRegulator,
+            referenceTracker: Tracker
+        ): ChainedControlSystemBuilder<State, Reference, Tracker>.ControlChainEnd<Reference, State> =
+            ChainedControlSystemBuilder(loopManager, referenceTracker)
+                .ControlChainEnd()
+
+        /**
+         * Starts building a control chain.
+         * @see [ChainedControlSystemBuilder]
+         */
+        @Suppress("RemoveRedundantQualifierName")
+        operator fun <State : Any, Reference : Any, Tracker : ReferenceTracker<State, Reference>> invoke(
             loopManager: LoopRegulator,
             referenceTracker: Tracker
         ): ChainedControlSystemBuilder<State, Reference, Tracker>.ControlChainEnd<Reference, State> =
