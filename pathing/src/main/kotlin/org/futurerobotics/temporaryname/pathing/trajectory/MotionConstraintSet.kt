@@ -1,5 +1,7 @@
 package org.futurerobotics.temporaryname.pathing.trajectory
 
+import org.futurerobotics.temporaryname.pathing.Path
+
 /**
  * A collection of [VelocityConstraint]s, [AccelConstraint]s, and (flattened) [MultipleConstraint] used to construct
  * a [TrajectoryConstraint] when paired with a Path for dynamic motion profile generation.
@@ -33,14 +35,6 @@ class MotionConstraintSet(
             .takeIf { it.isNotEmpty() } ?: FALLBACK_ACCEL_CONSTRAINTS
     }
 
-    private fun <T : SingleConstraint> Iterable<T>.removeRedundant(): MutableList<T> {
-        val newConstraints = toMutableList()
-        forEach { cur ->
-            newConstraints.removeIf { it !== cur && cur.otherIsRedundant(it) }
-        }
-        return newConstraints
-    }
-
     constructor(
         velocityConstraints: Iterable<VelocityConstraint>,
         accelConstraints: Iterable<AccelConstraint>,
@@ -56,4 +50,23 @@ class MotionConstraintSet(
     )
 
     constructor(vararg constraints: MotionConstraint) : this(constraints.asIterable())
+
+    /**
+     * Generates a trajectory using the given [path] and this set of constraints.
+     */
+    fun generateTrajectory(
+        path: Path, targetStartVel: Double = 0.0,
+        targetEndVel: Double = 0.0,
+        segmentSize: Double = 0.01
+    ): Trajectory = generateTrajectory(path, this, targetStartVel, targetEndVel, segmentSize)
+
+    private fun <T : SingleConstraint> Iterable<T>.removeRedundant(): MutableList<T> {
+        val newConstraints = toMutableList()
+        forEach { cur ->
+            newConstraints.removeIf { it !== cur && cur.otherIsRedundant(it) }
+        }
+        return newConstraints
+    }
+
+
 }
