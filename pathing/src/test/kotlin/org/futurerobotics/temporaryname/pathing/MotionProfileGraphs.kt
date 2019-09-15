@@ -121,8 +121,8 @@ class MotionProfileGraphs(
                 MaxPathAngularVelocityConstraint(1.5),
                 MaxCentripetalAccelConstraint(0.9),
                 MaxTangentAccelConstraint(0.9),
-                MaxTotalAccelerationConstraint(1.0),
-                MaxAngularAccelerationConstraint(0.3)
+                MaxTotalAccelConstraint(1.0),
+                MaxAngularAccelConstraint(0.3)
             )
         ).also {
             it += List(2) {
@@ -151,13 +151,13 @@ class MotionProfileGraphs(
                         3.0
                     )
                 ),
-                MaxTotalAccelerationConstraint(
+                MaxTotalAccelConstraint(
                     random.nextDouble(
                         1.0,
                         3.0
                     )
                 ),
-                MaxAngularAccelerationConstraint(
+                MaxAngularAccelConstraint(
                     random.nextDouble(
                         0.5,
                         2.0

@@ -25,8 +25,8 @@ internal class ConstraintTest {
     }.let { MultiplePath(it) }
     private val motionConstraints = MotionConstraintSet(
         MaxVelocityConstraint(10.0),
-        MaxTotalAccelerationConstraint(1.0),
-        MaxAngularAccelerationConstraint(0.2)
+        MaxTotalAccelConstraint(1.0),
+        MaxAngularAccelConstraint(0.2)
     )
     private val constraint = TrajectoryConstraint(path, motionConstraints)
     private val steps = 1_000

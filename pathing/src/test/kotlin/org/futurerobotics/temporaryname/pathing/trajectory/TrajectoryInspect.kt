@@ -62,8 +62,8 @@ class TrajectoryInspect(private val trajectory: Trajectory) {
             MaxPathAngularVelocityConstraint(1.5),
             MaxCentripetalAccelConstraint(0.9),
             MaxTangentAccelConstraint(0.9),
-            MaxTotalAccelerationConstraint(1.0),
-            MaxAngularAccelerationConstraint(1.0)
+            MaxTotalAccelConstraint(1.0),
+            MaxAngularAccelConstraint(1.0)
         )
 
         @JvmStatic
