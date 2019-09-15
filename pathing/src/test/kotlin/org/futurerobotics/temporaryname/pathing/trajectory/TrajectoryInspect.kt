@@ -9,7 +9,6 @@ import org.futurerobotics.temporaryname.mechanics.State
 import org.futurerobotics.temporaryname.pathing.MultiplePath
 import org.futurerobotics.temporaryname.pathing.TangentHeading
 import org.futurerobotics.temporaryname.pathing.addHeading
-import org.futurerobotics.temporaryname.pathing.constraint.*
 import org.futurerobotics.temporaryname.pathing.reparam.reparamByIntegration
 import org.futurerobotics.temporaryname.reportError
 import org.junit.Assert
@@ -59,12 +58,12 @@ class TrajectoryInspect(private val trajectory: Trajectory) {
         private const val maxError = 0.005
         private val random = Random(23934827)
         private val constraints = MotionConstraintSet(
-            TangentVelocityConstraint(2.0),
-            PathAngularVelocityConstraint(1.5),
-            CentripetalAccelConstraint(0.9),
-            TangentAccelConstraint(0.9),
-            TotalAccelConstraint(1.0),
-            RobotAngularAccelConstraint(1.0)
+            MaxVelocityConstraint(2.0),
+            MaxPathAngularVelocityConstraint(1.5),
+            MaxCentripetalAccelConstraint(0.9),
+            MaxTangentAccelConstraint(0.9),
+            MaxTotalAccelerationConstraint(1.0),
+            MaxAngularAccelerationConstraint(1.0)
         )
 
         @JvmStatic

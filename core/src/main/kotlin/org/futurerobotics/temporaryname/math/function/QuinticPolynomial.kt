@@ -11,10 +11,15 @@ import org.futurerobotics.temporaryname.math.Derivatives
  * @property c the t^3 coefficient
  * @property d the t^2 coefficient
  * @property e the t^1 coefficient
- * @property f the constant coefficient
+ * @property f the t^0 coefficient
  */
 class QuinticPolynomial(
-    @JvmField val a: Double, @JvmField val b: Double, @JvmField val c: Double, @JvmField val d: Double, @JvmField val e: Double, @JvmField val f: Double
+    @JvmField val a: Double,
+    @JvmField val b: Double,
+    @JvmField val c: Double,
+    @JvmField val d: Double,
+    @JvmField val e: Double,
+    @JvmField val f: Double
 ) : MathFunction {
 
     override fun invoke(t: Double): Double {
@@ -68,8 +73,10 @@ class QuinticPolynomial(
             //            val b = 5*s-20*(s+s_1/5)+30*(s_2/20+2*(s+s_1/5)-s)-20*(f_2/20+2*(f-f_1/5)-f)+5*(f-f_1/5)
             //            val c = -10*s+30*(s+s_1/5)-30*(s_2/20+2*(s+s_1/5)-s)+10*(f_2/20+2*(f-f_1/5)-f)
             //equation solvers was used.
-            val a = -6 * start - 3 * startDeriv - 0.5 * startSecondDeriv + 6 * end - 3 * endDeriv + 0.5 * endSecondDeriv
-            val b = 15 * start + 8 * startDeriv + 1.5 * startSecondDeriv - 15 * end + 7 * endDeriv - endSecondDeriv
+            val a =
+                -6 * start - 3 * startDeriv - 0.5 * startSecondDeriv + 6 * end - 3 * endDeriv + 0.5 * endSecondDeriv
+            val b =
+                15 * start + 8 * startDeriv + 1.5 * startSecondDeriv - 15 * end + 7 * endDeriv - endSecondDeriv
             val c =
                 -10 * start - 6 * startDeriv - 1.5 * startSecondDeriv + 10 * end - 4 * endDeriv + 0.5 * endSecondDeriv
             val d = startSecondDeriv / 2
@@ -79,7 +86,7 @@ class QuinticPolynomial(
         }
 
         /**
-         * Creates a Quintic polynomial defined by then start and endpoint values and derivatives.
+         * Creates a Quintic polynomial defined by start and endpoint [Derivatives]
          */
         @JvmStatic
         fun fromDerivatives(

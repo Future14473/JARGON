@@ -3,7 +3,7 @@ package org.futurerobotics.temporaryname.hardware
 import org.futurerobotics.temporaryname.system.StartStoppable
 
 /**
- * Represents a DcMotor; links directly to hardware (or simulation for testing).
+ * Represents a DcMotor. Links directly to hardware (or simulation).
  */
 interface DcMotor : StartStoppable {
 

@@ -7,7 +7,6 @@ import kotlin.math.roundToLong
  * Has one function [nanoTime] that returns the current relative time in nanoseconds.
  *
  * Default implementation simply uses [System.nanoTime].
- * For other implementations, see
  */
 interface Clock {
 
@@ -40,7 +39,7 @@ class ManualClock(var nanoTime: Long = 0) : Clock {
  */
 interface LoopRegulator {
     /**
-     * Indicates the start of a cycle.
+     * This is called to indicate the start of a loop.
      */
     fun start()
 
@@ -53,7 +52,7 @@ interface LoopRegulator {
 }
 
 /**
- * Possibly pauses the current thread so that the time between the last call to [start] is
+ * Possibly pauses the current thread so that the time between the last call to [LoopRegulator.start] is
  * controlled to this [LoopRegulator]'s liking; and then returns the elapsed time in _seconds_.
  */
 fun LoopRegulator.syncAndTimeSeconds(): Double = syncAndTime() / 1e9

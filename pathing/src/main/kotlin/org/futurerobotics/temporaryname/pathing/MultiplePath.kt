@@ -45,11 +45,11 @@ sealed class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>(
 
     private inline val maxInd get() = paths.size - 1
     /** Gets a [Point] for a point [s] units along this path. */
-    override fun atLength(s: Double): Point {
+    override fun pointAt(s: Double): Point {
         val i = startLengths.binarySearch(s)
             .replaceIf({ it < 0 }) { -it - 2 }
             .coerceIn(0, maxInd)
-        return paths[i].atLength(s - startLengths[i])
+        return paths[i].pointAt(s - startLengths[i])
     }
 
     override fun stepper(): Stepper<Double, Point> = object :
@@ -80,8 +80,8 @@ sealed class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>(
         var prevPath: Path? = null
         for (curPath in this) {
             if (prevPath != null) {
-                val prev = prevPath.atLength(prevPath.length)
-                val cur = curPath.atLength(0.0)
+                val prev = prevPath.pointAt(prevPath.length)
+                val cur = curPath.pointAt(0.0)
                 @Suppress("LeakingThis")
                 checkPointContinuity(prev, cur)
             }
@@ -94,7 +94,8 @@ sealed class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>(
 }
 
 /**
- * A [Curve] that consists of multiple other C-2 continuously connected [Curve]s.
+ * A [Curve] that consists of multiple other C2 continuously connected [Curve]s.
+ * tanAngleSecondDeriv, however, is allowed to be discontinuous.
  */
 class MultipleCurve(paths: Iterable<Curve>, checkContinuity: Boolean = true) :
     MultipleGeneric<Curve, CurvePoint>(paths, checkContinuity),
@@ -116,7 +117,8 @@ class MultipleCurve(paths: Iterable<Curve>, checkContinuity: Boolean = true) :
 }
 
 /**
- * A [Path] that consists of multiple other C-2 continuously connected [Path]s
+ * A [Path] that consists of multiple other C2 continuously connected [Path]s. headingSecondDeriv, and
+ * tanAngleSecondDeriv, however, is allowed to be discontinuous.
  */
 class MultiplePath(paths: Iterable<Path>, checkContinuity: Boolean = true) :
     MultipleGeneric<Path, PathPoint>(paths, checkContinuity),

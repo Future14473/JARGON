@@ -6,13 +6,16 @@ import kotlin.math.absoluteValue
 
 /**
  * Represents tolerances to use for when to dictate finishing moving on this motion profiled.
+ *
+ * @param positionalTolerance the maximum allowed difference position
+ * @param angularTolerance the maximum allowed difference in angle
  */
 data class PoseTolerance(val positionalTolerance: Double, val angularTolerance: Double) {
 
     /**
      * Returns true if the differences in [pose1] and [pose2] are small enough to be within this tolerance.
      */
-    fun areSatisifed(pose1: Pose2d, pose2: Pose2d): Boolean =
+    fun areSatisfied(pose1: Pose2d, pose2: Pose2d): Boolean =
         (pose1.vec distTo pose2.vec) <= positionalTolerance &&
                 angleNorm(pose1.heading - pose2.heading).absoluteValue <= angularTolerance
 

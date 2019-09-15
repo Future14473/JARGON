@@ -3,30 +3,38 @@ package org.futurerobotics.temporaryname.mechanics
 import kotlin.math.sign
 
 /**
- * A not-involving-complex-calculus first-order approximation of a model of a DC brushed motor following:
+ * A not-involving-complex-calculus first-order approximation model of a DC brushed motor following:
  *
  * V = torque/[kt]*[r] + angvel/[kv] + sign(angvel) * [i0] * r
  *
- * All units should be SI units; convert units first!
+ * All units should be SI units.
  *
  * Refer to section 14.2 of [calcmogul's state space guide][https://file.tavsys.net/control/state-space-guide.pdf]
- * for more details.
+ * for more details. This adds a [i0] term to the thing.
  *
  * This also assumes a positive torque/angular velocity corresponds to a positive voltage,
  * and vice versa.
  *
  * This class is meant to be reusable; Frictional forces are accounted for in [TransmissionModel]
  *
- * @param kt the kt term; see [DcMotorModel]
- * @param r the r term; see [DcMotorModel]
- * @param kv the kv term; see [DcMotorModel]
+ * @param kt the kt term
+ * @param r the r term
+ * @param kv the kv term
+ * @param i0 the i0 term
  */
 class DcMotorModel private constructor(
     private val kt: Double,
     private val r: Double,
     private val kv: Double,
-    val i0: Double = 0.0
+    private val i0: Double = 0.0
 ) {
+
+    init {
+        require(kt > 0) { "kt ($kt) must be > 0" }
+        require(r > 0) { "r ($r) must be > 0" }
+        require(kv > 0) { "kv ($kv) must be > 0" }
+        require(i0 >= 0) { "kv ($kv) must be >= 0" }
+    }
 
     /**
      * Gets the expected amount of volts per output torque, assuming that the motor isn't moving.
@@ -36,16 +44,11 @@ class DcMotorModel private constructor(
      * Gets the expected amount of volts per angVel needed to maintain a constant speed, assuming no output torque.
      */
     val voltsPerAngVel: Double get() = 1 / kv
+
     /**
-     * The number of volts needed to add to overcome frictional forces.
+     * The number of volts needed to be added to overcome frictional forces.
      */
     val voltsForFriction: Double get() = i0 * r
-
-    init {
-        require(kt > 0) { "kt ($kt) must be > 0" }
-        require(r > 0) { "r ($r) must be > 0" }
-        require(kv > 0) { "kv ($kv) must be > 0" }
-    }
 
     /**
      * Gets the expected voltage to turn this motor at the given [torque] and current [angVel].
@@ -66,7 +69,7 @@ class DcMotorModel private constructor(
         }
 
         /**
-         * Constructs based on data give on a motor data sheet.
+         * Constructs a model based on data give on a motor data sheet.
          */
         @JvmStatic
         fun fromMotorData(
@@ -87,16 +90,21 @@ class DcMotorModel private constructor(
 }
 
 /**
- * Extends a [motor] with transmission [gearRatio], and accounts for additional frictional forces.
+ * Extends a [DcMotorModel] with transmission [gearRatio], and accounts for additional frictional forces.
  *
  * This is a simple yet good enough model for most use cases.
  *
- * Frictional forces are divided into two parts:
- * [ratioTorqueLoss] and [constantTorqueLoss].
- * [ratioTorqueLoss] is the ratio of the torque "lost" due to frictional forces (acceleration), while [constantTorqueLoss] is
- * the constant amount of torque needed to keep the transmission at a constant speed (velocity).
+ * Frictional forces are divided into two parts: [ratioTorqueLoss] and [constantTorqueLoss].
+ *
+ * [ratioTorqueLoss] is the proportion between 0 and 1, that is the "amount of torque" that makes it to the output,
+ * some of which is "lost" due to frictional forces (acceleration related friction), and
+ * [constantTorqueLoss] is the constant amount of torque needed to keep the output at a constant speed
+ * (velocity related friction).
+ *
+ * These can be guessed or measured; The goal of a feedback control system is that errors can be accounted for.
  *
  * A negative gear ratio means going in the opposite direction.
+ *
  * @param motor the model of the motor used
  * @param gearRatio the gear ratio of this transmission (Input/Output, higher ratio means faster/less torque)
  * @param constantTorqueLoss the constant component of the torque required to overcome frictional forces.
@@ -104,6 +112,7 @@ class DcMotorModel private constructor(
  *                      or the "percentage of torque" that makes it to the output. In an ideal world, 1.0,
  *                      a deadlocked motor is 0.0.
  */
+@Suppress("MemberVisibilityCanBePrivate")
 class TransmissionModel private constructor(
     val motor: DcMotorModel,
     val gearRatio: Double,
@@ -112,6 +121,13 @@ class TransmissionModel private constructor(
 ) {
     //outSpeed = inSpeed * gearRatio
     //outTorque = inTorque * ratioFrictionalTorque / gearRatio
+    init {
+        require(gearRatio.isFinite()) { "gearRatio ($gearRatio) must be finite" }
+        require(constantTorqueLoss >= 0) { "constantTorqueLoss ($constantTorqueLoss) must be >= 0" }
+        require(ratioTorqueLoss in 0.0..1.0)
+        { "ratioTorqueLoss ($ratioTorqueLoss) must be in the range 0.0..1.0" }
+    }
+
     /**
      * Gets the ratio of the motor's torque to the outputTorque.
      */
@@ -128,22 +144,17 @@ class TransmissionModel private constructor(
      * Gets the expected amount of volts per angVel needed to maintain a constant velocity, assuming no output torque.
      */
     val voltsPerAngVel: Double get() = motor.voltsPerAngVel * motorAngVelPerOutputAngVel
+
     /**
-     * The idle extra volts needed to keep a motor at 0 torque, due to frictional forces.
+     * The extra volts needed to add to overcome frictional forces.
      *
-     * This is slightly more useful than stall current.
+     * This is slightly more useful than free current.
      */
     val voltsForFriction: Double get() = motor.voltsPerTorque * constantTorqueLoss + motor.voltsForFriction
 
-    init {
-        require(gearRatio.isFinite()) { "gearRatio ($gearRatio) must be finite" }
-        require(constantTorqueLoss >= 0) { "frictionalTorque ($constantTorqueLoss) must be >= 0" }
-        require(ratioTorqueLoss in 0.0..1.0) { "ratioFrictionalTorque ($ratioTorqueLoss) must be in the range 0.0..1.0" }
-    }
-
     companion object {
         /**
-         * Constructs a [TransmissionModel] with the given parameters.
+         * Constructs a [TransmissionModel] with the given parameters, based on torque losses.
          */
         @JvmStatic
         @JvmOverloads

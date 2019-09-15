@@ -10,7 +10,7 @@ import org.futurerobotics.temporaryname.mechanics.*
  * A controller for [LinearState] that uses PID for positional error,
  * and passes velocity and acceleration feed forwards to its output.
  *
- * The correction is added to the output's velocity.
+ * The PID correction is added to the output's velocity.
  *
  * This may be more useful than [PIDPassController], if used in a chained controller system where the next
  * controller handles feed-forwards more intelligently.
@@ -21,8 +21,10 @@ class PIDPassController(private val coefficients: PIDCoefficients) :
     BasePassingMotionController<Double>() {
 
     private inline val zero get() = 0.0
+
     private var prevError = zero
     private var errorSum = zero
+
     override fun getSignal(reference: State<Double>, currentState: Double, elapsedSeconds: Double): Motion<Double> {
         val (x, v, a) = reference
         val pid = processPID(currentState, elapsedSeconds, x)
@@ -35,15 +37,13 @@ class PIDPassController(private val coefficients: PIDCoefficients) :
             prevError = curError
             zero
         } else {
-            val dt = elapsedSeconds
-
             errorSum = if (curError <= coefficients.integralActivationThreshold) {
-                val curI = (curError + prevError) * (dt / 2)
+                val curI = (curError + prevError) * (elapsedSeconds / 2)
                 (errorSum + curI).coerceIn(-coefficients.maxErrorSum, coefficients.maxErrorSum)
             } else zero
             val p = curError * coefficients.p
             val i = errorSum * coefficients.i
-            val d = (curError - prevError) * (coefficients.d / dt)
+            val d = (curError - prevError) * (coefficients.d / elapsedSeconds)
             prevError = curError
             p + i + d
         }
@@ -60,10 +60,14 @@ class PIDPassController(private val coefficients: PIDCoefficients) :
 }
 
 /**
- * An experimental controller for for [VectorMotionState] that passes velocity and acceleration feed forwards to its output
- * [VectorMotion], and uses PID to correct for positional error which is added to the output's velocity.
+ * An experimental controller that works with [Vector2d] values, math is similar to [PIDPassController]
  *
- * TODO FINISH DOC
+ * The PID correction is added to the output's velocity.
+ *
+ * This may be more useful than [PIDPassController], if used in a chained controller system where the next
+ * controller handles feed-forwards more intelligently.
+ *
+ * @see [VecPIDPassController]
  */
 class VecPIDPassController(private val coefficients: PIDCoefficients) :
     BasePassingMotionController<Vector2d>() {
@@ -87,15 +91,14 @@ class VecPIDPassController(private val coefficients: PIDCoefficients) :
             prevError = curError
             zero
         } else {
-            val dt = elapsedSeconds
 
             errorSum = if (curError.length <= coefficients.integralActivationThreshold) {
-                val curI = (curError + prevError) * (dt / 2)
+                val curI = (curError + prevError) * (elapsedSeconds / 2)
                 (errorSum + curI) coerceLengthAtMost -coefficients.maxErrorSum
             } else zero
             val p = curError * coefficients.p
             val i = errorSum * coefficients.i
-            val d = (curError - prevError) * (coefficients.d / dt)
+            val d = (curError - prevError) * (coefficients.d / elapsedSeconds)
             prevError = curError
             p + i + d
         }
@@ -112,10 +115,11 @@ class VecPIDPassController(private val coefficients: PIDCoefficients) :
 }
 
 /**
- * A PID controller for [Pose2d]'s that uses a [PIDPassController] for heading, and a [VecPassPIDController] for translation.
+ * A PIDPass controller for [Pose2d]'s that uses a [PIDPassController] for heading, and a [VecPIDPassController] for
+ * translation.
  *
- * Input can be either global or local position, and output is a Pose2d that is supposed to move the robot
- * towards the reference (velocity).
+ * Input can be either global or local position, and output is a Pose Motion that is supposed to move the state
+ * towards the reference (velocity), _in the same coordinate frame_.
  *
  * @param translationalCoeff the translational PID coefficients
  * @param headingCoeff the heading PID coefficients
@@ -127,6 +131,7 @@ class TwoPartPIDPassController(
 
     private val translational = VecPIDPassController(translationalCoeff)
     private val rotational = PIDPassController(headingCoeff)
+
     override fun getSignal(reference: State<Pose2d>, currentState: Pose2d, elapsedSeconds: Double): Motion<Pose2d> {
         val (vv, va) = translational.updateAndGetSignal(reference.vec(), currentState.vec, elapsedSeconds)
         val (hv, ha) = rotational.updateAndGetSignal(reference.heading(), currentState.heading, elapsedSeconds)
@@ -145,7 +150,11 @@ class TwoPartPIDPassController(
 }
 
 /**
- * A PID controller for [Pose2d]'s that uses separate [PIDPassController]s for axial, lateral, and heading components of a pose.
+ * A PIDPass controller for [Pose2d]'s that uses separate [PIDPassController]s for axial, lateral, and heading components o
+ * f a pose.
+ *
+ * Input can be either global or local position, and output is a Pose Motion that is supposed to move the state
+ * towards the reference, _in the same coordinate frame_.
  *
  * Keep in mind this uses Northwest up orientation, so axial is the x-axis (up/down) and lateral is the y-axis
  * (left/right).
@@ -163,6 +172,7 @@ class ThreePartPIDPassController(
     private val axial = PIDPassController(axialCoeff) //x
     private val lateral = PIDPassController(lateralCoeff) //y
     private val heading = PIDPassController(headingCoeff)
+
     override fun getSignal(reference: State<Pose2d>, currentState: Pose2d, elapsedSeconds: Double): Motion<Pose2d> {
         val (xv, xa) = axial.updateAndGetSignal(reference.x(), currentState.x, elapsedSeconds)
         val (yv, ya) = lateral.updateAndGetSignal(reference.y(), currentState.y, elapsedSeconds)

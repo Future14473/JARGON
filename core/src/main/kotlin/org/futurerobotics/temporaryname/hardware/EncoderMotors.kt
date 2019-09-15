@@ -6,7 +6,7 @@ import org.futurerobotics.temporaryname.mechanics.MotorVoltages
 import org.futurerobotics.temporaryname.util.zipForEach
 
 /**
- * Base class for a set of Motors that use encoders as measurement.
+ * Base class for a [Plant] that is a set of Motors that use encoder _position_ as measurement.
  */
 abstract class BaseEncoderMotors : Plant<MotorVoltages, MotorPositions> {
 
@@ -17,7 +17,7 @@ abstract class BaseEncoderMotors : Plant<MotorVoltages, MotorPositions> {
 
     override fun start() {}
     override fun stop() {
-        signal(MotorVoltages(List(numMotors) { 0.0 }, false), 0.0)
+        signal(List(numMotors) { 0.0 }, 0.0)
     }
 }
 
@@ -29,7 +29,7 @@ class EncoderMotors(private val motors: List<DcMotor>) : BaseEncoderMotors() {
     override val numMotors: Int
         get() = motors.size
     override val measurement: MotorPositions
-        get() = MotorPositions(motors.map { it.getPosition() })
+        get() = motors.map { it.getPosition() }
 
     override fun start() {
         motors.forEach { it.start() }

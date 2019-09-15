@@ -5,8 +5,7 @@ import org.futurerobotics.temporaryname.math.*
 import org.futurerobotics.temporaryname.math.function.QuinticSpline
 import org.futurerobotics.temporaryname.math.function.VectorFunction
 import org.futurerobotics.temporaryname.reportError
-import org.futurerobotics.temporaryname.saveTest
-import org.futurerobotics.temporaryname.util.getCallerStackFrame
+import org.futurerobotics.temporaryname.saveGraph
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,12 +29,12 @@ internal class ReparamCurveInspect(private val func: VectorFunction, private val
 
     @Test
     fun `position inspect`() {
-        testVector({ func.vec(it) }, { curve.atLength(it).position }, 0.001, 0.0)
+        testVector({ func.vec(it) }, { curve.pointAt(it).position }, 0.001, 0.0)
     }
 
     @Test
     fun `positionDeriv inspect`() {
-        testVector({ func.vecDeriv(it).normalized() }, { curve.atLength(it).positionDeriv }, 0.002, 0.001)
+        testVector({ func.vecDeriv(it).normalized() }, { curve.pointAt(it).positionDeriv }, 0.002, 0.001)
     }
 
     @Test
@@ -45,24 +44,24 @@ internal class ReparamCurveInspect(private val func: VectorFunction, private val
             val secondDeriv = func.vecSecondDeriv(it)
             val z = (secondDeriv cross deriv) / deriv.lengthSquared.squared()
             Vector2d(deriv.y * z, -deriv.x * z)
-        }, { curve.atLength(it).positionSecondDeriv }, 0.005, 0.001)
+        }, { curve.pointAt(it).positionSecondDeriv }, 0.005, 0.001)
     }
 
     @Test
     fun `tanAngle inspect`() {
-        testAngle({ func.vecDeriv(it).angle }, { curve.atLength(it).tanAngle }, 0.001, 0.0)
+        testAngle({ func.vecDeriv(it).angle }, { curve.pointAt(it).tanAngle }, 0.001, 0.0)
     }
 
     @Test
     fun `tanAngleDeriv inspect`() {
-        testValue({ func.curvature(it) }, { curve.atLength(it).tanAngleDeriv }, 0.002, 0.001)
+        testValue({ func.curvature(it) }, { curve.pointAt(it).tanAngleDeriv }, 0.002, 0.001)
     }
 
     @Test
     fun `tanAngleSecondDeriv inspect`() {
         testValue(
             { func.curvatureDeriv(it) / func.vecDeriv(it).length },
-            { curve.atLength(it).tanAngleSecondDeriv },
+            { curve.pointAt(it).tanAngleSecondDeriv },
             0.05,
             0.001
         )
@@ -104,7 +103,7 @@ internal class ReparamCurveInspect(private val func: VectorFunction, private val
                 s += func.vecDeriv((i + 0.5) / steps).length / steps
             }
         }.let {
-            println(getCallerStackFrame(3).methodName + ":")
+            println(Thread.currentThread().stackTrace[3 + 1].methodName + ":")
             println(it.report())
             println()
             assertTrue(it.averageError <= maxError)
@@ -143,7 +142,7 @@ internal class ReparamCurveInspect(private val func: VectorFunction, private val
                 val p4 = p5 - p5Deriv / 5
                 val p3 = p5SecondDeriv / 20 + 2 * p4 - p5
 
-                GraphUtil.getSplineGraph(30, p0, p1, p2, p3, p4, p5).saveTest("RandomSpline/$it")
+                GraphUtil.getSplineGraph(30, p0, p1, p2, p3, p4, p5).saveGraph("RandomSpline/$it")
                 val func = QuinticSpline.fromControlPoints(p0, p1, p2, p3, p4, p5)
 
                 list.add(arrayOf(func, func.reparamByIntegration()))

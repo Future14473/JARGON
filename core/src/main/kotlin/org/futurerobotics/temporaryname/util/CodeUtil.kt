@@ -17,11 +17,11 @@ inline fun <T> T.replaceIf(condition: (T) -> Boolean, alternate: (T) -> T): T {
  *
  * Useful to put emphasis on return value; for example in builders
  * ```
- * fun addFoo(): ThisType = /*this*/.after {
+ * fun addFoo(): ThisType = /*this.*/after {
  *   ...
  * }
  * ```
- * also equivalent to `let { _ -> ... }`
+ * also equivalent to `also { _ -> ... }`
  */
 //@ExperimentalContracts
 inline fun <T> T.after(block: () -> Unit): T {
@@ -34,7 +34,7 @@ inline fun <T> T.after(block: () -> Unit): T {
 
 /**
  * Calls the specified [block] with [p1] as its argument and returns its result.
- * Similar to [kotlin.let] or [kotlin.with]. Useful for changing variable names.
+ * Similar to [kotlin.let]. Useful for changing variable names.
  */
 //@ExperimentalContracts
 inline fun <T, R> let(p1: T, block: (T) -> R): R {
@@ -46,7 +46,7 @@ inline fun <T, R> let(p1: T, block: (T) -> R): R {
 
 /**
  * Calls the specified [block] with [p1], [p2] as its arguments and returns its result.
- * Similar to [kotlin.let] or [kotlin.with]. Useful for changing variable names together or nested let statements.
+ * Similar to [kotlin.let]. Useful for changing variable names together or avoiding nested let statements.
  */
 //@ExperimentalContracts
 inline fun <T, U, R> let(p1: T, p2: U, block: (T, U) -> R): R {
@@ -58,7 +58,7 @@ inline fun <T, U, R> let(p1: T, p2: U, block: (T, U) -> R): R {
 
 /**
  * Calls the specified [block] with [p1], [p2], [p3] as its arguments and returns its result.
- * Similar to [kotlin.let] or [kotlin.with]. Useful for changing variable names together or nested let statements.
+ * Similar to [kotlin.let]. Useful for changing variable names together or avoiding nested let statements.
  */
 //@ExperimentalContracts
 inline fun <T, U, V, R> let(p1: T, p2: U, p3: V, block: (T, U, V) -> R): R {
@@ -70,7 +70,7 @@ inline fun <T, U, V, R> let(p1: T, p2: U, p3: V, block: (T, U, V) -> R): R {
 
 /**
  * Calls the specified [block] with [p1], [p2], [p3], [p4] as its arguments and returns its result.
- * Similar to [kotlin.let] or [kotlin.with]. Useful for changing variable names together or nested let statements.
+ * Similar to [kotlin.let]. Useful for changing variable names together or avoiding nested let statements.
  */
 //@ExperimentalContracts
 inline fun <T, U, V, W, R> let(p1: T, p2: U, p3: V, p4: W, block: (T, U, V, W) -> R): R {
@@ -79,9 +79,3 @@ inline fun <T, U, V, W, R> let(p1: T, p2: U, p3: V, p4: W, block: (T, U, V, W) -
 //    }
     return block(p1, p2, p3, p4)
 }
-
-/**
- * Get's the stack frame [numUp] from here.
- */
-fun getCallerStackFrame(numUp: Int = 1): StackTraceElement = Thread.currentThread().stackTrace[numUp + 1]
-

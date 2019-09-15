@@ -5,12 +5,11 @@ package org.futurerobotics.temporaryname.pathing
 import org.futurerobotics.temporaryname.math.DoubleProgression
 import org.futurerobotics.temporaryname.math.function.QuinticSpline
 import org.futurerobotics.temporaryname.math.randomVectorDerivatives
-import org.futurerobotics.temporaryname.pathing.constraint.*
 import org.futurerobotics.temporaryname.pathing.reparam.reparamByIntegration
-import org.futurerobotics.temporaryname.pathing.trajectory.TrajectoryConstraint
+import org.futurerobotics.temporaryname.pathing.trajectory.*
 import org.futurerobotics.temporaryname.profile.MotionProfile
 import org.futurerobotics.temporaryname.profile.MotionProfileGenerator
-import org.futurerobotics.temporaryname.saveTest
+import org.futurerobotics.temporaryname.saveGraph
 import org.futurerobotics.temporaryname.util.stepToAll
 import org.junit.Assume
 import org.junit.Before
@@ -83,7 +82,7 @@ class MotionProfileGraphs(
             marker = None()
             lineWidth = 1f
         }
-        chart.saveTest("Motion Profile and Constraints/$pathNumber/Profile$profileNumber")
+        chart.saveGraph("Motion Profile and Constraints/$pathNumber/Profile$profileNumber")
     }
 
     @Test
@@ -109,7 +108,7 @@ class MotionProfileGraphs(
             marker = None()
             //            toolTips = xs.map { "%.2f".format(it) }.toTypedArray()
         }
-        pathChart.saveTest("Motion Profile and Constraints/$pathNumber/Path")
+        pathChart.saveGraph("Motion Profile and Constraints/$pathNumber/Path")
     }
 
     companion object {
@@ -118,12 +117,12 @@ class MotionProfileGraphs(
         private const val yMax = 5.5
         private val constantConstraints = mutableListOf(
             MotionConstraintSet(
-                TangentVelocityConstraint(5.0),
-                PathAngularVelocityConstraint(1.5),
-                CentripetalAccelConstraint(0.9),
-                TangentAccelConstraint(0.9),
-                TotalAccelConstraint(1.0),
-                RobotAngularAccelConstraint(0.3)
+                MaxVelocityConstraint(5.0),
+                MaxPathAngularVelocityConstraint(1.5),
+                MaxCentripetalAccelConstraint(0.9),
+                MaxTangentAccelConstraint(0.9),
+                MaxTotalAccelerationConstraint(1.0),
+                MaxAngularAccelerationConstraint(0.3)
             )
         ).also {
             it += List(2) {
@@ -133,12 +132,37 @@ class MotionProfileGraphs(
 
         private fun randomConstraints(): MotionConstraintSet {
             return MotionConstraintSet(
-                TangentVelocityConstraint(random.nextDouble(3.0, 5.0)),
-                PathAngularVelocityConstraint(random.nextDouble(0.3, 3.0)),
-                CentripetalAccelConstraint(random.nextDouble(1.0, 3.0)),
-                TangentAccelConstraint(random.nextDouble(1.0, 3.0)),
-                TotalAccelConstraint(random.nextDouble(1.0, 3.0)),
-                RobotAngularAccelConstraint(random.nextDouble(0.5, 2.0))
+                MaxVelocityConstraint(random.nextDouble(3.0, 5.0)),
+                MaxPathAngularVelocityConstraint(
+                    random.nextDouble(
+                        0.3,
+                        3.0
+                    )
+                ),
+                MaxCentripetalAccelConstraint(
+                    random.nextDouble(
+                        1.0,
+                        3.0
+                    )
+                ),
+                MaxTangentAccelConstraint(
+                    random.nextDouble(
+                        1.0,
+                        3.0
+                    )
+                ),
+                MaxTotalAccelerationConstraint(
+                    random.nextDouble(
+                        1.0,
+                        3.0
+                    )
+                ),
+                MaxAngularAccelerationConstraint(
+                    random.nextDouble(
+                        0.5,
+                        2.0
+                    )
+                )
             )
         }
 

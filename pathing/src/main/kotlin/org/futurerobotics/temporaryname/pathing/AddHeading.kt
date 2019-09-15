@@ -3,12 +3,26 @@ package org.futurerobotics.temporaryname.pathing
 import org.futurerobotics.temporaryname.math.Derivatives
 import org.futurerobotics.temporaryname.util.Stepper
 
-/** A path that combines a [Curve] with a [HeadingProvider], to create a Path. */
-class ComponentPath(private val curve: Curve, private val heading: HeadingProvider) : Path {
+/**
+ * Provides heading info to complete a [Curve] into a [Path]
+ * @see ComponentPath
+ */
+interface HeadingProvider {
+
+    /**
+     * Gets a heading's derivatives at the point [s] units along the curve, using info provided by the [CurvePoint] [point]
+     */
+    fun getHeading(point: CurvePoint, s: Double): Derivatives<Double>
+}
+
+/**
+ * A path that combines a [Curve] with a [HeadingProvider], to create a Path.
+ */
+class ComponentPath(internal val curve: Curve, private val heading: HeadingProvider) : Path {
 
     override val length: Double get() = curve.length
-    override fun atLength(s: Double): PathPoint {
-        val point = curve.atLength(s)
+    override fun pointAt(s: Double): PathPoint {
+        val point = curve.pointAt(s)
         return ComponentPathPoint(
             point,
             heading.getHeading(point, s)

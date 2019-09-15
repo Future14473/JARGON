@@ -7,8 +7,8 @@ private sealed class ReverseGeneric<Path : GenericPath<Point>, Point : CurvePoin
     GenericPath<Point> {
 
     final override val length: Double get() = path.length
-    final override fun atLength(s: Double): Point {
-        return mapPoint(path.atLength(length - s))
+    final override fun pointAt(s: Double): Point {
+        return mapPoint(path.pointAt(length - s))
     }
 
     final override fun stepper(): Stepper<Double, Point> {
@@ -43,14 +43,12 @@ private class ReversePathPoint(point: PathPoint) : ReversePoint<PathPoint>(point
 
 private class ReverseCurve(curve: Curve) : ReverseGeneric<Curve, CurvePoint>(curve),
     Curve {
-
     override fun mapPoint(point: CurvePoint): CurvePoint =
         ReverseCurvePoint(point)
 }
 
 private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path),
     Path {
-
     override fun mapPoint(point: PathPoint): PathPoint =
         ReversePathPoint(point)
 
@@ -62,7 +60,7 @@ private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path),
  * Returns this curve, but traversed in the reverse direction.
  * First derivatives will be negated.
  */
-fun Curve.reversed(): Curve = if (this is ReverseGeneric<*, *>) this.path else ReverseCurve(
+fun Curve.reversed(): Curve = if (this is ReverseGeneric<*, *>) this.path.asCurve() else ReverseCurve(
     this
 )
 
@@ -70,6 +68,4 @@ fun Curve.reversed(): Curve = if (this is ReverseGeneric<*, *>) this.path else R
  * Returns this Path, but traversed in the reverse direction.
  * First derivatives will be negated.
  */
-fun Path.reversed(): Curve = if (this is ReversePath) this.path else ReversePath(
-    this
-)
+fun Path.reversed(): Path = if (this is ReversePath) this.path else ReversePath(this)

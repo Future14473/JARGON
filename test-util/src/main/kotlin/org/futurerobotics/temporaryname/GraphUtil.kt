@@ -9,15 +9,28 @@ import org.knowm.xchart.style.markers.SeriesMarkers
 import java.io.File
 import java.nio.file.Paths
 
+/**
+ * The location to store generated graphs.
+ */
 const val GRAPH_DIR: String = "./graphs/"
-fun XYChart.saveTest(name: String) {
+
+/**
+ * Saves this graph at [GRAPH_DIR] location.
+ */
+fun XYChart.saveGraph(name: String) {
     val file = File(Paths.get(GRAPH_DIR, name).toString())
     file.parentFile.mkdirs()
     BitmapEncoder.saveBitmap(this, file.absolutePath, BitmapEncoder.BitmapFormat.PNG)
 }
 
+/**
+ * Utilities for creating graphs.
+ */
 object GraphUtil {
     private val labels = "p0,p1,p2,p3,p4,p5".split(',').toTypedArray()
+    /**
+     * Creates a graph displaying a spline, with control points.
+     */
     fun getSplineGraph(
         steps: Int, vararg pts: Vector2d, toolTip: (Double) -> String? = { null }
     ): XYChart {

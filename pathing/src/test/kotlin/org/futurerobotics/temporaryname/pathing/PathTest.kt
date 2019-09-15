@@ -19,7 +19,7 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
 
     @Test
     fun `Bulk get (getAllPointInfo) and single get (getPointInfo) are same`() {
-        val singleGet = allS.map { path.atLength(it) }
+        val singleGet = allS.map { path.pointAt(it) }
         val bulkGet = path.stepToAll(allS)
         Assert.assertTrue("Size differs", bulkGet.size == singleGet.size)
 

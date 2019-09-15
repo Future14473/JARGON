@@ -6,7 +6,7 @@ package org.futurerobotics.temporaryname.control
  *
  * One of the more basic controllers.
  */
- class BangBangController<State: Comparable<State>, Signal : Any>(
+class BangBangController<State : Comparable<State>, Signal : Any>(
     private val lessThanOutput: Signal,
     private val greaterThanOutput: Signal,
     private val zeroOutput: Signal

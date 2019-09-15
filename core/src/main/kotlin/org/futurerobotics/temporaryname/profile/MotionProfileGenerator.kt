@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 private const val MAX_VEL = 10000.0
 
 /**
- * Generates approximate optimal [MotionProfiled]
+ * Holds the algorithm to generates approximate optimal [MotionProfiled]
  */
 object MotionProfileGenerator {
 
@@ -91,6 +91,7 @@ object MotionProfileGenerator {
         binarySearchTolerance: Double,
         reversed: Boolean
     ) {
+        val tolerance = max(binarySearchTolerance, EPSILON)
         repeat(points.size - 1) {
             var v0 = maxVels[it]
             val accelGetter = accelGetters[it]
@@ -98,17 +99,15 @@ object MotionProfileGenerator {
             var aMax = getAMaxOrNaN(dx, v0, accelGetter, reversed)
             if (aMax.isNaN()) {
                 if (v0 == 0.0) throwBadAccelAt0Vel()
-                val tolerance = max(v0 * binarySearchTolerance, EPSILON)
-                val initialStep = tolerance * BINARY_SEARCH_INITIAL_STEP_RATIO
                 //OH NO, ITS BINARY SEARCH!
                 // heuristic search, typically < 10 iterations, and only occurs when necessary,
                 // and typically happens < 1% of the time
-                v0 = extendingDownDoubleSearch(
-                    0.0, v0 - tolerance, initialStep, tolerance, searchingFor = false
+                val newV0 = extendingDownDoubleSearch(
+                    0.0, v0 - tolerance, tolerance, searchingFor = false
                 ) { v -> getAMaxOrNaN(dx, v, accelGetter, reversed).isNaN() }
-
                 aMax = getAMaxOrNaN(dx, v0, accelGetter, reversed).notNaNOrElse(::throwBadAccelAt0Vel)
-                maxVels[it] = v0 //is new
+                v0 = newV0
+                maxVels[it] = newV0 //is new
             }
             val v1 = sqrt(v0.squared() + 2 * aMax * dx).notNaNOrElse { 0.0 }
             val actualV1 = min(v1, maxVels[it + 1])
@@ -119,7 +118,7 @@ object MotionProfileGenerator {
     private fun throwBadAccelAt0Vel(): Nothing =
         throw RuntimeException(
             "Unsatisfiable constraints: The current constraints's acceleration did not return a non-empty interval" +
-                    "even at a given velocity of 0.0."
+                    " even at a given velocity of 0.0."
         )
 
     private fun getAMaxOrNaN(dx: Double, v: Double, accelGetter: PointConstraint, reversed: Boolean): Double {

@@ -4,7 +4,7 @@ This is a (currently ) work in progress robotics library that is originally for 
 control systems in FTC; it can theoretically be used beyond that.
 
 
-This library will be extensively used by Future Robotics, Team 14473, in the upcoming 2019-2020 Skystone competitions.
+This library will be extensively used by Future Robotics, Team 14473, in the upcoming 2019-2020 SkyStone competitions.
 
 
 _This may possibly be de-branded from Future robotics in the future._ No pun intended.
@@ -29,7 +29,7 @@ _This may possibly be de-branded from Future robotics in the future._ No pun int
 - Tutorial/documentation
 - Short papers enplaning all the math used
 - OpenCV frameworks
-- Visual interface (but thats like GUI stuff which takes time)
+- Visual interface (but that's like GUI stuff which takes time)
 
 
 #### Principles of design:

@@ -2,13 +2,11 @@ package org.futurerobotics.temporaryname.pathing.trajectory
 
 import org.futurerobotics.temporaryname.math.Pose2d
 import org.futurerobotics.temporaryname.math.epsEq
+import org.futurerobotics.temporaryname.math.squared
 import org.futurerobotics.temporaryname.mechanics.LinearState
 import org.futurerobotics.temporaryname.mechanics.State
 import org.futurerobotics.temporaryname.mechanics.ValueState
-import org.futurerobotics.temporaryname.pathing.Path
-import org.futurerobotics.temporaryname.pathing.PathPoint
-import org.futurerobotics.temporaryname.pathing.pose
-import org.futurerobotics.temporaryname.pathing.poseDeriv
+import org.futurerobotics.temporaryname.pathing.*
 import org.futurerobotics.temporaryname.profile.MotionProfile
 import org.futurerobotics.temporaryname.profile.MotionProfiled
 import org.futurerobotics.temporaryname.util.Stepper
@@ -41,11 +39,11 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
     }
 
     /**
-     * Gets the [PoseMotionState] after the specified [time] traversing this trajectory.
+     * Gets the [State] of Poses after the specified [time] traversing this trajectory.
      */
     override fun atTime(time: Double): State<Pose2d> {
         val state = profile.atTime(time)
-        val point = path.atLength(state.s)
+        val point = path.pointAt(state.s)
         return getState(state, point)
     }
 
@@ -60,6 +58,13 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
     }
 
     private fun getState(state: LinearState, point: PathPoint): State<Pose2d> {
-        return ValueState(point.pose, point.poseDeriv * state.v, TODO())
+        val pose = point.pose
+        val poseDeriv = point.poseDeriv
+        val poseSecondDeriv = point.poseSecondDeriv
+        return ValueState(
+            pose,
+            poseDeriv * state.v,
+            poseSecondDeriv * state.v.squared() + poseDeriv * state.a
+        )
     }
 }

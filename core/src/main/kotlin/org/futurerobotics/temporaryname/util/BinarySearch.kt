@@ -11,13 +11,12 @@ import org.futurerobotics.temporaryname.math.avg
  * If, however, the partition point does not exist within the given range, one of the endpoints will be returned instead.
  *
  * This behaves with the same contract that [doubleBinarySearch] does, however: This is faster when given the heuristic
- * that the partition point is close to [rangeMin]. For best performance, [initialStep] should be slightly smaller than
- * the estimated difference from the partition point to [rangeMin].
+ * that the partition point is close to [rangeMin].
  *
  * See [extendingDownDoubleSearch] for a version that works with the heuristic that the partition point is close to
  * [rangeMax] instead of [rangeMin]
  *
- * This works by first looking at the interval starting at [rangeMin], and upwards a step of [initialStep].
+ * This works by first looking at the interval starting at [rangeMin], and upwards a step of [tolerance].
  * If both endpoints returns false (`x` is not in this interval), this then looks at another interval from the end of the
  * old interval and a step double the size. This is repeated until an interval switches [partition] is found (`x` is in
  * the interval), then performs normal binary search on the new interval.
@@ -25,24 +24,22 @@ import org.futurerobotics.temporaryname.math.avg
  * _This has not been tested with extreme values (where excessive rounding may occur). It is the user's responsibility
  * to make sure that the Double values provided are in close enough of magnitude._
  *
- * This takes `O(log((x-initialValue)/initialStep)+log(x-initialValue)/tolerance)))`
+ * This takes `O(log((x-initialValue)/tolerance))`
  * @see extendingDownDoubleSearch
  */
 inline fun extendingDoubleSearch(
     rangeMin: Double,
     rangeMax: Double,
-    initialStep: Double,
-    tolerance: Double = initialStep,
+    tolerance: Double,
     searchingFor: Boolean = false,
     partition: (Double) -> Boolean
 ): Double {
     require(rangeMin <= rangeMax) { "rangeMin ($rangeMin) must be <= rangeMax ($rangeMax)" }
-    require(initialStep > 0) { "initialStep ($initialStep) must be > 0" }
     require(tolerance > 0) { "tolerance ($tolerance) must be > 0" }
     if (rangeMin == rangeMax) return rangeMin
     if (partition(rangeMin)) return rangeMin
     var lower = rangeMin
-    var step = initialStep
+    var step = tolerance
     var upper: Double
     while (true) {
         upper = lower + step
@@ -68,21 +65,19 @@ inline fun extendingDoubleSearch(
  *
  * _This has not been tested with extreme values (where excessive rounding may occur)._
  */
-/*inline*/ fun extendingDownDoubleSearch(
+inline fun extendingDownDoubleSearch(
     rangeMin: Double,
     rangeMax: Double,
-    initialStep: Double,
-    tolerance: Double = initialStep,
+    tolerance: Double,
     searchingFor: Boolean = false,
     partition: (Double) -> Boolean
 ): Double {
     require(rangeMin <= rangeMax) { "rangeMin ($rangeMin) must be <= rangeMax ($rangeMax)" }
-    require(initialStep > 0) { "initialStep ($initialStep) must be > 0" }
     require(tolerance > 0) { "tolerance ($tolerance) must be > 0" }
     if (rangeMax == rangeMin) return rangeMax
     var upper = rangeMax
     if (!partition(rangeMax)) return rangeMax
-    var step = initialStep
+    var step = tolerance
     var lower: Double
     while (true) {
         lower = upper - step

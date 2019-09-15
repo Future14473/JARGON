@@ -40,17 +40,19 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
      */
     val angle: Double get() = atan2(y, x)
 
-    operator fun plus(v: Vector2d): Vector2d = Vector2d(x + v.x, y + v.y)
-    operator fun minus(v: Vector2d): Vector2d = Vector2d(x - v.x, y - v.y)
+    operator fun plus(other: Vector2d): Vector2d = Vector2d(x + other.x, y + other.y)
+    operator fun minus(other: Vector2d): Vector2d = Vector2d(x - other.x, y - other.y)
     operator fun times(v: Double): Vector2d = Vector2d(x * v, y * v)
     operator fun times(v: Int): Vector2d = Vector2d(x * v, y * v)
     operator fun div(v: Double): Vector2d = Vector2d(x / v, y / v)
     operator fun div(v: Int): Vector2d = Vector2d(x / v, y / v)
     operator fun unaryMinus(): Vector2d = Vector2d(-x, -y)
+    /** Dot product. */
     infix fun dot(v: Vector2d): Double = x * v.x + y * v.y
+
     /**
      * Returns the z component of the cross product between `this` and [v],
-     *  interpreted as 3d vectors with a z component of 0.
+     * interpreted as 3d vectors with a z component of 0.
      */
     infix fun cross(v: Vector2d): Double = x * v.y - y * v.x
 
@@ -70,7 +72,7 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
     infix fun crossz(z: Double): Vector2d = Vector2d(y * z, -x * z)
 
     /**
-     * @return `||this||^[power]: the length of this vector to the specified power.
+     * `||this||^[power]: the length of this vector to the specified power.
      */
     fun lengthPow(power: Double): Double = lengthSquared.pow(power / 2)
 
@@ -141,6 +143,7 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
          * @param random the [Random] to use
          * @param range the range of values for x and y
          */
+        @JvmOverloads
         @JvmStatic
         fun random(random: Random, range: Double = 1.0): Vector2d =
             Vector2d(random.nextDouble(-range, range), random.nextDouble(-range, range))

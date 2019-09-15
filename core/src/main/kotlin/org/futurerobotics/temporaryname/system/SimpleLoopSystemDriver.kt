@@ -12,7 +12,7 @@ object SimpleLoopSystemDriver {
     fun runUntilCompletion(system: LoopBasedSystem) {
         try {
             while (true) {
-                if (!system.tick()) break
+                if (!system.tick() || Thread.interrupted()) break
             }
         } finally {
             system.stop()
@@ -26,7 +26,7 @@ object SimpleLoopSystemDriver {
     fun runMaxIterations(system: LoopBasedSystem, maxIterations: Int) {
         try {
             repeat(maxIterations) {
-                if (!system.tick()) return
+                if (!system.tick() || Thread.interrupted()) return
             }
         } finally {
             system.stop()

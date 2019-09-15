@@ -1,3 +1,5 @@
+@file:Suppress("KDocMissingDocumentation", "PublicApiImplicitType")
+
 val ext = project.rootProject.extra
 val junit: String by ext
 val xchart: String by ext

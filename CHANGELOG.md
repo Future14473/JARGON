@@ -11,6 +11,11 @@ At that point, a new changelog will be made and this will be renamed to old_chan
 ### Changed
 - MotionState is now State; and an interface; ValueMotion and ValueState are implementations.
 - Replace `Stopwatch` with `LoopRegulator`
+- Ditch Path is-a curve and create `asCurve` extension function instead.
+- Improved docs everywhere
+- Renamed a few things
+### Fixed
+- A lot of random things
 
 ## [Early3] 9/14/2019
 ### Changed

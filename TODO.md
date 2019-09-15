@@ -1,12 +1,3 @@
-General
--
-- Proofread, document, and defensive everything
-- @JvmOverloads, @JvmStatic
-- equals, hashCode, and toString
-- Double check SOLID, DRY, YAGNI (about the last one...)
-- typealiases or subclassing to consolidate types? (sorry java peeps)
-- What to do about path is-a curve
-
 Simulations
 -
 - Model error, measurement/actuation error
@@ -28,16 +19,15 @@ Control systems
     - Gryos
     - Odometry wheels
     - Camera or manual injection
-- Weird reference tracker thing: Generics or not?
 
 Pathing
 -
 - Model based constraints
     - Max motor velocity, acceleration <--> torque, voltage, current?
 - PathGraph
-    - kotlin DSL
+    - kotlin DSL, java builder
 - Dynamic Path/Trajectory generation
-- State insertion (for example with open CV)
+- State insertion (for example with CV)
 
 Systems
 -
@@ -46,3 +36,4 @@ Systems
     - Master/slave integrating into ^ with commands
     - Better executors and/or kotlin coroutines (sorry java peeps)
     - Integrate control systems within above
+- Tests

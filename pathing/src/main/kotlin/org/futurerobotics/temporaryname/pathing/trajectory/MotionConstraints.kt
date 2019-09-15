@@ -1,4 +1,4 @@
-package org.futurerobotics.temporaryname.pathing.constraint
+package org.futurerobotics.temporaryname.pathing.trajectory
 
 import org.futurerobotics.temporaryname.math.EPSILON
 import org.futurerobotics.temporaryname.math.Interval
@@ -11,7 +11,7 @@ import kotlin.math.sqrt
 /**
  * A constraint on _path_ tangent velocity, not allowing a motion that travels faster than [max] along the curve.
  */
-class TangentVelocityConstraint(max: Double) : MaxBasedVelocityConstraint(max) {
+class MaxVelocityConstraint(max: Double) : MaxBasedVelocityConstraint(max) {
 
     override fun maxVelocity(point: PathPoint): Double = max
 }
@@ -19,10 +19,10 @@ class TangentVelocityConstraint(max: Double) : MaxBasedVelocityConstraint(max) {
 /**
  * A constraint on _path_ tangent acceleration, not allowing a motion that accelerates more than [max]
  * _in the direction tangent to the curve_.
- * @see CentripetalAccelConstraint
- * @see TotalAccelConstraint
+ * @see MaxCentripetalAccelConstraint
+ * @see MaxTotalAccelerationConstraint
  */
-class TangentAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) {
+class MaxTangentAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) {
 
     private val interval = Interval.symmetric(max)
 
@@ -42,10 +42,10 @@ class TangentAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) {
  *
  * Since centripetal acceleration is only dependent on velocity, this is actually a [VelocityConstraint]
  *
- * @see TangentAccelConstraint
- * @see TotalAccelConstraint
+ * @see MaxTangentAccelConstraint
+ * @see MaxTotalAccelerationConstraint
  */
-class CentripetalAccelConstraint(max: Double) : MaxBasedVelocityConstraint(max) {
+class MaxCentripetalAccelConstraint(max: Double) : MaxBasedVelocityConstraint(max) {
 
     override fun maxVelocity(point: PathPoint): Double {
         //a_c = v^2*c <= max
@@ -58,13 +58,15 @@ class CentripetalAccelConstraint(max: Double) : MaxBasedVelocityConstraint(max) 
  * Represents a constraint on total acceleration, not allowing a motion that has a total acceleration in any direction
  * more than [max]. This is centripetal and tangential combined.
  */
-class TotalAccelConstraint(max: Double) : MultipleConstraint() {
+class MaxTotalAccelerationConstraint(max: Double) : MultipleConstraint() {
 
     override val velocityConstraints: Collection<VelocityConstraint> = listOf(
-        CentripetalAccelConstraint(max)
+        MaxCentripetalAccelConstraint(max)
     )
     override val accelConstraints: Collection<AccelConstraint> = listOf(
-        DynamicTangentalAccelConstraint(max)
+        DynamicTangentalAccelConstraint(
+            max
+        )
     )
 
     init {
@@ -85,7 +87,7 @@ class TotalAccelConstraint(max: Double) : MultipleConstraint() {
  * Represents a constraint on angular velocity _by the path's tangent_, not allowing a motion that has an angular velocity of a magnitude
  * greater than [max].
  */
-class PathAngularVelocityConstraint(max: Double) : MaxBasedVelocityConstraint(max) {
+class MaxPathAngularVelocityConstraint(max: Double) : MaxBasedVelocityConstraint(max) {
 
     override fun maxVelocity(point: PathPoint): Double = abs(max / point.tanAngleDeriv)
 }
@@ -94,7 +96,7 @@ class PathAngularVelocityConstraint(max: Double) : MaxBasedVelocityConstraint(ma
  * Represents a constraint on angular velocity _by the path's tangent_, not allowing a motion that has an angular acceleration of a magnitude
  * greater than [max].
  */
-class PathAngularAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) {
+class MaxPathAngularAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) {
 
     override fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval {
         //second derivative chain rule, solve for s''(t)
@@ -109,7 +111,7 @@ class PathAngularAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) {
  * Represents a constraint on angular velocity _by the heading (of the actual robot)_, not allowing a motion that has an angular velocity of a magnitude
  * greater than [max].
  */
-class RobotAngularVelocityConstraint(max: Double) : MaxBasedVelocityConstraint(max) {
+class MaxAngularVelocityConstraint(max: Double) : MaxBasedVelocityConstraint(max) {
 
     override fun maxVelocity(point: PathPoint): Double = abs(max / point.headingDeriv)
 }
@@ -118,7 +120,7 @@ class RobotAngularVelocityConstraint(max: Double) : MaxBasedVelocityConstraint(m
  * Represents a constraint on angular acceleration _by the heading (of the actual robot)_, not allowing a motion that has an angular acceleration of a magnitude
  * greater than [max].
  */
-class RobotAngularAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) {
+class MaxAngularAccelerationConstraint(max: Double) : MaxBasedAccelConstraint(max) {
 
     override fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval {
         val deriv = point.headingDeriv

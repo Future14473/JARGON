@@ -1,4 +1,4 @@
-package org.futurerobotics.temporaryname.pathing.constraint
+package org.futurerobotics.temporaryname.pathing.trajectory
 
 import org.futurerobotics.temporaryname.math.Interval
 import org.futurerobotics.temporaryname.pathing.PathPoint
@@ -18,18 +18,12 @@ sealed class MotionConstraint
 sealed class SingleConstraint : MotionConstraint() {
 
     /**
-     * Compares motion constraints, to remove redundant ones if multiple are added.
+     * Compares this constraint to another constraint; and returns true if it is known that this constraint is always
+     * more or equally restrictive compared to [other] constraint (other constraint is redundant).
      *
-     * Similar to compare to,
-     *
-     * If this returns a negative number, then this constraint is less than (always more restrictive) than the other,
-     * and so only this constraint will be used.
-     *
-     * If returns positive, vice versa.
-     *
-     * If returns 0, no constraints will be removed. Return 0 if not of the same type.
+     * If now known, return false.
      */
-    open fun compareConstraints(other: MotionConstraint): Int = 0
+    open fun otherIsRedundant(other: MotionConstraint): Boolean = false
 }
 
 /**
@@ -59,7 +53,11 @@ abstract class AccelConstraint : SingleConstraint() {
      */
     abstract fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval
 }
-
+//
+//interface JerkConstraint {
+//   Algorithm does not yet support this, and theoretically it would be slow.
+//   Instead, possible non-dynamic profiles or CONSTANT jerk constraint used instead.
+//}
 /**
  * Represents a constraint that needs to be represented by both one or more of [VelocityConstraint] and [AccelConstraint] together.
  */
@@ -70,10 +68,7 @@ abstract class MultipleConstraint : MotionConstraint() {
     /** Th [AccelConstraint] components of this multiple constraint */
     abstract val accelConstraints: Collection<AccelConstraint>
 }
-//
-//interface JerkConstraint {
-//   Algorithm does not yet support this, and theoretically it would be slow.
-//}
+
 /**
  * A base implementation of a [VelocityConstraint] based upon some positive max value, where if the maximum value is lower, it
  * implies more restrictive constraint.
@@ -86,10 +81,8 @@ abstract class MaxBasedVelocityConstraint(protected val max: Double) : VelocityC
         require(max > 0) { "Max value $max gives impossible constraint" }
     }
 
-    override fun compareConstraints(other: MotionConstraint): Int {
-        if (other !is MaxBasedVelocityConstraint || this::class != other::class) return 0
-        return max.compareTo(other.max)
-    }
+    override fun otherIsRedundant(other: MotionConstraint): Boolean =
+        other is MaxBasedVelocityConstraint && this.javaClass == other.javaClass && this.max <= other.max
 
     override fun toString(): String = "${(javaClass.simpleName ?: "anonymous AccelConstraint")}(max=$max)"
 }
@@ -106,10 +99,8 @@ abstract class MaxBasedAccelConstraint(protected val max: Double) : AccelConstra
         require(max > 0) { "Max value $max gives impossible constraint" }
     }
 
-    override fun compareConstraints(other: MotionConstraint): Int {
-        if (other !is MaxBasedAccelConstraint || this::class != other::class) return 0
-        return max.compareTo(other.max)
-    }
+    override fun otherIsRedundant(other: MotionConstraint): Boolean =
+        other is MaxBasedAccelConstraint && this.javaClass == other.javaClass && this.max <= other.max
 
     override fun toString(): String = "${(javaClass.simpleName ?: "anonymous AccelConstraint")}(max=$max)"
 }

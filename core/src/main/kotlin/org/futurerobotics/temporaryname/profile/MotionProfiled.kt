@@ -5,8 +5,7 @@ import org.futurerobotics.temporaryname.util.Steppable
 import org.futurerobotics.temporaryname.util.Stepper
 
 /**
- * Represents something that has been profiled with a MotionProfile over time,
- * returning [State]s as a representation of motion states.
+ * Represents a transformed motion of a [MotionProfile], returning some representation of [State] over time.
  */
 interface MotionProfiled<out State> : Steppable<Double, State> {
 
@@ -24,7 +23,9 @@ interface MotionProfiled<out State> : Steppable<Double, State> {
 }
 
 /**
- * A [MotionProfiled] for one-dimensional motion (state type [LinearState])
+ * Represents a Motion Profile: a graph/profile of velocity (and position and acceleration) over time or distance.
+ *
+ * This is also a [MotionProfiled] for one-dimensional motion (state type [LinearState])
  */
 interface MotionProfile : MotionProfiled<LinearState> {
 
@@ -34,7 +35,7 @@ interface MotionProfile : MotionProfiled<LinearState> {
     val distance: Double
 
     /**
-     * Returns the [State] of this motion profile after traveling a distance of [distance]
+     * Returns the [LinearState] of this motion profile after traveling a distance of [distance]
      */
     fun atDistance(distance: Double): LinearState
 }

@@ -3,7 +3,6 @@ package org.futurerobotics.temporaryname.pathing.trajectory
 import org.futurerobotics.temporaryname.math.Interval
 import org.futurerobotics.temporaryname.pathing.Path
 import org.futurerobotics.temporaryname.pathing.PathPoint
-import org.futurerobotics.temporaryname.pathing.constraint.MotionConstraintSet
 import org.futurerobotics.temporaryname.profile.MotionProfileConstrainer
 import org.futurerobotics.temporaryname.profile.PointConstraint
 import org.futurerobotics.temporaryname.util.Stepper

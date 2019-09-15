@@ -4,13 +4,13 @@ import org.futurerobotics.temporaryname.math.Vector2d
 import org.futurerobotics.temporaryname.math.epsEq
 
 /**
- * A wheel model for a wheel on a bot that cannot change location or direction.
+ * A model for a wheel on a bot that cannot change location or direction on the bot.
  *
  * @param transmission the transmission model
  * @param position where the wheel is located on a bot relative to the center of the bot
  * @param radius the wheel's radius
  * @param orientation a unit vector in the direction the wheel is facing, such that a positive transmission torque results
- *                          in a force applied to the bot in that direction. Directly north, in most cases.
+ *                     in a force applied to the bot in that direction. Directly north, in most cases.
  */
 data class FixedWheelModel(
     val transmission: TransmissionModel,

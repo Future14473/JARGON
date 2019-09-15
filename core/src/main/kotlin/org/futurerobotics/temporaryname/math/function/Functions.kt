@@ -54,12 +54,9 @@ interface VectorFunction {
  * @property y the y component function
  */
 open class ComponentVectorFunction(protected val x: MathFunction, protected val y: MathFunction) : VectorFunction {
-
     override fun vec(t: Double): Vector2d = Vector2d(x(t), y(t))
     override fun vecDeriv(t: Double): Vector2d = Vector2d(x.deriv(t), y.deriv(t))
     override fun vecSecondDeriv(t: Double): Vector2d = Vector2d(x.secondDeriv(t), y.secondDeriv(t))
     override fun vecThirdDeriv(t: Double): Vector2d = Vector2d(x.thirdDeriv(t), y.thirdDeriv(t))
-    override fun toString(): String {
-        return "ComponentVecFunc(x: $x, y: %y)"
-    }
+    override fun toString(): String = "ComponentVecFunc(x: $x, y: $y)"
 }

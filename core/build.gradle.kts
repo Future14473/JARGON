@@ -1,3 +1,5 @@
+@file:Suppress("PublicApiImplicitType", "KDocMissingDocumentation")
+
 val ext = project.rootProject.extra
 val junit: String by ext
 val koma: String by ext

@@ -5,21 +5,26 @@ import org.futurerobotics.temporaryname.mechanics.State
 import org.futurerobotics.temporaryname.system.StartStoppable
 
 /**
- * A [ReferenceTracker] is the "root" of a ControlSystem.
+ * A [ReferenceTracker] is the "root" component of a control system. Control systems in this library have exactly one of
+ * these.
  *
- * It provides the root [Reference] (desired state, fed into a [Controller]),
- * and is inputted [State]s (from a [Observer]) to update the reference, if the reference is dynamic.
+ * In signaling, it provides the root [Reference] (the desired state, fed into a [Controller]).
+ * On feedback, it is inputted the current [State] (from a [Observer]) to update the reference,
+ * if the reference is dynamic and depends on the state.
  *
- * This is also [StartStoppable]; and attempting to access [reference] before calling [update] when this has
- * just started may throw an exception.
+ * This is also [StartStoppable]. Attempting to access [reference] before calling [update] when this component has
+ * just started may throw [IllegalStateException]
  *
  * This is also responsible for stopping the system if the state has reached the reference within tolerable levels
  * _and_ it is safe to stop the system.
  *
- * Both [SimpleControlSystem]s and [ChainedControlSystem]s only have one of these at its root.
- *
  * The [Reference] is usually the same as the [State], or some representation of the [State] along with derivative values
  * used for reference dynamic feed-forward.
+ *
+ * @see BaseReferenceTracker
+ * @see StandardReferenceTracker
+ * @see SimpleControlSystem
+ * @see ChainedControlSystem
  */
 interface ReferenceTracker<in State : Any, out Reference : Any> : StartStoppable {
 
@@ -30,6 +35,7 @@ interface ReferenceTracker<in State : Any, out Reference : Any> : StartStoppable
      *                               enough information to produce a reference
      */
     val reference: Reference
+
     /**
      * Polls if, by the previous call to [update], the state has reached the desired state within acceptable levels
      * and so we can stop the system, _and_ it is safe to stop the system and the state will stay by the reference.
@@ -37,20 +43,23 @@ interface ReferenceTracker<in State : Any, out Reference : Any> : StartStoppable
     val isDone: Boolean
 
     /**
-     * Given the new current [State], updates the [reference]
+     * Given the new [currentState] and the elapsed time ([elapsedSeconds]), updates the [reference]
      *
      * [elapsedSeconds] will be NaN on first iteration of the control loop.
      */
     fun update(currentState: State, elapsedSeconds: Double)
 }
 
-/** The standard reference tracker; takes a value to update and outputs [State] of that value. */
+/**
+ * The standard reference tracker. It takes a [Value] to update and outputs [State] of that value.
+ * @see BaseStandardReferenceTracker
+ */
 interface StandardReferenceTracker<Value : Any> : ReferenceTracker<Value, State<Value>>
 
 
 /**
- * Base implementation of a [ReferenceTracker] where only a [getReference] function that returns reference is needed;
- * automatically stores reference.
+ * Base implementation of a [ReferenceTracker] where only a [getReference] function that returns reference is needed.
+ * Automatically stores said reference.
  *
  * Use [invalidateReference] to invalidate the reference (on start/stop).
  */
@@ -58,7 +67,7 @@ abstract class BaseReferenceTracker<State : Any, Reference : Any> : ReferenceTra
 
     private var _reference: Reference? = null
     /**
-     * Given the new current [State], returns the [reference]
+     * Given the new [currentState] and the elapsed time ([elapsedSeconds]), returns a [Reference]
      *
      * [elapsedSeconds] will be NaN on first iteration of the control loop.
      */
@@ -80,7 +89,7 @@ abstract class BaseReferenceTracker<State : Any, Reference : Any> : ReferenceTra
 }
 
 /**
- * A base implementation of [StandardReferenceTracker]; only here for convenience of naming.
+ * A base implementation of [StandardReferenceTracker]. Only here for convenience of naming.
  *
  * @see BaseReferenceTracker
  */
@@ -89,7 +98,7 @@ abstract class BaseStandardReferenceTracker<Value : Any> :
 
 /**
  * A [ReferenceTracker] in which the user sets reference manually,
- * and does not respond dynamically to inputted [State]s.
+ * and does not respond to inputted [State]s.
  */
 class ManualReferenceTracker<State : Any, Reference : Any>(
     @Volatile override var reference: Reference,
@@ -102,8 +111,11 @@ class ManualReferenceTracker<State : Any, Reference : Any>(
 }
 
 /**
- * The [Plant] is the "end" of a control system;
- * i.e. representing the actuators (motors and such) and measurement devices (encoders, gyro, tracking, etc).
+ * A [Plant] is the "end" component of a control system. Control systems in this library have exactly one of these.
+ *
+ *
+ * This representing the actuators (motors and such) and measurement devices (encoders, gyro, tracking, etc):
+ * _the actual hardware, not just a model_
  *
  * This takes in [Signal]s (from a [Controller]) to set to the actuators,
  * and provides the [Measurement]s used for feedback and state estimation (used by [Observer]s).
@@ -115,7 +127,7 @@ class ManualReferenceTracker<State : Any, Reference : Any>(
 interface Plant<in Signal : Any, out Measurement : Any> : StartStoppable {
 
     /**
-     * Returns a [Measurement]; should be calculated on each get; or else stored based on the last call to [signal]
+     * Returns a [Measurement]. This should be calculated on each get; or else stored based on the last call to [signal]
      */
     val measurement: Measurement
 
@@ -131,35 +143,34 @@ interface Plant<in Signal : Any, out Measurement : Any> : StartStoppable {
 /**
  * Represents the controller component of a control system.
  *
- * This is an intermediary in signaling, in which a reference from a [ReferenceTracker] eventually turns into a signal fed into
- * a [Plant].
+ * This is an intermediary in signaling, in which a reference from a [ReferenceTracker] eventually turns into a signal
+ * fed into a [Plant].
  *
  * It takes in a [Reference] state (given from a [ReferenceTracker] or another [Controller] (explained below)),
- * and measured/estimated [State]s (as given from a [Observer]), and produces a [Signal] (with the goal of
- * moving the current [State] to the [Reference]).
+ * and measured/estimated [State] (as given from a [Observer]), and produces a [Signal] with the goal of
+ * moving the current [State] to the [Reference].
  *
- * This is also [StartStoppable]; and attempting to access [signal] before calling [update] when this has
- * just started may throw an exception.
+ * This is also [StartStoppable]. Attempting to access [signal] before calling [update] when this has
+ * just started may throw [IllegalStateException]
  *
  * ***Important***:
  * See [ChainedControlSystem] for more info on how controllers/observers can be chained.
  *
  * A control system can have one or more _links_, each with a [Controller] and a [Observer], that
- * work can work with different [State]/[Reference] representations.
+ * work can work with different [State] representations.
  * In this case, the output signal of the previous controller becomes the reference for the next link's controller.
  */
 interface Controller<in Reference : Any, in State : Any, out Signal : Any> : StartStoppable {
 
     /**
-     * The current signal, as calculated from the last call to [update]; or whatever represents "no signal" if
-     * [update] has never been called at the last call to [StartStoppable.start]
+     * The current signal, as calculated from the last call to [update].
      *
      * @throws IllegalStateException if trying to access before [update] had been called, when system just started.
      */
     val signal: Signal
 
     /**
-     * Given the [currentState] state, the [reference] state, and the elapsedTime in nanoseconds [elapsedSeconds],
+     * Given the [currentState] state, the [reference] state, and the elapsedTime ([elapsedSeconds]),
      * updates [signal] to produce a signal intended to drive the current state to the [reference].
      *
      * [elapsedSeconds] will be NaN on the first iteration of the control loop.
@@ -168,7 +179,7 @@ interface Controller<in Reference : Any, in State : Any, out Signal : Any> : Sta
 }
 
 /**
- * Convenience extension function for both update and get signal at once
+ * Convenience extension function for both update and get signal at once.
  */
 fun <Reference : Any, State : Any, Signal : Any> Controller<Reference, State, Signal>.updateAndGetSignal(
     reference: Reference,
@@ -179,20 +190,22 @@ fun <Reference : Any, State : Any, Signal : Any> Controller<Reference, State, Si
     return signal
 }
 
-/** The the standard controller; that works with the [State] of a value as it's reference. */
-interface StandardController<Value : Any, Signal : Any> : Controller<State<Value>, Value, Signal>
+/**
+ * The the standard controller. It works with the [State] of a value as it's reference.
+ */
+typealias StandardController<Value, Signal> = Controller<State<Value>, Value, Signal>
 
 /**
- * A pass through controller; which is usually used in chained control systems;
+ * A pass through controller; which is usually used in chained control systems.
  *
  * It's output is a [Motion] which is the controller's corrective measure operating only on the current
- * position AND the reference's motion combined.
+ * position _and_ the reference's motion combined.
  */
-interface PassingMotionController<Value : Any> : StandardController<Value, Motion<Value>>
+typealias PassingMotionController<Value> = StandardController<Value, Motion<Value>>
 
 /**
- * Base implementation of a [Controller] where only a [getSignal] function that returns a signal is needed;
- * automatically stores signal.
+ * Base implementation of a [Controller] where only a [getSignal] function that returns a signal is needed.
+ * Automatically stores signal.
  *
  * Use [invalidateSignal] to invalidate the signal (on start/stop).
  */
@@ -201,7 +214,7 @@ abstract class BaseController<in Reference : Any, in State : Any, Signal : Any> 
 
     private var _signal: Signal? = null
     /**
-     * Given the [currentState] state, the [reference] state, and the elapsedTime in nanoseconds [elapsedSeconds],
+     * Given the [currentState], the [reference], and the elapsed time ([elapsedSeconds]),
      * returns a signal intended to drive the current state to the [reference].
      *
      * [elapsedSeconds] of -1 indicates the first iteration of the control loop.
@@ -209,7 +222,7 @@ abstract class BaseController<in Reference : Any, in State : Any, Signal : Any> 
     protected abstract fun getSignal(reference: Reference, currentState: State, elapsedSeconds: Double): Signal
 
     /**
-     * Invalidates signal, call on [start]/[stop]
+     * Invalidates signal, call on [start].
      */
     protected fun invalidateSignal() {
         _signal = null
@@ -222,31 +235,28 @@ abstract class BaseController<in Reference : Any, in State : Any, Signal : Any> 
         _signal = this.getSignal(reference, currentState, elapsedSeconds)
     }
 
-    override fun stop() {
+    override fun start() {
         invalidateSignal()
     }
 }
 
 /**
- * Base implementation of the [StandardController]. Only here for convenience of naming.
+ * Typealias for base implementation of [StandardController].
+ * @see [BaseController]
+ */
+typealias BaseStandardController<Value, Signal> = BaseController<State<Value>, Value, Signal>
+
+/**
+ * Typealias for base implementation of [PassingMotionController].
  *
  * @see [BaseController]
  */
-abstract class BaseStandardController<Value : Any, Signal : Any> :
-    BaseController<State<Value>, Value, Signal>(), StandardController<Value, Signal>
+typealias BasePassingMotionController<Value> = BaseController<State<Value>, Value, Motion<Value>>
 
 /**
- * Base implementation of the [PassingMotionController]. Only here for convenience of naming.
+ * A [Controller] that does not take into account the current state, i.e. a open loop control system.
  *
- * @see [BaseController]
- */
-abstract class BasePassingMotionController<Value : Any> :
-    BaseController<State<Value>, Value, Motion<Value>>(), PassingMotionController<Value>
-
-/**
- * A [Controller] that does not take into account the current state; i.e. a open loop control system.
- *
- * This can be paired with a [DirectObserver] is state needs to be passed on.
+ * This can be paired with a [DirectObserver] in chained control systems if state needs to be passed on.
  */
 abstract class OpenController<in Reference : Any, Signal : Any> :
     BaseController<Reference, Any, Signal>() {
@@ -265,7 +275,7 @@ abstract class OpenController<in Reference : Any, Signal : Any> :
      */
     protected abstract fun getSignal(reference: Reference, elapsedSeconds: Double): Signal
 
-    override fun stop() {
+    override fun start() {
         invalidateSignal()
     }
 }
@@ -276,15 +286,14 @@ abstract class OpenController<in Reference : Any, Signal : Any> :
 class DirectController<Reference : Any> : OpenController<Reference, Reference>() {
 
     override fun getSignal(reference: Reference, elapsedSeconds: Double): Reference = reference
-    override fun start() {
-        stop()
+    override fun stop() {
     }
 }
 
 /**
  * Represents the observer component of a control system.
  *
- * This is an intermediary in feedback, in which measurements from a [Plant] eventually estimate the current [State]
+ * This is an intermediary in feedback, in which measurements from a [Plant] eventually estimate the current [State].
  *
  * It takes in a [Measurement] state (measured from a [Plant] or another [Observer] (explained below)),
  * and also the last [Signal] last used (as given from a [Controller], used to account for possible feed-through or
@@ -337,7 +346,7 @@ fun <Measurement : Any, Signal : Any, State : Any> Observer<Measurement, Signal,
 
 /**
  * Base implementation of a [Controller] where only a [getState] function that returns estimated state needed;
- * automatically stores signal.
+ * Automatically stores state.
  *
  * [state] can manually set on [start] or construction, too.
  *
@@ -356,7 +365,7 @@ abstract class BaseObserver<in Measurement : Any, in Signal : Any, State : Any> 
     protected abstract fun getState(measurement: Measurement, lastSignal: Any, elapsedSeconds: Double): State
 
     /**
-     * Invalidates state; call on [start]/[stop]
+     * Invalidates state; _possibly_ call on [start]/[stop]
      */
     protected fun invalidateState() {
         _state = null
@@ -383,12 +392,14 @@ abstract class BaseObserver<in Measurement : Any, in Signal : Any, State : Any> 
 class DirectObserver<State : Any> :
     BaseObserver<State, Any, State>() {
 
-    override fun start() {}
     override fun getState(measurement: State, lastSignal: Any, elapsedSeconds: Double): State {
         return measurement
     }
 
-    override fun stop() {
+    override fun start() {
         invalidateState()
+    }
+
+    override fun stop() {
     }
 }

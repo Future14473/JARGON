@@ -16,6 +16,9 @@ data class Interval(val a: Double, val b: Double) {
     /** If this interval is empty (contains no values) */
     fun isEmpty(): Boolean = a.isNaN() || b.isNaN() || a > b
 
+    /** If this interval is not empty. */
+    fun isNotEmpty(): Boolean = !isEmpty()
+
     /** If this interval consists of a single point. */
     fun isPoint(): Boolean = a == b
 
@@ -35,9 +38,7 @@ data class Interval(val a: Double, val b: Double) {
     operator fun contains(v: Double): Boolean = v in a..b //includes empty case
 
     /** @return if [v] is contained in this interval, with leniency at the endpoints. */
-    fun epsContains(v: Double): Boolean {
-        return !isEmpty() && v in (a - EPSILON)..(b + EPSILON)
-    }
+    fun epsContains(v: Double): Boolean = !isEmpty() && v in (a - EPSILON)..(b + EPSILON)
 
     /** @return if this interval epsilon equals the other via endpoints */
     infix fun epsEq(other: Interval): Boolean = this.isEmpty() && other.isEmpty() || a epsEq other.a && b epsEq other.b
@@ -55,15 +56,30 @@ data class Interval(val a: Double, val b: Double) {
             lta = other
         }
         if (gta.b <= lta.b) return gta //lta[ gta(--) ]
-        return gta.a intervalTo lta.b  //lta[ gta(--] )
+        return Interval(gta.a, lta.b)  //lta[ gta(--] )
     }
 
-    override fun toString(): String {
-        return when {
-            isEmpty() -> "Interval [Empty]"
-            else -> "Interval [$a, $b]"
-        }
+    override fun toString(): String = when {
+        isEmpty() -> "Interval [Empty]"
+        else -> "Interval [$a, $b]"
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Interval) return false
+
+        if (a != other.a) return false
+        if (b != other.b) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = a.hashCode()
+        result = 31 * result + b.hashCode()
+        return result
+    }
+
 
     companion object {
         /** An empty interval */
@@ -147,7 +163,8 @@ infix fun Double.epsIn(i: Interval): Boolean = i.epsContains(this)
  * Ensures that this value lies in the specified [Interval] i.
  * Will return [Double.NaN] if the interval is empty.
  */
-infix fun Double.coerceIn(i: Interval): Double = coerceIn(i.a, i.b)
+infix fun Double.coerceIn(i: Interval): Double =
+    if (i.isEmpty()) throw IllegalArgumentException("Cannot coerce to empty interval") else coerceIn(i.a, i.b)
 
 /**
  * Returns this Double range as an interval.

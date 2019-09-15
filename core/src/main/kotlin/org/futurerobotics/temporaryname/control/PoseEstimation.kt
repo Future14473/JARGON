@@ -7,7 +7,7 @@ import org.futurerobotics.temporaryname.math.sinc
 import org.futurerobotics.temporaryname.mechanics.Motion
 
 /**
- * Non-linearly tracks the global pose, given relative pose velocities.
+ * Non-linearly tracks the _global_ pose, given _relative_ pose velocities.
  */
 class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : BaseObserver<Motion<Pose2d>, Any, Pose2d>() {
 
@@ -32,3 +32,4 @@ class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : BaseObserver<Motion
     override fun stop() {
     }
 }
+

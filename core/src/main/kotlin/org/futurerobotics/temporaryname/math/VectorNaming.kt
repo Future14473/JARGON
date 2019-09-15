@@ -4,9 +4,13 @@ import koma.extensions.get
 import org.futurerobotics.temporaryname.util.zipForEachIndexed
 
 /**
- * A way to represent a vector with value names and units, when it makes sense.
+ * A way to represent the values in a vector with value names and units, when it makes sense.
  *
- * Todo: more doc
+ * Each value in the vector has a corresponding name and unit, given in [names] and [units].
+ *
+ * When [toString] is called, it return a string of the given vector using these names.
+ *
+ * This makes debugging or presenting vector related info easier.
  */
 class VectorNaming {
 

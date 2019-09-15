@@ -65,9 +65,9 @@ inline val CurvePoint.curvatureDeriv: Double
     get() = tanAngleSecondDeriv
 
 /**
- * Holds all needed info about a specific point on a [Curve]. This does not include heading info.
+ * Holds all needed info about a specific point on a [Path]. This _does_ include heading info.
  *
- * This includes the value, first derivative, and second derivatives, of position and tanAngle
+ * This includes the value, first derivative, and second derivatives, of position, tanAngle, and heading.
  *
  * This interface is used to try to discourage unnecessary re-calculation and provide room for possible
  * calculation optimizations.
@@ -79,31 +79,31 @@ inline val CurvePoint.curvatureDeriv: Double
  */
 interface PathPoint : CurvePoint {
 
-    /** The heading at this point along the path */
+    /** The heading at this point */
     val heading: Double
-    /** The [heading]'s derivative w/rt arc length at this point along the path */
+    /** The [heading]'s derivative w/rt arc length at this point */
     val headingDeriv: Double
     /**
-     * The [heading]'s second derivative w/rt arc length this point along the path. This may be instantaneously
+     * The [heading]'s second derivative w/rt arc length this point. This may be instantaneously
      * discontinuous.
      */
     val headingSecondDeriv: Double
 }
 
 /**
- * The pose at this point along the path, which includes both
+ * The pose at this point, which includes both
  * [position][PathPoint.position] and [heading][PathPoint.heading]
  */
 val PathPoint.pose: Pose2d
     get() = Pose2d(position, heading)
 /**
- * The pose's derivative w/rt arc length at this point along the path, which includes both
+ * The pose's derivative w/rt arc length at this point, which includes both
  * [positionDeriv][PathPoint.positionDeriv] and [headingDeriv][PathPoint.headingDeriv]
  */
 val PathPoint.poseDeriv: Pose2d
     get() = Pose2d(positionDeriv, headingDeriv)
 /**
- * The pose's derivative w/rt arc length at this point along the path, which includes both
+ * The pose's derivative w/rt arc length at this point, which includes both
  * [positionSecondDeriv][PathPoint.positionSecondDeriv] and [headingSecondDeriv][PathPoint.headingSecondDeriv]
  */
 val PathPoint.poseSecondDeriv: Pose2d

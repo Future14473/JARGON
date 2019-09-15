@@ -8,9 +8,11 @@ import org.futurerobotics.temporaryname.math.*
 import org.futurerobotics.temporaryname.util.zipForEachIndexed
 
 /**
- * Represents a model for drive; i.e. a body than an move and rotate via wheels or wheel like things.
+ * Represents a model for drive, i.e. a body than an move and rotate via wheels or wheel-like things.
  *
- * For a simpler model, these assume that the center of gravity correspond with the center of the robot (position 0,0)
+ * For a simpler model, this assumes that the center of gravity corresponds with the center of the robot (position 0,0)
+ *
+ * Keep in mind all math in this library uses North-west-up orientation: +x is forward, +y is left, angles are CCW.
  */
 interface DriveModel {
 
@@ -87,14 +89,14 @@ abstract class FixedWheelDriveModel(
     }
 
     /**
-     * Gets the motor voltages corresponding modeled to drive at the given [PoseMotion].
+     * Gets the motor voltages corresponding modeled to drive at the given [Motion] of Poses.
      * Used for a (partially) _open_ controller.
      */
     fun getModeledVoltages(motion: Motion<Pose2d>): MotorVoltages {
         val (v, a) = motion
         val vels = botVelToVolts * v.toColumnVector()
         val accels = botAccelToVolts * a.toColumnVector()
-        return MotorVoltages((vels + accels + sign(vels) emul stallVolts).toList())
+        return (vels + accels + sign(vels) emul stallVolts).toList()
     }
 
     private val cachedMotorPositions: Matrix<Double> = zeros(wheels.size, 1)
@@ -140,7 +142,10 @@ open class NonHolonomicDriveModel(
 
     override val isHolonomic: Boolean get() = false
 }
-//TODO: Swerve
+
+/**
+ * Utility for creating common drive models.
+ */
 object DriveModels {
     /**
      * Creates a drive model for a mecanum-like drive, with transmissions supplied in

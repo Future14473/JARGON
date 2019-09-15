@@ -5,20 +5,22 @@ import org.futurerobotics.temporaryname.util.Steppable
 import org.futurerobotics.temporaryname.util.Stepper
 
 /**
- * Represents the constraints to be used to generate a dynamic [MotionProfiled] using [MotionProfileGenerator].
+ * Represents the constrainer to use to generate a dynamic [MotionProfile] using [MotionProfileGenerator].
  * @see PointConstraint
  */
 interface MotionProfileConstrainer : Steppable<Double, PointConstraint> {
 
     /**
-     * Returns a stepper that steps along distances from the start along the profiled object and returns a [PointConstraint]
+     * Returns a [Stepper] that steps on distances along the profiled object and returns a [PointConstraint]
      * representing the constraints at that point.
      */
     override fun stepper(): Stepper<Double, PointConstraint>
 }
 
 /**
- * Represents the constraints at a specific point along a motion to be profiled.
+ * Represents the constraints at a specific point to be motion profiled.
+ *
+ * This includes maximum Velocity, and a range of allowable accelerations.
  */
 interface PointConstraint {
 
@@ -30,21 +32,20 @@ interface PointConstraint {
 }
 
 /**
- * A quick way to create a [PointConstraint], using the given [maxVelocity] and [accelRange]
+ * A quick way to create a [PointConstraint], using the given [maxVelocity] value and [accelRange] function
  */
 @Suppress("FunctionName")
 inline fun PointConstraint(
     maxVelocity: Double,
     crossinline accelRange: (curVelocity: Double) -> Interval
-): PointConstraint =
-    object : PointConstraint {
-        override val maxVelocity: Double = maxVelocity
-        override fun accelRange(curVelocity: Double): Interval = accelRange(curVelocity)
-    }
+): PointConstraint = object : PointConstraint {
+    override val maxVelocity: Double = maxVelocity
+    override fun accelRange(curVelocity: Double): Interval = accelRange(curVelocity)
+}
 
 /**
- * A partial implementation of a ProfileConstraint that simply divides up into [getMaxVelocity] and [getMaxAccel],
- * without using stepper optimizations.
+ * A partial implementation of a ProfileConstraint that simply divides up velocity and acceleration
+ * components of the constraint into [getMaxVelocity] and [getMaxAccel] functions, without stepper optimizations.
  */
 abstract class ComponentsMotionProfileConstrainer : MotionProfileConstrainer {
 
@@ -56,11 +57,8 @@ abstract class ComponentsMotionProfileConstrainer : MotionProfileConstrainer {
      */
     abstract fun getMaxAccel(x: Double, curVelocity: Double): Interval
 
-    final override fun stepper(): Stepper<Double, PointConstraint> =
+    override fun stepper(): Stepper<Double, PointConstraint> =
         Stepper {
-            object : PointConstraint {
-                override val maxVelocity: Double = getMaxVelocity(it)
-                override fun accelRange(curVelocity: Double): Interval = getMaxAccel(it, curVelocity)
-            }
+            PointConstraint(getMaxVelocity(it)) { vel -> getMaxAccel(it, vel) }
         }
 }

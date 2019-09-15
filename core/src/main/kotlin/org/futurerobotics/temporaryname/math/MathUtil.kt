@@ -17,14 +17,9 @@ const val TAU: Double = 2 * PI
 const val EPSILON: Double = 1e-6
 
 /**
- * If [this] is equal to [that] number, with a difference tolerance of [EPSILON] to account for floating-point errors.
+ * If [this] is equal to [other], with a difference tolerance of [EPSILON] to account for floating-point errors.
  */
-infix fun Double.epsEq(that: Double): Boolean = abs(this - that) < EPSILON
-
-/**
- * If [this] is equal to [that] number, with a custom tolerance of [epsilon] to account for floating-point errors.
- */
-fun Double.epsEq(that: Double, epsilon: Double = EPSILON): Boolean = abs(this - that) < epsilon
+infix fun Double.epsEq(other: Double): Boolean = abs(this - other) < EPSILON
 
 /**
  * Returns [this] if not [isNaN], else the value given by [alternate]
@@ -47,7 +42,7 @@ fun max(a: Double, b: Double, c: Double, d: Double): Double = max(max(a, b), max
 fun maxDiff(a: Double, b: Double, c: Double): Double = max(abs((a - b)), abs((b - c)), abs((c - a)))
 
 /** [this] value squared.*/
-fun Double.squared(): Double = this.pow(2)
+fun Double.squared(): Double = this * this
 
 /** [this] value squared.*/
 fun Int.squared(): Int = this * this

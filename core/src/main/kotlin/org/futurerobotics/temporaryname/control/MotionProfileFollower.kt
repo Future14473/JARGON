@@ -6,15 +6,14 @@ import org.futurerobotics.temporaryname.util.replaceIf
 import org.futurerobotics.temporaryname.util.value
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 
 /**
- * A base implementation of a [ReferenceProvider] that follows a [MotionProfiled] object.
+ * A base implementation of a [ReferenceTracker] that follows a [MotionProfiled] object.
  *
- * The abstract function [getNextTime] dictates what time is fed into the [MotionProfiled] object.
+ * The abstract function [getNextTime] dictates what time is polled on the [MotionProfiled] object.
  *
- * The base implementation is also thread safe.
+ * The base implementation is also thread safe; if the thread that runs the loop is separate than the thread
+ * that supplies [MotionProfiled]s
  */
 abstract class MotionProfileFollower<State : Any, Reference : Any> :
     ReferenceTracker<State, Reference> {
@@ -22,29 +21,32 @@ abstract class MotionProfileFollower<State : Any, Reference : Any> :
     private var _reference: Reference? = null
     final override val reference: Reference
         get() = _reference ?: throw IllegalStateException("reference was accessed before function update was called.")
+
+    /** Set to not null when command to follow a newProfiled reference. */
     private val newProfiled = AtomicReference<MotionProfiled<Reference>?>()
-    //if is holding reference; someday possibly update to state instead of only checking currentStepper.
+    /** If is currently following a profiled. */
     private val following = AtomicBoolean(false)
-    private val updateLock = ReentrantLock()
-    // ^ guards the following:
+    //command only thread things:
     private var currentStepper: Stepper<Double, Reference>? = null
     private var currentDuration = 0.0
     private var currentTime = Double.NaN
+    /** If idle reference needs to be polled. */
+    private var needIdleRef = true
+    /**
+     * The past state given on the last call to [update]
+     */
     protected var pastState: State? = null
         private set
-    private var needIdleRef = true
+
     final override fun update(currentState: State, elapsedSeconds: Double) {
-        _reference = updateLock.withLock getRef@{
+        _reference = run getRef@{
             processCommand()
             val pastState = pastState
             this.pastState = currentState
-            val currentStepper =
-                currentStepper ?: return@getRef if (needIdleRef) {
+            val currentStepper = currentStepper
+                ?: return@getRef if (needIdleRef || _reference == null) {
                     needIdleRef = false
-                    getIdleReference(
-                        _reference,
-                        currentState
-                    )
+                    getIdleReference(_reference, currentState)
                 } else _reference
 
             if (currentTime.isNaN()) { //just started
@@ -53,10 +55,11 @@ abstract class MotionProfileFollower<State : Any, Reference : Any> :
                 currentTime = getNextTime(
                     pastState,
                     currentState,
-                    reference,
+                    _reference
+                        ?: throw AssertionError("If just started, currentTime should be NaN at least once."),
                     currentTime,
                     elapsedSeconds
-                ).replaceIf({ it >= currentDuration }) {
+                ).replaceIf({ it >= currentDuration || it.isNaN() }) {
                     following.value = false
                     this.currentStepper = null
                     needIdleRef = true
@@ -70,7 +73,7 @@ abstract class MotionProfileFollower<State : Any, Reference : Any> :
     private fun processCommand() {
         val command = newProfiled.value
         if (command != null) {
-            this.newProfiled.compareAndSet(command, null)
+            newProfiled.compareAndSet(command, null)
             following.value = true
             currentDuration = command.duration
             currentTime = Double.NaN
@@ -93,15 +96,15 @@ abstract class MotionProfileFollower<State : Any, Reference : Any> :
         return following.value
     }
 
-    override fun stop(): Unit = updateLock.withLock {
+    override fun stop() {
         currentStepper = null
-        pastState = null
-        _reference = null
         needIdleRef = true
     }
 
     override fun start() {
         stop()
+        pastState = null
+        _reference = null
     }
 
     /**
@@ -111,14 +114,14 @@ abstract class MotionProfileFollower<State : Any, Reference : Any> :
 
     /**
      * Gets the "virtual" next time to go to on a [MotionProfiled] object, based on the supplied
-     * [pastOutput], [pastState], [currentState], [pastVirtualTime],
-     * and the real [elapsedSeconds].
+     * [pastOutput], [pastState], [currentState], [pastVirtualTime], and the real [elapsedSeconds].
      *
      * This time will be used to progress through [MotionProfiled] object.
      * A returned time of Double.NAN or greater than the current [MotionProfiled]'s profile duration
      * signals for this to either halt or hold the reference at the final state.
      *
-     * For example, if motors were under-actuated, this can account for it by not stepping time up as fast.
+     * For example, if the bot does not move as fast as expected, this can account for it by not stepping time up as
+     * fast.
      */
     protected abstract fun getNextTime(
         pastState: State,
@@ -141,18 +144,4 @@ abstract class MotionProfileFollower<State : Any, Reference : Any> :
         pastReference: Reference?,
         currentState: State
     ): Reference
-}
-
-/**
- * A simple implementation of [MotionProfileFollower] that only uses time.
- */
-abstract class TimeOnlyProfileFollower<State : Any, Reference : Any> : MotionProfileFollower<State, Reference>() {
-
-    final override fun getNextTime(
-        pastState: State,
-        currentState: State,
-        pastOutput: Reference,
-        pastVirtualTime: Double,
-        elapsedSeconds: Double
-    ): Double = pastVirtualTime + elapsedSeconds
 }

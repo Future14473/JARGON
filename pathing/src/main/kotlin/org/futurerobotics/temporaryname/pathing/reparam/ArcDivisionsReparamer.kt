@@ -8,6 +8,7 @@ import org.futurerobotics.temporaryname.math.epsEq
 import org.futurerobotics.temporaryname.math.function.VectorFunction
 import org.futurerobotics.temporaryname.math.maxDiff
 import org.futurerobotics.temporaryname.pathing.reparam.ArcDivisionsReparamer.Companion.reparam
+import kotlin.math.abs
 import kotlin.math.asin
 
 /**
@@ -86,9 +87,7 @@ class ArcDivisionsReparamer private constructor(
             val center2 = Vector2d(e1 * v2.y - e2 * v1.y, -(e1 * v2.x - e2 * v1.x)) / det
             //radius * 2
             val radius2 = center2.length //since one of the points is (0,0)
-            if (expectedCurvature.epsEq(
-                    2 / radius2, curvatureTolerance
-                )
+            if (abs(expectedCurvature - 2 / radius2) < curvatureTolerance
             ) radius2 * asin(chordLen / radius2) //arc length
             else Double.NaN
             //== 2 * radius * asin(chordLen / 2 / radius)

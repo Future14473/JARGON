@@ -1,5 +1,8 @@
 package org.futurerobotics.temporaryname.mechanics
 
+import org.futurerobotics.temporaryname.math.Pose2d
+import org.futurerobotics.temporaryname.math.Vector2d
+
 /**
  * Represents the motion of some quantity representing type [T] (e.g. 1d motion, vector2d, pose, linear algebra vector).
  *
@@ -14,7 +17,10 @@ interface Motion<T : Any> {
     val a: T
 }
 
+/** @return v */
 operator fun <T : Any> Motion<T>.component1(): T = v
+
+/** @return a */
 operator fun <T : Any> Motion<T>.component2(): T = a
 
 /**
@@ -36,8 +42,13 @@ interface State<T : Any> : Motion<T> {
     override val a: T
 }
 
+/** @return s */
 operator fun <T : Any> State<T>.component1(): T = s
+
+/** @return v */
 operator fun <T : Any> State<T>.component2(): T = v
+
+/** @return a */
 operator fun <T : Any> State<T>.component3(): T = a
 
 /** An simple implementation of [Motion] that holds values in fields */
@@ -63,3 +74,16 @@ open class ValueState<T : Any>(override val s: T, v: T, a: T) : ValueMotion<T>(v
 
     override fun hashCode(): Int = 31 * super.hashCode() + s.hashCode()
 }
+
+
+/** Extracts the vector [State] from this pose [State]. */
+fun State<Pose2d>.vec(): State<Vector2d> = ValueState(s.vec, v.vec, a.vec)
+
+/** Extracts the heading component from this pose [State]. */
+fun State<Pose2d>.heading(): LinearState = LinearState(s.heading, v.heading, a.heading)
+
+/** Extracts the x component from this pose [State]. */
+fun State<Pose2d>.x(): LinearState = LinearState(s.x, v.x, a.x)
+
+/** Extracts the y component from this pose [State]. */
+fun State<Pose2d>.y(): LinearState = LinearState(s.y, v.y, a.y)

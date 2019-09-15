@@ -1,7 +1,6 @@
 package org.futurerobotics.temporaryname.pathing.trajectory
 
 import org.futurerobotics.temporaryname.pathing.Path
-import org.futurerobotics.temporaryname.pathing.constraint.MotionConstraintSet
 import org.futurerobotics.temporaryname.profile.MotionProfileGenerator
 
 /**

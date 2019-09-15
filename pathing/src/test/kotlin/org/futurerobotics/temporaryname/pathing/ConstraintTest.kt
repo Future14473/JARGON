@@ -5,12 +5,8 @@ import org.futurerobotics.temporaryname.math.DoubleProgression
 import org.futurerobotics.temporaryname.math.distTo
 import org.futurerobotics.temporaryname.math.function.QuinticSpline
 import org.futurerobotics.temporaryname.math.randomVectorDerivatives
-import org.futurerobotics.temporaryname.pathing.constraint.MotionConstraintSet
-import org.futurerobotics.temporaryname.pathing.constraint.RobotAngularAccelConstraint
-import org.futurerobotics.temporaryname.pathing.constraint.TangentVelocityConstraint
-import org.futurerobotics.temporaryname.pathing.constraint.TotalAccelConstraint
 import org.futurerobotics.temporaryname.pathing.reparam.reparamByIntegration
-import org.futurerobotics.temporaryname.pathing.trajectory.TrajectoryConstraint
+import org.futurerobotics.temporaryname.pathing.trajectory.*
 import org.futurerobotics.temporaryname.util.extendingDoubleSearch
 import org.futurerobotics.temporaryname.util.stepToAll
 import org.junit.Test
@@ -28,7 +24,9 @@ internal class ConstraintTest {
         QuinticSpline.fromDerivatives(start, end).reparamByIntegration().addHeading(TangentHeading)
     }.let { MultiplePath(it) }
     private val motionConstraints = MotionConstraintSet(
-        TangentVelocityConstraint(10.0), TotalAccelConstraint(1.0), RobotAngularAccelConstraint(0.2)
+        MaxVelocityConstraint(10.0),
+        MaxTotalAccelerationConstraint(1.0),
+        MaxAngularAccelerationConstraint(0.2)
     )
     private val constraint = TrajectoryConstraint(path, motionConstraints)
     private val steps = 1_000

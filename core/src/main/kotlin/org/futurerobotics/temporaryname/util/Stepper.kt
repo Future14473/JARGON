@@ -1,34 +1,6 @@
 package org.futurerobotics.temporaryname.util
 
 /**
- * Represents something that can be stepped with a [Stepper].
- */
-interface Steppable<in T, out R> {
-
-    /**
-     * Gets a stepper stepping through this object.
-     */
-    fun stepper(): Stepper<T, R>
-}
-
-/**
- * Returns a [Steppable] that uses the given [stepper] function to provide a stepper for stepping.
- */
-inline fun <T, R> Steppable(crossinline stepper: () -> Stepper<T, R>) = object :
-    Steppable<T, R> {
-    override fun stepper(): Stepper<T, R> = stepper()
-}
-
-/**
- * Returns a list corresponding to stepping through all the values in the specified [list].
- * This assumes that all values in [list] can be stepped through.
- */
-fun <T, R> Steppable<T, R>.stepToAll(list: Iterable<T>): List<R> {
-    val stepper = stepper()
-    return list.map(stepper::stepTo)
-}
-
-/**
  * A [Stepper] is similar to an [Iterator], except that on each iteration an input value of type [T] must be specified
  * as to where to "step"/iterate to.
  *
@@ -37,8 +9,6 @@ fun <T, R> Steppable<T, R>.stepToAll(list: Iterable<T>): List<R> {
  *
  * This can be used, for example, to avoid doing binary search on every iteration, while also not wasting memory on
  * intermediary lists.
- *
- * hasNextAt(place: T) will return
  */
 interface Stepper<in T, out R> {
 
@@ -67,6 +37,36 @@ inline fun <T, R> Stepper(crossinline step: (T) -> R): Stepper<T, R> = object :
     Stepper<T, R> {
     override fun stepTo(step: T): R = step(step)
 }
+
+/**
+ * Represents something that can be stepped with a [Stepper].
+ */
+interface Steppable<in T, out R> {
+
+    /**
+     * Gets a stepper stepping through this object.
+     */
+    fun stepper(): Stepper<T, R>
+}
+
+/**
+ * Returns a [Steppable] that uses the given [stepper] function to provide a stepper for stepping.
+ */
+@Suppress("FunctionName")
+inline fun <T, R> Steppable(crossinline stepper: () -> Stepper<T, R>): Steppable<T, R> = object :
+    Steppable<T, R> {
+    override fun stepper(): Stepper<T, R> = stepper()
+}
+
+/**
+ * Returns a list corresponding to stepping through all the values in the specified [list].
+ * This assumes that all values in [list] can be stepped through.
+ */
+fun <T, R> Steppable<T, R>.stepToAll(list: Iterable<T>): List<R> {
+    val stepper = stepper()
+    return list.map(stepper::stepTo)
+}
+
 
 /**
  * Returns a new Steppable which maps the output of [this] stepper through the given [outputMapping].

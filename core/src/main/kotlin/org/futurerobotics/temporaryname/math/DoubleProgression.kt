@@ -5,36 +5,54 @@ import kotlin.math.ceil
 
 /**
  * A progression of double values.
+ *
  * See factory methods.
- * @property first The first value of this progression.
- * @property last
- * @property step
- * @property segments The number of "fences", not fencePosts, of this double progression; equal to the number of values
- *                      - 1.
+ * @param first The first value of this progression.
+ * @param last The last value of this progression.
+ * @param step the step size of this progression.
+ * @param segments The number of "segments" in this progression, equal to the number of values - 1.
  */
 class DoubleProgression
 private constructor( //see factory methods
     val first: Double, val last: Double, val step: Double, val segments: Int
 ) : Iterable<Double> {
 
-    /** @return if this progression is empty or not */
+    /**
+     *  If this progression is empty or not
+     *  */
     fun isEmpty(): Boolean = segments < 0
 
     /**
-     * Returns a new DoubleProgression that is this progression but reversed.
+     * Returns a new DoubleProgression that is this progression but reversed in direction.
      */
     fun reversed(): DoubleProgression = DoubleProgression(last, first, -step, segments)
 
     override operator fun iterator(): DoubleIterator = object : DoubleIterator() {
-        private val intIt = IntProgression.fromClosedRange(0, segments, 1).iterator()
+        private val intIt = (0..segments).iterator()
         override fun hasNext() = intIt.hasNext()
         override fun nextDouble() = first + intIt.nextInt() * step.notNaNOrElse { 0.0 }
     }
 
-    override fun equals(other: Any?): Boolean =
-        this === other || (other is DoubleProgression && (isEmpty() && other.isEmpty() || first == other.first && last == other.last && step == other.step))
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is DoubleProgression) return false
 
-    override fun hashCode(): Nothing = throw UnsupportedOperationException()
+        if (first != other.first) return false
+        if (last != other.last) return false
+        if (step != other.step) return false
+        if (segments != other.segments) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = first.hashCode()
+        result = 31 * result + last.hashCode()
+        result = 31 * result + step.hashCode()
+        result = 31 * result + segments
+        return result
+    }
+
 
     companion object {
         /**

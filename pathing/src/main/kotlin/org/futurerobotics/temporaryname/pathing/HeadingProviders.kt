@@ -2,11 +2,13 @@ package org.futurerobotics.temporaryname.pathing
 
 import org.futurerobotics.temporaryname.math.Derivatives
 import org.futurerobotics.temporaryname.math.ValueDerivatives
+import org.futurerobotics.temporaryname.math.angleNorm
 import org.futurerobotics.temporaryname.math.function.MathFunction
 
-/** A [HeadingProvider] that maintains a constant heading [angle] */
-class ConstantHeading(private val angle: Double) : HeadingProvider {
+/** A [HeadingProvider] that maintains a constant heading of [angle] */
+class ConstantHeading(angle: Double) : HeadingProvider {
 
+    private val angle = angleNorm(angle)
     private val derivatives = ValueDerivatives(angle, 0.0, 0.0)
     override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = derivatives
 }
@@ -18,7 +20,7 @@ class LinearInterpolatedHeading(private val fromAngle: Double, endAngle: Double)
     private val diff = endAngle - fromAngle
     override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> {
         val dcl = diff / point.length
-        return ValueDerivatives(fromAngle + s * dcl, dcl, 0.0)
+        return ValueDerivatives(angleNorm(fromAngle + s * dcl), dcl, 0.0)
     }
 }
 

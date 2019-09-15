@@ -3,22 +3,41 @@ package org.futurerobotics.temporaryname.control
 import org.futurerobotics.temporaryname.control.ChainedControlSystemBuilder.Companion.start
 import org.futurerobotics.temporaryname.system.LoopBasedSystem
 import org.futurerobotics.temporaryname.system.StartStoppable
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Base implementation of a ControlSystem.
+ * Represents some control system.
+ *
+ * @param State the state in which this control system operates on (the root state, if chained)
+ * @param Tracker the [ReferenceTracker] used in this control system.
+ */
+interface ControlSystem<State : Any, Tracker : ReferenceTracker<State, *>> : LoopBasedSystem {
+    /**
+     * Gets the [ReferenceTracker] of this control system; possibly update reference here.
+     */
+    val reference: Tracker
+    /**
+     * Gets the current [State] monitored by this control system (the root state, if this is a chained system).
+     *
+     * @throws IllegalArgumentException if the state has not been initialized; see [Observer]
+     */
+    var currentState: State
+}
+
+
+/**
+ * Base implementation of a ControlSystem. Not recommended for using directly.
  *
  * @param loopManager the [LoopRegulator] to use
- * @property reference the [ReferenceTracker] to use
+ * @param reference the [ReferenceTracker] to use
  */
-abstract class AbstractControlSystem<Tracker : ReferenceTracker<*, *>>(
+abstract class BaseControlSystem<State : Any, Tracker : ReferenceTracker<State, *>>(
     private val loopManager: LoopRegulator,
-    val reference: Tracker
-) : LoopBasedSystem {
+    override val reference: Tracker
+) : ControlSystem<State, Tracker> {
 
     /**
      * The elapsed number of nanos timed by the stopwatch. Will be [Double.NaN] on
-     * the first iteration of the control loop
+     * the first iteration of the control loop.
      */
     protected var elapsedSeconds: Double = Double.NaN
         private set
@@ -52,11 +71,8 @@ abstract class AbstractControlSystem<Tracker : ReferenceTracker<*, *>>(
  * A basic digital control system consisting of the 4 parts shown in the constructor.
  * This is equivalent to a [ChainedControlSystem] with only 1 _link_.
  *
- * [StartStoppable.start] will be called on every component before the system starts,
- * and [StartStoppable.stop] will be called after the systems stops.
- *
  * The update order is: first the [plant] is measured, the [observer] is updated, the [reference] is updated,
- * The first update is meant for initialization.
+ * (The first update is meant for initialization).
  * then the [reference] is polled, [controller] is updated, and [plant] is signaled.
  */
 class SimpleControlSystem<State : Any, Reference : Any, Signal : Any, Measurement : Any, Tracker : ReferenceTracker<State, Reference>>(
@@ -65,35 +81,30 @@ class SimpleControlSystem<State : Any, Reference : Any, Signal : Any, Measuremen
     private val plant: Plant<Signal, Measurement>,
     private val controller: Controller<Reference, State, Signal>,
     private val observer: Observer<Measurement, Signal, State>
-) : AbstractControlSystem<Tracker>(loopManager, referenceTracker) {
+) : BaseControlSystem<State, Tracker>(loopManager, referenceTracker) {
 
     /**
-     * The current state monitored by this control system;
+     * The current state monitored by this control system; Can be manually reset.
      *
-     * @throws IllegalStateException if the [Observer]'s state has not been initialized
+     * @throws IllegalStateException if attempted to get while the [Observer]'s state has not yet been initialized
      */
-    var currentState: State = observer.state
+    override var currentState: State
+        get() = observer.state
+        set(value) {
+            observer.state = value
+        }
+
 
     override fun feedBack() {
         val measurement = plant.measurement
         observer.update(measurement, controller.signal, elapsedSeconds)
-        observer.state.let {
-            reference.update(it, elapsedSeconds)
-            currentState = it
-        }
+        reference.update(observer.state, elapsedSeconds)
     }
 
     override fun signalForward() {
         val reference = reference.reference
         controller.update(reference, observer.state, elapsedSeconds)
         plant.signal(controller.signal, elapsedSeconds)
-    }
-
-    /**
-     * Resets the internal state using stateEstimator.resetState()
-     */
-    fun resetState(state: State) {
-        observer.state = state
     }
 
     override fun start() {
@@ -105,16 +116,38 @@ class SimpleControlSystem<State : Any, Reference : Any, Signal : Any, Measuremen
     }
 }
 
-@Suppress("UNCHECKED_CAST")
-internal class ControlChainLink<State : Any, Reference : Any, Signal : Any, Measurement : Any>(
-    private val controller: Controller<Reference, State, Signal>,
+/**
+ * Represents a yet-to-be added Control Chain Link.
+ *
+ * @see [ChainedControlSystemBuilder]
+ *
+ */
+interface ControlLink<State : Any, Reference : Any, Signal : Any, Measurement : Any> {
+    /**
+     * The [Controller] of this control link.
+     */
+    val controller: Controller<Reference, State, Signal>
+    /**
+     * The [Observer] of this control ink.
+     */
     val observer: Observer<Measurement, Signal, State>
+}
+
+
+/**
+ * A control chain link used in [ChainedControlSystem].
+ * Internal due to unchecked casts.
+ */
+@Suppress("UNCHECKED_CAST")
+internal class InternalControlLink<State : Any, Reference : Any, Signal : Any, Measurement : Any>(
+    private val controller: Controller<Reference, State, Signal>,
+    private val observer: Observer<Measurement, Signal, State>
 ) : StartStoppable {
 
-    var state: State
+    var state: Any
         get() = observer.state
         set(value) {
-            observer.state = value
+            observer.state = value as State
         }
 
     fun getSignal(reference: Any, elapsedSeconds: Double): Signal {
@@ -137,62 +170,81 @@ internal class ControlChainLink<State : Any, Reference : Any, Signal : Any, Meas
 }
 
 /**
- * Represents a control system with multiple intermediary _links_; this is used to chain a series of controllers/state
- * representations from the [ReferenceTracker] down to the [Plant].
+ * Represents a control system with multiple intermediary _links_; this is used to chain a series of controllers and or
+ * observers, each working with different state representations, representations from the [ReferenceTracker] down to the
+ * [Plant].
  *
- * Due to generics, this must be construted using a [ChainedControlSystemBuilder].
- *
+ * (Due to generics, this must be constructed using a [ChainedControlSystemBuilder]).
  *
  * A chained control system has _one_ [ReferenceTracker] and _one_ [Plant], any number of _links_ in between;
- * Every link is independent and has one [Controller] and one [Observer], and working with their own [State]s.
+ * Every link is independent and has one [Controller] and one [Observer], and working with their own representation of
+ * State.
+ *
  * Starting from the [ReferenceTracker], the the signal of one link's controller acts as the reference of the controller
  * of the next link, until reaching the [Plant]. Similarly, starting from the [Plant], the state estimated by one link's
  * [Observer] becomes the measurement of the previous link's [Observer] until finally reaching the [ReferenceTracker].
  *
- * If you draw a diagram of this on paper, it looks like a chain; hence the name.
+ * If you draw a diagram of this, it looks like chain links, hence the name.
+ *
+ * Adding a link can loosely be interpreted as using _another_ control system instead of hardware output for a [Plant],
+ * or interpreted as using _another_ control system as a [ReferenceTracker].
+ *
  *
  * This is extremely useful when the initial [Reference] given by the supplied [ReferenceTracker] needs to be
  * processed multiple times in to different state representations before finally becoming a [Signal].
  *
- * For example, for a trajectory-following wheeled-robot control system:
- * *Tracker*: the [ReferenceTracker] follows a trajectory and provides the desired global pose motion as
- *      a _reference_, and updates via tracking the global pose, as _state(1)_.
+ * For example, a common pattern for a trajectory-following wheeled-robot control system:
  *
- * *Link1*: The first link has a controller can then be a Ramsete controller with pass-through acceleration feed-forward,
- *      that takes the previous _reference_ and the current global position _state(1)_, and produces translational
+ * **Reference**: the [ReferenceTracker] follows a trajectory and provides the desired global `Motion` as
+ *      a _reference_, and updates via tracking the global pose. The first state representation is a POSE.
+ *
+ * **Link1**: The first link has a controller can then be a Ramsete controller with pass-through acceleration feed-forward,
+ *      that takes the previous _reference_ and the current global position, and produces translational
  *      and rotational turn signals as its _signal_.
  *
- * *Link2*: The next controller can be an [OpenController] or "mapper" that maps the previous _signal_ (it's _reference_) of the
- *      Ramsete controller into desired motor velocities and accelerations.
+ * **Link2**: The next controller can be an [OpenController] or "mapper" that maps the previous _signal_ (it's _reference_) of the
+ *      Ramsete controller into desired _motor_ velocities and accelerations.
  *
- * *Link3*: The final controller can be and a linear state-space controller with acceleration feed-forward
- *      to control the actual motor voltages, to send to the plant.
+ * **Link3**: The final controller can be and a linear state-space controller with motor acceleration feed-forward
+ *      to control the actual motor voltages.
  *
- * *Plant*: The plant takes the motor voltages, and returns motor positions as measurement.
+ * **Plant**: The plant takes the motor voltages, and returns motor positions as measurement.
  *
- * *Link3*: The linear state-space link contains has an [Observer] -- a kalman filter or a more naive filter, to map the
- *    motor positions into motor velocities.
+ * **Link3**: The linear state-space link contains has an [Observer] -- a kalman filter or a simpler filter, to map
+ *    the motor positions into motor velocities.
  *
- * *Link2*: The "mapper" link's observer simply passes on the _measurement_ via an [DirectObserver].
+ * **Link2**: The "mapper" link's takes the motor velocities and estimates the robot's relative pose motion.
  *
- * *Link1*: The Ramsete link's observer takes the motor velocities, and updates its tracking of the global _pose_.
+ * **Link1**: The Ramsete link's observer takes the motor velocities, and updates its tracking of the global pose.
  *
- * *Tracker*: The [ReferenceTracker] finally updates its step on the trajectory it's following based on the change in pose.
+ * **Tracker**: The [ReferenceTracker] finally updates its step on the trajectory it's following based on the change in
+ *    pose.
  */
 class ChainedControlSystem<State : Any, Reference : Any, Signal : Any, Measurement : Any, Tracker : ReferenceTracker<State, Reference>>
 internal constructor(
     loopManager: LoopRegulator,
     referenceTracker: Tracker,
     private val plant: Plant<Signal, Measurement>,
-    private val links: List<ControlChainLink<*, *, *, *>>
-) : AbstractControlSystem<Tracker>(loopManager, referenceTracker) {
+    private val links: List<InternalControlLink<*, *, *, *>>
+) : BaseControlSystem<State, Tracker>(loopManager, referenceTracker) {
+    init {
+        require(links.isNotEmpty())
+        { "The control system requires at least one link. If you REALLY mean no link, use DirectObserver/Controller." }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override var currentState: State
+        get() = links.first().state as State
+        set(value) {
+            links.first().state = value
+        }
 
     /**
-     * Get's the current state at the corresponding [link]; or null if the system has never been run.
-     * Due to generics, it is the user's responsibility to cast to the right type.
+     * Get's the current state at the corresponding [link] number, where 0 is the "root" link; or null if the system
+     * has never been run. Due to generics, it is the user's responsibility to cast to the right type.
      */
     @Suppress("UNCHECKED_CAST")
-    fun getState(link: Int): Any? {
+    fun getState(link: Int): Any {
         require(link in links.indices) { "link number out of range" }
 
         return links[link].state
@@ -238,6 +290,7 @@ internal constructor(
  *
  * This is created by [start]ing a chain with a stopwatch and referenceTracker,
  * appending any number of links, and closing with a plant.
+ * @see ChainedControlSystem
  */
 class ChainedControlSystemBuilder<State : Any, Reference : Any, Tracker : ReferenceTracker<State, Reference>>
 private constructor(
@@ -245,43 +298,47 @@ private constructor(
     private val referenceTracker: Tracker
 ) {
 
-    private val links = ArrayList<ControlChainLink<*, *, *, *>>()
+    private val links = ArrayList<InternalControlLink<*, *, *, *>>()
 
     /**
-     * Represents an open end of a control chain.
+     * Represents an end of a control chain currently being built.
      * Add links using [addLink], or close the chain with a plant using [end]
      */
     inner class ControlChainEnd<Signal : Any, Measurement : Any> internal constructor() {
 
-        private val appended = AtomicBoolean(false)
+        private var appended = false
         /**
          * Adds another link to this control chain; given compatible [controller] and [observer].
          *
-         * a link can only be [addLink]ed or [end]ed once.
+         * A link can only be [addLink]ed or [end]ed once.
          */
         fun <NewSignal : Any, NewMeasurement : Any> addLink(
             controller: Controller<Signal, Measurement, NewSignal>,
             observer: Observer<NewMeasurement, NewSignal, Measurement>
         ): ControlChainEnd<NewSignal, NewMeasurement> {
-            check(appended.compareAndSet(false, true)) { "Chain end already appended" }
-
-            links += ControlChainLink(controller, observer)
+            check(!appended) { "Chain end already appended" }
+            appended = true
+            links += InternalControlLink(controller, observer)
             return ControlChainEnd()
         }
 
+        /**
+         * Adds a compatible [ControlLink] to this control chain.
+         *
+         * A link can only be [addLink]ed or [end]ed once.
+         */
         infix fun <NewSignal : Any, NewMeasurement : Any> addLink(
-            link: Pair<Controller<Signal, Measurement, NewSignal>,
-                    Observer<NewMeasurement, NewSignal, Measurement>>
-        ): ControlChainEnd<NewSignal, NewMeasurement> = link.let { (a, b) ->
-            addLink(a, b)
-        }
+            link: ControlLink<Measurement, Signal, NewSignal, NewMeasurement>
+        ): ControlChainEnd<NewSignal, NewMeasurement> = addLink(link.controller, link.observer)
+
 
         /**
          * Closes off this control chain using the supplied compatible [plant].
          */
         infix fun end(plant: Plant<Signal, Measurement>):
                 ChainedControlSystem<State, Reference, Signal, Measurement, Tracker> {
-            check(appended.compareAndSet(false, true)) { "Chain end already appended" }
+            check(!appended) { "Chain end already appended" }
+            appended = true
             return ChainedControlSystem(loopManager, referenceTracker, plant, links)
         }
     }
@@ -289,6 +346,7 @@ private constructor(
     companion object {
         /**
          * Starts building a control chain.
+         * @see [ChainedControlSystemBuilder]
          */
         @Suppress("RemoveRedundantQualifierName")
         @JvmStatic
@@ -302,18 +360,20 @@ private constructor(
 }
 
 /**
- * shorthand for [addLink]
+ * Shorthand for `addLink`.
+ *
+ * Use only in kotlin unless you like huge generics
  */
 operator fun <State : Any, Reference : Any, Signal : Any, Measurement : Any, NewSignal : Any, NewMeasurement : Any, Tracker : ReferenceTracker<State, Reference>>
-        ChainedControlSystemBuilder<State, Reference, Tracker>.ControlChainEnd<Signal, Measurement>.plus(
-    link: Pair<Controller<Signal, Measurement, NewSignal>, Observer<NewMeasurement, NewSignal, Measurement>>
+        ChainedControlSystemBuilder<State, Reference, Tracker>.ControlChainEnd<Signal, Measurement>.times(
+    link: ControlLink<Measurement, Signal, NewSignal, NewMeasurement>
 ): ChainedControlSystemBuilder<State, Reference, Tracker>.ControlChainEnd<NewSignal, NewMeasurement> = addLink(link)
 
 /**
- * shorthand for [end]
+ * shorthand for `end`
  */
 operator fun <State : Any, Reference : Any, Signal : Any, Measurement : Any, Tracker : ReferenceTracker<State, Reference>>
-        ChainedControlSystemBuilder<State, Reference, Tracker>.ControlChainEnd<Signal, Measurement>.minus(
+        ChainedControlSystemBuilder<State, Reference, Tracker>.ControlChainEnd<Signal, Measurement>.times(
     plant: Plant<Signal, Measurement>
 ): ChainedControlSystem<State, Reference, Signal, Measurement, Tracker> = end(plant)
 

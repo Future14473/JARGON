@@ -18,7 +18,7 @@ internal class CurveTest(private val curve: Curve, private val allS: List<Double
 
     @Test
     fun `Bulk get (getAllPointInfo) and single get (getPointInfo) are same`() {
-        val singleGet = allS.map { curve.atLength(it) }
+        val singleGet = allS.map { curve.pointAt(it) }
         val bulkGet = curve.stepToAll(allS)
         Assert.assertTrue("Size differs", bulkGet.size == singleGet.size)
 
