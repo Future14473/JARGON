@@ -119,8 +119,12 @@ class SimpleControlSystem<State : Any, Reference : Any, Signal : Any, Measuremen
 /**
  * Represents a yet-to-be added Control Chain Link.
  *
- * @see [ChainedControlSystemBuilder]
+ * This is here instead of a pair of controller and observer to:
+ * 1. Enforce Generics matching
+ * 2. Allow implementations where both the controller and observer are supplied at the same time.
  *
+ * @see [ChainedControlSystemBuilder]
+ * @see [ValueControlLink]
  */
 interface ControlLink<State : Any, Reference : Any, Signal : Any, Measurement : Any> {
     /**
@@ -132,7 +136,6 @@ interface ControlLink<State : Any, Reference : Any, Signal : Any, Measurement : 
      */
     val observer: Observer<Measurement, Signal, State>
 }
-
 
 /**
  * A control chain link used in [ChainedControlSystem].
@@ -229,7 +232,7 @@ internal constructor(
 ) : BaseControlSystem<State, Tracker>(loopManager, referenceTracker) {
     init {
         require(links.isNotEmpty())
-        { "The control system requires at least one link. If you REALLY mean no link, use DirectObserver/Controller." }
+        { "The control chain requires at least one link. If you REALLY mean no link, use DirectObserver/Controller." }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -333,6 +336,17 @@ private constructor(
 
 
         /**
+         * Adds the compatible pair of a [Controller] and an [Observer] to this control chain.
+         *
+         * A link can only be [addLink]ed or [end]ed once.
+         */
+        infix fun <NewSignal : Any, NewMeasurement : Any> addLink(
+            link: Pair<Controller<Signal, Measurement, NewSignal>,
+                    Observer<NewMeasurement, NewSignal, Measurement>>
+        ): ControlChainEnd<NewSignal, NewMeasurement> = addLink(link.first, link.second)
+
+
+        /**
          * Closes off this control chain using the supplied compatible [plant].
          */
         infix fun end(plant: Plant<Signal, Measurement>):
@@ -358,22 +372,3 @@ private constructor(
                 .ControlChainEnd()
     }
 }
-
-/**
- * Shorthand for `addLink`.
- *
- * Use only in kotlin unless you like huge generics
- */
-operator fun <State : Any, Reference : Any, Signal : Any, Measurement : Any, NewSignal : Any, NewMeasurement : Any, Tracker : ReferenceTracker<State, Reference>>
-        ChainedControlSystemBuilder<State, Reference, Tracker>.ControlChainEnd<Signal, Measurement>.times(
-    link: ControlLink<Measurement, Signal, NewSignal, NewMeasurement>
-): ChainedControlSystemBuilder<State, Reference, Tracker>.ControlChainEnd<NewSignal, NewMeasurement> = addLink(link)
-
-/**
- * shorthand for `end`
- */
-operator fun <State : Any, Reference : Any, Signal : Any, Measurement : Any, Tracker : ReferenceTracker<State, Reference>>
-        ChainedControlSystemBuilder<State, Reference, Tracker>.ControlChainEnd<Signal, Measurement>.times(
-    plant: Plant<Signal, Measurement>
-): ChainedControlSystem<State, Reference, Signal, Measurement, Tracker> = end(plant)
-
