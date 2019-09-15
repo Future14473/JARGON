@@ -4,9 +4,9 @@ import org.futurerobotics.temporaryname.math.Pose2d
 import kotlin.math.PI
 
 /**
- * Calculations for mapping global pose information to relative pose information.
+ * Calculations for mapping global pose information to bot pose information.
  */
-object FieldToBot {
+object GlobalToBot {
 
     /**
      * Converts [globalVelocity] (field velocity) to relative velocity (bot velocity), given the [globalHeading].
@@ -16,14 +16,14 @@ object FieldToBot {
         globalVelocity.vecRotated(-globalHeading)
 
     /**
-     * Converts a [globalError] in pose to relative error given the [globalHeading]
+     * Converts a [globalError] in pose to bot error given the [globalHeading]
      */
     @JvmStatic
     fun error(globalError: Pose2d, globalHeading: Double): Pose2d =
         globalError.vecRotated(-globalHeading)
 
     /**
-     * Converts a _expected_ [globalMotion] in poses to relative [globalMotion], given the true [globalHeading]
+     * Converts a _expected_ [globalMotion] in poses to bot [globalMotion], given the true [globalHeading]
      */
     @JvmStatic
     fun motion(globalMotion: Motion<Pose2d>, globalHeading: Double): Motion<Pose2d> {
@@ -38,7 +38,7 @@ object FieldToBot {
     }
 
     /**
-     * Converts a global [reference] PoseMotionState to a relative reference (to where the relative current state is
+     * Converts a global [reference] PoseMotionState to a bot reference (to where the bot's "current state" is
      * Pose2d.Zero), given the current [globalPose]
      */
     @JvmStatic

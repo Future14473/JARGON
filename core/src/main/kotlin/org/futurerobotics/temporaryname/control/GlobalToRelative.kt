@@ -4,12 +4,12 @@ import org.futurerobotics.temporaryname.math.Pose2d
 import org.futurerobotics.temporaryname.math.Vector2d
 import org.futurerobotics.temporaryname.math.cosc
 import org.futurerobotics.temporaryname.math.sinc
-import org.futurerobotics.temporaryname.mechanics.FieldToBot
+import org.futurerobotics.temporaryname.mechanics.GlobalToBot
 import org.futurerobotics.temporaryname.mechanics.Motion
 import org.futurerobotics.temporaryname.mechanics.State
 
 /**
- * Non-linearly tracks the _global_ pose, given _relative_ pose velocities.
+ * Non-linearly tracks the _global_ pose, given _bot_ pose velocities.
  */
 class GlobalPoseObserver(initialPose: Pose2d = Pose2d.ZERO) : BaseObserver<Motion<Pose2d>, Any, Pose2d>() {
 
@@ -37,18 +37,18 @@ class GlobalPoseObserver(initialPose: Pose2d = Pose2d.ZERO) : BaseObserver<Motio
 
 
 /**
- * A wrapper around another controller that first maps reference from global to relative first.
+ * A wrapper around another controller that first maps reference from global to bot first.
  *
  * The current state supplied will always be [Pose2d.ZERO], and reference moves around.
  */
-class GlobalToRelativePoseController(
+class GlobalToBotMotionController(
     private val baseController: Controller<State<Pose2d>, Pose2d, Motion<Pose2d>>
 ) : Controller<State<Pose2d>, Pose2d, Motion<Pose2d>> {
 
     override val signal: Motion<Pose2d> get() = baseController.signal
     override fun update(reference: State<Pose2d>, currentState: Pose2d, elapsedSeconds: Double) {
         baseController.update(
-            FieldToBot.reference(reference, currentState),
+            GlobalToBot.reference(reference, currentState),
             Pose2d.ZERO, elapsedSeconds
         )
     }

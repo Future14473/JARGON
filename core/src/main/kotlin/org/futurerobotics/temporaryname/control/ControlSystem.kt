@@ -227,7 +227,7 @@ internal class InternalControlLink<State : Any, Reference : Any, Signal : Any, M
  * **Link3**: The linear state-space link contains has an [Observer] -- a kalman filter or a simpler filter, to map
  *    the motor positions into motor velocities.
  *
- * **Link2**: The "mapper" link's takes the motor velocities and estimates the robot's relative pose motion.
+ * **Link2**: The "mapper" link's takes the motor velocities and estimates the _bot's_ pose motion.
  *
  * **Link1**: The Ramsete link's observer takes the motor velocities, and updates its tracking of the global pose.
  *
