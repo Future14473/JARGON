@@ -1,3 +1,3 @@
-rootProject.name = "robotics-lib"
+rootProject.name = "jargon"
 include(":core", ":test-util")
 include(":pathing")

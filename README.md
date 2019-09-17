@@ -1,11 +1,11 @@
-## Hi!
+# WELCOME TO JARGON
 
-This is a (currently ) work in progress robotics library that is originally for creating advanced(ish)
-control systems in FTC; it can theoretically be used beyond that.
+JARGON stands For **J**ust **A**nother **R**obot **G**uidance **O**peratio**N**
 
+This is a (currently) work in progress robotics library that is originally for creating semi-advanced
+control systems in FTC; although it could theoretically work in applications too.
 
 This library will be extensively used by Future Robotics, Team 14473, in the upcoming 2019-2020 SkyStone competitions.
-
 
 _This may possibly be de-branded from Future robotics in the future._ No pun intended.
  
@@ -14,9 +14,9 @@ _This may possibly be de-branded from Future robotics in the future._ No pun int
 - Advanced (well, advanced enough for high school level robotics) and customizable control systems, based off of MODELs
   not just PID coefficients
 - Flexible and customizable/extendable trajectory constraints; for example maximum modeled wheel voltage/torque constraint
-- High level easy to understand abstractions 
 
 #### Planned features include, in general order of planned development:
+- High level easy to understand abstractions of said above
 - Optional state-space theory applications (yay linear algebra)
 - Simulations
 - Concurrency frameworks
@@ -27,7 +27,7 @@ _This may possibly be de-branded from Future robotics in the future._ No pun int
   - Swerve drive
 - Parameter estimation
 - Tutorial/documentation
-- Short papers enplaning all the math used
+- Short papers explaining all the math used
 - OpenCV frameworks
 - Visual interface (but that's like GUI stuff which takes time)
 

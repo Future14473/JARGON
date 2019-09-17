@@ -9,7 +9,7 @@ repositories {
     mavenLocal()
 }
 dependencies {
-    //    implementation("org.futurerobotics.temporaryname:core:0.0.1")
+    //    implementation("org.futurerobotics.jargon:core:0.0.1")
     implementation(project(":core"))
 
     implementation(junit)

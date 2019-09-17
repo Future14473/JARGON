@@ -28,7 +28,7 @@ plugins {
 //
 //}
 subprojects {
-    group = "org.futurerobotics.temporaryname"
+    group = "org.futurerobotics.jargon"
     version = "0.1.0-SNAPSHOT"
     repositories {
         //        mavenCentral()
@@ -49,7 +49,7 @@ subprojects {
     }
     tasks.getting(Test::class) {
         useJUnit {
-            excludeCategories("org.futurerobotics.temporaryname.NotARealTest")
+            excludeCategories("org.futurerobotics.jargon.NotARealTest")
         }
     }
 }
