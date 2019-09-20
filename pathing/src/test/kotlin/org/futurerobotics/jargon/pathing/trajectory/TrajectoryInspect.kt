@@ -82,7 +82,7 @@ class TrajectoryInspect(private val trajectory: Trajectory) {
                 }.let {
                     MultiplePath(it)
                 }.let {
-                    TrajectoryGenerator.generateTrajectory(
+                    generateTrajectory(
                         it,
                         constraints
                     )
