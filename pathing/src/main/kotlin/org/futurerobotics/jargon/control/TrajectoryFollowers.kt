@@ -1,8 +1,8 @@
 package org.futurerobotics.jargon.control
 
 import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.mechanics.State
-import org.futurerobotics.jargon.mechanics.ValueState
+import org.futurerobotics.jargon.mechanics.MotionState3
+import org.futurerobotics.jargon.mechanics.ValueMotionState3
 
 /**
  * Base implementation of a Trajectory follower, that uses [tolerances] to estimate if done.
@@ -10,10 +10,10 @@ import org.futurerobotics.jargon.mechanics.ValueState
  * @param tolerances the [PoseTolerance] to use to indicate if we can safely turn off the control system.
  */
 abstract class BaseTrajectoryFollower(var tolerances: PoseTolerance = PoseTolerance.NONE) :
-    MotionProfileFollower<Pose2d, State<Pose2d>>() {
+    MotionProfileFollower<Pose2d, MotionState3<Pose2d>>() {
 
-    override fun getIdleReference(pastReference: State<Pose2d>?, currentState: Pose2d): State<Pose2d> =
-        pastReference ?: ValueState(currentState, Pose2d.ZERO, Pose2d.ZERO)
+    override fun getIdleReference(pastReference: MotionState3<Pose2d>?, currentState: Pose2d): MotionState3<Pose2d> =
+        pastReference ?: ValueMotionState3(currentState, Pose2d.ZERO, Pose2d.ZERO)
 
     override val isDone: Boolean
         get() = reference.v epsEq Pose2d.ZERO &&
@@ -30,7 +30,7 @@ class TimeOnlyTrajectoryFollower(tolerances: PoseTolerance = PoseTolerance.NONE)
     override fun getNextTime(
         pastState: Pose2d,
         currentState: Pose2d,
-        pastOutput: State<Pose2d>,
+        pastOutput: MotionState3<Pose2d>,
         pastVirtualTime: Double,
         elapsedSeconds: Double
     ): Double {
@@ -55,7 +55,7 @@ private class AdaptiveTrajectoryFollower(
     override fun getNextTime(
         pastState: Pose2d,
         currentState: Pose2d,
-        pastOutput: State<Pose2d>,
+        pastOutput: MotionState3<Pose2d>,
         pastVirtualTime: Double,
         elapsedSeconds: Double
     ): Double {

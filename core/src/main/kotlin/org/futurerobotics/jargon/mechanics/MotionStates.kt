@@ -7,83 +7,97 @@ import org.futurerobotics.jargon.math.Vector2d
  * Represents the motion of some quantity representing type [T] (e.g. 1d motion, vector2d, pose, linear algebra vector).
  *
  * This contains velocity ([v]), and acceleration ([a])
- * @see [State]
+ * @see [MotionState3]
  */
-interface Motion<T : Any> {
-
-    /** The velocity of this [Motion] */
+interface MotionOnly<T : Any> {
+    /** The velocity of this [MotionOnly] */
     val v: T
-    /** The acceleration of this [Motion] */
+    /** The acceleration of this [MotionOnly] */
     val a: T
+
+    /** @return v */
+    operator fun component1(): T = v
+
+    /** @return a */
+    operator fun component2(): T = a
 }
-
-/** @return v */
-operator fun <T : Any> Motion<T>.component1(): T = v
-
-/** @return a */
-operator fun <T : Any> Motion<T>.component2(): T = a
 
 /**
- * Represents the motion state _including position/current state_
- * of some space or quantity representing type [T] (e.g. 1d motion, vector, pose, matrix).
- *
- * This contains position ([s]), velocity ([v]), and acceleration ([a])
- *
- * This is a subclass of:
- * @see [Motion]
+ * Represents the motion state: current state (s), and derivative (v)
+ * of some quantity [T].
  */
-interface State<T : Any> : Motion<T> {
-
-    /** The position of this [State] */
+interface MotionState2<T : Any> {
+    /** The position of this [MotionState3] */
     val s: T
-    /** The velocity of this [State] */
-    override val v: T
-    /** The acceleration of this [State] */
-    override val a: T
+    /** The velocity of this [MotionOnly] */
+    val v: T
+
+    /** @return s */
+    operator fun component1(): T = s
+
+    /** @return v */
+    operator fun component2(): T = v
 }
 
-/** @return s */
-operator fun <T : Any> State<T>.component1(): T = s
+/**
+ * Represents the motion state: current state (s), derivative (v), and second derivative [a]
+ * of some quantity [T].
+ *
+ * This is a sub-interface of [MotionState2]
+ */
+interface MotionState3<T : Any> : MotionState2<T> {
+    /** The acceleration of this [MotionState3] */
+    val a: T
 
-/** @return v */
-operator fun <T : Any> State<T>.component2(): T = v
+    /** @return a */
+    operator fun component3(): T = a
+}
 
-/** @return a */
-operator fun <T : Any> State<T>.component3(): T = a
 
-/** An simple implementation of [Motion] that holds values in fields */
-open class ValueMotion<T : Any>(override val v: T, override val a: T) : Motion<T> {
+/** An simple implementation of [MotionOnly] that holds values in fields */
+open class ValueMotionOnly<T : Any>(override val v: T, override val a: T) : MotionOnly<T> {
 
     override fun equals(other: Any?): Boolean = when {
         this === other -> true
-        other !is ValueState<*> -> false
+        other !is ValueMotionState3<*> -> false
         else -> v == other.v && a == other.a
     }
 
     override fun hashCode(): Int = 31 * v.hashCode() + a.hashCode()
 }
 
-/** An simple implementation of [State] that holds values in fields */
-open class ValueState<T : Any>(override val s: T, v: T, a: T) : ValueMotion<T>(v, a), State<T> {
+/** An simple implementation of [MotionOnly] that holds values in fields */
+open class ValueMotionState2<T : Any>(override val s: T, override val v: T) : MotionState2<T> {
 
     override fun equals(other: Any?): Boolean = when {
         this === other -> true
-        other !is ValueState<*> -> false
-        else -> super.equals(other) && s == other.s
+        other !is ValueMotionState3<*> -> false
+        else -> s == other.s && v == other.v
+    }
+
+    override fun hashCode(): Int = 31 * s.hashCode() + v.hashCode()
+}
+
+/** An simple implementation of [MotionState3] that holds values in fields */
+open class ValueMotionState3<T : Any>(s: T, v: T, override val a: T) : ValueMotionState2<T>(s, v), MotionState3<T> {
+    override fun equals(other: Any?): Boolean = when {
+        this === other -> true
+        other !is ValueMotionState3<*> -> false
+        else -> s == other.s && v == other.v && a == other.a
     }
 
     override fun hashCode(): Int = 31 * super.hashCode() + s.hashCode()
 }
 
 
-/** Extracts the vector [State] from this pose [State]. */
-fun State<Pose2d>.vec(): State<Vector2d> = ValueState(s.vec, v.vec, a.vec)
+/** Extracts the vector [MotionState3] from this pose [MotionState3]. */
+fun MotionState3<Pose2d>.vec(): MotionState3<Vector2d> = ValueMotionState3(s.vec, v.vec, a.vec)
 
-/** Extracts the heading component from this pose [State]. */
-fun State<Pose2d>.heading(): LinearState = LinearState(s.heading, v.heading, a.heading)
+/** Extracts the heading component from this pose [MotionState3]. */
+fun MotionState3<Pose2d>.heading(): LinearMotionState3 = LinearMotionState3(s.heading, v.heading, a.heading)
 
-/** Extracts the x component from this pose [State]. */
-fun State<Pose2d>.x(): LinearState = LinearState(s.x, v.x, a.x)
+/** Extracts the x component from this pose [MotionState3]. */
+fun MotionState3<Pose2d>.x(): LinearMotionState3 = LinearMotionState3(s.x, v.x, a.x)
 
-/** Extracts the y component from this pose [State]. */
-fun State<Pose2d>.y(): LinearState = LinearState(s.y, v.y, a.y)
+/** Extracts the y component from this pose [MotionState3]. */
+fun MotionState3<Pose2d>.y(): LinearMotionState3 = LinearMotionState3(s.y, v.y, a.y)

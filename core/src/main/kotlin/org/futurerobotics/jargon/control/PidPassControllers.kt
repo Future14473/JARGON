@@ -7,7 +7,7 @@ import org.futurerobotics.jargon.math.coerceLengthAtMost
 import org.futurerobotics.jargon.mechanics.*
 
 /**
- * A controller for [LinearState] that uses PID for positional error,
+ * A controller for [LinearMotionState3] that uses PID for positional error,
  * and passes velocity and acceleration feed forwards to its output.
  *
  * The PID correction is added to the output's velocity.
@@ -25,7 +25,11 @@ class PIDPassController(private val coefficients: PIDCoefficients) :
     private var prevError = zero
     private var errorSum = zero
 
-    override fun getSignal(reference: State<Double>, currentState: Double, elapsedSeconds: Double): Motion<Double> {
+    override fun getSignal(
+        reference: MotionState3<Double>,
+        currentState: Double,
+        elapsedSeconds: Double
+    ): MotionOnly<Double> {
         val (x, v, a) = reference
         val pid = processPID(currentState, elapsedSeconds, x)
         return LinearMotion(v + pid, a)
@@ -76,13 +80,13 @@ class VecPIDPassController(private val coefficients: PIDCoefficients) :
     private var prevError = zero
     private var errorSum = zero
     override fun getSignal(
-        reference: State<Vector2d>,
+        reference: MotionState3<Vector2d>,
         currentState: Vector2d,
         elapsedSeconds: Double
-    ): Motion<Vector2d> {
+    ): MotionOnly<Vector2d> {
         val (x, v, a) = reference
         val pid = processPID(currentState, elapsedSeconds, x)
-        return ValueMotion(v + pid, a)
+        return ValueMotionOnly(v + pid, a)
     }
 
     private fun processPID(current: Vector2d, elapsedSeconds: Double, x: Vector2d): Vector2d {
@@ -132,10 +136,14 @@ class TwoPartPIDPassController(
     private val translational = VecPIDPassController(translationalCoeff)
     private val rotational = PIDPassController(headingCoeff)
 
-    override fun getSignal(reference: State<Pose2d>, currentState: Pose2d, elapsedSeconds: Double): Motion<Pose2d> {
+    override fun getSignal(
+        reference: MotionState3<Pose2d>,
+        currentState: Pose2d,
+        elapsedSeconds: Double
+    ): MotionOnly<Pose2d> {
         val (vv, va) = translational.updateAndGetSignal(reference.vec(), currentState.vec, elapsedSeconds)
         val (hv, ha) = rotational.updateAndGetSignal(reference.heading(), currentState.heading, elapsedSeconds)
-        return ValueMotion(Pose2d(vv, hv), Pose2d(va, ha))
+        return ValueMotionOnly(Pose2d(vv, hv), Pose2d(va, ha))
     }
 
     override fun start() {
@@ -173,11 +181,15 @@ class ThreePartPIDPassController(
     private val lateral = PIDPassController(lateralCoeff) //y
     private val heading = PIDPassController(headingCoeff)
 
-    override fun getSignal(reference: State<Pose2d>, currentState: Pose2d, elapsedSeconds: Double): Motion<Pose2d> {
+    override fun getSignal(
+        reference: MotionState3<Pose2d>,
+        currentState: Pose2d,
+        elapsedSeconds: Double
+    ): MotionOnly<Pose2d> {
         val (xv, xa) = axial.updateAndGetSignal(reference.x(), currentState.x, elapsedSeconds)
         val (yv, ya) = lateral.updateAndGetSignal(reference.y(), currentState.y, elapsedSeconds)
         val (hv, ha) = heading.updateAndGetSignal(reference.heading(), currentState.heading, elapsedSeconds)
-        return ValueMotion(Pose2d(xv, yv, hv), Pose2d(xa, ya, ha))
+        return ValueMotionOnly(Pose2d(xv, yv, hv), Pose2d(xa, ya, ha))
     }
 
     override fun start() {

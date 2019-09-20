@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.control
 
-import org.futurerobotics.jargon.mechanics.Motion
-import org.futurerobotics.jargon.mechanics.State
+import org.futurerobotics.jargon.mechanics.MotionOnly
+import org.futurerobotics.jargon.mechanics.MotionState3
 import org.futurerobotics.jargon.system.StartStoppable
 
 /**
@@ -51,10 +51,10 @@ interface ReferenceTracker<in State : Any, out Reference : Any> : StartStoppable
 }
 
 /**
- * The standard reference tracker. It takes a [Value] to update and outputs [State] of that value.
+ * The standard reference tracker. It takes a [Value] to update and outputs [MotionState3] of that value.
  * @see BaseStandardReferenceTracker
  */
-interface StandardReferenceTracker<Value : Any> : ReferenceTracker<Value, State<Value>>
+interface StandardReferenceTracker<Value : Any> : ReferenceTracker<Value, MotionState3<Value>>
 
 
 /**
@@ -94,7 +94,7 @@ abstract class BaseReferenceTracker<State : Any, Reference : Any> : ReferenceTra
  * @see BaseReferenceTracker
  */
 abstract class BaseStandardReferenceTracker<Value : Any> :
-    BaseReferenceTracker<Value, State<Value>>(), StandardReferenceTracker<Value>
+    BaseReferenceTracker<Value, MotionState3<Value>>(), StandardReferenceTracker<Value>
 
 /**
  * A [ReferenceTracker] in which the user sets reference manually,
@@ -191,17 +191,17 @@ fun <Reference : Any, State : Any, Signal : Any> Controller<Reference, State, Si
 }
 
 /**
- * The the standard controller. It works with the [State] of a value as it's reference.
+ * The the standard controller. It works with the [MotionState3] of a value as it's reference.
  */
-typealias StandardController<Value, Signal> = Controller<State<Value>, Value, Signal>
+typealias StandardController<Value, Signal> = Controller<MotionState3<Value>, Value, Signal>
 
 /**
  * A pass through controller; which is usually used in chained control systems.
  *
- * It's output is a [Motion] which is the controller's corrective measure operating only on the current
+ * It's output is a [MotionOnly] which is the controller's corrective measure operating only on the current
  * position _and_ the reference's motion combined.
  */
-typealias PassingMotionController<Value> = StandardController<Value, Motion<Value>>
+typealias PassingMotionController<Value> = StandardController<Value, MotionOnly<Value>>
 
 /**
  * Base implementation of a [Controller] where only a [getSignal] function that returns a signal is needed.
@@ -244,14 +244,14 @@ abstract class BaseController<in Reference : Any, in State : Any, Signal : Any> 
  * Typealias for base implementation of [StandardController].
  * @see [BaseController]
  */
-typealias BaseStandardController<Value, Signal> = BaseController<State<Value>, Value, Signal>
+typealias BaseStandardController<Value, Signal> = BaseController<MotionState3<Value>, Value, Signal>
 
 /**
  * Typealias for base implementation of [PassingMotionController].
  *
  * @see [BaseController]
  */
-typealias BasePassingMotionController<Value> = BaseController<State<Value>, Value, Motion<Value>>
+typealias BasePassingMotionController<Value> = BaseController<MotionState3<Value>, Value, MotionOnly<Value>>
 
 /**
  * A [Controller] that does not take into account the current state, i.e. a open loop control system.

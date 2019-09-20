@@ -5,7 +5,7 @@ import org.futurerobotics.jargon.mechanics.*
 
 /**
  * A open-loop controller [FixedWheelDriveModel]; holonomic or non-holonomic,
- * that takes in [Motion] of Pose as references, and produces [MotorVoltages] output.
+ * that takes in [MotionOnly] of Pose as references, and produces [MotorVoltages] output.
  *
  * For a better closed loop controllers, see (something that does not yet exist)
  *
@@ -15,9 +15,9 @@ import org.futurerobotics.jargon.mechanics.*
  */
 class FixedWheelOpenController(
     private val model: FixedWheelDriveModel
-) : OpenController<Motion<Pose2d>, MotorVoltages>() {
+) : OpenController<MotionOnly<Pose2d>, MotorVoltages>() {
 
-    override fun getSignal(reference: Motion<Pose2d>, elapsedSeconds: Double): MotorVoltages {
+    override fun getSignal(reference: MotionOnly<Pose2d>, elapsedSeconds: Double): MotorVoltages {
         return model.getModeledVoltages(reference)
     }
 
@@ -31,10 +31,10 @@ class FixedWheelOpenController(
  * Maybe pass through a filter first.
  */
 class FixedWheelPositionToVelocityObserver(private val model: FixedWheelDriveModel) :
-    BaseObserver<MotorPositions, Any, Motion<Pose2d>>() {
+    BaseObserver<MotorPositions, Any, MotionOnly<Pose2d>>() {
 
     private var lastPositions: MotorPositions? = null
-    override fun getState(measurement: MotorPositions, lastSignal: Any, elapsedSeconds: Double): Motion<Pose2d> {
+    override fun getState(measurement: MotorPositions, lastSignal: Any, elapsedSeconds: Double): MotionOnly<Pose2d> {
         val lastPositions = lastPositions
         val velocity = if (lastPositions == null || elapsedSeconds.isNaN()) {
             Pose2d.ZERO
@@ -43,7 +43,7 @@ class FixedWheelPositionToVelocityObserver(private val model: FixedWheelDriveMod
             model.getEstimatedVelocity(diff)
         }
         this.lastPositions = measurement
-        return ValueMotion(velocity, Pose2d.ZERO)
+        return ValueMotionOnly(velocity, Pose2d.ZERO)
     }
 
     override fun start() {
@@ -60,10 +60,10 @@ class FixedWheelPositionToVelocityObserver(private val model: FixedWheelDriveMod
  * Maybe pass through a filter first.
  */
 class FixedWheelVelocityToVelocityObserver(private val model: FixedWheelDriveModel) :
-    BaseObserver<MotorVelocities, Any, Motion<Pose2d>>() {
+    BaseObserver<MotorVelocities, Any, MotionOnly<Pose2d>>() {
 
-    override fun getState(measurement: MotorVelocities, lastSignal: Any, elapsedSeconds: Double): Motion<Pose2d> {
-        return ValueMotion(model.getEstimatedVelocity(measurement), Pose2d.ZERO)
+    override fun getState(measurement: MotorVelocities, lastSignal: Any, elapsedSeconds: Double): MotionOnly<Pose2d> {
+        return ValueMotionOnly(model.getEstimatedVelocity(measurement), Pose2d.ZERO)
     }
 
     override fun start() {

@@ -26,7 +26,7 @@ object GlobalToBot {
      * Converts a _expected_ [globalMotion] in poses to bot [globalMotion], given the true [globalHeading]
      */
     @JvmStatic
-    fun motion(globalMotion: Motion<Pose2d>, globalHeading: Double): Motion<Pose2d> {
+    fun motion(globalMotion: MotionOnly<Pose2d>, globalHeading: Double): MotionOnly<Pose2d> {
         val (v, a) = globalMotion
         val rv = v.vecRotated(-globalHeading)
         val ra = Pose2d(
@@ -34,7 +34,7 @@ object GlobalToBot {
                     v.vec.rotated(-globalHeading + PI / 2) * -v.heading,
             a.heading
         )
-        return ValueMotion(rv, ra)
+        return ValueMotionOnly(rv, ra)
     }
 
     /**
@@ -42,7 +42,7 @@ object GlobalToBot {
      * Pose2d.Zero), given the current [globalPose]
      */
     @JvmStatic
-    fun reference(reference: State<Pose2d>, globalPose: Pose2d): State<Pose2d> {
+    fun reference(reference: MotionState3<Pose2d>, globalPose: Pose2d): MotionState3<Pose2d> {
         val (s, v, a) = reference
         val rs = (s - globalPose).vecRotated(-globalPose.heading)
         val rv = v.vecRotated(-globalPose.heading)
@@ -51,6 +51,6 @@ object GlobalToBot {
                     v.vec.rotated(-globalPose.heading + PI / 2) * -v.heading,
             a.heading
         )
-        return ValueState(rs, rv, ra)
+        return ValueMotionState3(rs, rv, ra)
     }
 }

@@ -65,8 +65,8 @@ inline fun <T, V> forEachZippedIndexed(p1: Iterable<T>, p2: Iterable<V>, action:
     var i = 0
     let(p1.iterator(), p2.iterator()) { it1, it2 ->
         while (it1.hasNext() && it2.hasNext()) {
-            action(i++, it1.next(), it2.next())
             if (i < 0) throw ArithmeticException("Index overflow")
+            action(i++, it1.next(), it2.next())
         }
     }
 }

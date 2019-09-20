@@ -5,7 +5,7 @@ import org.futurerobotics.jargon.errorTo
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.randomVectorDerivatives
-import org.futurerobotics.jargon.mechanics.State
+import org.futurerobotics.jargon.mechanics.MotionState3
 import org.futurerobotics.jargon.pathing.MultiplePath
 import org.futurerobotics.jargon.pathing.TangentHeading
 import org.futurerobotics.jargon.pathing.addHeading
@@ -26,7 +26,7 @@ class TrajectoryInspect(private val trajectory: Trajectory) {
         reportError {
             stepT { i, t ->
                 val time = t * duration
-                val direct: State<Pose2d> = trajectory.atTime(time)
+                val direct: MotionState3<Pose2d> = trajectory.atTime(time)
                 val approx =
                     (trajectory.atTime(time + epsilon).s - trajectory.atTime(time - epsilon).s) / (2 * epsilon)
                 addError(approx errorTo direct.v) {

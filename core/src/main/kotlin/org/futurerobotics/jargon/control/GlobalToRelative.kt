@@ -5,19 +5,19 @@ import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.cosc
 import org.futurerobotics.jargon.math.sinc
 import org.futurerobotics.jargon.mechanics.GlobalToBot
-import org.futurerobotics.jargon.mechanics.Motion
-import org.futurerobotics.jargon.mechanics.State
+import org.futurerobotics.jargon.mechanics.MotionOnly
+import org.futurerobotics.jargon.mechanics.MotionState3
 
 /**
  * Non-linearly tracks the _global_ pose, given _bot_ pose velocities.
  */
-class GlobalPoseObserver(initialPose: Pose2d = Pose2d.ZERO) : BaseObserver<Motion<Pose2d>, Any, Pose2d>() {
+class GlobalPoseObserver(initialPose: Pose2d = Pose2d.ZERO) : BaseObserver<MotionOnly<Pose2d>, Any, Pose2d>() {
 
     init {
         state = initialPose
     }
 
-    override fun getState(measurement: Motion<Pose2d>, lastSignal: Any, elapsedSeconds: Double): Pose2d {
+    override fun getState(measurement: MotionOnly<Pose2d>, lastSignal: Any, elapsedSeconds: Double): Pose2d {
         val (v, dTheta) = measurement.v * elapsedSeconds
         val (x, y) = v
         val sinc = sinc(dTheta)
@@ -42,11 +42,11 @@ class GlobalPoseObserver(initialPose: Pose2d = Pose2d.ZERO) : BaseObserver<Motio
  * The current state supplied will always be [Pose2d.ZERO], and reference moves around.
  */
 class GlobalToBotMotionController(
-    private val baseController: Controller<State<Pose2d>, Pose2d, Motion<Pose2d>>
-) : Controller<State<Pose2d>, Pose2d, Motion<Pose2d>> {
+    private val baseController: Controller<MotionState3<Pose2d>, Pose2d, MotionOnly<Pose2d>>
+) : Controller<MotionState3<Pose2d>, Pose2d, MotionOnly<Pose2d>> {
 
-    override val signal: Motion<Pose2d> get() = baseController.signal
-    override fun update(reference: State<Pose2d>, currentState: Pose2d, elapsedSeconds: Double) {
+    override val signal: MotionOnly<Pose2d> get() = baseController.signal
+    override fun update(reference: MotionState3<Pose2d>, currentState: Pose2d, elapsedSeconds: Double) {
         baseController.update(
             GlobalToBot.reference(reference, currentState),
             Pose2d.ZERO, elapsedSeconds

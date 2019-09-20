@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 class LinearMotion constructor(
     override val v: Double,
     override val a: Double = 0.0
-) : Motion<Double> {
+) : MotionOnly<Double> {
 
     /**
      * Returns the new motion after time [t], assuming constant acceleration.
@@ -31,17 +31,17 @@ class LinearMotion constructor(
 }
 
 /**
- * Represents a [State] in [Double], with position [s], velocity [v], and acceleration [a].
+ * Represents a [MotionState3] in [Double], with position [s], velocity [v], and acceleration [a].
  * @param s position of this state
  * @param v velocity of this state
  * @param a acceleration of this state
  */
-class LinearState constructor(override val s: Double, override val v: Double, override val a: Double = 0.0) :
-    State<Double> {
+class LinearMotionState3 constructor(override val s: Double, override val v: Double, override val a: Double = 0.0) :
+    MotionState3<Double> {
 
     /** Returns the new state after time [t], assuming constant acceleration. */
-    fun afterTime(t: Double): LinearState =
-        LinearState(s + v * t + a * t.squared() / 2, v + a * t, a)
+    fun afterTime(t: Double): LinearMotionState3 =
+        LinearMotionState3(s + v * t + a * t.squared() / 2, v + a * t, a)
 
     /**
      * Returns the state, the case with positive velocity, after moving a displacement
@@ -49,14 +49,14 @@ class LinearState constructor(override val s: Double, override val v: Double, ov
      *
      * This may return a velocity of NaN if this state will never reach a displacement of [s] relative to here.
      */
-    fun afterForwardDist(s: Double): LinearState =
-        LinearState(this.s + s, sqrt(v.squared() + 2 * a * s), a)
+    fun afterForwardDist(s: Double): LinearMotionState3 =
+        LinearMotionState3(this.s + s, sqrt(v.squared() + 2 * a * s), a)
 
     /**
      * Returns the state, the case with positive velocity, when this state reaches a position of [s].
      *
      * This may return a velocity of NaN if this state will never reach a position of [s]
      */
-    fun atDist(s: Double): LinearState =
-        LinearState(s, sqrt(v.squared() + 2 * a * (s - this.s)), a)
+    fun atDist(s: Double): LinearMotionState3 =
+        LinearMotionState3(s, sqrt(v.squared() + 2 * a * (s - this.s)), a)
 }
