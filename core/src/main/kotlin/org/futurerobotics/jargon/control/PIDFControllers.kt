@@ -2,6 +2,7 @@ package org.futurerobotics.jargon.control
 
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
+import org.futurerobotics.jargon.math.coerceIn
 import org.futurerobotics.jargon.math.coerceLengthAtMost
 import org.futurerobotics.jargon.mechanics.*
 

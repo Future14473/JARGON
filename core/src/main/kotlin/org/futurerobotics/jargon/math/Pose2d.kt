@@ -2,10 +2,9 @@
 
 package org.futurerobotics.jargon.math
 
-import koma.extensions.get
-import koma.extensions.set
-import koma.matrix.Matrix
-import koma.zeros
+import org.futurerobotics.jargon.linalg.Vec
+import org.futurerobotics.jargon.linalg.createVec
+
 
 /**
  * Represents a 2d pose, i.e. both position ([vec]) and orientation ([heading])
@@ -18,8 +17,7 @@ data class Pose2d(val vec: Vector2d, val heading: Double) {
     /** Constructs a pose from [x] and [y] position components, and [heading] */
     constructor(x: Double, y: Double, heading: Double) : this(Vector2d(x, y), heading)
 
-    /** Constructs a pose from a matrix; only takes the first 3 elements */
-    constructor(matrix: Matrix<Double>) : this(matrix[0], matrix[1], matrix[2])
+    constructor(values: DoubleArray) : this(values[0], values[1], values[2])
 
     /** The x component of the position ([vec]) of this Pose */
     val x: Double get() = vec.x
@@ -49,18 +47,8 @@ data class Pose2d(val vec: Vector2d, val heading: Double) {
     /** If all components are finite. */
     fun isFinite(): Boolean = vec.isFinite() && heading.isFinite()
 
-    /** Returns a new column matrix with this pose's data, as [x, y, heading] */
-    fun toColumnVector(): Matrix<Double> = zeros(3, 1).apply {
-        this[0] = x
-        this[1] = y
-        this[2] = heading
-    }
-
-    /** Returns a new row matrix with this pose's data, as [x, y, heading] */
-    fun toRowVector(): Matrix<Double> = zeros(1, 3).apply {
-        this[0] = x
-        this[1] = y
-        this[2] = heading
+    fun toVector(): Vec {
+        return createVec(x, y, heading)
     }
 
     override fun toString(): String = "Pose2d(v:<%.4f, %.4f>, h: %.4f)".format(x, y, heading)

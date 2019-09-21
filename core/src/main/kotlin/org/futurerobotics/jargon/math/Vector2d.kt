@@ -2,9 +2,6 @@
 
 package org.futurerobotics.jargon.math
 
-import koma.extensions.set
-import koma.matrix.Matrix
-import koma.zeros
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -97,18 +94,6 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
         0 -> x
         1 -> y
         else -> throw IndexOutOfBoundsException("Vector index must be 0 or 1, instead got $index")
-    }
-
-    /** Returns a new column vector matrix with this vector's data. */
-    fun toColumnVector(): Matrix<Double> = zeros(2, 1).apply {
-        this[0] = x
-        this[1] = y
-    }
-
-    /** Returns a new row vector matrix with this vector's data. */
-    fun toRowVector(): Matrix<Double> = zeros(1, 2).apply {
-        this[0] = x
-        this[1] = y
     }
 
     override fun toString(): String = "Vector2d(%.6f, %.6f)".format(x, y)

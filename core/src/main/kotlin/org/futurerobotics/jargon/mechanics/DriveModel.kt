@@ -1,10 +1,9 @@
 package org.futurerobotics.jargon.mechanics
 
-import koma.extensions.*
-import koma.matrix.Matrix
-import koma.sign
-import koma.zeros
-import org.futurerobotics.jargon.math.*
+import org.futurerobotics.jargon.linalg.*
+import org.futurerobotics.jargon.math.Pose2d
+import org.futurerobotics.jargon.math.Vector2d
+import org.futurerobotics.jargon.math.degrees
 import org.futurerobotics.jargon.util.zipForEachIndexed
 
 /**
@@ -48,17 +47,17 @@ abstract class FixedWheelDriveModel(
     }
 
     //question: which data representation do we really need
-    private val botVelToVolts: Matrix<Double>
-    private val botAccelToVolts: Matrix<Double> //this matrix * poseAccelMatrix = wheel torque matrix
-    private val stallVolts: Matrix<Double>
-    private val motorVelToBotVel: Matrix<Double>
+    private val botVelToVolts: Mat
+    private val botAccelToVolts: Mat //this matrix * poseAccelMatrix = wheel torque matrix
+    private val stallVolts: Vec
+    private val motorVelToBotVel: Mat
 
     init {
         //remember: a matrix is simply a linear transformation.
         //turnContribution * bot ang vel = wheel tangent speed
         //turnContribution * wheel's force = wheel's contribution to bot torque. Yes, the other way around.
         val turnContributionVector = wheels.map { it.position cross it.orientation }
-        val botForceToBotAccel = createDiag(1 / mass, 1 / mass, 1 / moi)
+        val botForceToBotAccel = diag(1 / mass, 1 / mass, 1 / moi)
         val wheelForceToBotForce = zeros(3, wheels.size).also {
             wheels.zipForEachIndexed(turnContributionVector) { i, wheel, c ->
                 // [fx, fy, c].transpose
@@ -68,24 +67,22 @@ abstract class FixedWheelDriveModel(
                 it[2, i] = c
             }
         }
-        val voltsToWheelForce = createDiag(wheels.map { it.voltsPerForce })
+        val voltsToWheelForce = diag(wheels.map { it.voltsPerForce })
         val voltsToBotAccel = botForceToBotAccel * wheelForceToBotForce * voltsToWheelForce
 
         botAccelToVolts = voltsToBotAccel.pinv() //least squares
-        assert(botAccelToVolts.shape() == listOf(wheels.size, 3))
         val botVelToWheelVel = wheelForceToBotForce.transpose() //turns out to be the same
-        val wheelVelToVolts = createDiag(wheels.map { 1 / it.voltsPerVelocity })
+        val wheelVelToVolts = diag(wheels.map { 1 / it.voltsPerVelocity })
 
         botVelToVolts = wheelVelToVolts * botVelToWheelVel
 
-        assert(botVelToVolts.shape() == listOf(wheels.size, 3))
-        val motorVelToWheelVel = createDiag(wheels.map {
+        val motorVelToWheelVel = diag(wheels.map {
             it.motorAngVelPerVelocity
         })
         val wheelVelToBotVel = botVelToWheelVel.pinv()
         motorVelToBotVel = wheelVelToBotVel * motorVelToWheelVel
 
-        stallVolts = create(wheels.map { it.transmission.voltsForFriction }).asColVector()
+        stallVolts = createVec(wheels.map { it.transmission.voltsForFriction })
     }
 
     /**
@@ -94,22 +91,21 @@ abstract class FixedWheelDriveModel(
      */
     fun getModeledVoltages(motion: MotionOnly<Pose2d>): MotorVoltages {
         val (v, a) = motion
-        val vels = botVelToVolts * v.toColumnVector()
-        val accels = botAccelToVolts * a.toColumnVector()
+        val vels = botVelToVolts * v.toVector()
+        val accels = botAccelToVolts * a.toVector()
         return (vels + accels + sign(vels) emul stallVolts).toList()
     }
 
-    private val cachedMotorPositions: Matrix<Double> = zeros(wheels.size, 1)
     /**
      * Gets the estimated velocity based on the velocity in [motorPositions].
      *
      * This also gets the estimated _difference_ in _local_ pose given a difference in [motorPositions]
      */
     fun getEstimatedVelocity(motorPositions: List<Double>): Pose2d {
-        require(motorPositions.size == motorVelToBotVel.numCols()) {
+        require(motorPositions.size == motorVelToBotVel.columnDimension) {
             "motorPositions should have same number of positions as this's wheels."
         }
-        return Pose2d(motorVelToBotVel * cachedMotorPositions.setTo(motorPositions))
+        return Pose2d(motorVelToBotVel * motorPositions.toDoubleArray())
     }
 }
 
