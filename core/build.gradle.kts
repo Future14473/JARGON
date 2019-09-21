@@ -2,14 +2,14 @@
 
 val ext = project.rootProject.extra
 val junit: String by ext
-val commons: String by ext
+val hipparchus: String by ext
 plugins {
     kotlin("jvm")
     id("org.jetbrains.dokka")
     `maven-publish`
 }
 dependencies {
-    implementation(commons)
+    implementation(hipparchus)
     testImplementation(junit)
     testImplementation(project(":test-util"))
 //    implementation( "org.ejml:ejml-all:0.38")

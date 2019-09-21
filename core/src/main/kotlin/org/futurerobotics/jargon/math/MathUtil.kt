@@ -14,7 +14,7 @@ const val TAU: Double = 2 * PI
 /**
  * The leniency given to Double comparison in [epsEq] and related functions.
  */
-const val EPSILON: Double = 1e-6
+const val EPSILON: Double = 1e-8
 
 /**
  * If [this] is equal to [other], with a difference tolerance of [EPSILON] to account for floating-point errors.

@@ -2,8 +2,7 @@
 
 package org.futurerobotics.jargon.math
 
-import org.futurerobotics.jargon.linalg.Vec
-import org.futurerobotics.jargon.linalg.createVec
+import org.futurerobotics.jargon.linalg.*
 
 
 /**

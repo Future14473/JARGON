@@ -4,11 +4,11 @@ buildscript {
     val kotlinVersion by extra("1.3.50")
     val junitVersion by extra("4.12")
     val xchartVersion by extra("3.5.4")
-    val commonsVersion by extra("3.6.1")
+    val hipparchusVersion by extra("1.5")
     val junit by extra("junit:junit:$junitVersion")
     val xchart by extra("org.knowm.xchart:xchart:$xchartVersion")
     val dokka by extra("org.jetbrains.dokka")
-    val commons by extra("org.apache.commons:commons-math3:$commonsVersion")
+    val hipparchus by extra("org.hipparchus:hipparchus-core:$hipparchusVersion")
     repositories {
         mavenCentral()
     }
