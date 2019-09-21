@@ -1,6 +1,7 @@
 # WELCOME TO JARGON
 
 JARGON stands For **J**ust **A**nother **R**obot **G**uidance **O**peratio**N**
+###### (A.K.A cha cha real smooth)
 
 This is a (currently) work in progress robotics library that is originally for creating semi-advanced
 control systems in FTC; although it could theoretically work in applications too.
@@ -86,11 +87,10 @@ and the will to contribute to the development of this library before we open it 
 contact Future Robotics.
 
 'Guts' meaning having at least some of the following:
-- Have a creative idea for what this library should be named besides "chow chow real smooth"
 - Know kotlin well (a language very much worth learning)
 - Understand what SOLID is and what it could look like in practice, which is not what roadrunner currently does
 - Know some calculus and/or physics
 - Know linear algebra and/or state-space theory (go read the state-space guide linked above somewhere)
 - Willing to proofread, document, or write tests
 
-When this is (somewhat) stable, we will release it.
+When this is (somewhat) stable, we will release 0.1.0.
