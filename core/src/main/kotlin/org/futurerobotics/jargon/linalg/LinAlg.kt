@@ -5,50 +5,66 @@ package org.futurerobotics.jargon.linalg
 import org.hipparchus.linear.RealMatrix
 import org.hipparchus.linear.RealVector
 
-/** Shorthand for RealMatrix */
+/** Shorthand for a Matrix */
 typealias Mat = RealMatrix
 
+/** Shorthand for a Vector. */
 typealias Vec = RealVector
 
+private val dummyArr = pureDiag(0.0)
+
+/**
+ * Functions for concatenating matrices
+ */
 object MatConcat {
     /**
-     * DSL using [], similar to [mat]
+     * DSL using [] to concatenate matrices (or numbers which represent single elements), similar to [CreateMat].
+     *
+     * Recommended use in kotlin only.
      */
-    operator fun invoke(vararg ts: Any): Mat {
-        val numStops = ts.count { it is Pair<*, *> }
+    operator fun get(vararg elements: Any): Mat {
+        val numStops = elements.count { it is Pair<*, *> }
+        val numElements = elements.count() + numStops
         val numRows = numStops + 1
-        val numElements = ts.count() + numStops
         val numCols = numElements / numRows
         if (numRows * numCols != numElements) throwNotEven()
-        val arr = Array(numRows) { arrayOfNulls<Any>(numCols) }
+        val arr = Array(numRows) { Array(numCols) { dummyArr } }
         var curRow = 0
         var curCol = 0
-        for (element in ts) {
-            if (curCol >= numCols) throwNotEven()
+        fun Any.convertToMat(): Mat = when (this) {
+            is Mat -> this
+            is Number -> pureDiag(toDouble())
+            else -> throwInvalidValue()
+        }
+        elements.forEach { element ->
+            if (curCol >= numCols) throwNotEven() //if stop late
             when (element) {
-                is Mat, is Number -> {
-                    arr[curRow][curCol] = element
-                    curCol++
-                }
                 is Pair<*, *> -> {
-                    arr[curRow][curCol] = element.first
-                    arr[curRow + 1][0] = element.second
+                    if (curCol != numCols - 1) throwNotEven() //if stop early
+                    arr[curRow][curCol] = element.first?.convertToMat() ?: throwInvalidValue()
+                    arr[curRow + 1][0] = element.second?.convertToMat() ?: throwInvalidValue()
                     curRow++
                     curCol = 1
                 }
-                else -> throw IllegalArgumentException("Invalid value given to builder.")
+                else -> {
+                    arr[curRow][curCol] = element.convertToMat()
+                    curCol++
+                }
             }
         }
+
         return concat(arr)
     }
 
+
     /**
-     * Flattens a 2d array of [Matrix]es or Numbers, concatenating them into a single Matrix.
+     * Takes a 2d array of [Matrix]es with compatible sizes, concatenating them into a single Matrix.
      */
-    fun concat(arr: Array<Array<Any?>>): Mat {
+    @JvmStatic
+    fun concat(arr: Array<out Array<out Mat>>): Mat {
         if (arr.isEmpty()) return zeros(0, 0)
-        val cols = arr.first().map { it.numCols() }
-        val rows = arr.map { it.first().numRows() }
+        val cols = arr.first().map { it.cols }
+        val rows = arr.map { it.first().rows }
         val outRows = rows.sum()
         val outCols = cols.sum()
         val out = zeros(outRows, outCols)
@@ -58,13 +74,8 @@ object MatConcat {
             var currentCol = 0
             row.forEachIndexed { colInd, it ->
                 val requiredCols = cols[colInd]
-                if (it.numCols() != requiredCols || it.numRows() != requiredRows) throwNotEven()
-                @Suppress("UNCHECKED_CAST")
-                when (it) {
-                    is Mat -> out[currentRow, currentCol] = it
-                    is Number -> out[currentRow, currentCol] = it.toDouble()
-                    else -> throwInvalidValue()
-                }
+                if (it.cols != requiredCols || it.rows != requiredRows) throwNotEven()
+                out[currentRow, currentCol] = it
                 currentCol += requiredCols
             }
             currentRow += requiredRows
@@ -72,11 +83,13 @@ object MatConcat {
         return out
     }
 
-    fun concat4(m11: Mat, m12: Mat, m21: Mat, m22: Mat): Mat {
-        require(m11.rows == m12.rows)
-        require(m21.rows == m22.rows)
-        require(m11.cols == m21.cols)
-        require(m12.cols == m22.cols)
+    /** Common operation of concatenating 4 matrices of compatible size into a 2x2 pattern */
+    @JvmStatic
+    fun concat2x2(m11: Mat, m12: Mat, m21: Mat, m22: Mat): Mat {
+        require(m11.rows == m12.rows) { "Size must match" }
+        require(m21.rows == m22.rows) { "Size must match" }
+        require(m11.cols == m21.cols) { "Size must match" }
+        require(m12.cols == m22.cols) { "Size must match" }
         val row = m11.rows
         val col = m11.cols
         return zeros(row + m21.rows, col + m12.cols).apply {
@@ -87,19 +100,48 @@ object MatConcat {
         }
     }
 
-    private fun Any?.numCols(): Int = when (this) {
-        is Mat -> this.cols
-        is Number -> 1
-        else -> throwInvalidValue()
+
+    /**
+     * Common operation of concatenates 4 _square_ matrices of equal size into a single matrix.
+     *
+     * This is also _dynamic_:
+     * If at least one matrix is supplied and so the size can be determined, use the value 0 to indicate a zero
+     * matrix and the value 1 to indicate an identity matrix.
+     * */
+    @JvmStatic
+    fun square2x2(m11: Any, m12: Any, m21: Any, m22: Any): Mat {
+        var size: Int = -1
+        val all = arrayOf(m11, m12, m21, m22)
+        all.forEach {
+            when (it) {
+                is Mat -> {
+                    require(it.isSquare) { "Matrix given must be square" }
+                    if (size == -1) size = it.rows
+                    else require(size == it.rows) { "All matrices give must be same size" }
+                }
+                !is Number -> throwInvalidValue()
+            }
+        }
+        require(size != -1) { "At least one matrix must be given" }
+         fun convertToMat(any: Any, size: Int): Mat = when (any) {
+             is Mat -> any
+             !is Number -> throwInvalidValue()
+             0 -> pureZeroSquare(size)
+             1 -> pureEye(size)
+             else -> throw IllegalArgumentException(
+                 "Number value given must be 0, for zero matrix, or 1, for identity matrix"
+             )
+         }
+        return zeros(size * 2, size * 2).apply {
+            this[0, 0] = convertToMat(m11, size)
+            this[size, 0] = convertToMat(m12, size)
+            this[0, size] = convertToMat(m21, size)
+            this[size, size] = convertToMat(m22, size)
+        }
     }
 
-    private fun Any?.numRows(): Int = when (this) {
-        is Mat -> this.rows
-        is Number -> 1
-        else -> throwInvalidValue()
-    }
 
-    private fun throwInvalidValue(): Nothing = throw IllegalArgumentException("Invalid value given to builder.")
+    private fun throwInvalidValue(): Nothing = throw IllegalArgumentException("Invalid value given")
 
     private fun throwNotEven(): Nothing = throw IllegalArgumentException("Even rows/cols not given")
 

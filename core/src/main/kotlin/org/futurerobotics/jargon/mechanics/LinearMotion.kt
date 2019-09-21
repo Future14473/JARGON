@@ -9,7 +9,8 @@ import kotlin.math.sqrt
  * @param v velocity of this motion
  * @param a acceleration of this motion
  */
-class LinearMotion constructor(
+class LinearMotion
+@JvmOverloads constructor(
     override val v: Double,
     override val a: Double = 0.0
 ) : MotionOnly<Double> {
@@ -36,8 +37,12 @@ class LinearMotion constructor(
  * @param v velocity of this state
  * @param a acceleration of this state
  */
-class LinearMotionState3 constructor(override val s: Double, override val v: Double, override val a: Double = 0.0) :
-    MotionState3<Double> {
+class LinearMotionState3
+@JvmOverloads constructor(
+    override val s: Double,
+    override val v: Double,
+    override val a: Double = 0.0
+) : MotionState3<Double> {
 
     /** Returns the new state after time [t], assuming constant acceleration. */
     fun afterTime(t: Double): LinearMotionState3 =

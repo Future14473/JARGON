@@ -23,11 +23,9 @@ class VectorStructure {
         this.names = names.toList()
         this.units = units.toList()
     }
-
-    constructor(namesAndUnits: List<Pair<String, String>>) {
-        namesAndUnits.spliterator()
-        names = namesAndUnits.map { it.first }
-        units = namesAndUnits.map { it.second }
+    constructor(names: List<String>) {
+        this.names = names.toList()
+        this.units = repeatedList(names.size,"")
     }
 
     /**
@@ -67,7 +65,7 @@ class VectorStructure {
             append(' ')
             appendln(unit)
         }
-        appendln(']')
+        append(']')
     }
 }
 

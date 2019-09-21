@@ -1,8 +1,11 @@
-@file:Suppress("PublicApiImplicitType", "KDocMissingDocumentation")
+@file:Suppress("KDocMissingDocumentation")
 
 val ext = project.rootProject.extra
-val junit: String by ext
+
+@Suppress("PublicApiImplicitType")
 val hipparchus: ((String) -> String) by ext
+val junit: String by ext
+
 plugins {
     kotlin("jvm")
     id("org.jetbrains.dokka")
@@ -10,10 +13,12 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":core"))
     implementation(hipparchus("core"))
+    implementation(hipparchus("filtering"))
     testImplementation(junit)
-    testImplementation(project(":test-util"))
 }
+
 
 tasks.dokka {
     outputFormat = "html"
@@ -47,3 +52,4 @@ publishing {
         }
     }
 }
+

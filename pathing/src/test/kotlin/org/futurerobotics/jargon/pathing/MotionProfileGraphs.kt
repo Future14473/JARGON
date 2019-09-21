@@ -8,7 +8,7 @@ import org.futurerobotics.jargon.math.randomVectorDerivatives
 import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
 import org.futurerobotics.jargon.pathing.trajectory.*
 import org.futurerobotics.jargon.profile.MotionProfile
-import org.futurerobotics.jargon.profile.MotionProfileGenerator
+import org.futurerobotics.jargon.profile.generateDynamicProfile
 import org.futurerobotics.jargon.saveGraph
 import org.futurerobotics.jargon.util.stepToAll
 import org.junit.Assume
@@ -38,8 +38,8 @@ class MotionProfileGraphs(
     fun generateAndTimeProfile() {
         generationTime = measureNanoTime {
             val constraints = TrajectoryConstraint(path, constraints)
-            profile = MotionProfileGenerator.generateDynamicProfile(
-                constraints, path.length, targetStartVel = 0.0, targetEndVel = 0.0, segmentSize = 0.01
+            profile = generateDynamicProfile(
+                constraints, path.length, targetStartVel = 0.0, targetEndVel = 0.0, segmentSize = 0.02
             )
         }
     }

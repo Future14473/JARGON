@@ -18,7 +18,6 @@ private sealed class ReverseGeneric<Path : GenericPath<Point>, Point : CurvePoin
         }
     }
 
-    //factory method! I'm proud of myself.
     abstract fun mapPoint(point: Point): Point
 }
 
@@ -43,14 +42,12 @@ private class ReversePathPoint(point: PathPoint) : ReversePoint<PathPoint>(point
 
 private class ReverseCurve(curve: Curve) : ReverseGeneric<Curve, CurvePoint>(curve),
     Curve {
-    override fun mapPoint(point: CurvePoint): CurvePoint =
-        ReverseCurvePoint(point)
+    override fun mapPoint(point: CurvePoint): CurvePoint = ReverseCurvePoint(point)
 }
 
 private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path),
     Path {
-    override fun mapPoint(point: PathPoint): PathPoint =
-        ReversePathPoint(point)
+    override fun mapPoint(point: PathPoint): PathPoint = ReversePathPoint(point)
 
     override val isPointTurn: Boolean
         get() = path.isPointTurn
@@ -60,12 +57,14 @@ private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path),
  * Returns this curve, but traversed in the reverse direction.
  * First derivatives will be negated.
  */
-fun Curve.reversed(): Curve = if (this is ReverseGeneric<*, *>) this.path.asCurve() else ReverseCurve(
-    this
-)
+fun Curve.reversed(): Curve =
+    if (this is ReverseGeneric<*, *>) this.path.asCurve()
+    else ReverseCurve(this)
 
 /**
  * Returns this Path, but traversed in the reverse direction.
  * First derivatives will be negated.
  */
-fun Path.reversed(): Path = if (this is ReversePath) this.path else ReversePath(this)
+fun Path.reversed(): Path =
+    if (this is ReversePath) this.path
+    else ReversePath(this)

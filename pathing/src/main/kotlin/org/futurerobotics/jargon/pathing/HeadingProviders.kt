@@ -13,13 +13,12 @@ class ConstantHeading(angle: Double) : HeadingProvider {
     override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = derivatives
 }
 
-/** A [HeadingProvider] that interpolates linearly among two angles along the length of each curve */
-class LinearInterpolatedHeading(private val fromAngle: Double, endAngle: Double) :
+/** A [HeadingProvider] that interpolates linearly among two angles, starting at [fromAngle] and turning [turnAngle] */
+class LinearInterpolatedHeading(private val fromAngle: Double, private val turnAngle: Double) :
     HeadingProvider {
 
-    private val diff = endAngle - fromAngle
     override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> {
-        val dcl = diff / point.length
+        val dcl = turnAngle / point.length
         return ValueDerivatives(angleNorm(fromAngle + s * dcl), dcl, 0.0)
     }
 }
@@ -35,8 +34,9 @@ object TangentHeading : HeadingProvider {
 }
 
 /** A [HeadingProvider] that has the heading equal to the curve's tangent angle plus [angleOffset]. */
-class OffsetTangentHeading(private val angleOffset: Double) : HeadingProvider {
+class OffsetTangentHeading(angleOffset: Double) : HeadingProvider {
 
+    private val angleOffset = angleNorm(angleOffset)
     override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = object : Derivatives<Double> {
         override val value: Double get() = point.tanAngle + angleOffset
         override val deriv: Double get() = point.tanAngleDeriv
@@ -53,7 +53,7 @@ class FunctionHeading(private val function: MathFunction) : HeadingProvider {
     override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = object : Derivatives<Double> {
         private val t = s / point.length
         override val value: Double
-            get() = function(s / point.length)
+            get() = angleNorm(function(s / point.length))
         override val deriv: Double
             get() = function.deriv(t)
         override val secondDeriv: Double

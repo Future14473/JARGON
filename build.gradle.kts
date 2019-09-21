@@ -8,7 +8,7 @@ buildscript {
     val junit by extra("junit:junit:$junitVersion")
     val xchart by extra("org.knowm.xchart:xchart:$xchartVersion")
     val dokka by extra("org.jetbrains.dokka")
-    val hipparchus by extra("org.hipparchus:hipparchus-core:$hipparchusVersion")
+    val hipparchus by extra<(String) -> String> { { "org.hipparchus:hipparchus-$it:$hipparchusVersion" } }
     repositories {
         mavenCentral()
     }

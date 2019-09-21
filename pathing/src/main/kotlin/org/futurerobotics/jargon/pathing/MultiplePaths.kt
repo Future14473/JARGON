@@ -20,12 +20,12 @@ sealed class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>(
     private val paths: List<Path>
 
     init {
-        this.paths = ArrayList<Path>(if (paths is Collection) paths.size else 10).also { list ->
-            paths.forEach {
-                if (it is MultipleGeneric<*, *>) list += it.paths.filterIsPath()
-                else list += it
-            }
+        val list = ArrayList<Path>(if (paths is Collection) paths.size else 10)
+        paths.forEach {
+            if (it is MultipleGeneric<*, *>) list += it.paths.filterIsPath()
+            else list += it
         }
+        this.paths = list
     }
 
     private val startLengths: DoubleArray
@@ -98,8 +98,7 @@ sealed class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>(
  * tanAngleSecondDeriv, however, is allowed to be discontinuous.
  */
 class MultipleCurve(paths: Iterable<Curve>, checkContinuity: Boolean = true) :
-    MultipleGeneric<Curve, CurvePoint>(paths, checkContinuity),
-    Curve {
+    MultipleGeneric<Curve, CurvePoint>(paths, checkContinuity), Curve {
 
     constructor(checkContinuity: Boolean = true, vararg curves: Curve) : this(curves.asList(), checkContinuity)
 
@@ -121,14 +120,14 @@ class MultipleCurve(paths: Iterable<Curve>, checkContinuity: Boolean = true) :
  * tanAngleSecondDeriv, however, is allowed to be discontinuous.
  */
 class MultiplePath(paths: Iterable<Path>, checkContinuity: Boolean = true) :
-    MultipleGeneric<Path, PathPoint>(paths, checkContinuity),
-    Path {
-
-    override val isPointTurn: Boolean = paths.all { it.isPointTurn }
+    MultipleGeneric<Path, PathPoint>(paths, checkContinuity), Path {
 
     constructor(checkContinuity: Boolean = true, vararg paths: Path) : this(paths.asList(), checkContinuity)
 
+    override val isPointTurn: Boolean = paths.all { it.isPointTurn }
+
     override fun List<GenericPath<*>>.filterIsPath(): Iterable<Path> = filterIsInstance<Path>()
+
     override fun checkPointContinuity(prev: PathPoint, cur: PathPoint) {
         checkCont("Position", prev.position, cur.position)
         checkCont("PositionDeriv", prev.positionDeriv, cur.positionDeriv)

@@ -19,8 +19,7 @@ interface ReparamMapping : Steppable<Double, Double> {
     /**
      * Returns a stepper for [tOfS]
      */
-    override fun stepper(): Stepper<Double, Double> =
-        Stepper(this::tOfS)
+    override fun stepper(): Stepper<Double, Double> = Stepper(this::tOfS)
 }
 
 /**
@@ -33,9 +32,9 @@ private constructor(
 
     /** The total length of this mapping; i.e. the last sample's s value. */
     override val length: Double get() = sSamples.last()
+
     /** The total number of samples. */
     val numSamples: Int get() = sSamples.size
-    private inline val lastT get() = tSamples.last()
 
     init {
         require(sSamples.size == tSamples.size)
@@ -61,43 +60,40 @@ private constructor(
     }
 
     /** @return the t on the original parametric function associated with [s] units along the curve. */
-    override fun tOfS(s: Double): Double = when {
-        s <= 0.0 -> 0.0
-        s >= length -> 1.0
-        else -> run {
-            var i = sSamples.binarySearch(s)
-            if (i >= 0) return tSamples[i]
-            i = -i - 2
-            if (i >= numSamples - 1) return lastT
-            val sBefore = sSamples[i]
-            val tBefore = tSamples[i]
-            val sAfter = sSamples[i + 1]
-            val tAfter = tSamples[i + 1]
-            val progress = (s - sBefore) / (sAfter - sBefore)
-            return tBefore + progress * (tAfter - tBefore)
-        }
+    override fun tOfS(s: Double): Double {
+        var i = sSamples.binarySearch(s)
+        if (i >= 0) return tSamples[i]
+        i = (-i - 2).coerceIn(0, sSamples.lastIndex - 1)
+        return getAtSeg(i, s)
     }
 
-    override fun stepper(): Stepper<Double, Double> = object :
-        Stepper<Double, Double> {
-        private var i = -2
+    private fun getAtSeg(index: Int, s: Double): Double {
+        val sBefore = sSamples[index]
+        val tBefore = tSamples[index]
+        val sAfter = sSamples[index + 1]
+        val tAfter = tSamples[index + 1]
+        val progress = (s - sBefore) / (sAfter - sBefore)
+        return tBefore + progress * (tAfter - tBefore)
+    }
+
+    override fun stepper(): Stepper<Double, Double> = object : Stepper<Double, Double> {
+        private var i = -1
+
         override fun stepTo(step: Double): Double {
-            if (i == -2) i = when {
-                step <= 0 -> -1
-                step >= length -> numSamples - 1
-                else -> sSamples.binarySearch(step).replaceIf({ it < 0 }) { -it - 2 }
+            //Compare me to SegmentsMotionProfile; difference since max index is actual lastIndex - 1
+            if (i == -1) {
+                i = when {
+                    step <= 0 -> 0
+                    step >= length -> sSamples.lastIndex - 1
+                    else -> sSamples.binarySearch(step)
+                        .replaceIf({ it < 0 }) { -it - 2 }
+                        .coerceIn(0, sSamples.lastIndex - 1)
+                }
+            } else {
+                while (i < sSamples.lastIndex - 1 && step >= sSamples[i + 1]) i++
+                while (i > 0 && step < sSamples[i]) i--
             }
-            //forward
-            while (i < numSamples - 1 && step >= sSamples[i + 1]) i++
-            if (i >= numSamples - 1) return lastT
-            while (i >= 0 && step < sSamples[i]) i--
-            if (i < 0) return 0.0
-            val sBefore = sSamples[i]
-            val tBefore = tSamples[i]
-            val sAfter = sSamples[i + 1]
-            val tAfter = tSamples[i + 1]
-            val progress = (step - sBefore) / (sAfter - sBefore)
-            return tBefore + progress * (tAfter - tBefore)
+            return getAtSeg(i, step)
         }
     }
 

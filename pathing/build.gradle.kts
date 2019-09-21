@@ -5,15 +5,15 @@ val junit: String by ext
 val xchart: String by ext
 
 plugins {
+    kotlin("jvm")
     id("org.jetbrains.dokka")
     `maven-publish`
-    kotlin("jvm")
 }
 
 dependencies {
     implementation(project(":core"))
 
-    testApi(project(":test-util"))
+    testImplementation(project(":test-util"))
     testImplementation(junit)
     testImplementation(xchart)
 }
@@ -35,10 +35,9 @@ val dokkaJar by tasks.creating(Jar::class) {
 
 publishing {
     publications {
-        create<MavenPublication>("publishLocal") {
+        create<MavenPublication>("publish") {
             from(components["java"])
-            println(artifactId)
-//            artifact(dokkaJar)
+            artifact(dokkaJar)
             artifact(sourcesJar)
             versionMapping {
                 usage("java-api") {

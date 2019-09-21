@@ -21,7 +21,7 @@ sealed class SingleConstraint : MotionConstraint() {
      * Compares this constraint to another constraint; and returns true if it is known that this constraint is always
      * more or equally restrictive compared to [other] constraint (other constraint is redundant).
      *
-     * If now known, return false.
+     * If not known, return false.
      */
     open fun otherIsRedundant(other: MotionConstraint): Boolean = false
 }

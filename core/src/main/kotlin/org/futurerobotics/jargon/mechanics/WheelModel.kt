@@ -38,21 +38,21 @@ data class FixedWheelModel(
     )
 
     /**
-     * The ratio between the motor torque and hte force exerted by the wheel.
+     * The ratio between the motor torque and the force exerted by the wheel.
      */
-    val motorTorquePerForce: Double get() = transmission.motorTorquePerOutputTorque * radius
+    val motorTorquePerOutputForce: Double get() = transmission.motorTorquePerOutputTorque * radius
     /**
      * The ratio between the motor angular velocity and the wheel's tangential velocity.
      */
-    val motorAngVelPerVelocity: Double get() = transmission.motorAngVelPerOutputAngVel / radius
+    val motorVelPerWheelVel: Double get() = transmission.motorAngVelPerOutputAngVel / radius
     /**
      * Gets the expected amount of volts per force applied, assuming the wheel is not moving.
      */
-    val voltsPerForce: Double get() = transmission.voltsPerTorque * radius
+    val motorVoltsPerOutputForce: Double get() = transmission.motorVoltsPerOutputTorque * radius
     /**
      * Gets the expected amount of volts per velocity to maintain the wheel moving at a constant speed.
      */
-    val voltsPerVelocity: Double get() = transmission.voltsPerAngVel / radius
+    val voltsPerWheelVel: Double get() = transmission.voltsPerAngVel / radius
     /**
      * @see [TransmissionModel.voltsForFriction]
      */

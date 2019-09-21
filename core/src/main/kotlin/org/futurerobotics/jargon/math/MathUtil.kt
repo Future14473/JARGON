@@ -17,6 +17,8 @@ const val TAU: Double = 2 * PI
 const val EPSILON: Double = 1e-8
 
 /**
+ * Short for "epsilon equals"
+ *
  * If [this] is equal to [other], with a difference tolerance of [EPSILON] to account for floating-point errors.
  */
 infix fun Double.epsEq(other: Double): Boolean = abs(this - other) < EPSILON

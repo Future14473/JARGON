@@ -60,26 +60,21 @@ class MaxCentripetalAccelConstraint(max: Double) : MaxBasedVelocityConstraint(ma
  */
 class MaxTotalAccelConstraint(max: Double) : MultipleConstraint() {
 
-    override val velocityConstraints: Collection<VelocityConstraint> = listOf(
-        MaxCentripetalAccelConstraint(max)
-    )
-    override val accelConstraints: Collection<AccelConstraint> = listOf(
-        DynamicTangentalAccelConstraint(
-            max
-        )
-    )
+    override val velocityConstraints: Collection<VelocityConstraint> = listOf(MaxCentripetalAccelConstraint(max))
+    override val accelConstraints: Collection<AccelConstraint> = listOf(TotalAccelConstraint(max))
 
     init {
         require(max >= EPSILON) { "Impossible constraint." }
     }
 
-    private class DynamicTangentalAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) {
-        override fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval =
-            Interval.symmetric(
-                //since |dp/dt| = 1 = const, tan accel is always perpendicular to tangental
-                //== sqrt(max^2-center^2)
-                //super: unambiguous
-                sqrt(super.max.squared() - (point.tanAngleDeriv * curVelocity.squared()).squared()).notNaNOrElse { 0.0 })
+    private class TotalAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) {
+        //since |dp/dt| = 1 = const, tan accel is always perpendicular to tangental
+        //== sqrt(max^2-center^2)
+        //super: unambiguous
+        override fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval = Interval.symmetric(
+            sqrt(super.max.squared() - (point.tanAngleDeriv * curVelocity.squared()).squared())
+                .notNaNOrElse { 0.0 }
+        )
     }
 }
 
@@ -136,14 +131,16 @@ class MaxAngularAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) {
 private const val FALLBACK_MAX_VEL = 10000.0
 private const val FALLBACK_MAX_ACCEL = 10000.0
 internal val FALLBACK_VELOCITY_CONSTRAINTS = listOf<VelocityConstraint>(object : VelocityConstraint() {
-    override fun maxVelocity(point: PathPoint): Double =
-        FALLBACK_MAX_VEL
+
+    override fun maxVelocity(point: PathPoint): Double = FALLBACK_MAX_VEL
 
     override fun toString(): String = "FallbackVelocityConstraint(max=$FALLBACK_MAX_VEL)"
 })
+private val FALLBACK_MAX_ACCEL_INTERVAL = Interval.symmetric(FALLBACK_MAX_ACCEL)
 internal val FALLBACK_ACCEL_CONSTRAINTS = listOf<AccelConstraint>(object : AccelConstraint() {
-    private val interval = Interval.symmetric(FALLBACK_MAX_ACCEL)
-    override fun maxAccelRange(point: PathPoint, curVelocity: Double) = interval
+
+    override fun maxAccelRange(point: PathPoint, curVelocity: Double) = FALLBACK_MAX_ACCEL_INTERVAL
+
     override fun toString(): String = "FallbackAccelConstraint(max=$FALLBACK_MAX_ACCEL)"
 })
 

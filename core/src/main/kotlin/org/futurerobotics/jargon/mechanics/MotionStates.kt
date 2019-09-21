@@ -51,6 +51,11 @@ interface MotionState3<T : Any> : MotionState2<T> {
 
     /** @return a */
     operator fun component3(): T = a
+
+    /**
+     * Creates a [MotionOnly] with same v and a as this [MotionState3]
+     */
+    fun toMotionOnly(): ValueMotionOnly<T> = ValueMotionOnly(v,a)
 }
 
 

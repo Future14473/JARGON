@@ -1,3 +1,5 @@
+@file:Suppress("KDocMissingDocumentation")
+
 package org.futurerobotics.jargon.linalg
 
 import org.hipparchus.linear.ArrayRealVector
@@ -5,31 +7,31 @@ import org.hipparchus.linear.DiagonalMatrix
 import org.hipparchus.linear.MatrixUtils
 
 
-/**
- * Creates a matrix with zeros given the [numRows] and [numCols]
- */
 fun zeros(numRows: Int, numCols: Int): Mat = MatrixUtils.createRealMatrix(numRows, numCols)
+fun pureZeroSquare(size: Int): Mat = DiagonalMatrix(DoubleArray(size), false)
+
+fun eye(size: Int): Mat = MatrixUtils.createRealIdentityMatrix(size)
+fun pureEye(size: Int): Mat = DiagonalMatrix(DoubleArray(size) { 1.0 }, false)
 
 fun create(data: Array<DoubleArray>): Mat = MatrixUtils.createRealMatrix(data)
+
+fun pureDiag(v: DoubleArray): Mat = DiagonalMatrix(v)
+fun pureDiag(v: List<Double>): Mat = DiagonalMatrix(v.toDoubleArray(), false)
+@JvmName("createDiagVararg")
+fun pureDiag(vararg v: Double): Mat = DiagonalMatrix(v, false)
+
 
 fun createVec(v: DoubleArray): Vec = ArrayRealVector(v, true)
 fun createVec(v: List<Double>): Vec = ArrayRealVector(v.toDoubleArray(), false)
 @JvmName("createVecVararg")
 fun createVec(vararg v: Double): Vec = ArrayRealVector(v, false)
 
-fun zeroVec(size: Int) = ArrayRealVector(size)
+fun zeroVec(size: Int): Vec = ArrayRealVector(size)
 
-fun diag(v: DoubleArray): Mat = DiagonalMatrix(v)
-fun diag(v: List<Double>): Mat = DiagonalMatrix(v.toDoubleArray(), false)
-@JvmName("createDiagVararg")
-fun diag(vararg v: Double): Mat = DiagonalMatrix(v, false)
-
-
-fun eye(size: Int): Mat = MatrixUtils.createRealIdentityMatrix(size)
-
-fun pureEye(size: Int): Mat = DiagonalMatrix(DoubleArray(size) { 1.0 })
-
-object mat {
+/**
+ * Kotlin DSL for creating matrices, similar to koma.
+ */
+object CreateMat {
     operator fun get(vararg values: Any): Mat {
         val stops = values.count { it is Pair<*, *> }
         val items = values.count() + stops

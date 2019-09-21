@@ -14,42 +14,43 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
 
     override val duration: Double = segments.last().t
     override val distance: Double = segments.last().state.s
-    private inline val maxInd get() = segments.size - 1
     override fun atTime(time: Double): LinearMotionState3 {
         var i = segments.binarySearchBy(time) { it.t }
         if (i >= 0) return segments[i].state
-        i = -i - 2
+        i = (-i - 2).coerceAtLeast(0)
         return segments[i].stateAtTime(time)
     }
 
     override fun atDistance(distance: Double): LinearMotionState3 {
         var i = segments.binarySearchBy(distance) { it.x }
         if (i >= 0) return segments[i].state
-        i = -i - 2
+        i = (-i - 2).coerceAtLeast(0)
         return segments[i].stateAtDist(distance)
     }
 
-    override fun stepper(): Stepper<Double, LinearMotionState3> = object :
-        Stepper<Double, LinearMotionState3> {
+    override fun stepper(): Stepper<Double, LinearMotionState3> = object : Stepper<Double, LinearMotionState3> {
         private var i = -1
-        override fun stepTo(step: Double): LinearMotionState3 = step.let { time ->
-            if (i == -1) {
-                i = segments.binarySearchBy(time) { it.t }
-                    .replaceIf({ it < 0 }) { -it - 2 }
-                    .coerceIn(0, maxInd)
-            } else {
-                while (i < maxInd && time >= segments[i + 1].t) i++
 
-                while (i > 0 && time < segments[i].t) i--
-                // Delegate extreme points behavior to the ends
+        override fun stepTo(step: Double): LinearMotionState3 {
+            //delegate extreme point behavior to the ends.
+            if (i == -1) {
+                i = when {
+                    step <= 0 -> 0
+                    step >= duration -> segments.lastIndex
+                    else -> segments.binarySearchBy(step) { it.t }
+                        .replaceIf({ it < 0 }) { -it - 2 }
+                        .coerceIn(0, segments.lastIndex)
+                }
+            } else {
+                while (i < segments.lastIndex && step >= segments[i + 1].t) i++
+                while (i > 0 && step < segments[i].t) i--
             }
-            return segments[i].stateAtTime(time)
+            return segments[i].stateAtTime(step)
         }
     }
 
     /** A pre-calculated representation of the endpoints of segments. */
     private class Segment(val state: LinearMotionState3, val t: Double) {
-
         val x get() = state.s
         fun stateAtTime(t: Double) = state.afterTime(t - this.t)
         fun stateAtDist(x: Double) = state.atDist(x)
@@ -73,11 +74,11 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
             require(pairs.all { it.second >= 0 }) { "Motion must be progressing forward; All velocities must be >= 0" }
             var t = 0.0
             val segs = pairs.zipWithNext { (x1, v1), (x2, v2) ->
+                require(!(v1 == 0.0 && v2 == 0.0)) { "Velocity can only be instantaneously 0, got two 0 velocities." }
                 val dx = x2 - x1
                 val a = (v2.squared() - v1.squared()) / 2 / dx //acceleration given (positive) velocities
                 val seg = Segment(LinearMotionState3(x1, v1, a), t)
                 val dt = dx / avg(v1, v2)
-                require(dt.isFinite()) { "Velocity can only be instantaneously 0, got two 0 velocities." }
                 t += dt
                 seg
             } + pairs.last().let {

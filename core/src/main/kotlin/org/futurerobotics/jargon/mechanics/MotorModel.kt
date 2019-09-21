@@ -139,7 +139,7 @@ class TransmissionModel private constructor(
     /**
      * Gets the expected amount of volts per torque, assuming that the motor isn't moving.
      */
-    val voltsPerTorque: Double get() = motor.voltsPerTorque * motorTorquePerOutputTorque
+    val motorVoltsPerOutputTorque: Double get() = motor.voltsPerTorque * motorTorquePerOutputTorque
     /**
      * Gets the expected amount of volts per angVel needed to maintain a constant velocity, assuming no output torque.
      */

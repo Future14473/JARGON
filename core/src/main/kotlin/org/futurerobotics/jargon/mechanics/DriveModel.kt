@@ -38,7 +38,7 @@ interface DriveModel {
 abstract class FixedWheelDriveModel(
     final override val mass: Double,
     final override val moi: Double,
-    val wheels: List<FixedWheelModel>
+    wheels: List<FixedWheelModel>
 ) : DriveModel {
 
     init {
@@ -46,53 +46,65 @@ abstract class FixedWheelDriveModel(
         require(moi >= 0) { "moi ($moi) should be >= 0" }
     }
 
-    //question: which data representation do we really need
-    private val botVelToVolts: Mat
-    private val botAccelToVolts: Mat //this matrix * poseAccelMatrix = wheel torque matrix
-    private val stallVolts: Vec
-    private val motorVelToBotVel: Mat
+    /** The [FixedWheelModel]s of this drive model. */
+    val wheels: List<FixedWheelModel> = wheels.toList()
+    //useful matrices as linear transformations, used in calculations
+    val voltsFromBotVel: Mat
+    val voltsFromBotAccel: Mat
+    val voltsFromWheelVel: Mat
 
+    val botVelFromMotorVel: Mat
+    val botAccelFromVolts: Mat
+
+    val wheelVelFromBotVel: Mat
+    val wheelAccelFromVolts: Mat
+
+    val motorVelFromWheelVel: Mat
+    val stallVolts: Vec
     init {
         //remember: a matrix is simply a linear transformation.
         //turnContribution * bot ang vel = wheel tangent speed
         //turnContribution * wheel's force = wheel's contribution to bot torque. Yes, the other way around.
         val turnContributionVector = wheels.map { it.position cross it.orientation }
-        val botForceToBotAccel = diag(1 / mass, 1 / mass, 1 / moi)
-        val wheelForceToBotForce = zeros(3, wheels.size).also {
+        val botAccelFromBotForce = pureDiag(1 / mass, 1 / mass, 1 / moi)
+        val botForceFromWheelForce = zeros(3, wheels.size).also {
             wheels.zipForEachIndexed(turnContributionVector) { i, wheel, c ->
-                // [fx, fy, c].transpose
+                // [fx, fy, c].T
                 val (fx, fy) = wheel.orientation
                 it[0, i] = fx
                 it[1, i] = fy
                 it[2, i] = c
             }
         }
-        val voltsToWheelForce = diag(wheels.map { it.voltsPerForce })
-        val voltsToBotAccel = botForceToBotAccel * wheelForceToBotForce * voltsToWheelForce
+        val wheelForceFromVolts = pureDiag(wheels.map { 1 / it.motorVoltsPerOutputForce })
+        botAccelFromVolts = botAccelFromBotForce * botForceFromWheelForce * wheelForceFromVolts
 
-        botAccelToVolts = voltsToBotAccel.pinv() //least squares
-        val botVelToWheelVel = wheelForceToBotForce.transpose() //turns out to be the same
-        val wheelVelToVolts = diag(wheels.map { 1 / it.voltsPerVelocity })
+        voltsFromBotAccel = botAccelFromVolts.pinv() //least squares
+        wheelVelFromBotVel = botForceFromWheelForce.T //turns out to be the same
+        voltsFromWheelVel = pureDiag(wheels.map { it.voltsPerWheelVel })
+        motorVelFromWheelVel = pureDiag(wheels.map { it.motorVelPerWheelVel })
 
-        botVelToVolts = wheelVelToVolts * botVelToWheelVel
+        voltsFromBotVel = voltsFromWheelVel * wheelVelFromBotVel
 
-        val motorVelToWheelVel = diag(wheels.map {
-            it.motorAngVelPerVelocity
-        })
-        val wheelVelToBotVel = botVelToWheelVel.pinv()
-        motorVelToBotVel = wheelVelToBotVel * motorVelToWheelVel
+        val wheelVelFromMotorVel = pureDiag(wheels.map { 1 / it.motorVelPerWheelVel })
+        val botVelFromWheelVel = wheelVelFromBotVel.pinv()
+        botVelFromMotorVel = botVelFromWheelVel * wheelVelFromMotorVel
 
         stallVolts = createVec(wheels.map { it.transmission.voltsForFriction })
+        //wheel accel from wheel force
+        val wheelAccelFromBotAccel = wheelVelFromBotVel
+        wheelAccelFromVolts = wheelAccelFromBotAccel * botAccelFromVolts
     }
 
+    val numWheels: Int get() = wheels.size
     /**
      * Gets the motor voltages corresponding modeled to drive at the given [MotionOnly] of Poses.
      * Used for a (partially) _open_ controller.
      */
     fun getModeledVoltages(motion: MotionOnly<Pose2d>): MotorVoltages {
         val (v, a) = motion
-        val vels = botVelToVolts * v.toVector()
-        val accels = botAccelToVolts * a.toVector()
+        val vels = voltsFromBotVel * v.toVector()
+        val accels = voltsFromBotAccel * a.toVector()
         return (vels + accels + sign(vels) emul stallVolts).toList()
     }
 
@@ -102,10 +114,10 @@ abstract class FixedWheelDriveModel(
      * This also gets the estimated _difference_ in _local_ pose given a difference in [motorPositions]
      */
     fun getEstimatedVelocity(motorPositions: List<Double>): Pose2d {
-        require(motorPositions.size == motorVelToBotVel.columnDimension) {
+        require(motorPositions.size == botVelFromMotorVel.columnDimension) {
             "motorPositions should have same number of positions as this's wheels."
         }
-        return Pose2d(motorVelToBotVel * motorPositions.toDoubleArray())
+        return Pose2d(botVelFromMotorVel * motorPositions.toDoubleArray())
     }
 }
 
@@ -120,7 +132,7 @@ open class HolonomicDriveModel(
     wheels: List<FixedWheelModel>
 ) : FixedWheelDriveModel(mass, moi, wheels) {
 
-    override val isHolonomic: Boolean get() = true
+    final override val isHolonomic: Boolean get() = true
 }
 
 /**
@@ -136,7 +148,7 @@ open class NonHolonomicDriveModel(
     wheels: List<FixedWheelModel>
 ) : FixedWheelDriveModel(mass, moi, wheels) {
 
-    override val isHolonomic: Boolean get() = false
+    final override val isHolonomic: Boolean get() = false
 }
 
 /**
