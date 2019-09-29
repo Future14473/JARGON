@@ -1,5 +1,29 @@
 package org.futurerobotics.jargon.util
 
+
+/** Fills an array using the given [generator]. */
+inline fun <T> Array<T>.fillWith(generator: (Int) -> T) {
+    repeat(size) {
+        this[it] = generator(it)
+    }
+}
+
+inline fun <T> MutableList<T>.fillWith(generator: (Int) -> T) {
+    val iterator = listIterator()
+    var index = 0
+    while (iterator.hasNext()) {
+        iterator.next()
+        iterator.set(generator(index++))
+    }
+}
+
+/**
+ * Returns a [MutableList] that wraps the original array.
+ */
+fun <T> Array<T>.asMutableList(): MutableList<T> {
+    return asList() as MutableList<T>
+}
+
 /**
  * Creates a new list where the elements are viewed as a [mapping] of the original list.
  */

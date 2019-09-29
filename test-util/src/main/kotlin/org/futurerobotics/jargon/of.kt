@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.util
+package org.futurerobotics.jargon
 
 /**
  * To make formatting less painful (kotlin only), especially with [koma.mat]

@@ -7,7 +7,7 @@ Simulations
 Control systems
 -
 - All the state space stuff
-    - system components
+    - system blocks
     - LQR
     - Kalman filter
     - Automated Augmentation, maybe

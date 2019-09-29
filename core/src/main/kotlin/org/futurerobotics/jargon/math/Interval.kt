@@ -41,7 +41,8 @@ data class Interval(val a: Double, val b: Double) {
     fun epsContains(v: Double): Boolean = !isEmpty() && v in (a - EPSILON)..(b + EPSILON)
 
     /** @return if this interval epsilon equals the other via endpoints */
-    infix fun epsEq(other: Interval): Boolean = this.isEmpty() && other.isEmpty() || a epsEq other.a && b epsEq other.b
+    infix fun epsEq(other: Interval): Boolean =
+        this.isEmpty() && other.isEmpty() || a epsEq other.a && b epsEq other.b
 
     /** @return the intersection of this interval with another. */
     fun intersect(other: Interval): Interval {

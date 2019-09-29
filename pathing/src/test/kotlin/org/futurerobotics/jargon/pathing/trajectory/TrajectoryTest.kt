@@ -18,7 +18,7 @@ import org.junit.runners.Parameterized
 import kotlin.random.Random
 
 @RunWith(Parameterized::class)
-class TrajectoryInspect(private val trajectory: Trajectory) {
+class TrajectoryTest(private val trajectory: Trajectory) {
 
     @Test
     fun `time deriv inspect`() {

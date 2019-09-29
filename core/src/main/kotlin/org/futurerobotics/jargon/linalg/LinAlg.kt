@@ -18,7 +18,7 @@ private val dummyArr = pureDiag(0.0)
  */
 object MatConcat {
     /**
-     * DSL using [] to concatenate matrices (or numbers which represent single elements), similar to [CreateMat].
+     * DSL using [] to concatenate matrices (or numbers which represent single elements), similar to [mat].
      *
      * Recommended use in kotlin only.
      */

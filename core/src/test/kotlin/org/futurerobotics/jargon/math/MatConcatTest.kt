@@ -1,86 +1,81 @@
 package org.futurerobotics.jargon.math
 
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.util.of
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.futurerobotics.jargon.of
+import org.junit.jupiter.api.Test
+import strikt.api.expectCatching
+import strikt.api.expectThat
+import strikt.assertions.failed
+import strikt.assertions.isA
+import strikt.assertions.isEqualTo
 import java.math.BigInteger
 
 class MatConcatTest {
 
     @Test
     fun get1() {
-        val expect = CreateMat[of the
+        val expect = mat[of the
                 3, 4, 2 end
                 5, 6, 3 end
                 2, 3, 3 end
                 8, 7, 4 end
                 12, 14, 5]
         val test = MatConcat[ //@formatter:off
-                CreateMat[3, 4 end
-                    5, 6],    CreateMat[2, 3].T to
-                CreateMat[2, 3 end
+                mat[3, 4 end
+                    5, 6],    mat[2, 3].T to
+                mat[2, 3 end
                     8, 7 end
-                    12, 14], CreateMat[3, 4, 5].T //@formatter:on
+                    12, 14], mat[3, 4, 5].T //@formatter:on
         ]
-        assertEquals(expect, test)
+        expectThat(test).isEqualTo(expect)
     }
 
     @Test
     fun get2() {
-        val expect = CreateMat[of the
+        val expect = mat[of the
                 3, 4, 5, 6, 7 end
                 8, 1, -1, -2, -3 end
                 7, 2, -4, -5, -6]
         val test = MatConcat[//@formatter:off
-                    3,BigInteger.valueOf(4), CreateMat[ 5,  6,  7] to
-                    CreateMat[8, 7].T, CreateMat[1, 2].T, CreateMat[-1, -2, -3 end
+                    3,BigInteger.valueOf(4), mat[ 5,  6,  7] to
+                    mat[8, 7].T, mat[1, 2].T, mat[-1, -2, -3 end
                                                   -4, -5, -6]
             ]//@formatter:on
-        assertEquals(expect, test)
+        expectThat(test).isEqualTo(expect)
     }
 
     @Test
     fun getThrows() {
-        var thrown = false
-        try {
+        expectCatching {
             MatConcat[//@formatter:off
-                    3,           4,         CreateMat[5,  6,  7] to
-                    CreateMat[8, 7].T, CreateMat[1, 2], CreateMat[-1, -2, -3 end
+                    3,           4,         mat[5,  6,  7] to
+                    mat[8, 7].T, mat[1, 2], mat[-1, -2, -3 end
                                                   -4, -5, -6]
             ]//@formatter:on
-        } catch (e: Exception) {
-            e.printStackTrace()
-            thrown = true
-        }
-        assertTrue(thrown)
-        thrown = false
-        try {
+        }.failed().isA<Exception>()
+        expectCatching {
             MatConcat[//@formatter:off
-                    3,           Any(),       CreateMat[ 5,  6,  7] to
-                    CreateMat[8, 7].T, CreateMat[1, 2].T, CreateMat[-1, -2, -3 end
+                    3,           Any(),       mat[ 5,  6,  7] to
+                    mat[8, 7].T, mat[1, 2].T, mat[-1, -2, -3 end
                                                   -4, -5, -6]
             ]//@formatter:on
-        } catch (e: Exception) {
-            e.printStackTrace()
-            thrown = true
-        }
-        assertTrue(thrown)
+        }.failed().isA<Exception>()
     }
 
     @Test
     fun concat1() {
-        val expect = CreateMat[of the
+        val expect = mat[of the
                 1, 2, 3, 4, 5, 6 end
                 7, 8, 9, 8, 7, 6 end
                 1, 3, 5, 4, 6, 8]
         val test = MatConcat.concat(
             arrayOf(
-                arrayOf(1, 2, 3, CreateMat[4, 5, 6]),
-                arrayOf(CreateMat[7, 1].T, CreateMat[8, 3].T, CreateMat[9, 5].T, CreateMat[8, 7, 6 end 4, 6, 8])
+                arrayOf(1.m, 2.m, 3.m, mat[4, 5, 6]),
+                arrayOf(mat[7, 1].T, mat[8, 3].T, mat[9, 5].T, mat[8, 7, 6 end 4, 6, 8])
             )
         )
-        assertEquals(expect, test)
+        expectThat(test).isEqualTo(expect)
     }
+
+    private val Number.m get() = mat[this]
 }

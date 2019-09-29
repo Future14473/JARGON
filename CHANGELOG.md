@@ -7,11 +7,13 @@ and this project (will eventually) adheres to [Semantic Versioning](https://semv
 Until a version that makes sense, everything will be version [Early#].
 At that point, a new changelog will be made and this will be renamed to old_changelog.
 
-## [Unreleased]
+## [Early4]
 ### Changed
 - MotionState is now State; and an interface; ValueMotion and ValueState are implementations.
 - Replace `Stopwatch` with `LoopRegulator`
 - Ditch Path is-a curve and create `asCurve` extension function instead.
+- Added the entire state-space module.
+- Introduced new blocks control systems, replaced old chain system.
 - Improved docs everywhere
 - Renamed a few things
 ### Fixed
@@ -35,7 +37,6 @@ At that point, a new changelog will be made and this will be renamed to old_chan
 - `PointTurn` Path
 - `PointConstraint` interface: return of `MotionProfileConstraint`
 - `MotionProfiled` interface, in preparation for anything motion profiled control
-- [Koma](http://koma.kyonifer.com/) kotlin linear algebra library dependency
 
 ### Changed
 - Change versioning since it doesn't make sense, and every change will likely be breaking

@@ -5,7 +5,6 @@ package org.futurerobotics.jargon.statespace
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.VectorStructure
 import org.futurerobotics.jargon.mechanics.FixedWheelDriveModel
-import org.futurerobotics.jargon.mechanics.HolonomicDriveModel
 import org.futurerobotics.jargon.util.repeatedList
 
 
@@ -17,7 +16,7 @@ import org.futurerobotics.jargon.util.repeatedList
  * @param C the measurement matrix
  * @param D the feed-through matrix, which is usually 0 so nobody cares about it very much
  */
-sealed class StateSpaceModel constructor(
+sealed class LinearStateSpaceModel constructor(
     A: Mat,
     B: Mat,
     C: Mat,
@@ -26,17 +25,12 @@ sealed class StateSpaceModel constructor(
     inputStructure: VectorStructure? = null,
     outputStructure: VectorStructure? = null
 ) {
+    /** The state [VectorStructure]. */
     val stateStructure: VectorStructure
+    /** The input [VectorStructure] */
     val inputStructure: VectorStructure
+    /** the output [VectorStructure] */
     val outputStructure: VectorStructure
-    /** A or system matrix. */
-    val A: Mat = A.copy()
-    /** B or control matrix. */
-    val B: Mat = B.copy()
-    /** C or measurement matrix. Also the measurement Jacobian with respect to the state. */
-    val C: Mat = C.copy()
-    /** D or feed-through matrix. */
-    val D: Mat = D.copy()
 
     init {
         require(A.isSquare) { "A matrix must be square" }
@@ -66,6 +60,16 @@ sealed class StateSpaceModel constructor(
         }
     }
 
+    /** A or system matrix. */
+    val A: Mat = A.toImmutableMat()
+    /** B or control matrix. */
+    val B: Mat = B.toImmutableMat()
+    /** C or measurement matrix. Also the measurement Jacobian with respect to the state. */
+    val C: Mat = C.toImmutableMat()
+    /** D or feed-through matrix. */
+    val D: Mat = D.toImmutableMat()
+
+
     /** The size of this model's state vector. */
     val stateSize: Int get() = stateStructure.size
     /** The size of this model's input/signal vector. */
@@ -74,17 +78,24 @@ sealed class StateSpaceModel constructor(
     val outputSize: Int get() = outputStructure.size
 
 
-    operator fun component1() = A
-    operator fun component2() = B
-    operator fun component3() = C
-    operator fun component4() = D
+    /** A matrix */
+    operator fun component1(): Mat = A
+
+    /** B matrix */
+    operator fun component2(): Mat = B
+
+    /** C matrix */
+    operator fun component3(): Mat = C
+
+    /** D matrix */
+    operator fun component4(): Mat = D
 }
 
 
 /**
- * A [StateSpaceModel] that is continuous.
+ * A [LinearStateSpaceModel] that is continuous.
  */
-open class ContinuousSSModel @JvmOverloads constructor(
+open class ContinuousLinSSModel @JvmOverloads constructor(
     A: Mat,
     B: Mat,
     C: Mat,
@@ -92,10 +103,13 @@ open class ContinuousSSModel @JvmOverloads constructor(
     stateStructure: VectorStructure? = null,
     inputStructure: VectorStructure? = null,
     outputStructure: VectorStructure? = null
-) : StateSpaceModel(A, B, C, D, stateStructure, inputStructure, outputStructure) {
+) : LinearStateSpaceModel(A, B, C, D, stateStructure, inputStructure, outputStructure) {
 
 
-    fun discretize(period: Double, QRCost: QRCost): Pair<DiscreteSSModel, QRCost> {
+    /**
+     * Discretizes this [ContinuousLinSSModel] using the given [period], also discretizing the given [QRCost].
+     */
+    fun discretize(period: Double, QRCost: QRCost): Pair<DiscreteLinSSModel, QRCost> {
         require(QRCost applicableTo this) { "Cost matrices must be applicable to this model" }
         val model = discretize(period)
 
@@ -106,16 +120,19 @@ open class ContinuousSSModel @JvmOverloads constructor(
         return model to QRCost(q, r)
     }
 
-    fun discretize(period: Double): DiscreteSSModel {
+    /**
+     *  Discretizes this [ContinuousLinSSModel] using the given [period]
+     */
+    fun discretize(period: Double): DiscreteLinSSModel {
         val (ad, bd) = MatConcat.square2x2(A, B, 0, 0).expm().let {
             it.getQuad(0, 0) to it.getQuad(0, 1)
         }
-        return DiscreteSSModel(period, ad, bd, C, D, stateStructure, inputStructure, outputStructure)
+        return DiscreteLinSSModel(ad, bd, C, D, period, stateStructure, inputStructure, outputStructure)
     }
 
     companion object {
         /**
-         * Derives a [ContinuousSSModel] from the given [driveModel] that:
+         * Derives a [ContinuousLinSSModel] from the given [driveModel] that:
          *
          * - _state_ is bot's pose velocity in [x, y, heading],
          * - _signal/input_ is a vector of motors' voltages in the same order as given in the [driveModel]
@@ -126,7 +143,8 @@ open class ContinuousSSModel @JvmOverloads constructor(
          * Otherwise for a non-holonomic, consider first using another controller that maps to _wheel velocities_
          * instead, and use [wheelVelocityController]
          */
-        fun poseVelocityController(driveModel: HolonomicDriveModel): ContinuousSSModel {
+        fun poseVelocityController(driveModel: FixedWheelDriveModel): ContinuousLinSSModel {
+            require(driveModel.isHolonomic) { "Drive model must be holonomic" }
             val size = driveModel.numWheels
             val botDeccelFromBotVel = -driveModel.botAccelFromVolts * driveModel.voltsFromBotVel
             val a = botDeccelFromBotVel
@@ -135,16 +153,16 @@ open class ContinuousSSModel @JvmOverloads constructor(
             val c = motorVelFromBotVel
             val d = zeros(size, size)
             val names = List(size) { "wheel$it" }
-            return ContinuousSSModel(
+            return ContinuousLinSSModel(
                 a, b, c, d,
-                stateStructure = VectorStructure(listOf("x", "y", "heading")),
+                stateStructure = VectorStructure(listOf("x", "y", "heading"), repeatedList(size, "")),
                 inputStructure = VectorStructure(names, repeatedList(size, "volts")),
                 outputStructure = VectorStructure(names, repeatedList(size, "rad/s"))
             )
         }
 
         /**
-         * Derives a [ContinuousSSModel] from the given [driveModel] that:
+         * Derives a [ContinuousLinSSModel] from the given [driveModel] that:
          *
          * - _state_ is a vector of the motors' angular velocity in the same order as given in the [driveModel].
          * - _signal/input_ is a vector of motors' voltages in the same order as given in the [driveModel]
@@ -156,7 +174,7 @@ open class ContinuousSSModel @JvmOverloads constructor(
          *
          * In that case you have a holonomic drive, so use [poseVelocityController]
          */
-        fun wheelVelocityController(driveModel: FixedWheelDriveModel): ContinuousSSModel {
+        fun wheelVelocityController(driveModel: FixedWheelDriveModel): ContinuousLinSSModel {
             val size = driveModel.numWheels
             val wheelDeccelFromWheelVel = -driveModel.wheelAccelFromVolts * driveModel.voltsFromWheelVel
             val a = wheelDeccelFromWheelVel
@@ -165,7 +183,7 @@ open class ContinuousSSModel @JvmOverloads constructor(
             val d = zeros(size, size)
             val names = List(size) { "wheel$it" }
             val velStructure = VectorStructure(names, repeatedList(size, "rad/s"))
-            return ContinuousSSModel(
+            return ContinuousLinSSModel(
                 a, b, c, d,
                 stateStructure = velStructure,
                 inputStructure = VectorStructure(names, repeatedList(size, "volts")),
@@ -176,17 +194,17 @@ open class ContinuousSSModel @JvmOverloads constructor(
 }
 
 /**
- * A [StateSpaceModel] that is discrete.
+ * A [LinearStateSpaceModel] that is discrete.
  *
  * @param period the period the discretization is based on.
  */
-open class DiscreteSSModel @JvmOverloads constructor(
-    val period: Double,
+open class DiscreteLinSSModel @JvmOverloads constructor(
     A: Mat,
     B: Mat,
     C: Mat,
     D: Mat,
+    val period: Double,
     stateStructure: VectorStructure? = null,
     inputStructure: VectorStructure? = null,
     outputStructure: VectorStructure? = null
-) : StateSpaceModel(A, B, C, D, stateStructure, inputStructure, outputStructure)
+) : LinearStateSpaceModel(A, B, C, D, stateStructure, inputStructure, outputStructure)

@@ -1,63 +1,70 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package org.futurerobotics.jargon.control
 
+import org.futurerobotics.jargon.control.Block.InOutOrder.IN_FIRST
+import org.futurerobotics.jargon.control.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.cosc
 import org.futurerobotics.jargon.math.sinc
 import org.futurerobotics.jargon.mechanics.GlobalToBot
-import org.futurerobotics.jargon.mechanics.MotionOnly
 import org.futurerobotics.jargon.mechanics.MotionState3
 
 /**
  * Non-linearly tracks the _global_ pose, given _bot_ pose velocities.
+ *
+ * The [currentPose] can also be set manually.
+ *
+ * Inputs:
+ * 1. the _bot's_ velocity in [Pose2d]
+ * 2. the loop time.
+ * 3. If connected and not null, manual override of global Pose.
+ *
+ * Outputs:
+ * 1. the currently estimated global pose.
  */
-class GlobalPoseObserver(initialPose: Pose2d = Pose2d.ZERO) : BaseObserver<MotionOnly<Pose2d>, Any, Pose2d>() {
+class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : AbstractBlock(3, 1, IN_FIRST, ALWAYS) {
+    private var currentPose: Pose2d = initialPose
 
-    init {
-        state = initialPose
-    }
 
-    override fun getState(measurement: MotionOnly<Pose2d>, lastSignal: Any, elapsedSeconds: Double): Pose2d {
-        val (v, dTheta) = measurement.v * elapsedSeconds
+    override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
+        val maybeOverride = inputs[2]
+        if (maybeOverride != null) {
+            currentPose = maybeOverride as Pose2d
+            return
+        }
+        val velocity = inputs[0] as Pose2d
+        val elapsedSeconds = inputs[1] as Double
+        val (v, dTheta) = velocity * elapsedSeconds
         val (x, y) = v
         val sinc = sinc(dTheta)
         val cosc = cosc(dTheta)
-        val dPose = Pose2d(
-            Vector2d(sinc * x - cosc * y, cosc * x + sinc * y).rotated(state.heading), dTheta
-        )
-        return (state + dPose).normalizeAngle()
+        val relativeDiff = Vector2d(sinc * x - cosc * y, cosc * x + sinc * y)
+        val dPose = Pose2d(relativeDiff.rotated(currentPose.heading), dTheta)
+        currentPose = (currentPose + dPose).normalizeAngle()
+        outputs[0] = currentPose
     }
 
-    override fun start() {
-    }
-
-    override fun stop() {
+    override fun init(outputs: MutableList<Any?>) {
     }
 }
 
 
 /**
- * A wrapper around another controller that first maps reference from global to bot first.
+ * Converts the [MotionState3] of global pose (interpreted as a reference) using the current global pose, into
+ * an equivalent [MotionState3] from the bot's perspective (where the bot's current "position" is always Pose2d.ZERO).
+ * This is how global motion is translated into bot motion.
  *
- * The current state supplied will always be [Pose2d.ZERO], and reference moves around.
+ * Inputs:
+ * 1. the current pose [MotionState3]/[MotionState2] of the pose, or the current pose.
+ * 2. the global pose
+ *
+ * Outputs:
+ * 1. [MotionState3] from the bot's perspective
  */
-class GlobalToBotMotionController(
-    private val baseController: Controller<MotionState3<Pose2d>, Pose2d, MotionOnly<Pose2d>>
-) : Controller<MotionState3<Pose2d>, Pose2d, MotionOnly<Pose2d>> {
-
-    override val signal: MotionOnly<Pose2d> get() = baseController.signal
-    override fun update(reference: MotionState3<Pose2d>, currentState: Pose2d, elapsedSeconds: Double) {
-        baseController.update(
-            GlobalToBot.reference(reference, currentState),
-            Pose2d.ZERO, elapsedSeconds
-        )
-    }
-
-    override fun start() {
-        baseController.start()
-    }
-
-    override fun stop() {
-        baseController.stop()
+class GlobalToBotReference : CombineBlock<Any, Pose2d, MotionState3<Pose2d>>() {
+    override fun combine(a: Any, b: Pose2d): MotionState3<Pose2d> {
+        return GlobalToBot.referenceMotion(a.toMotionState3(Pose2d.ZERO), b)
     }
 }

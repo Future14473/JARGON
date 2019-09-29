@@ -2,6 +2,7 @@
 
 package org.futurerobotics.jargon.linalg
 
+import org.futurerobotics.jargon.math.epsEq
 import org.hipparchus.linear.*
 
 
@@ -54,6 +55,24 @@ inline operator fun Vec.minus(vec: Vec): Vec = this.subtract(vec)
 
 inline operator fun Mat.unaryMinus(): Mat = this * -1.0
 inline operator fun Vec.unaryMinus(): Vec = this * -1.0
+
+infix fun Mat.epsEq(mat: Mat): Boolean {
+    require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
+    repeat(rows) { i ->
+        repeat(cols) { j ->
+            if (!(this[i, j] epsEq mat[i, j])) return false
+        }
+    }
+    return true
+}
+
+infix fun Vec.epsEq(mat: Vec): Boolean {
+    require(dimension == mat.dimension) { "Dimension mismatch" }
+    repeat(dimension) { i ->
+        if (!(this[i] epsEq mat[i])) return false
+    }
+    return true
+}
 
 // +=, -=
 @PublishedApi
