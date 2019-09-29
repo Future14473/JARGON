@@ -1,6 +1,7 @@
 package org.futurerobotics.jargon.statespace
 
-import org.futurerobotics.jargon.control.Observer
+import org.futurerobotics.jargon.control.Block
+import org.futurerobotics.jargon.control.SingleOutputBlock
 import org.futurerobotics.jargon.linalg.*
 import org.hipparchus.filtering.kalman.Measurement
 import org.hipparchus.filtering.kalman.ProcessEstimate
@@ -8,12 +9,23 @@ import org.hipparchus.filtering.kalman.linear.LinearEvolution
 import org.hipparchus.filtering.kalman.linear.LinearKalmanFilter
 import org.hipparchus.filtering.kalman.linear.LinearProcess
 import org.hipparchus.linear.CholeskyDecomposer
+import org.hipparchus.linear.CholeskyDecomposition
 import org.hipparchus.linear.RealVector
 
-private val cholDecomp = CholeskyDecomposer(1e-15, 1e-10)
+private val DECOMP = CholeskyDecomposer(
+    CholeskyDecomposition.DEFAULT_RELATIVE_SYMMETRY_THRESHOLD,
+    CholeskyDecomposition.DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD
+)
 
 /**
- * Kalman Filter as an [Observer]
+ * A Kalman Filter [Block]. Assumes that the system always runs at the model's period.
+ *
+ * Inputs:
+ * 1. Measurement Vector
+ * 2. Signal Vector
+ *
+ * Outputs:
+ * 1. Predicted state.
  *
  * @param model the "base" state space model
  * @param Q the process noise covariance
@@ -21,58 +33,49 @@ private val cholDecomp = CholeskyDecomposer(1e-15, 1e-10)
  *
  */
 class KalmanFilter(
-    private val model: DiscreteSSModel,
+    private val model: DiscreteLinSSModel,
     private val Q: Mat,
     private val R: Mat
-) : Observer<Vec, Vec, Vec> {
+) : SingleOutputBlock(2, Block.InOutOrder.ALWAYS_IN_FIRST, Block.Processing.ALWAYS) {
 
     private var filter: LinearKalmanFilter<Measurement>? = null
     private val measurementObj = TheMeasurement()
     private val process = TheLinearProcess()
     private var stateCovariance = steadyStateKalmanErrorCov(model, Q, R)
     private var lastUpdate: ProcessEstimate? = null
-    @Volatile
-    private var _state: Vec? = null
-    override var state: Vec
-        get() = _state ?: throw IllegalStateException("State not initialized")
-        /**
-         * Setting the state only provides the initial state to the Kalman Filter when first initialized.
-         * Otherwise, will be overwritten pretty soon.
-         */
-        set(value) {
-            _state = value
-        }
+    override fun process(inputs: List<Any?>) {
+        val measurement = inputs[0] as Vec
+        val signal = inputs[0] as Vec
 
-    override fun update(measurement: Vec, lastSignal: Vec, elapsedSeconds: Double) {
-        if (elapsedSeconds.isNaN() || filter == null) {
+        measurementObj.value = measurement
+        process.signal = signal
+
+        if (filter == null) {
             filter = LinearKalmanFilter(
-                cholDecomp,
+                DECOMP,
                 process,
                 ProcessEstimate(
                     0.0,
-                    _state ?: model.C.solve(measurement),
+                    output as RealVector? ?: model.C.solve(measurement),
                     stateCovariance
                 )
             )
         }
-        measurementObj.value = measurement
+
         filter?.let {
             it.estimationStep(measurementObj)
             val corrected = it.corrected
             lastUpdate = corrected
-            _state = corrected.state
+            output = corrected.state
         }
     }
 
-    override fun start() {
-    }
-
-    override fun stop() {
+    override fun init() {
         lastUpdate?.covariance?.let {
             stateCovariance = it
         }
         lastUpdate = null
-        filter = null //reset filter
+        filter = null //reset filter with new state, perhaps.
     }
 
     private inner class TheMeasurement : Measurement {

@@ -20,7 +20,7 @@ open class PIDCoefficients(
     val errorBounds: Interval = Interval.REAL,
     val outputBounds: Interval = Interval.REAL,
     val integralActivationThreshold: Double = Double.POSITIVE_INFINITY,
-    val maxIntegralContribution: Double = Double.POSITIVE_INFINITY
+    maxIntegralContribution: Double = Double.POSITIVE_INFINITY
 ) {
     init {
         require(p >= 0) { "p term ($p) must be >= 0" }

@@ -1,7 +1,9 @@
-val ext = project.rootProject.extra
-val junit: String by ext
-val xchart: String by ext
+@file:Suppress("KDocMissingDocumentation", "SpellCheckingInspection", "PublicApiImplicitType")
 
+val ext = project.rootProject.extra
+val junit5: String by ext
+val xchart: String by ext
+val strikt: String by ext
 plugins {
     kotlin("jvm")
 }
@@ -9,9 +11,8 @@ repositories {
     mavenLocal()
 }
 dependencies {
-    //    implementation("org.futurerobotics.jargon:core:0.0.1")
     implementation(project(":core"))
-
-    implementation(junit)
+//    implementation(junit5)
     implementation(xchart)
+    implementation(strikt)
 }

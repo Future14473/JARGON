@@ -69,7 +69,7 @@ fun calcCurvatureDeriv(v: Vector2d, a: Vector2d, j: Vector2d): Double =
     (v cross j) / v.lengthPow(3.0) - 3 * (v cross a) * (v dot a) / v.lengthPow(5.0)
 
 /**
- * Performs the common operation sin([x])/`x`.
+ * Performs the common operation `sin(x)/x`.
  */
 fun sinc(x: Double): Double = when {
     x epsEq 0.0 -> 1 - x.squared() / 6
@@ -77,7 +77,7 @@ fun sinc(x: Double): Double = when {
 }
 
 /**
- * Performs the common operation (1-cos([x]))/`x`
+ * Performs the common operation `(1-cos x)/x`
  */
 fun cosc(x: Double): Double = when {
     x epsEq 0.0 -> x / 2

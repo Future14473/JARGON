@@ -13,8 +13,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":core"))
-    implementation(hipparchus("core"))
+    api(project(":core"))
     implementation(hipparchus("filtering"))
     testImplementation(junit)
 }
@@ -39,7 +38,7 @@ publishing {
     publications {
         create<MavenPublication>("publish") {
             from(components["java"])
-            artifact(dokkaJar)
+//            artifact(dokkaJar)
             artifact(sourcesJar)
             versionMapping {
                 usage("java-api") {

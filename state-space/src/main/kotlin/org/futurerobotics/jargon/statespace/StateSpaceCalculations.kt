@@ -17,40 +17,66 @@ import org.hipparchus.linear.RiccatiEquationSolverImpl
  *
  * u_ff = (K_ff)(r_(k+1)-A*r).
  */
-fun plantInversionKFF(stateSpaceModel: DiscreteSSModel, QRCost: QRCost? = null): Mat {
+fun plantInversionKFF(stateSpaceModel: DiscreteLinSSModel, cost: QRCost? = null): Mat {
     val B = stateSpaceModel.B
-    if (QRCost == null) return B.pinv()
-    require(QRCost applicableTo stateSpaceModel)
-    val (Q, R) = QRCost
+    if (cost == null) return B.pinv()
+    require(cost applicableTo stateSpaceModel)
+    val (Q, R) = cost
     return (B.T * Q * B + R).inv() * B.T * Q
 }
 
-fun steadyStateKalmanErrorCov(model: DiscreteSSModel, Q: Mat, R: Mat): Mat {
+/**
+ * Calculates the stead state kalman filter error.
+ */
+fun steadyStateKalmanErrorCov(model: DiscreteLinSSModel, Q: Mat, R: Mat): Mat {
     val (A, B, C) = model
     return steadyStateKalmanErrorCov(A, B, C, Q, R)
 }
 
+/**
+ * Calculates the stead state kalman filter error.
+ */
 fun steadyStateKalmanErrorCov(A: Mat, B: Mat, C: Mat, Q: Mat, R: Mat): Mat {
-    val Pprior = DiscreteRicattiEquationSolverImpl(A, B, Q, R).p
-    val S = C * Pprior * C.T + R
-    val K = Pprior * C.T * S.inv()
-    return (pureEye(A.cols) - K * C) * Pprior
+    val prior = DiscreteRicattiEquationSolverImpl(A, B, Q, R).p
+    val S = C * prior * C.T + R
+    val K = prior * C.T * S.inv()
+    return (pureEye(A.cols) - K * C) * prior
 }
 
 
-fun continuousLQR(model: StateSpaceModel, QRCost: QRCost): Mat {
-    return continuousLQR(model.A, model.B, QRCost.Q, QRCost.R)
+/**
+ * Solves the continuous LQR K gain
+ */
+fun continuousLQR(model: ContinuousLinSSModel, cost: QRCost): Mat {
+    return continuousLQR(model.A, model.B, cost.Q, cost.R)
 }
 
+/**
+ * Solves the discrete LQR K gain
+ */
 fun continuousLQR(A: Mat, B: Mat, Q: Mat, R: Mat): Mat {
     return RiccatiEquationSolverImpl(A, B, Q, R).k
 }
 
-fun discreteLQR(model: StateSpaceModel, QRCost: QRCost): Mat {
-    return discreteLQR(model.A, model.B, QRCost.Q, QRCost.R)
+/**
+ * Solves the discrete LQR K gain
+ */
+fun discreteLQR(model: DiscreteLinSSModel, cost: QRCost): Mat {
+    return discreteLQR(model.A, model.B, cost.Q, cost.R)
 }
 
+/**
+ * Solves the discrete LQR K gain
+ */
 fun discreteLQR(A: Mat, B: Mat, Q: Mat, R: Mat): Mat {
     return DiscreteRicattiEquationSolverImpl(A, B, Q, R).k
+}
+
+/**
+ * Solves the LQR gain, either continuous or discrete based on the model.
+ */
+fun anyLQR(model: LinearStateSpaceModel, cost: QRCost): Mat = when (model) {
+    is ContinuousLinSSModel -> continuousLQR(model, cost)
+    is DiscreteLinSSModel -> discreteLQR(model, cost)
 }
 

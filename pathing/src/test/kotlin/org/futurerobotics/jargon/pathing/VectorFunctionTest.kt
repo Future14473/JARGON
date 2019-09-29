@@ -12,7 +12,7 @@ import org.junit.runners.Parameterized
 import kotlin.random.Random
 
 @RunWith(Parameterized::class)
-internal class VectorFunctionInspect(private val curve: QuinticSpline) {
+internal class VectorFunctionTest(private val curve: QuinticSpline) {
 
     @Test
     fun `deriv inspect`() {

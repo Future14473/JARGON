@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.system
 
 import kotlin.math.roundToLong
 
@@ -15,7 +15,6 @@ interface Clock {
 
     /** Default clock implementation that uses [System.nanoTime] */
     object Default : Clock {
-
         override fun nanoTime(): Long = System.nanoTime()
     }
 }
@@ -43,19 +42,19 @@ interface LoopRegulator {
      */
     fun start()
 
-
     /**
      * Possibly pauses the current thread so that the time between the last call to [start] is
-     * controlled to this [LoopRegulator]'s liking; and then returns the elapsed time in nanoseconds.
+     * controlled to this [LoopRegulator]'s liking; restarts the timing;
+     * and then returns the elapsed time in seconds as in [currentTime]
      */
-    fun syncAndTime(): Long
-}
+    @Throws(InterruptedException::class)
+    fun syncAndRestart(): Double
 
-/**
- * Possibly pauses the current thread so that the time between the last call to [LoopRegulator.start] is
- * controlled to this [LoopRegulator]'s liking; and then returns the elapsed time in _seconds_.
- */
-fun LoopRegulator.syncAndTimeSeconds(): Double = syncAndTime() / 1e9
+    /**
+     * Stops typing.
+     */
+    fun stop()
+}
 
 /**
  * A [LoopRegulator] that runs its cycle as fast as possible; timing using the given [clock].
@@ -66,11 +65,13 @@ class LoopAsFastAsPossible(private val clock: Clock = Clock.Default) : LoopRegul
         lastNanos = clock.nanoTime()
     }
 
-    override fun syncAndTime(): Long {
+    override fun syncAndRestart(): Double {
         val nanos = clock.nanoTime()
-        return (nanos - lastNanos).also {
-            lastNanos = nanos
-        }
+        return ((nanos - lastNanos) / 1e9)
+            .also { lastNanos = nanos }
+    }
+
+    override fun stop() {
     }
 }
 
@@ -80,18 +81,30 @@ class LoopAsFastAsPossible(private val clock: Clock = Clock.Default) : LoopRegul
  *
  * @param maxHertz the maximum hertz to run the loop at.
  */
-class LoopAtMaximumHertz(maxHertz: Double, private val clock: Clock = Clock.Default) : LoopRegulator {
+class LoopWithMaxSpeed(maxHertz: Double, private val clock: Clock = Clock.Default) : LoopRegulator {
     private var lastNanos = clock.nanoTime()
-    private val minPeriod = (1e9 / maxHertz).roundToLong()
+    private val minNanos = (1e9 / maxHertz).roundToLong()
     override fun start() {
         lastNanos = clock.nanoTime()
     }
 
-    override fun syncAndTime(): Long {
-        val elapsed = clock.nanoTime() - lastNanos
-        if (elapsed >= minPeriod) return elapsed
-        Thread.sleep((minPeriod - elapsed) / 1000000)
-        return minPeriod
+    override fun syncAndRestart(): Double {
+        val nanos = clock.nanoTime()
+        val elapsed = nanos - lastNanos
+
+        return if (elapsed >= minNanos) {
+            lastNanos = nanos
+            elapsed / 1e9
+        } else {
+
+            val neededNanos = minNanos - elapsed
+            lastNanos = nanos + neededNanos
+
+            Thread.sleep(neededNanos / 1_000_000, (neededNanos % 1_000_000).toInt())
+            minNanos / 1e9
+        }
     }
 
+    override fun stop() {
+    }
 }

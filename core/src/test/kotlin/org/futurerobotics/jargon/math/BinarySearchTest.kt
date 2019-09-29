@@ -3,7 +3,9 @@ package org.futurerobotics.jargon.math
 import org.futurerobotics.jargon.util.doubleBinarySearch
 import org.futurerobotics.jargon.util.extendingDoubleSearch
 import org.futurerobotics.jargon.util.extendingDownDoubleSearch
-import org.junit.Test
+import org.junit.jupiter.api.Test
+import strikt.api.expectThat
+import strikt.assertions.isLessThanOrEqualTo
 import kotlin.random.Random
 
 internal class BinarySearchTest {
@@ -21,7 +23,7 @@ internal class BinarySearchTest {
             val binarySearchVal = doubleBinarySearch(
                 lower, upper, tolerance
             ) { it > partitionPoint }
-            assert(binarySearchVal distTo partitionPoint <= tolerance)
+            expectThat(binarySearchVal distTo partitionPoint).isLessThanOrEqualTo(tolerance)
         }
     }
 
@@ -38,7 +40,7 @@ internal class BinarySearchTest {
             val binarySearchVal = extendingDoubleSearch(
                 lower, upper, tolerance
             ) { it > partitionPoint }
-            assert(binarySearchVal distTo partitionPoint <= tolerance)
+            expectThat(binarySearchVal distTo partitionPoint).isLessThanOrEqualTo(tolerance)
         }
     }
 

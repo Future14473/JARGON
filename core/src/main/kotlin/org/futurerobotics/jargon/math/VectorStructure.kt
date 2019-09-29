@@ -5,11 +5,13 @@ import org.futurerobotics.jargon.util.forEachZippedIndexed
 import org.futurerobotics.jargon.util.repeatedList
 
 /**
- * A way to represent the values in a vector with value names and units, when it makes sense.
+ * A way to represent what the values in a vector mean, with value names and units, when it makes sense.
+ *
+ * Placeholder versions also exist.
  *
  * Each value in the vector has a corresponding name and unit, given in [names] and [units].
  *
- * When [toString] is called, it return a string of the given vector using these names.
+ * When [format] is called, it return a representation of the given vector using these names.
  *
  * This makes debugging or presenting vector related info easier.
  */
@@ -23,9 +25,10 @@ class VectorStructure {
         this.names = names.toList()
         this.units = units.toList()
     }
-    constructor(names: List<String>) {
-        this.names = names.toList()
-        this.units = repeatedList(names.size,"")
+
+    constructor(names: List<Pair<String, String>>) {
+        this.names = names.map { it.first }
+        this.units = names.map { it.second }
     }
 
     /**
@@ -45,7 +48,7 @@ class VectorStructure {
     /**
      * Gets a string representation of the supplied [vector] with this vector naming.
      */
-    fun toString(vector: Vec): String {
+    fun format(vector: Vec): String {
         require(this matchedBy vector) { "Supplied vector must have same size as this naming." }
         return internalToString(vector)
     }
@@ -65,13 +68,13 @@ class VectorStructure {
             append(' ')
             appendln(unit)
         }
-        append(']')
+        appendln(']')
     }
 }
 
 /** Returns if this matrix is a vector that is valid for the given [structure] */
 infix fun Vec.matches(structure: VectorStructure): Boolean = structure matchedBy this
 
-/** Returns if this matrix is valid for naming by row and column, using [rowStructure] and  [colStructure] */
+/** Returns if this matrix is valid for naming by row and column, using [rowStructure] and [colStructure] */
 fun Mat.matches(rowStructure: VectorStructure, colStructure: VectorStructure): Boolean =
     rows == rowStructure.size && cols == colStructure.size

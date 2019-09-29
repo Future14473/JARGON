@@ -8,6 +8,7 @@ import org.futurerobotics.jargon.reportError
 import org.futurerobotics.jargon.saveGraph
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.jupiter.api.Tag
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
@@ -15,7 +16,8 @@ import kotlin.math.PI
 import kotlin.random.Random
 
 @RunWith(Parameterized::class)
-internal class ReparamCurveInspect(private val func: VectorFunction, private val curve: ReparamCurve) {
+@Tag("Inspection")
+internal class ReparamCurveTest(private val func: VectorFunction, private val curve: ReparamCurve) {
 
     @Test
     fun `report samples`() {

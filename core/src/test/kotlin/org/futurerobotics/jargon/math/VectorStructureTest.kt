@@ -1,8 +1,10 @@
 package org.futurerobotics.jargon.math
 
 import org.futurerobotics.jargon.linalg.*
-import org.junit.Assert
-import org.junit.Test
+import org.futurerobotics.jargon.normalize
+import org.junit.jupiter.api.Test
+import strikt.api.expectThat
+import strikt.assertions.isEqualTo
 
 internal class VectorStructureTest {
     @Test
@@ -23,7 +25,8 @@ internal class VectorStructureTest {
             coolness: 6.0 rads
             absurdity: 7.0 level
             ]
-            """.trimIndent()
-        Assert.assertEquals(expected, naming.toString(vec).replace("\r\n","\n"))
+            
+            """.trimIndent().normalize()
+        expectThat(naming.format(vec).normalize()).isEqualTo(expected)
     }
 }

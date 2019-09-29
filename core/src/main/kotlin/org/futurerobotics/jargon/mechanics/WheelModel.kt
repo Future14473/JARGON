@@ -25,6 +25,9 @@ data class FixedWheelModel(
         require(radius > 0) { "wheel radius ($radius) should be > 0" }
     }
 
+    /**
+     * Constructs using wheel angle instead.
+     */
     constructor(
         transmission: TransmissionModel,
         wheelPosition: Vector2d,

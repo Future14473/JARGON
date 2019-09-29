@@ -1,147 +1,112 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package org.futurerobotics.jargon.control
 
+import org.futurerobotics.jargon.control.Block.InOutOrder.IN_FIRST
+import org.futurerobotics.jargon.control.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.profile.MotionProfiled
 import org.futurerobotics.jargon.util.Stepper
-import org.futurerobotics.jargon.util.replaceIf
-import org.futurerobotics.jargon.util.value
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 
 /**
- * A base implementation of a [ReferenceTracker] that follows a [MotionProfiled] object.
+ * Base class for implementing a component that follows a motion profiled object.
  *
- * The abstract function [getNextTime] dictates what time is polled on the [MotionProfiled] object.
+ * Inputs:
+ * 1. The [MotionProfiled] object to follow, or null to indicate to idling at the last reference given.
+ *      WILL ONLY BE POLLED upon reaching end of the previous motion profile, or input #2 is pulsed:
+ * 2. Boolean to stop following motion profile. When given `true`, will immediately cancel following the
+ *      current motion profile and the next profile will be polled. Recommended using [Pulse] to accomplish
+ * Subclasses may specify other inputs, starting with #3.
  *
- * The base implementation is also thread safe; if the thread that runs the loop is separate than the thread
- * that supplies [MotionProfiled]s
+ * Outputs:
+ * 1. The current output of the motion profiled object.
+ * 2. The current progress along motion profiled object as a number from 0 to 1.
+ * Subclasses may specify other outputs, starting with #3
+ *
+ * @param initialIdleOutput the initial output if the system is idle and no motion profiled has been given
+ *              yet.
  */
-abstract class MotionProfileFollower<State : Any, Reference : Any> :
-    ReferenceTracker<State, Reference> {
+abstract class MotionProfileFollower(numInputs: Int, numOutputs: Int, private val initialIdleOutput: Any) :
+    AbstractBlock(numInputs, numOutputs, IN_FIRST, ALWAYS) {
+    private var profileOutput: Any = initialIdleOutput
 
-    private var _reference: Reference? = null
-    final override val reference: Reference
-        get() = _reference ?: throw IllegalStateException("reference was accessed before function update was called.")
+    private var currentTime: Double = 0.0
+    private var endTime: Double = 1.0
+    private var currentStepper: Stepper<Double, Any>? = null //if null; means poll more.
 
-    /** Set to not null when command to follow a newProfiled reference. */
-    private val newProfiled = AtomicReference<MotionProfiled<Reference>?>()
-    /** If is currently following a profiled. */
-    private val following = AtomicBoolean(false)
-    //command only thread things:
-    private var currentStepper: Stepper<Double, Reference>? = null
-    private var currentDuration = 0.0
-    private var currentTime = Double.NaN
-    /** If idle reference needs to be polled. */
-    private var needIdleRef = true
-    /**
-     * The past state given on the last call to [update]
-     */
-    protected var pastState: State? = null
-        private set
-
-    final override fun update(currentState: State, elapsedSeconds: Double) {
-        _reference = run getRef@{
-            processCommand()
-            val pastState = pastState
-            this.pastState = currentState
-            val currentStepper = currentStepper
-                ?: return@getRef if (needIdleRef || _reference == null) {
-                    needIdleRef = false
-                    getIdleReference(_reference, currentState)
-                } else _reference
-
-            if (currentTime.isNaN()) { //just started
-                currentTime = 0.0
-            } else if (!elapsedSeconds.isNaN() && pastState != null) {
-                currentTime = getNextTime(
-                    pastState,
-                    currentState,
-                    _reference
-                        ?: throw AssertionError("If just started, currentTime should be NaN at least once."),
-                    currentTime,
-                    elapsedSeconds
-                ).replaceIf({ it >= currentDuration || it.isNaN() }) {
-                    following.value = false
-                    this.currentStepper = null
-                    needIdleRef = true
-                    currentDuration
-                }
-            } //else keep as is
-            return@getRef currentStepper.stepTo(currentTime)
-        }
+    init {
+        require(numInputs >= 3) { "NumInputs should be >= 2" }
+        require(numOutputs >= 2) { "NumInputs should be >= 2" }
     }
 
-    private fun processCommand() {
-        val command = newProfiled.value
-        if (command != null) {
-            newProfiled.compareAndSet(command, null)
-            following.value = true
-            currentDuration = command.duration
-            currentTime = Double.NaN
-            currentStepper = command.stepper()
-        }
-    }
-
-    /**
-     * Sets this reference provider to follow the current [profiled] object.
-     */
-    fun follow(profiled: MotionProfiled<Reference>) {
-        beforeFollow()
-        newProfiled.set(profiled)
-    }
-
-    /**
-     * If this reference is currently still following a [MotionProfiled]
-     */
-    fun isFollowing(): Boolean {
-        return following.value
-    }
-
-    override fun stop() {
+    override fun init(outputs: MutableList<Any?>) {
+        profileOutput = initialIdleOutput
+        currentTime = 0.0
+        endTime = 1.0
         currentStepper = null
-        needIdleRef = true
     }
 
-    override fun start() {
-        stop()
-        pastState = null
-        _reference = null
+    final override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
+        var currentStepper = currentStepper
+        if (inputs[1] as Boolean? == true || currentStepper == null) {//always poll inputs[2]; so doesn't store up
+            val newProfiledMaybe = inputs[0] ?: return
+            val newProfiled = newProfiledMaybe as MotionProfiled<*>
+            currentTime = 0.0
+            endTime = newProfiled.duration
+            currentStepper = newProfiled.stepper()
+            this.currentStepper = currentStepper
+        } else {
+            currentTime = getNextTime(currentTime, profileOutput, inputs)
+        }
+        if (currentTime >= endTime) {
+            currentTime = endTime
+            this.currentStepper = null
+        }
+        profileOutput = currentStepper.stepTo(currentTime)
+
+        outputs[0] = profileOutput
+        outputs[1] = currentTime / endTime
+        processFurther(inputs, outputs)
     }
 
     /**
-     * What is run before [follow] is called; do any reset-before-following-profile here.
+     * Gets the next time to use to get the value out of the [MotionProfiled] object;
+     *
+     * given the [currentTime] along the profile, the [lastOutput]ed value, and possible additional
+     * [inputs]. If this component specifies it (Please do not to access inputs (0-1) or things may break)
+     *
+     * Following the motion profile ends if [getNextTime] returns a time longer past the current motion profiled's
+     * duration.
      */
-    protected open fun beforeFollow() {}
+    protected abstract fun getNextTime(currentTime: Double, lastOutput: Any, inputs: List<Any?>): Double
 
     /**
-     * Gets the "virtual" next time to go to on a [MotionProfiled] object, based on the supplied
-     * [pastOutput], [pastState], [currentState], [pastVirtualTime], and the real [elapsedSeconds].
-     *
-     * This time will be used to progress through [MotionProfiled] object.
-     * A returned time of Double.NAN or greater than the current [MotionProfiled]'s profile duration
-     * signals for this to either halt or hold the reference at the final state.
-     *
-     * For example, if the bot does not move as fast as expected, this can account for it by not stepping time up as
-     * fast.
+     * Performs any additional possible processing, possibly using more outputs.
      */
-    protected abstract fun getNextTime(
-        pastState: State,
-        currentState: State,
-        pastOutput: Reference,
-        pastVirtualTime: Double,
-        elapsedSeconds: Double
-    ): Double
+    abstract fun processFurther(inputs: List<Any?>, outputs: MutableList<Any?>)
+}
 
-    /**
-     * Gets a reference to output when no motion profile is being followed.
-     *
-     * If [pastReference] is null, [update] had been called on the very first iteration of the control loop, and
-     * [currentState] will be the very first estimate of the state.
-     *
-     * Otherwise, [pastReference] is the last reference obtained at the end of the last motion profiled followed,
-     * and currentState is the measured state right after.
-     */
-    protected abstract fun getIdleReference(
-        pastReference: Reference?,
-        currentState: State
-    ): Reference
+/**
+ * A [MotionProfileFollower] that only uses time to progress along the motion profile.
+ *
+ * Inputs:
+ * 1. The [MotionProfiled] object to follow, or null to indicate to idling at the last reference given.
+ *      WILL ONLY BE POLLED upon reaching end of the previous motion profile, or input #2 is pulsed:
+ * 2. Boolean to stop following motion profile. When given `true`, will immediately cancel following the
+ *      current motion profile and the next profile will be polled. Recommended using [Pulse] to accomplish
+ * 3. The loop time.
+ *
+ * Outputs:
+ * 1. The current output of the motion profiled object.
+ * 2. The current progress along motion profiled object as a number from 0 to 1.
+ *
+ * @param initialIdleOutput the initial value to be outputted when no motion profile has been ever given.
+ */
+class TimeOnlyMotionProfileFollower(initialIdleOutput: Any) : MotionProfileFollower(3, 2, initialIdleOutput) {
+
+    override fun getNextTime(currentTime: Double, lastOutput: Any, inputs: List<Any?>): Double {
+        return currentTime + inputs[2] as Double
+    }
+
+    override fun processFurther(inputs: List<Any?>, outputs: MutableList<Any?>) {
+    }
 }

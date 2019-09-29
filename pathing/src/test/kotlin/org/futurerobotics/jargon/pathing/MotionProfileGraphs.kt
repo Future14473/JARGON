@@ -14,6 +14,7 @@ import org.futurerobotics.jargon.util.stepToAll
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
+import org.junit.jupiter.api.Tag
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.knowm.xchart.XYChart
@@ -24,6 +25,7 @@ import kotlin.random.Random
 import kotlin.system.measureNanoTime
 
 @RunWith(Parameterized::class)
+@Tag("Not a test")
 class MotionProfileGraphs(
     private val path: Path,
     private val constraints: MotionConstraintSet,

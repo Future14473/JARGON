@@ -31,7 +31,17 @@ fun zeroVec(size: Int): Vec = ArrayRealVector(size)
 /**
  * Kotlin DSL for creating matrices, similar to koma.
  */
-object CreateMat {
+object vec {
+    operator fun get(vararg values: Number): Vec {
+        val doubles = DoubleArray(values.size) { values[it].toDouble() }
+        return ArrayRealVector(doubles, false)
+    }
+}
+
+/**
+ * Kotlin DSL for creating matrices, similar to koma.
+ */
+object mat {
     operator fun get(vararg values: Any): Mat {
         val stops = values.count { it is Pair<*, *> }
         val items = values.count() + stops
