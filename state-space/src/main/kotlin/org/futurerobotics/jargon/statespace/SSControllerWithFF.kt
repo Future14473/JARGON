@@ -26,19 +26,19 @@ class SSControllerWithFF(
     private val model: DiscreteLinSSModel,
     kGain: Mat,
     feedForwardQRCost: QRCost? = null
-) : CombineBlock() {
+) : CombineBlock<Any, Vec, Vec>() {
 
     init {
         require(kGain.matches(model.stateStructure, model.inputStructure))
     }
 
     //flatten model
-    private val kGain: Mat = kGain.copy()
+    private val kGain = kGain.toImmutableMat()
     private val kFF = plantInversionKFF(model, feedForwardQRCost)
-    override fun combine(a: Any, b: Any): Any {
+    override fun combine(a: Any, b: Vec): Vec {
         //we don't care about elapsed seconds.
         val (r, r1) = getRefs(a)
-        val x = b as Vec
+        val x = b
         return kGain(r - x) + kFF(r1 - model.A * r)
     }
 

@@ -11,13 +11,13 @@ import org.futurerobotics.jargon.linalg.*
 class QRCost(Q: Mat, R: Mat) {
     init {
         require(Q.isSquare) { "Q must be square" }
-        require(Q.isSquare) { "R must be square" }
+        require(R.isSquare) { "R must be square" }
     }
 
     /** State cost matrix Q */
-    val Q: Mat = Q.copy()
+    val Q: Mat = Q.toImmutableMat()
     /** Control cost matrix Q */
-    val R: Mat = R.copy()
+    val R: Mat = R.toImmutableMat()
 
     /** Q matrix; state cost */
     operator fun component1(): Mat = Q
