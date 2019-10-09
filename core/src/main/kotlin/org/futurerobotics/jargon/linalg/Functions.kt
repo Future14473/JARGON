@@ -8,9 +8,6 @@ import kotlin.math.*
 
 fun sign(vec: Vec): Vec = vec.map { sign(it) }
 
-fun Vec.toList(): List<Double> = List(dimension) { this[it] }
-
-
 fun Mat.normMax(): Double = walkInOptimizedOrder(object : RealMatrixPreservingVisitor {
     private var m = 0.0
     override fun visit(row: Int, column: Int, value: Double) {
@@ -38,34 +35,34 @@ private const val c11 = 2.5291534915979653E-13
 private const val c12 = 2.8101705462199615E-15
 private const val c13 = 1.5440497506703084E-17
 /**
- * Computes the matrix exponential (`e^[x]`) of [this] matrix.
+ * Computes the matrix exponential (`e^[x]`) of the given matrix [mat].
  *
- * This implementation is translated from `MatrixFunctions.expm(DoubleMatrix) in `[jBlas][http://jblas.org/], which is licensed under
- * a [BSD - style license][https://raw.githubusercontent.com/jblas-project/jblas/jblas-1.2.4/COPYING]
+ * This implementation is translated from `MatrixFunctions.expm(DoubleMatrix) in `[jBlas][http://jblas.org/], which is
+ * licensed under a [BSD - style license][https://raw.githubusercontent.com/jblas-project/jblas/jblas-1.2.4/COPYING]
  */
 @Suppress("LocalVariableName")
-fun Mat.expm(): Mat {
+fun expm(mat: Mat): Mat {
 
-    require(this.isSquare) { "Matrix must be square" }
-    val j = max(0, 1 + floor(log(this.normMax(), 2.0)).toInt())
-    val As = this / (2.0.pow(j)) // scaled version of A
-    val n = this.rows
+    require(mat.isSquare) { "Matrix must be square" }
+    val j = max(0, 1 + floor(log(mat.normMax(), 2.0)).toInt())
+    val As = mat / (2.0.pow(j)) // scaled version of A
+    val n = mat.rows
 
     // calculate D and N using special Horner techniques
     val As_2 = As * As
     val As_4 = As_2 * As_2
     val As_6 = As_4 * As_2
     // U = c0*I + c2*A^2 + c4*A^4 + (c6*I + c8*A^2 + c10*A^4 + c12*A^6)*A^6
-    val U = (pureEye(n) * c0) + c2 * As_2 + c4 * As_4 +
-            ((pureEye(n) * c6) + c8 * As_2 + c10 * As_4 + c12 * As_6) * As_6
+    val U = (eye(n) * c0) addI (c2 * As_2) addI (c4 * As_4) addI
+            ((eye(n) * c6) addI (c8 * As_2) addI (c10 * As_4) addI (c12 * As_6)) * As_6
 
     // V = c1*I + c3*A^2 + c5*A^4 + (c7*I + c9*A^2 + c11*A^4 + c13*A^6)*A^6
-    val V = (pureEye(n) * c1) + As_2 * c3 + As_4 * c5 +
-            ((pureEye(n) * c7) + c9 * As_2 + c11 * As_4 + c13 * As_6) * As_6
+    val V = (eye(n) * c1) addI (As_2 * c3) addI (As_4 * c5) addI
+            ((eye(n) * c7) addI (c9 * As_2) addI (c11 * As_4) addI (c13 * As_6)) * As_6
 
     val AV = As * V
     val N = U + AV
-    val D = U - AV
+    val D = U subI AV
 
     // solve DF = N for F
     var F = D.solve(N)

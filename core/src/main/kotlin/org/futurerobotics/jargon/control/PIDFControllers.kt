@@ -33,7 +33,7 @@ class PIDFController(
     }
 
     override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
-        val reference = inputs[0]!!.toMotionState3(0.0)
+        val reference = inputs[0]!!.castToMotionState3(0.0)
         val currentState = inputs[1] as Double
         val loopTime = inputs[2] as Double
         val (s, v, a) = reference
@@ -82,7 +82,7 @@ class VecPIDFController(
     }
 
     override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
-        val reference = inputs[0]!!.toMotionState3(Vector2d.ZERO)
+        val reference = inputs[0]!!.castToMotionState3(Vector2d.ZERO)
         val currentState = inputs[1] as Vector2d
         val loopTime = inputs[2] as Double
         val (s, v, a) = reference

@@ -4,6 +4,7 @@ package org.futurerobotics.jargon.linalg
 
 import org.futurerobotics.jargon.math.epsEq
 import org.hipparchus.linear.*
+import kotlin.math.abs
 
 
 //getset
@@ -56,11 +57,11 @@ inline operator fun Vec.minus(vec: Vec): Vec = this.subtract(vec)
 inline operator fun Mat.unaryMinus(): Mat = this * -1.0
 inline operator fun Vec.unaryMinus(): Vec = this * -1.0
 
-infix fun Mat.epsEq(mat: Mat): Boolean {
+fun Mat.epsEq(mat: Mat, epsilon: Double): Boolean {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
     repeat(rows) { i ->
         repeat(cols) { j ->
-            if (!(this[i, j] epsEq mat[i, j])) return false
+            if (!(abs(this[i, j] - mat[i, j]) < epsilon)) return false
         }
     }
     return true

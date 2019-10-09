@@ -5,10 +5,10 @@ package org.futurerobotics.jargon.linalg
 import org.hipparchus.linear.RealMatrix
 import org.hipparchus.linear.RealVector
 
-/** Shorthand for a Matrix */
+/** Shorthand for a [RealMatrix] */
 typealias Mat = RealMatrix
 
-/** Shorthand for a Vector. */
+/** Shorthand for a [RealVector]. */
 typealias Vec = RealVector
 
 private val dummyArr = pureDiag(0.0)

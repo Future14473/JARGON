@@ -113,7 +113,7 @@ open class ContinuousLinSSModel @JvmOverloads constructor(
         require(QRCost applicableTo this) { "Cost matrices must be applicable to this model" }
         val model = discretize(period)
 
-        val q = MatConcat.square2x2(-A.T, QRCost.Q, 0, A).expm().let {
+        val q = expm(MatConcat.square2x2(-A.T, QRCost.Q, 0, A)).let {
             it.getQuad(1, 1) * it.getQuad(0, 1)
         }
         val r = QRCost.R / period
@@ -124,7 +124,7 @@ open class ContinuousLinSSModel @JvmOverloads constructor(
      *  Discretizes this [ContinuousLinSSModel] using the given [period]
      */
     fun discretize(period: Double): DiscreteLinSSModel {
-        val (ad, bd) = MatConcat.square2x2(A, B, 0, 0).expm().let {
+        val (ad, bd) = expm(MatConcat.square2x2(A, B, 0, 0)).let {
             it.getQuad(0, 0) to it.getQuad(0, 1)
         }
         return DiscreteLinSSModel(ad, bd, C, D, period, stateStructure, inputStructure, outputStructure)

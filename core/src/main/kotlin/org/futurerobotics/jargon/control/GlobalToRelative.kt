@@ -65,6 +65,6 @@ class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : AbstractBlock(3, 1,
  */
 class GlobalToBotReference : CombineBlock<Any, Pose2d, MotionState3<Pose2d>>() {
     override fun combine(a: Any, b: Pose2d): MotionState3<Pose2d> {
-        return GlobalToBot.referenceMotion(a.toMotionState3(Pose2d.ZERO), b)
+        return GlobalToBot.referenceMotion(a.castToMotionState3(Pose2d.ZERO), b)
     }
 }
