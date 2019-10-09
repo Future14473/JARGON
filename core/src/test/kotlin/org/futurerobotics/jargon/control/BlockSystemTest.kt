@@ -11,7 +11,6 @@ import strikt.assertions.isA
 import strikt.assertions.isEqualTo
 
 internal abstract class AbstractBlockSystemTest {
-    protected lateinit var monitor: Monitor<*>
     protected fun BlocksBuilder.testBlock(
         name: String,
         numInputs: Int,
@@ -32,6 +31,7 @@ internal class BlockSystemTest : AbstractBlockSystemTest() {
 
     @Test
     fun `update order test`() {
+        val monitor: Monitor<String>
         val system = buildBlockSystem {
             val b = testBlock("B", 2, 2)
             val c = testBlock("C", 1, 2)

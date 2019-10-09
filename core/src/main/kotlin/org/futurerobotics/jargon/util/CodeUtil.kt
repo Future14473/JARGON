@@ -1,14 +1,18 @@
-@file:JvmName("CodeUtil")
+@file:JvmName("KotlinOnlyCodeUtil")
 
 package org.futurerobotics.jargon.util
 
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
+
 /** An inline alternative to [takeIf] that avoids boxing of primitives. */
-//@ExperimentalContracts
+@UseExperimental(ExperimentalContracts::class)
 inline fun <T> T.replaceIf(condition: (T) -> Boolean, alternate: (T) -> T): T {
-//    contract {
-//        callsInPlace(condition, InvocationKind.EXACTLY_ONCE)
-//        callsInPlace(alternate, InvocationKind.AT_MOST_ONCE)
-//    }
+    contract {
+        callsInPlace(condition, InvocationKind.EXACTLY_ONCE)
+        callsInPlace(alternate, InvocationKind.AT_MOST_ONCE)
+    }
     return if (condition(this)) alternate(this) else this
 }
 
@@ -23,11 +27,11 @@ inline fun <T> T.replaceIf(condition: (T) -> Boolean, alternate: (T) -> T): T {
  * ```
  * also equivalent to `also { _ -> ... }`
  */
-//@ExperimentalContracts
+@UseExperimental(ExperimentalContracts::class)
 inline fun <T> T.after(block: () -> Unit): T {
-//    contract {
-//        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
-//    }
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
     block()
     return this
 }
@@ -36,11 +40,11 @@ inline fun <T> T.after(block: () -> Unit): T {
  * Calls the specified [block] with [p1] as its argument and returns its result.
  * Similar to [kotlin.let]. Useful for changing variable names.
  */
-//@ExperimentalContracts
+@UseExperimental(ExperimentalContracts::class)
 inline fun <T, R> let(p1: T, block: (T) -> R): R {
-//    contract {
-//        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
-//    }
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
     return block(p1)
 }
 
@@ -48,11 +52,11 @@ inline fun <T, R> let(p1: T, block: (T) -> R): R {
  * Calls the specified [block] with [p1], [p2] as its arguments and returns its result.
  * Similar to [kotlin.let]. Useful for changing variable names together or avoiding nested let statements.
  */
-//@ExperimentalContracts
+@UseExperimental(ExperimentalContracts::class)
 inline fun <T, U, R> let(p1: T, p2: U, block: (T, U) -> R): R {
-//    contract {
-//        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
-//    }
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
     return block(p1, p2)
 }
 
@@ -60,11 +64,11 @@ inline fun <T, U, R> let(p1: T, p2: U, block: (T, U) -> R): R {
  * Calls the specified [block] with [p1], [p2], [p3] as its arguments and returns its result.
  * Similar to [kotlin.let]. Useful for changing variable names together or avoiding nested let statements.
  */
-//@ExperimentalContracts
+@UseExperimental(ExperimentalContracts::class)
 inline fun <T, U, V, R> let(p1: T, p2: U, p3: V, block: (T, U, V) -> R): R {
-//    contract {
-//        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
-//    }
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
     return block(p1, p2, p3)
 }
 
@@ -72,10 +76,10 @@ inline fun <T, U, V, R> let(p1: T, p2: U, p3: V, block: (T, U, V) -> R): R {
  * Calls the specified [block] with [p1], [p2], [p3], [p4] as its arguments and returns its result.
  * Similar to [kotlin.let]. Useful for changing variable names together or avoiding nested let statements.
  */
-//@ExperimentalContracts
+@UseExperimental(ExperimentalContracts::class)
 inline fun <T, U, V, W, R> let(p1: T, p2: U, p3: V, p4: W, block: (T, U, V, W) -> R): R {
-//    contract {
-//        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
-//    }
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
     return block(p1, p2, p3, p4)
 }
