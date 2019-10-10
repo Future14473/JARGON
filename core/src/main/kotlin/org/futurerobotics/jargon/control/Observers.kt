@@ -28,8 +28,7 @@ class FixedDriveMotorPoseToBotDiff(private val model: FixedDriveModel) : PipeBlo
  *
  * Maybe pass through a filter first.
  */
-class FixedDriveMotorToBotVel(private val model: FixedDriveModel) :
-    PipeBlock<List<Double>, Pose2d>() {
+class FixedDriveMotorToBotVel(private val model: FixedDriveModel) : PipeBlock<List<Double>, Pose2d>() {
     override fun pipe(input: List<Double>): Pose2d {
         return model.getEstimatedVelocity(input)
     }

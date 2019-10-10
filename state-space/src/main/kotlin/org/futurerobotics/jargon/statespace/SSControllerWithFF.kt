@@ -35,6 +35,7 @@ class SSControllerWithFF(
     //flatten model
     private val kGain = kGain.toImmutableMat()
     private val kFF = plantInversionKFF(model, feedForwardQRCost)
+
     override fun combine(a: Any, b: Vec): Vec {
         //we don't care about elapsed seconds.
         val (r, r1) = getRefs(a)

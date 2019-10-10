@@ -15,7 +15,6 @@ plugins {
 
 dependencies {
     api(hipparchus("core"))
-//    testCompileOnly(junit)
     testImplementation(junit5)
     testImplementation(junit5params)
     testImplementation(strikt)
@@ -55,16 +54,16 @@ publishing {
     publications {
         create<MavenPublication>("publish") {
             from(components["java"])
-//            artifact(dokkaJar)
+            artifact(dokkaJar)
             artifact(sourcesJar)
-//            versionMapping {
-//                usage("java-api") {
-//                    fromResolutionOf("runtimeClasspath")
-//                }
-//                usage("java-runtime") {
-//                    fromResolutionResult()
-//                }
-//            }
+            versionMapping {
+                usage("java-api") {
+                    fromResolutionOf("runtimeClasspath")
+                }
+                usage("java-runtime") {
+                    fromResolutionResult()
+                }
+            }
         }
     }
 }

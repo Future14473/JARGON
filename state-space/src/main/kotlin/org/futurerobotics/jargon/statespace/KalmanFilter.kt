@@ -1,7 +1,8 @@
 package org.futurerobotics.jargon.statespace
 
-import org.futurerobotics.jargon.control.AbstractBlock
 import org.futurerobotics.jargon.control.Block
+import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.control.ListStoreBlock
 import org.futurerobotics.jargon.linalg.*
 import org.hipparchus.filtering.kalman.Measurement
 import org.hipparchus.filtering.kalman.ProcessEstimate
@@ -36,7 +37,7 @@ class KalmanFilter(
     private val model: DiscreteLinSSModel,
     private val Q: Mat,
     private val R: Mat
-) : AbstractBlock(2, 1, Block.InOutOrder.IN_FIRST, Block.Processing.ALWAYS) {
+) : ListStoreBlock(2, 1, IN_FIRST_ALWAYS) {
 
     private var filter: LinearKalmanFilter<Measurement>? = null
     private val measurementObj = TheMeasurement()

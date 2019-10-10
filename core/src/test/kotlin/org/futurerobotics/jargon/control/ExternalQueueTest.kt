@@ -10,8 +10,8 @@ internal class ExternalQueueTest {
         val items = List(200) { Any() }
         val queue = ExternalQueue<Any>()
         val monitor: Monitor<Any?>
-        val system = buildBlockSystem {
-            monitor = add(queue).output<Any?>().monitor()
+        val system = buildBlocksSystem {
+            monitor = queue.monitor()
         }
         system.init()
         queue.addAll(items)

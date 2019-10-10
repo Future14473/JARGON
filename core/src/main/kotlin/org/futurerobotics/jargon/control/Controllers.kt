@@ -36,20 +36,26 @@ class BangBangController<State, Signal>(
             else -> equalOutput
         }
     }
+
+
+    /** The reference [BlockInput] */
+    val reference: BlockInput<State> get() = first
+    /** The state [BlockInput] */
+    val state: BlockInput<State> get() = second
+    /** the signal [BlockOutput] */
+    val signal: BlockOutput<Signal> = this
+
 }
 
 /**
  * A open-loop controller for a [FixedDriveModel], that takes the [MotionOnly] of Pose as references,
  * and produces the modeled motor voltages as a list of doubles, using the [model].
  *
- * This will throw NullPointerException if input is null.
- *
  *Inputs:
  *  1. the current pose [MotionOnly]
  *
  * Outputs
  *  1. the modeled motor voltages as a [List] of Doubles
- *
  */
 class FixedDriveOpenController(private val model: FixedDriveModel) :
     PipeBlock<MotionOnly<Pose2d>, List<Double>>() {

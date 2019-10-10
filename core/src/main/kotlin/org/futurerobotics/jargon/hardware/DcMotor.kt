@@ -13,17 +13,22 @@ interface DcMotor : InitStoppable {
     val maxVoltage: Double
 
     /**
-     * Powers the motor with the supplied [volts] normalizing in bounds if necessary.
+     * Powers the motor with the supplied [voltage] normalizing in bounds if necessary.
      */
-    fun setVoltage(volts: Double)
+    var voltage: Double
 
     /**
-     * Gets the position ***in radians*** of this motor; with the same sign direction as [setVoltage]
+     * Gets the position ***in radians*** of this motor; with the same sign direction as [voltage]
      */
-    fun getPosition(): Double
+    val position: Double
 
     /**
-     * Resets the position so that the current position is 0.0; Following [getPosition] calls will be relative
+     * Gets the velocity ***in radians per second*** of this motor, in the same direction as [voltage]
+     */
+    val velocity: Double
+
+    /**
+     * Resets the position so that the current position is 0.0; Following position gets calls will be relative
      * to this position.
      */
     fun resetPosition()
@@ -33,4 +38,10 @@ interface DcMotor : InitStoppable {
      */
     override fun init()
 
+    /**
+     * Stops this motor completely.
+     */
+    override fun stop() {
+        voltage = 0.0
+    }
 }

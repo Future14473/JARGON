@@ -6,17 +6,17 @@ internal class TestBlock(
     val name: String,
     numInputs: Int,
     numOutputs: Int,
-    inOutOrder: Block.InOutOrder = Block.InOutOrder.IN_FIRST,
-    processing: Block.Processing = Block.Processing.LAZY
-) : AbstractBlock(numInputs, numOutputs, inOutOrder, processing) {
+    processing: Block.Processing = Block.Processing.IN_FIRST_LAZY,
+    private val requireAllInputs: Boolean = true
+) : ListStoreBlock(numInputs, numOutputs, processing) {
     private var updateNum = 0
     override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
 
-        val list = if (inOutOrder == Block.InOutOrder.OUT_FIRST) {
+        val list = if (processing == Block.Processing.OUT_FIRST_ALWAYS) {
             List(numInputs) {
                 inputs[it].let { str ->
-                    str as String
-                    str.substring(0, str.indexOf('['))
+                    if (str is String)
+                        str.substring(0, str.indexOf('[')) else null
                 }
             }
         } else {
@@ -31,5 +31,13 @@ internal class TestBlock(
 
     override fun toString(): String {
         return name
+    }
+
+    fun output(index: Int = 0): BlockOutput<String> = outputIndex(index)
+
+    fun input(index: Int = 0): BlockInput<Any?> = inputIndex(index)
+
+    override fun verifyConfig(config: BlocksConfig) {
+        if (requireAllInputs) super.verifyConfig(config)
     }
 }

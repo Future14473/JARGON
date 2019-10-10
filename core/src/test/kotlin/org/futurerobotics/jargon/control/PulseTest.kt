@@ -9,11 +9,10 @@ import strikt.assertions.isTrue
 internal class PulseTest : AbstractBlockSystemTest() {
 
     @Test
-    fun testPulse() {
+    fun `pulse pulses`() {
         val monitor: Monitor<Boolean>
-        val pulseBlock = Pulse()
-        val system = buildBlockSystem {
-            val pulse = pulseBlock.add()<Boolean>()
+        val pulse = Pulse()
+        val system = buildBlocksSystem {
             monitor = pulse.monitor()
         }
 
@@ -24,7 +23,7 @@ internal class PulseTest : AbstractBlockSystemTest() {
                     system.loop(0.0)
                     get { value }.isA<Boolean>().isFalse()
                 }
-                pulseBlock.pulse()
+                pulse.pulse()
                 system.loop(0.0)
                 get { value }.isA<Boolean>().isTrue()
             }
