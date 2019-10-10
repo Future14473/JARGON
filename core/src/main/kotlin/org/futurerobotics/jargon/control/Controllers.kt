@@ -3,7 +3,7 @@
 package org.futurerobotics.jargon.control
 
 import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.mechanics.FixedWheelDriveModel
+import org.futurerobotics.jargon.mechanics.FixedDriveModel
 import org.futurerobotics.jargon.mechanics.MotionOnly
 
 
@@ -39,7 +39,7 @@ class BangBangController<State, Signal>(
 }
 
 /**
- * A open-loop controller for a [FixedWheelDriveModel], that takes the [MotionOnly] of Pose as references,
+ * A open-loop controller for a [FixedDriveModel], that takes the [MotionOnly] of Pose as references,
  * and produces the modeled motor voltages as a list of doubles, using the [model].
  *
  * This will throw NullPointerException if input is null.
@@ -51,7 +51,7 @@ class BangBangController<State, Signal>(
  *  1. the modeled motor voltages as a [List] of Doubles
  *
  */
-class FixedWheelOpenController(private val model: FixedWheelDriveModel) :
+class FixedDriveOpenController(private val model: FixedDriveModel) :
     PipeBlock<MotionOnly<Pose2d>, List<Double>>() {
 
     override fun pipe(input: MotionOnly<Pose2d>): List<Double> {

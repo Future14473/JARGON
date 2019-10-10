@@ -35,10 +35,11 @@ interface DriveModel {
  *
  * @param wheels the list of [FixedWheelModel]s
  */
-abstract class FixedWheelDriveModel(
+open class FixedDriveModel(
     final override val mass: Double,
     final override val moi: Double,
-    wheels: List<FixedWheelModel>
+    wheels: List<FixedWheelModel>,
+    final override val isHolonomic: Boolean
 ) : DriveModel {
 
     init {
@@ -46,7 +47,7 @@ abstract class FixedWheelDriveModel(
         require(moi >= 0) { "moi ($moi) should be >= 0" }
     }
 
-    private val wheels: List<FixedWheelModel> = wheels.toList()
+    val wheels: List<FixedWheelModel> = wheels.toList()
 
     /** The number of wheels. */
     val numWheels: Int get() = wheels.size
@@ -70,6 +71,7 @@ abstract class FixedWheelDriveModel(
                 it[2, i] = c
             }
         }
+
         val wheelForceFromVolts = pureDiag(wheels.map { 1 / it.motorVoltsPerOutputForce })
         botAccelFromVolts = botAccelFromBotForce * botForceFromWheelForce * wheelForceFromVolts
 
@@ -102,6 +104,7 @@ abstract class FixedWheelDriveModel(
      * This assumes that no wheels slip and they are all interlinked.
      */
     val wheelAccelFromVolts: Mat by lazy { wheelVelFromBotVel * botAccelFromVolts }
+
     /** The amount of volts needed to overcome frictional forces, ignoring acceleration. */
     val stallVolts: Vec by lazy { createVec(wheels.map { it.transmission.voltsForFriction }) }
 
@@ -130,36 +133,6 @@ abstract class FixedWheelDriveModel(
 }
 
 /**
- * A drive model that both turn and move in any direction.
- *
- * Making sure that the wheel configurations actually are holonomic is left to the user.
- */
-open class HolonomicDriveModel(
-    mass: Double,
-    moi: Double,
-    wheels: List<FixedWheelModel>
-) : FixedWheelDriveModel(mass, moi, wheels) {
-
-    final override val isHolonomic: Boolean get() = true
-}
-
-/**
- * A drive model that can only move at a heading of 0 (Vector <1, 0>).
- * (Use the North-West-Up coordinate frame), but can still turn too.
- *
- * Making sure that the wheel configurations are actually non-holonomic do this is left to the user,
- * or else the model may perform better than expected.
- */
-open class NonHolonomicDriveModel(
-    mass: Double,
-    moi: Double,
-    wheels: List<FixedWheelModel>
-) : FixedWheelDriveModel(mass, moi, wheels) {
-
-    final override val isHolonomic: Boolean get() = false
-}
-
-/**
  * Utility for creating common drive models.
  */
 object DriveModels {
@@ -175,14 +148,34 @@ object DriveModels {
         wheelRadius: Double,
         horizontalRadius: Double,
         verticalRadius: Double
-    ): HolonomicDriveModel {
+    ): FixedDriveModel {
         val wheels = listOf(
-            FixedWheelModel(transmission, Vector2d(verticalRadius, horizontalRadius), wheelRadius, -45 * degrees),
-            FixedWheelModel(transmission, Vector2d(verticalRadius, -horizontalRadius), wheelRadius, 45 * degrees),
-            FixedWheelModel(transmission, Vector2d(-verticalRadius, horizontalRadius), wheelRadius, 45 * degrees),
-            FixedWheelModel(transmission, Vector2d(-verticalRadius, -horizontalRadius), wheelRadius, -45 * degrees)
+            FixedWheelModel.fromWheelAngle(
+                transmission,
+                Vector2d(verticalRadius, horizontalRadius),
+                wheelRadius,
+                -45 * degrees
+            ),
+            FixedWheelModel.fromWheelAngle(
+                transmission,
+                Vector2d(verticalRadius, -horizontalRadius),
+                wheelRadius,
+                45 * degrees
+            ),
+            FixedWheelModel.fromWheelAngle(
+                transmission,
+                Vector2d(-verticalRadius, horizontalRadius),
+                wheelRadius,
+                45 * degrees
+            ),
+            FixedWheelModel.fromWheelAngle(
+                transmission,
+                Vector2d(-verticalRadius, -horizontalRadius),
+                wheelRadius,
+                -45 * degrees
+            )
         )
-        return HolonomicDriveModel(mass, moi, wheels)
+        return FixedDriveModel(mass, moi, wheels, true)
     }
 
     /**
@@ -194,11 +187,11 @@ object DriveModels {
         transmission: TransmissionModel,
         wheelRadius: Double,
         horizontalRadius: Double
-    ): NonHolonomicDriveModel {
+    ): FixedDriveModel {
         val wheels = listOf(
-            FixedWheelModel(transmission, Vector2d(0.0, horizontalRadius), wheelRadius, 0.0),
-            FixedWheelModel(transmission, Vector2d(0.0, -horizontalRadius), wheelRadius, 0.0)
+            FixedWheelModel.fromWheelAngle(transmission, Vector2d(0.0, horizontalRadius), wheelRadius, 0.0),
+            FixedWheelModel.fromWheelAngle(transmission, Vector2d(0.0, -horizontalRadius), wheelRadius, 0.0)
         )
-        return NonHolonomicDriveModel(mass, moi, wheels)
+        return FixedDriveModel(mass, moi, wheels, false)
     }
 }

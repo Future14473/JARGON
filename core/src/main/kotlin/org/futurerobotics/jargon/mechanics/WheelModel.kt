@@ -1,7 +1,6 @@
 package org.futurerobotics.jargon.mechanics
 
 import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.epsEq
 
 /**
  * A model for a wheel on a bot that cannot change location or direction on the bot.
@@ -12,7 +11,7 @@ import org.futurerobotics.jargon.math.epsEq
  * @param orientation a unit vector in the direction the wheel is facing, such that a positive transmission torque results
  *                     in a force applied to the bot in that direction. Directly north, in most cases.
  */
-data class FixedWheelModel(
+class FixedWheelModel private constructor(
     val transmission: TransmissionModel,
     val position: Vector2d,
     val radius: Double,
@@ -21,24 +20,8 @@ data class FixedWheelModel(
 
     init {
         require(position.isFinite()) { "The wheel position vector ($position) must be finite" }
-        require(orientation.length epsEq 1.0) { "The wheelOrientation ($orientation) must be a unit vector" }
         require(radius > 0) { "wheel radius ($radius) should be > 0" }
     }
-
-    /**
-     * Constructs using wheel angle instead.
-     */
-    constructor(
-        transmission: TransmissionModel,
-        wheelPosition: Vector2d,
-        wheelRadius: Double,
-        wheelAngle: Double
-    ) : this(
-        transmission,
-        wheelPosition,
-        wheelRadius,
-        Vector2d.polar(1.0, wheelAngle)
-    )
 
     /**
      * The ratio between the motor torque and the force exerted by the wheel.
@@ -60,4 +43,47 @@ data class FixedWheelModel(
      * @see [TransmissionModel.voltsForFriction]
      */
     val stallVolts: Double get() = transmission.voltsForFriction
+
+    companion object {
+        /**
+         * Constructs a [FixedWheelModel] using an orientation unit vector
+         *
+         *
+         * @param transmission the transmission model
+         * @param position where the wheel is located on a bot relative to the center of the bot
+         * @param radius the wheel's radius
+         * @param orientation a unit vector in the direction the wheel is facing, such that a positive transmission torque results
+         *                     in a force applied to the bot in that direction. Directly north, in most cases.
+         */
+        fun fromOrientationVector(
+            transmission: TransmissionModel,
+            position: Vector2d,
+            radius: Double,
+            orientation: Vector2d
+        ): FixedWheelModel {
+            return FixedWheelModel(
+                transmission,
+                position,
+                radius,
+                orientation.normalized().also { require(it.isFinite()) })
+        }
+
+        /**
+         * Constructs a [FixedWheelModel] using a wheel facing angle.
+         *
+         * @param transmission the transmission model
+         * @param position where the wheel is located on a bot relative to the center of the bot
+         * @param radius the wheel's radius
+         * @param angle the way the wheel is facing, such that a positive tranmission torque results in a force applied
+         *          to the bot in that direction.
+         */
+        fun fromWheelAngle(
+            transmission: TransmissionModel,
+            position: Vector2d,
+            radius: Double,
+            angle: Double
+        ): FixedWheelModel {
+            return FixedWheelModel(transmission, position, radius, Vector2d.polar(1.0, angle))
+        }
+    }
 }

@@ -5,7 +5,6 @@ package org.futurerobotics.jargon.statespace
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.VectorStructure
 import org.futurerobotics.jargon.mechanics.FixedWheelDriveModel
-import org.futurerobotics.jargon.mechanics.HolonomicDriveModel
 import org.futurerobotics.jargon.util.repeatedList
 
 
@@ -32,14 +31,6 @@ sealed class LinearStateSpaceModel constructor(
     val inputStructure: VectorStructure
     /** the output [VectorStructure] */
     val outputStructure: VectorStructure
-    /** A or system matrix. */
-    val A: Mat = A.copy()
-    /** B or control matrix. */
-    val B: Mat = B.copy()
-    /** C or measurement matrix. Also the measurement Jacobian with respect to the state. */
-    val C: Mat = C.copy()
-    /** D or feed-through matrix. */
-    val D: Mat = D.copy()
 
     init {
         require(A.isSquare) { "A matrix must be square" }
@@ -68,6 +59,16 @@ sealed class LinearStateSpaceModel constructor(
             VectorStructure(C.rows)
         }
     }
+
+    /** A or system matrix. */
+    val A: Mat = A.toImmutableMat()
+    /** B or control matrix. */
+    val B: Mat = B.toImmutableMat()
+    /** C or measurement matrix. Also the measurement Jacobian with respect to the state. */
+    val C: Mat = C.toImmutableMat()
+    /** D or feed-through matrix. */
+    val D: Mat = D.toImmutableMat()
+
 
     /** The size of this model's state vector. */
     val stateSize: Int get() = stateStructure.size
@@ -106,7 +107,7 @@ open class ContinuousLinSSModel @JvmOverloads constructor(
 
 
     /**
-     * Discretizes this [ContinuousLinSSModel] using the given [period], also discreitizing the given [QRCost].
+     * Discretizes this [ContinuousLinSSModel] using the given [period], also discretizing the given [QRCost].
      */
     fun discretize(period: Double, QRCost: QRCost): Pair<DiscreteLinSSModel, QRCost> {
         require(QRCost applicableTo this) { "Cost matrices must be applicable to this model" }
@@ -142,7 +143,8 @@ open class ContinuousLinSSModel @JvmOverloads constructor(
          * Otherwise for a non-holonomic, consider first using another controller that maps to _wheel velocities_
          * instead, and use [wheelVelocityController]
          */
-        fun poseVelocityController(driveModel: HolonomicDriveModel): ContinuousLinSSModel {
+        fun poseVelocityController(driveModel: FixedWheelDriveModel): ContinuousLinSSModel {
+            require(driveModel.isHolonomic) { "Drive model must be holonomic" }
             val size = driveModel.numWheels
             val botDeccelFromBotVel = -driveModel.botAccelFromVolts * driveModel.voltsFromBotVel
             val a = botDeccelFromBotVel

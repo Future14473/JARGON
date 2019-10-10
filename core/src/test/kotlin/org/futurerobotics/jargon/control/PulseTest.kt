@@ -10,6 +10,7 @@ internal class PulseTest : AbstractBlockSystemTest() {
 
     @Test
     fun testPulse() {
+        val monitor: Monitor<Boolean>
         val pulseBlock = Pulse()
         val system = buildBlockSystem {
             val pulse = pulseBlock.add()<Boolean>()

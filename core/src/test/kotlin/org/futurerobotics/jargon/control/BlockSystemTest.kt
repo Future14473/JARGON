@@ -86,6 +86,7 @@ internal class BlockSystemTest : AbstractBlockSystemTest() {
 
     @Test
     fun `it actually shuts down`() {
+        val monitor: Monitor<Int>
         val externalConstant = ExternalInput(4)
         val system = buildBlockSystem {
 

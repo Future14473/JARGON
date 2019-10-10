@@ -3,7 +3,7 @@
 package org.futurerobotics.jargon.control
 
 import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.mechanics.FixedWheelDriveModel
+import org.futurerobotics.jargon.mechanics.FixedDriveModel
 
 
 /**
@@ -11,7 +11,7 @@ import org.futurerobotics.jargon.mechanics.FixedWheelDriveModel
  *
  * Maybe pass through a filter first.
  */
-class MotorPositionsToPoseVelocity(private val model: FixedWheelDriveModel) : PipeBlock<List<Double>, Pose2d>() {
+class MotorPositionsToPoseVelocity(private val model: FixedDriveModel) : PipeBlock<List<Double>, Pose2d>() {
     private var pastPositions: List<Double>? = null
     override fun pipe(input: List<Double>): Pose2d {
         val pastPositions = pastPositions
@@ -28,7 +28,7 @@ class MotorPositionsToPoseVelocity(private val model: FixedWheelDriveModel) : Pi
  *
  * Maybe pass through a filter first.
  */
-class FixedWheelVelocityToVelocityObserver(private val model: FixedWheelDriveModel) :
+class FixedDriveMotorToBotVel(private val model: FixedDriveModel) :
     PipeBlock<List<Double>, Pose2d>() {
     override fun pipe(input: List<Double>): Pose2d {
         return model.getEstimatedVelocity(input)
