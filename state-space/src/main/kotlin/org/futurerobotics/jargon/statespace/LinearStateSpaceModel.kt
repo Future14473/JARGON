@@ -89,6 +89,21 @@ sealed class LinearStateSpaceModel constructor(
 
     /** D matrix */
     operator fun component4(): Mat = D
+
+    /**
+     * Gets either x-dot or x_k+1 given the current state vector [x] and signal vector [u]
+     */
+    fun processState(x: Vec, u: Vec): Vec {
+        return A * x + B * u
+    }
+
+    /**
+     * Gets the output/measurement vector given the current state vector [x] and signal vector [u]
+     */
+    fun processOutput(x: Vec, u: Vec): Vec {
+        return C * x + D * u
+    }
+
 }
 
 
@@ -129,70 +144,6 @@ open class ContinuousLinSSModel @JvmOverloads constructor(
         }
         return DiscreteLinSSModel(ad, bd, C, D, period, stateStructure, inputStructure, outputStructure)
     }
-
-    companion object {
-        /**
-         * Derives a [ContinuousLinSSModel] from the given [driveModel] that:
-         *
-         * - _state_ is bot's pose velocity in [x, y, heading],
-         * - _signal/input_ is a vector of motors' voltages in the same order as given in the [driveModel]
-         * - _measurement/output_ is a vector of the motors' angular
-         *    velocity in the same order as given in the [driveModel].
-         *
-         * The drive model must be a [FixedDriveModel.isHolonomic] or else the ss model may not be controllable.
-         * Otherwise for a non-holonomic, consider first using another controller that maps to _wheel velocities_
-         * instead, and use [wheelVelocityController]
-         */
-        @Suppress("UnnecessaryVariable")
-        fun poseVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
-            require(driveModel.isHolonomic) { "Drive model must be holonomic" }
-            val size = driveModel.numWheels
-            val botDeccelFromBotVel = -driveModel.botAccelFromVolts * driveModel.voltsFromBotVel
-            val a = botDeccelFromBotVel
-            val b = driveModel.botAccelFromVolts
-            val motorVelFromBotVel = driveModel.motorVelFromWheelVel * driveModel.wheelVelFromBotVel
-            val c = motorVelFromBotVel
-            val d = zeros(size, size)
-            val names = List(size) { "wheel$it" }
-            return ContinuousLinSSModel(
-                a, b, c, d,
-                stateStructure = VectorStructure(listOf("x", "y", "heading"), repeatedList(size, "")),
-                inputStructure = VectorStructure(names, repeatedList(size, "volts")),
-                outputStructure = VectorStructure(names, repeatedList(size, "rad/s"))
-            )
-        }
-
-        /**
-         * Derives a [ContinuousLinSSModel] from the given [driveModel] that:
-         *
-         * - _state_ is a vector of the motors' angular velocity in the same order as given in the [driveModel].
-         * - _signal/input_ is a vector of motors' voltages in the same order as given in the [driveModel]
-         * - _measurement/output_ directly corresponds to the state (motor angular velocity).
-         *
-         * The drive model may not be controllable if there are more than 3 wheels
-         * since this derivation depends on the fact that the wheels do not slip and so the wheel's velocities are not
-         * independent of each other, but dependent on the bot's pose acceleration.
-         *
-         * In that case you have a holonomic drive, so use [poseVelocityController]
-         */
-        @Suppress("UnnecessaryVariable")
-        fun wheelVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
-            val size = driveModel.numWheels
-            val wheelDeccelFromWheelVel = -driveModel.wheelAccelFromVolts * driveModel.voltsFromWheelVel
-            val a = wheelDeccelFromWheelVel
-            val b = driveModel.wheelAccelFromVolts
-            val c = pureEye(size) //measure vel directly
-            val d = zeros(size, size)
-            val names = List(size) { "wheel$it" }
-            val velStructure = VectorStructure(names, repeatedList(size, "rad/s"))
-            return ContinuousLinSSModel(
-                a, b, c, d,
-                stateStructure = velStructure,
-                inputStructure = VectorStructure(names, repeatedList(size, "volts")),
-                outputStructure = velStructure
-            )
-        }
-    }
 }
 
 /**
@@ -210,3 +161,72 @@ open class DiscreteLinSSModel @JvmOverloads constructor(
     inputStructure: VectorStructure? = null,
     outputStructure: VectorStructure? = null
 ) : LinearStateSpaceModel(A, B, C, D, stateStructure, inputStructure, outputStructure)
+
+
+/**
+ * Utilities for creating [LinearStateSpaceModel]s from [FixedDriveModel]s.
+ */
+object LinearDriveModels {
+
+    /**
+     * Derives a [ContinuousLinSSModel] from the given [driveModel] that:
+     *
+     * - _state_ is bot's pose velocity in [x, y, heading],
+     * - _signal/input_ is a vector of motors' voltages in the same order as given in the [driveModel]
+     * - _measurement/output_ is a vector of the motors' angular
+     *    velocity in the same order as given in the [driveModel].
+     *
+     * The drive model must be a [FixedDriveModel.isHolonomic] or else the ss model may not be controllable.
+     * Otherwise for a non-holonomic, consider first using another controller that maps to _wheel velocities_
+     * instead, and use [wheelVelocityController]
+     */
+    @Suppress("UnnecessaryVariable")
+        fun poseVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
+        require(driveModel.isHolonomic) { "Drive model must be holonomic" }
+        val size = driveModel.numWheels
+        val botDeccelFromBotVel = -driveModel.botAccelFromVolts * driveModel.voltsFromBotVel
+        val a = botDeccelFromBotVel
+        val b = driveModel.botAccelFromVolts
+        val motorVelFromBotVel = driveModel.motorVelFromWheelVel * driveModel.wheelVelFromBotVel
+        val c = motorVelFromBotVel
+        val d = zeros(size, size)
+        val names = List(size) { "wheel$it" }
+        return ContinuousLinSSModel(
+            a, b, c, d,
+            stateStructure = VectorStructure(listOf("x", "y", "heading"), repeatedList(size, "")),
+            inputStructure = VectorStructure(names, repeatedList(size, "volts")),
+            outputStructure = VectorStructure(names, repeatedList(size, "rad/s"))
+        )
+    }
+
+    /**
+     * Derives a [ContinuousLinSSModel] from the given [driveModel] that:
+     *
+     * - _state_ is a vector of the motors' angular velocity in the same order as given in the [driveModel].
+     * - _signal/input_ is a vector of motors' voltages in the same order as given in the [driveModel]
+     * - _measurement/output_ directly corresponds to the state (motor angular velocity).
+     *
+     * The drive model may not be controllable if there are more than 3 wheels
+     * since this derivation depends on the fact that the wheels do not slip and so the wheel's velocities are not
+     * independent of each other, but dependent on the bot's pose acceleration.
+     *
+     * In that case you have a holonomic drive, so use [poseVelocityController]
+     */
+    @Suppress("UnnecessaryVariable")
+        fun wheelVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
+        val size = driveModel.numWheels
+        val wheelDeccelFromWheelVel = -driveModel.wheelAccelFromVolts * driveModel.voltsFromWheelVel
+        val a = wheelDeccelFromWheelVel
+        val b = driveModel.wheelAccelFromVolts
+        val c = pureEye(size) //measure vel directly
+        val d = zeros(size, size)
+        val names = List(size) { "wheel$it" }
+        val velStructure = VectorStructure(names, repeatedList(size, "rad/s"))
+        return ContinuousLinSSModel(
+            a, b, c, d,
+            stateStructure = velStructure,
+            inputStructure = VectorStructure(names, repeatedList(size, "volts")),
+            outputStructure = velStructure
+        )
+    }
+}

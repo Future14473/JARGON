@@ -21,10 +21,10 @@ import kotlin.math.sign
  *
  */
 class DcMotorModel private constructor(
-    private val kt: Double,
-    private val r: Double,
-    private val kv: Double,
-    private val i0: Double = 0.0
+    val kt: Double,
+    val r: Double,
+    val kv: Double,
+    val i0: Double = 0.0
 ) {
 
     init {
