@@ -1,4 +1,5 @@
 @file:JvmName("MatrixFuncs")
+@file:Suppress("KDocMissingDocumentation")
 
 
 package org.futurerobotics.jargon.linalg
@@ -35,7 +36,7 @@ private const val c11 = 2.5291534915979653E-13
 private const val c12 = 2.8101705462199615E-15
 private const val c13 = 1.5440497506703084E-17
 /**
- * Computes the matrix exponential (`e^[x]`) of the given matrix [mat].
+ * Computes the matrix exponential (`e^X`) of the given matrix [mat].
  *
  * This implementation is translated from `MatrixFunctions.expm(DoubleMatrix) in `[jBlas][http://jblas.org/], which is
  * licensed under a [BSD - style license][https://raw.githubusercontent.com/jblas-project/jblas/jblas-1.2.4/COPYING]

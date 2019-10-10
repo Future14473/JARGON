@@ -20,7 +20,7 @@ inline fun <reified T : Any> Any.castToMotionState3(zero: T): MotionState3<T> = 
 }
 
 /**
- * Attempts to convert the input into a [MotionState3] representation of <T>.
+ * Attempts to convert this value into a [MotionState3] representation of <T>.
  *
  *
  * @param zero the value of zero to fill in missing values
@@ -35,7 +35,7 @@ fun <T : Any> Any.castToMotionState3NoInline(zero: T): MotionState3<T> = when (t
 }
 
 /**
- * Attempts to convert this value to a List of Doubles.
+ * Attempts to convert this value to a List<Double>.
  *
  * Allowed types: List<Double>, DoubleArray/double[], [Vec].
  *
@@ -50,7 +50,7 @@ fun Any.castToDoubleList(): List<Double> = when (this) {
 }
 
 /**
- * Attempts to convert this value to a  [Vec]
+ * Attempts to convert this value to a [Vec]
  *
  * Allowed types: List<Double>, DoubleArray/double[], [Vec].
  *

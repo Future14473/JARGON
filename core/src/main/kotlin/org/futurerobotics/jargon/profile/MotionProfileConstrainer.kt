@@ -5,7 +5,7 @@ import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
 
 /**
- * Represents the constrainer to use to generate a dynamic [MotionProfile] using [MotionProfileGenerator].
+ * Represents the constrainer to use to generate a dynamic [MotionProfile].
  * @see PointConstraint
  */
 interface MotionProfileConstrainer : Steppable<Double, PointConstraint> {

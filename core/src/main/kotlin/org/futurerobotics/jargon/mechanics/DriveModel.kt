@@ -47,6 +47,7 @@ open class FixedDriveModel(
         require(moi >= 0) { "moi ($moi) should be >= 0" }
     }
 
+    /** the [FixedWheelModel]s that this uses. */
     val wheels: List<FixedWheelModel> = wheels.toList()
 
     /** The number of wheels. */
@@ -120,15 +121,15 @@ open class FixedDriveModel(
     }
 
     /**
-     * Gets the estimated velocity based on the velocity in [motorPositions].
+     * Gets the estimated velocity based on the velocity in [motorVelocities].
      *
-     * This also gets the estimated _difference_ in _local_ pose given a difference in [motorPositions]
+     * This also gets the estimated _difference_ in _local_ pose given a difference in [motorVelocities]
      */
-    fun getEstimatedVelocity(motorPositions: List<Double>): Pose2d {
-        require(motorPositions.size == botVelFromMotorVel.columnDimension) {
-            "motorPositions should have same number of positions as this's wheels."
+    fun getEstimatedVelocity(motorVelocities: List<Double>): Pose2d {
+        require(motorVelocities.size == botVelFromMotorVel.columnDimension) {
+            "motorVelocities $motorVelocities should have same size as wheels $numWheels."
         }
-        return Pose2d(botVelFromMotorVel * motorPositions.toDoubleArray())
+        return Pose2d(botVelFromMotorVel * motorVelocities.toDoubleArray())
     }
 }
 
@@ -181,6 +182,7 @@ object DriveModels {
     /**
      * Creates a drive model for a differential supplied, wheels in [left, right] order, using NWU orientation.
      */
+    @JvmStatic
     fun differential(
         mass: Double,
         moi: Double,

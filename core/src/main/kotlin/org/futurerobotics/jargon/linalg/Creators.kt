@@ -1,4 +1,4 @@
-@file:Suppress("KDocMissingDocumentation")
+@file:Suppress("KDocMissingDocumentation", "ClassName")
 
 package org.futurerobotics.jargon.linalg
 
@@ -44,7 +44,7 @@ object vec {
 object mat {
     operator fun get(vararg values: Any): Mat {
         val stops = values.count { it is Pair<*, *> }
-        val items = values.count() + stops
+        val items = values.size + stops
         val rows = stops + 1
         val cols = items / rows
         require(rows * cols == items) { "Even rows/cols not given" }
@@ -74,4 +74,4 @@ object mat {
     }
 }
 
-infix fun Number.end(other: Number) = this to other
+infix fun Number.end(other: Number): Pair<Number, Number> = this to other

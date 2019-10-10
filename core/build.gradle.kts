@@ -6,7 +6,6 @@ val junit5: String by ext
 val junit5params: String by ext
 val junit5engine: String by ext
 val strikt: String by ext
-val coroutines: String by ext
 
 plugins {
     kotlin("jvm")
@@ -19,11 +18,19 @@ dependencies {
 //    testCompileOnly(junit)
     testImplementation(junit5)
     testImplementation(junit5params)
-    testRuntimeOnly(junit5engine)
-    testImplementation(project(":test-util"))
     testImplementation(strikt)
-    testImplementation(coroutines)
+    testImplementation(project(":test-util"))
+    testRuntimeOnly(junit5engine)
 }
+tasks.withType<KotlinCompile> {
+    kotlinOptions {
+        @Suppress("SuspiciousCollectionReassignment")
+        freeCompilerArgs += listOf(
+            "-Xuse-experimental=kotlin.Experimental" //for contracts
+        )
+    }
+}
+
 tasks.test {
     dependsOn("cleanTest")
     useJUnitPlatform()

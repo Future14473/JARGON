@@ -11,7 +11,7 @@ import org.futurerobotics.jargon.mechanics.FixedDriveModel
  *
  * Maybe pass through a filter first.
  */
-class MotorPositionsToPoseVelocity(private val model: FixedDriveModel) : PipeBlock<List<Double>, Pose2d>() {
+class FixedDriveMotorPoseToBotDiff(private val model: FixedDriveModel) : PipeBlock<List<Double>, Pose2d>() {
     private var pastPositions: List<Double>? = null
     override fun pipe(input: List<Double>): Pose2d {
         val pastPositions = pastPositions

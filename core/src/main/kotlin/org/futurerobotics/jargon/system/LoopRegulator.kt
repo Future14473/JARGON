@@ -45,7 +45,7 @@ interface LoopRegulator {
     /**
      * Possibly pauses the current thread so that the time between the last call to [start] is
      * controlled to this [LoopRegulator]'s liking; restarts the timing;
-     * and then returns the elapsed time in seconds as in [currentTime]
+     * and then returns the elapsed time in seconds.
      */
     @Throws(InterruptedException::class)
     fun syncAndRestart(): Double

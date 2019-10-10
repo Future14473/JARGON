@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.statespace
 
+import org.futurerobotics.jargon.control.AbstractBlock
 import org.futurerobotics.jargon.control.Block
-import org.futurerobotics.jargon.control.SingleOutputBlock
 import org.futurerobotics.jargon.linalg.*
 import org.hipparchus.filtering.kalman.Measurement
 import org.hipparchus.filtering.kalman.ProcessEstimate
@@ -36,14 +36,15 @@ class KalmanFilter(
     private val model: DiscreteLinSSModel,
     private val Q: Mat,
     private val R: Mat
-) : SingleOutputBlock(2, Block.InOutOrder.ALWAYS_IN_FIRST, Block.Processing.ALWAYS) {
+) : AbstractBlock(2, 1, Block.InOutOrder.IN_FIRST, Block.Processing.ALWAYS) {
 
     private var filter: LinearKalmanFilter<Measurement>? = null
     private val measurementObj = TheMeasurement()
     private val process = TheLinearProcess()
     private var stateCovariance = steadyStateKalmanErrorCov(model, Q, R)
     private var lastUpdate: ProcessEstimate? = null
-    override fun process(inputs: List<Any?>) {
+    private var pastOutput: Vec? = null
+    override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
         val measurement = inputs[0] as Vec
         val signal = inputs[0] as Vec
 
@@ -56,21 +57,21 @@ class KalmanFilter(
                 process,
                 ProcessEstimate(
                     0.0,
-                    output as RealVector? ?: model.C.solve(measurement),
+                    pastOutput ?: model.C.solve(measurement),
                     stateCovariance
                 )
             )
         }
 
-        filter?.let {
+        filter!!.let {
             it.estimationStep(measurementObj)
             val corrected = it.corrected
             lastUpdate = corrected
-            output = corrected.state
+            outputs[0] = corrected.state
         }
     }
 
-    override fun init() {
+    override fun init(outputs: MutableList<Any?>) {
         lastUpdate?.covariance?.let {
             stateCovariance = it
         }

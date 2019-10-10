@@ -74,7 +74,7 @@ class FixedWheelModel private constructor(
          * @param transmission the transmission model
          * @param position where the wheel is located on a bot relative to the center of the bot
          * @param radius the wheel's radius
-         * @param angle the way the wheel is facing, such that a positive tranmission torque results in a force applied
+         * @param angle the way the wheel is facing, such that a positive transmission torque results in a force applied
          *          to the bot in that direction.
          */
         fun fromWheelAngle(

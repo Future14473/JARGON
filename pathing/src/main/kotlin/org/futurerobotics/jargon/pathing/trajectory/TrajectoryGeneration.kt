@@ -103,7 +103,7 @@ class TrajectoryConstraint(
  * Generates a approximate-time optimal trajectory given the [path] and [constraints].
  * [targetStartVel] and [targetEndVel] indicate the endpoints
  *
- * @see MotionProfileGenerator
+ * @see generateDynamicProfile
  */
 fun generateTrajectory(
     path: Path,

@@ -24,7 +24,7 @@ object MatConcat {
      */
     operator fun get(vararg elements: Any): Mat {
         val numStops = elements.count { it is Pair<*, *> }
-        val numElements = elements.count() + numStops
+        val numElements = elements.size + numStops
         val numRows = numStops + 1
         val numCols = numElements / numRows
         if (numRows * numCols != numElements) throwNotEven()
@@ -58,7 +58,7 @@ object MatConcat {
 
 
     /**
-     * Takes a 2d array of [Matrix]es with compatible sizes, concatenating them into a single Matrix.
+     * Takes a 2d array of [Mat]rices with compatible sizes, concatenating them into a single Matrix.
      */
     @JvmStatic
     fun concat(arr: Array<out Array<out Mat>>): Mat {
@@ -123,15 +123,15 @@ object MatConcat {
             }
         }
         require(size != -1) { "At least one matrix must be given" }
-         fun convertToMat(any: Any, size: Int): Mat = when (any) {
-             is Mat -> any
-             !is Number -> throwInvalidValue()
-             0 -> pureZeroSquare(size)
-             1 -> pureEye(size)
-             else -> throw IllegalArgumentException(
-                 "Number value given must be 0, for zero matrix, or 1, for identity matrix"
-             )
-         }
+        fun convertToMat(any: Any, size: Int): Mat = when (any) {
+            is Mat -> any
+            !is Number -> throwInvalidValue()
+            0 -> pureZeroSquare(size)
+            1 -> pureEye(size)
+            else -> throw IllegalArgumentException(
+                "Number value given must be 0, for zero matrix, or 1, for identity matrix"
+            )
+        }
         return zeros(size * 2, size * 2).apply {
             this[0, 0] = convertToMat(m11, size)
             this[size, 0] = convertToMat(m12, size)

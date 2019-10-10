@@ -7,7 +7,7 @@ import org.hipparchus.linear.*
 import kotlin.math.abs
 
 
-//getset
+//get set
 inline operator fun Mat.get(row: Int, col: Int): Double = this.getEntry(row, col)
 
 inline operator fun Mat.get(rows: IntRange, cols: IntRange): Mat =
@@ -61,7 +61,7 @@ fun Mat.epsEq(mat: Mat, epsilon: Double): Boolean {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
     repeat(rows) { i ->
         repeat(cols) { j ->
-            if (!(abs(this[i, j] - mat[i, j]) < epsilon)) return false
+            if (abs(this[i, j] - mat[i, j]) >= epsilon) return false
         }
     }
     return true

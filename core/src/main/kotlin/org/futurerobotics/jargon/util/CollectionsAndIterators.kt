@@ -8,6 +8,7 @@ inline fun <T> Array<T>.fillWith(generator: (Int) -> T) {
     }
 }
 
+/** Fills an mutable list using the given [generator]. */
 inline fun <T> MutableList<T>.fillWith(generator: (Int) -> T) {
     val iterator = listIterator()
     var index = 0

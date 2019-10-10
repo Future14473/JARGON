@@ -14,7 +14,7 @@ import org.futurerobotics.jargon.util.Stepper
 /**
  * Represents a trajectory; that is a Path paired with time/velocity info on traversal (a [MotionProfiled]).
  *
- * @see TrajectoryGenerator
+ * @see generateTrajectory
  */
 class Trajectory(private val path: Path, private val profile: MotionProfile) : MotionProfiled<MotionState3<Pose2d>> {
 

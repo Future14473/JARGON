@@ -4,7 +4,7 @@ package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.VectorStructure
-import org.futurerobotics.jargon.mechanics.FixedWheelDriveModel
+import org.futurerobotics.jargon.mechanics.FixedDriveModel
 import org.futurerobotics.jargon.util.repeatedList
 
 
@@ -139,11 +139,12 @@ open class ContinuousLinSSModel @JvmOverloads constructor(
          * - _measurement/output_ is a vector of the motors' angular
          *    velocity in the same order as given in the [driveModel].
          *
-         * The drive model must be a [HolonomicDriveModel] or else the ss model may not be controllable.
+         * The drive model must be a [FixedDriveModel.isHolonomic] or else the ss model may not be controllable.
          * Otherwise for a non-holonomic, consider first using another controller that maps to _wheel velocities_
          * instead, and use [wheelVelocityController]
          */
-        fun poseVelocityController(driveModel: FixedWheelDriveModel): ContinuousLinSSModel {
+        @Suppress("UnnecessaryVariable")
+        fun poseVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
             require(driveModel.isHolonomic) { "Drive model must be holonomic" }
             val size = driveModel.numWheels
             val botDeccelFromBotVel = -driveModel.botAccelFromVolts * driveModel.voltsFromBotVel
@@ -174,7 +175,8 @@ open class ContinuousLinSSModel @JvmOverloads constructor(
          *
          * In that case you have a holonomic drive, so use [poseVelocityController]
          */
-        fun wheelVelocityController(driveModel: FixedWheelDriveModel): ContinuousLinSSModel {
+        @Suppress("UnnecessaryVariable")
+        fun wheelVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
             val size = driveModel.numWheels
             val wheelDeccelFromWheelVel = -driveModel.wheelAccelFromVolts * driveModel.voltsFromWheelVel
             val a = wheelDeccelFromWheelVel

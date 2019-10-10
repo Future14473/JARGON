@@ -113,7 +113,7 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
     }
 
     companion object {
-        const val steps = 100_000
+        const val steps = 20_000
         private const val seed = 34226
         private const val minDiff = 2.0
         private const val maxDiff = 8.0
