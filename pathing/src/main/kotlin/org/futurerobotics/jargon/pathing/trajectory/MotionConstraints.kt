@@ -47,11 +47,9 @@ class MaxTangentAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) {
  */
 class MaxCentripetalAccelConstraint(max: Double) : MaxBasedVelocityConstraint(max) {
 
-    override fun maxVelocity(point: PathPoint): Double {
-        //a_c = v^2*c <= max
+    override fun maxVelocity(point: PathPoint): Double =//a_c = v^2*c <= max
         //v <= sqrt(max/c)
-        return sqrt(abs(max / point.tanAngleDeriv))
-    }
+        sqrt(abs(max / point.tanAngleDeriv))
 }
 
 /**

@@ -5,14 +5,10 @@ import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.nextVector2d
 import kotlin.random.Random
 
-/**
- * Represents a Quintic Spline, defined by two quintic polynomials for the x and y components.
- */
+/** Represents a Quintic Spline, defined by two quintic polynomials for the x and y components. */
 class QuinticSpline(x: QuinticPolynomial, y: QuinticPolynomial) : ComponentVectorFunction(x, y) {
 
-    override fun toString(): String {
-        return "QuinticSpline(x: $x, y: $y)"
-    }
+    override fun toString(): String = "QuinticSpline(x: $x, y: $y)"
 
     companion object {
         /**

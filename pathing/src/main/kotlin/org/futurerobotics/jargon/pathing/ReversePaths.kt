@@ -7,9 +7,7 @@ private sealed class ReverseGeneric<Path : GenericPath<Point>, Point : CurvePoin
     GenericPath<Point> {
 
     final override val length: Double get() = path.length
-    final override fun pointAt(s: Double): Point {
-        return mapPoint(path.pointAt(length - s))
-    }
+    final override fun pointAt(s: Double): Point = mapPoint(path.pointAt(length - s))
 
     final override fun stepper(): Stepper<Double, Point> {
         val baseStepper = path.stepper()

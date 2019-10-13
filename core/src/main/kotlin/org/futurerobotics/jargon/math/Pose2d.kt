@@ -45,16 +45,12 @@ data class Pose2d(val vec: Vector2d, val heading: Double) {
     }
 
     /** If this pose is equal to another with epsilon leniency. */
-    infix fun epsEq(other: Pose2d): Boolean {
-        return vec epsEq other.vec && angleNorm(heading - other.heading) epsEq 0.0
-    }
+    infix fun epsEq(other: Pose2d): Boolean = vec epsEq other.vec && angleNorm(heading - other.heading) epsEq 0.0
 
     /** If all components are finite. */
     fun isFinite(): Boolean = vec.isFinite() && heading.isFinite()
 
-    fun toVector(): Vec {
-        return createVec(x, y, heading)
-    }
+    fun toVector(): Vec = createVec(x, y, heading)
 
     override fun toString(): String = "Pose2d(v:<%.4f, %.4f>, h: %.4f)".format(x, y, heading)
 

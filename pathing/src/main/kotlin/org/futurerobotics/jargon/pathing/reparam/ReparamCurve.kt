@@ -19,9 +19,7 @@ class ReparamCurve(private val func: VectorFunction, internal val mapping: Repar
     /** Gets the t parameter on the original function that corresponds to an arc length of [s] */
     fun tOfS(s: Double): Double = mapping.tOfS(s)
 
-    override fun pointAt(s: Double): CurvePoint {
-        return ReparamCurvePoint(tOfS(s))
-    }
+    override fun pointAt(s: Double): CurvePoint = ReparamCurvePoint(tOfS(s))
 
     override fun stepper(): Stepper<Double, CurvePoint> {
         val mappingStepper = mapping.stepper()

@@ -21,9 +21,20 @@ inline fun <T> MutableList<T>.fillWith(generator: (Int) -> T) {
 /**
  * Returns a [MutableList] that wraps the original array.
  */
-fun <T> Array<T>.asMutableList(): MutableList<T> {
-    return asList() as MutableList<T>
+fun <T> Array<T>.asMutableList(): MutableList<T> = asList() as MutableList<T>
+
+/**
+ * Creates a mutable list with a fixed [size],  filling with init.
+ */
+inline fun <reified T> fixedSizeMutableList(size: Int, init: (Int) -> T): MutableList<T> {
+    @Suppress("UNCHECKED_CAST")
+    return (arrayOfNulls<T>(size).apply { fillWith(init) } as Array<T>).asMutableList()
 }
+
+/**
+ * Creates a mutable list with a fixed size, initializing with nulls.
+ */
+inline fun <reified T> fixedSizeMutableListOfNulls(size: Int): MutableList<T?> = arrayOfNulls<T>(size).asMutableList()
 
 /**
  * Creates a new list where the elements are viewed as a [mapping] of the original list.
@@ -32,9 +43,7 @@ inline fun <T, R> List<T>.mappedView(crossinline mapping: (T) -> R): List<R> = o
     override val size: Int
         get() = this@mappedView.size
 
-    override fun get(index: Int): R {
-        return mapping(this@mappedView[index])
-    }
+    override fun get(index: Int): R = mapping(this@mappedView[index])
 }
 
 /**

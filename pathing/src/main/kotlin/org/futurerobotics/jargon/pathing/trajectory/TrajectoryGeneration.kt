@@ -76,9 +76,7 @@ class TrajectoryConstraint(
     private val velConstraints = motionConstraintSet.velocityConstraints
     private val accelConstrains = motionConstraintSet.accelConstraints
 
-    private fun getMaxVel(point: PathPoint): Double {
-        return velConstraints.map { it.maxVelocity(point) }.min()!!
-    }
+    private fun getMaxVel(point: PathPoint): Double = velConstraints.map { it.maxVelocity(point) }.min()!!
 
     private fun getMaxAccel(point: PathPoint, curVelocity: Double): Interval {
         return accelConstrains.map {
