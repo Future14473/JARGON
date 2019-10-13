@@ -3,9 +3,9 @@ package org.futurerobotics.jargon.pathing.trajectory
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.epsEq
 import org.futurerobotics.jargon.math.squared
-import org.futurerobotics.jargon.mechanics.LinearMotionState3
-import org.futurerobotics.jargon.mechanics.MotionState3
-import org.futurerobotics.jargon.mechanics.ValueMotionState3
+import org.futurerobotics.jargon.mechanics.LinearMotionState
+import org.futurerobotics.jargon.mechanics.MotionState
+import org.futurerobotics.jargon.mechanics.ValueMotionState
 import org.futurerobotics.jargon.pathing.*
 import org.futurerobotics.jargon.profile.MotionProfile
 import org.futurerobotics.jargon.profile.MotionProfiled
@@ -16,7 +16,7 @@ import org.futurerobotics.jargon.util.Stepper
  *
  * @see generateTrajectory
  */
-class Trajectory(private val path: Path, private val profile: MotionProfile) : MotionProfiled<MotionState3<Pose2d>> {
+class Trajectory(private val path: Path, private val profile: MotionProfile) : MotionProfiled<MotionState<Pose2d>> {
 
     /**
      * The duration of time to traverse this [Trajectory] (ideally)
@@ -39,15 +39,15 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
     }
 
     /**
-     * Gets the [MotionState3] of Poses after the specified [time] traversing this trajectory.
+     * Gets the [MotionState] of Poses after the specified [time] traversing this trajectory.
      */
-    override fun atTime(time: Double): MotionState3<Pose2d> {
+    override fun atTime(time: Double): MotionState<Pose2d> {
         val state = profile.atTime(time)
         val point = path.pointAt(state.s)
         return getState(state, point)
     }
 
-    override fun stepper(): Stepper<Double, MotionState3<Pose2d>> {
+    override fun stepper(): Stepper<Double, MotionState<Pose2d>> {
         val pathStepper = path.stepper()
         val profileStepper = profile.stepper()
         return Stepper {
@@ -57,11 +57,11 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
         }
     }
 
-    private fun getState(state: LinearMotionState3, point: PathPoint): MotionState3<Pose2d> {
+    private fun getState(state: LinearMotionState, point: PathPoint): MotionState<Pose2d> {
         val pose = point.pose
         val poseDeriv = point.poseDeriv
         val poseSecondDeriv = point.poseSecondDeriv
-        return ValueMotionState3(
+        return ValueMotionState(
             pose,
             poseDeriv * state.v,
             poseSecondDeriv * state.v.squared() + poseDeriv * state.a

@@ -42,7 +42,7 @@ object GlobalToBot {
      * Pose2d.Zero), given the current [globalPose]
      */
     @JvmStatic
-    fun referenceMotion(reference: MotionState3<Pose2d>, globalPose: Pose2d): MotionState3<Pose2d> {
+    fun referenceMotion(reference: MotionState<Pose2d>, globalPose: Pose2d): MotionState<Pose2d> {
         val (s, v, a) = reference
         val rs = (s - globalPose).vecRotated(-globalPose.heading)
         val rv = v.vecRotated(-globalPose.heading)
@@ -51,6 +51,6 @@ object GlobalToBot {
                     v.vec.rotated(-globalPose.heading + PI / 2) * -v.heading,
             a.heading
         )
-        return ValueMotionState3(rs, rv, ra)
+        return ValueMotionState(rs, rv, ra)
     }
 }

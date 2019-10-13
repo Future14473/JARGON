@@ -5,27 +5,27 @@ package org.futurerobotics.jargon.control
 import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_LAZY
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.mechanics.MotionState3
-import org.futurerobotics.jargon.mechanics.ValueMotionState3
+import org.futurerobotics.jargon.mechanics.MotionState
+import org.futurerobotics.jargon.mechanics.ValueMotionState
 
 /**
- * A block that takes a [MotionState3] and splits it into its components in order.
+ * A block that takes a [MotionState] and splits it into its components in order.
  *
  * Inputs:
- * 1. A [MotionState3] of [T].
+ * 1. A [MotionState] of [T].
  *
  * Outputs:
  * 1. value
  * 2. velocity
  * 3. acceleration
  */
-class SplitMotionState<T : Any> : ListStoreBlock(1, 3, IN_FIRST_LAZY), BlockInput<MotionState3<T>> {
+class SplitMotionState<T : Any> : ListStoreBlock(1, 3, IN_FIRST_LAZY), BlockInput<MotionState<T>> {
     override fun init(outputs: MutableList<Any?>) {}
 
     @Suppress("UNCHECKED_CAST")
     override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
         run {
-            val t = inputs[0] as MotionState3<T>
+            val t = inputs[0] as MotionState<T>
             outputs[0] = t.s
             outputs[1] = t.v
             outputs[2] = t.a
@@ -44,7 +44,7 @@ class SplitMotionState<T : Any> : ListStoreBlock(1, 3, IN_FIRST_LAZY), BlockInpu
 }
 
 /**
- * A block that takes the value, velocity, and acceleration and combines it into a [MotionState3]
+ * A block that takes the value, velocity, and acceleration and combines it into a [MotionState]
  *
  * Inputs:
  *
@@ -53,13 +53,13 @@ class SplitMotionState<T : Any> : ListStoreBlock(1, 3, IN_FIRST_LAZY), BlockInpu
  * 3. acceleration
  *
  * Outputs:
- * 1. A [MotionState3] of [T].
+ * 1. A [MotionState] of [T].
  */
-class CreateMotionState<T : Any> : SingleOutputBlock<MotionState3<T>>(3, IN_FIRST_LAZY) {
-    override fun doInit(): MotionState3<T>? = null
+class CreateMotionState<T : Any> : SingleOutputBlock<MotionState<T>>(3, IN_FIRST_LAZY) {
+    override fun doInit(): MotionState<T>? = null
 
-    override fun getOutput(inputs: List<Any?>): MotionState3<T> {
-        return ValueMotionState3(
+    override fun getOutput(inputs: List<Any?>): MotionState<T> {
+        return ValueMotionState(
             inputs[0] as T,
             inputs[1] as T,
             inputs[2] as T

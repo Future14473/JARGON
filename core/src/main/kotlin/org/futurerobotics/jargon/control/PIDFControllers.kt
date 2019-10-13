@@ -6,15 +6,14 @@ import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_ALWAYS
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.coerceIn
 import org.futurerobotics.jargon.math.coerceLengthAtMost
-import org.futurerobotics.jargon.mechanics.MotionState2
-import org.futurerobotics.jargon.mechanics.MotionState3
+import org.futurerobotics.jargon.mechanics.MotionState
 
 
 /**
- * A PIDF controller that works with Doubles, as specified in[PIDFCoefficients]
+ * A PIDF controller that works with Doubles, as specified in [PIDFCoefficients]
  *
  * Inputs:
- * 1. reference: value, [MotionState2], or [MotionState3] of Double.
+ * 1. reference: [MotionState] of Double.
  * 2. current state: Double value
  *
  * Outputs:
@@ -28,9 +27,9 @@ class PIDFController(
     private var errorSum = 0.0
 
     /** The reference motion [BlockInput] */
-    val referenceIn: BlockInput<MotionState3<Double>> = inputIndex(0)
+    val reference: BlockInput<MotionState<Double>> = inputIndex(0)
     /** The state [BlockInput] */
-    val stateIn: BlockInput<Double> = inputIndex(1)
+    val state: BlockInput<Double> = inputIndex(1)
 
     override fun doInit(): Double? {
         errorSum = 0.0
@@ -39,7 +38,7 @@ class PIDFController(
     }
 
     override fun getOutput(inputs: List<Any?>): Double {
-        val reference = inputs[0] as MotionState3<Double>
+        val reference = inputs[0] as MotionState<Double>
         val currentState = inputs[1] as Double
         val loopTime = inputs[2] as Double
         val (s, v, a) = reference
@@ -69,8 +68,8 @@ class PIDFController(
  * A PIDF controller that works with [Vector2d] values, specified in [PIDFCoefficients]
  *
  * Inputs:
- * 1. reference: value, [MotionState2], or [MotionState3] of [Vector2d].
- * 2. the current state: Vector2d
+ * 1. reference: [MotionState] of [Vector2d].
+ * 2. current state: Vector2d
  *
  * Outputs:
  * 1. Signal: [Vector2d].
@@ -83,9 +82,9 @@ class VecPIDFController(
     private var errorSum = Vector2d.ZERO
 
     /** The reference motion [BlockInput] */
-    val referenceIn: BlockInput<MotionState3<Vector2d>> = inputIndex(0)
+    val reference: BlockInput<MotionState<Vector2d>> = inputIndex(0)
     /** The state [BlockInput] */
-    val stateIn: BlockInput<Vector2d> = inputIndex(1)
+    val state: BlockInput<Vector2d> = inputIndex(1)
 
     override fun doInit(): Vector2d? {
         prevError = Vector2d.ZERO
@@ -94,7 +93,7 @@ class VecPIDFController(
     }
 
     override fun getOutput(inputs: List<Any?>): Vector2d {
-        val reference = inputs[0] as MotionState3<Vector2d>
+        val reference = inputs[0] as MotionState<Vector2d>
         val currentState = inputs[1] as Vector2d
         val loopTime = inputs[2] as Double
         val (s, v, a) = reference
@@ -144,7 +143,7 @@ class VecPIDFController(
 //    private val lateral = PIDFController(lateralCoeff) //y
 //    private val heading = PIDFController(headingCoeff)
 //
-//    override fun getSignal(reference: MotionState3<Pose2d>, currentState: Pose2d, loopTime: Double): Pose2d {
+//    override fun getSignal(reference: MotionState<Pose2d>, currentState: Pose2d, loopTime: Double): Pose2d {
 //        return Pose2d(
 //            axial.updateAndGetSignal(reference.x(), currentState.x, loopTime),
 //            lateral.updateAndGetSignal(reference.y(), currentState.y, loopTime),

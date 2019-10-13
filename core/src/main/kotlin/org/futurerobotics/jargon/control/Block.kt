@@ -237,11 +237,13 @@ abstract class SingleOutputBlock<T> @JvmOverloads constructor(
         value = doInit()
     }
 
-    final override fun process(inputs: List<Any?>) {}
+    final override fun process(inputs: List<Any?>) {
+        value = getOutput(inputs)
+    }
 
     final override fun getOutput(index: Int, inputs: List<Any?>): Any? {
         if (index != 0) throw IndexOutOfBoundsException(index)
-        return getOutput(inputs)
+        return value
     }
 
     /**
