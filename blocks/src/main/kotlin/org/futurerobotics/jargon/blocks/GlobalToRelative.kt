@@ -1,8 +1,8 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.cosc
@@ -28,12 +28,11 @@ class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : SingleOutputBlock<P
 
     override fun doInit(): Pose2d? = null
 
-    override fun getOutput(inputs: List<Any?>): Pose2d {
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Pose2d {
         val maybeOverride = inputs[1]
         currentPose = if (maybeOverride != null) maybeOverride as Pose2d else {
             val velocity = inputs[0] as Pose2d
-            //TODO
-            val (v, dTheta) = velocity * elapsedSeconds
+            val (v, dTheta) = velocity * systemValues.loopTime
             val (x, y) = v
             val sinc = sinc(dTheta)
             val cosc = cosc(dTheta)

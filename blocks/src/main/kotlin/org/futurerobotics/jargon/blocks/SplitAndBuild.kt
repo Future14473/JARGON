@@ -1,8 +1,8 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_LAZY
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.mechanics.*
@@ -18,7 +18,8 @@ import org.futurerobotics.jargon.mechanics.*
  * 2. velocity
  * 3. acceleration
  */
-class SplitMotionState<T : Any> : ListStoreBlock(1, 3, IN_FIRST_LAZY), BlockInput<MotionState<T>> {
+class SplitMotionState<T : Any> : ListStoreBlock(1, 3, IN_FIRST_LAZY),
+    BlockInput<MotionState<T>> {
     override fun init(outputs: MutableList<Any?>) {}
 
     @Suppress("UNCHECKED_CAST")
@@ -57,7 +58,7 @@ class SplitMotionState<T : Any> : ListStoreBlock(1, 3, IN_FIRST_LAZY), BlockInpu
 class CreateMotionState<T : Any> : SingleOutputBlock<MotionState<T>>(3, IN_FIRST_LAZY) {
     override fun doInit(): MotionState<T>? = null
 
-    override fun getOutput(inputs: List<Any?>): MotionState<T> {
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): MotionState<T> {
         return ValueMotionState(
             inputs[0] as T,
             inputs[1] as T,
@@ -76,7 +77,8 @@ class CreateMotionState<T : Any> : SingleOutputBlock<MotionState<T>>(3, IN_FIRST
 /**
  * A block that takes in a [Vector2d] and splits it into its parts.
  */
-class SplitVector : ListStoreBlock(1, 2, IN_FIRST_LAZY), BlockInput<Vector2d> {
+class SplitVector : ListStoreBlock(1, 2, IN_FIRST_LAZY),
+    BlockInput<Vector2d> {
     override fun init(outputs: MutableList<Any?>) {}
 
     override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
@@ -100,7 +102,8 @@ class SplitVector : ListStoreBlock(1, 2, IN_FIRST_LAZY), BlockInput<Vector2d> {
 class CreateVector : SingleOutputBlock<Vector2d>(1, IN_FIRST_LAZY) {
     override fun doInit(): Vector2d? = null
 
-    override fun getOutput(inputs: List<Any?>): Vector2d = Vector2d(inputs[0] as Double, inputs[1] as Double)
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Vector2d =
+        Vector2d(inputs[0] as Double, inputs[1] as Double)
 
     /** x value [BlockInput] */
     val x: BlockInput<Double> get() = inputIndex(0)
@@ -112,7 +115,8 @@ class CreateVector : SingleOutputBlock<Vector2d>(1, IN_FIRST_LAZY) {
 /**
  * A block that takes in a [Pose2d] and splits it into its parts.
  */
-class SplitPose : ListStoreBlock(1, 3, IN_FIRST_LAZY), BlockInput<Pose2d> {
+class SplitPose : ListStoreBlock(1, 3, IN_FIRST_LAZY),
+    BlockInput<Pose2d> {
     override fun init(outputs: MutableList<Any?>) {}
 
     override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
@@ -138,7 +142,7 @@ class SplitPose : ListStoreBlock(1, 3, IN_FIRST_LAZY), BlockInput<Pose2d> {
 class CreatePoseFromComp : SingleOutputBlock<Pose2d>(1, IN_FIRST_LAZY) {
     override fun doInit(): Pose2d? = null
 
-    override fun getOutput(inputs: List<Any?>): Pose2d =
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Pose2d =
         Pose2d(inputs[0] as Double, inputs[1] as Double, inputs[2] as Double)
 
     /** x value [BlockInput] */
@@ -156,7 +160,8 @@ class CreatePoseFromComp : SingleOutputBlock<Pose2d>(1, IN_FIRST_LAZY) {
 class CreatePoseFromVec : SingleOutputBlock<Pose2d>(1, IN_FIRST_LAZY) {
     override fun doInit(): Pose2d? = null
 
-    override fun getOutput(inputs: List<Any?>): Pose2d = Pose2d(inputs[0] as Vector2d, inputs[1] as Double)
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Pose2d =
+        Pose2d(inputs[0] as Vector2d, inputs[1] as Double)
 
     /** x value [BlockInput] */
     val vec: BlockInput<Vector2d> get() = inputIndex(0)
@@ -167,7 +172,8 @@ class CreatePoseFromVec : SingleOutputBlock<Pose2d>(1, IN_FIRST_LAZY) {
 /**
  * A block that splits a [MotionState]<[Pose2d]> into 3 [LinearMotionState], each representing a component of [Pose2d]
  */
-class SplitPoseMotionState : ListStoreBlock(1, 3, IN_FIRST_LAZY), BlockInput<MotionState<Pose2d>> {
+class SplitPoseMotionState : ListStoreBlock(1, 3, IN_FIRST_LAZY),
+    BlockInput<MotionState<Pose2d>> {
     override fun init(outputs: MutableList<Any?>) {}
 
     override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {

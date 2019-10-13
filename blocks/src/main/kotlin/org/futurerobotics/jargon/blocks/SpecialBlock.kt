@@ -1,6 +1,6 @@
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
 
 
 /**
@@ -18,7 +18,8 @@ sealed class SpecialBlock(numInputs: Int, numOutputs: Int, processing: Block.Pro
 /**
  * This [SpecialBlock], when inputted a value of `true`, will tell the system to shutdown.
  */
-class Shutdown : SpecialBlock(1, 0, IN_FIRST_ALWAYS), BlockInput<Boolean?> {
+class Shutdown : SpecialBlock(1, 0, IN_FIRST_ALWAYS),
+    BlockInput<Boolean?> {
     /** If this block received  shutdown signal or not. */
     var shutDownSignal: Boolean = false
         private set

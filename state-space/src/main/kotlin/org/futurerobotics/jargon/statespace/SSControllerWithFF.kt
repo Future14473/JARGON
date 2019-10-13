@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.statespace
 
-import org.futurerobotics.jargon.control.BlockInput
-import org.futurerobotics.jargon.control.Combine
+import org.futurerobotics.jargon.blocks.BlockInput
+import org.futurerobotics.jargon.blocks.Combine
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.matches
 import org.futurerobotics.jargon.math.squared

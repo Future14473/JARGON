@@ -1,8 +1,8 @@
 @file:JvmName("BlockIOKt")
 
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.control.BaseBlocksConfig.BlockConnections
+import org.futurerobotics.jargon.blocks.BaseBlocksConfig.BlockConnections
 import java.util.*
 
 /**
@@ -108,7 +108,8 @@ interface BlockInput<in T> : BlockIO {
 }
 
 /** A basic implementation of [BlockInput]. */
-class BasicBlockInput<in T>(override val block: Block, override val inputIndex: Int) : BlockInput<T>
+class BasicBlockInput<in T>(override val block: Block, override val inputIndex: Int) :
+    BlockInput<T>
 
 /**
  * Represents the output of a block, that outputs the type [T].
@@ -123,7 +124,8 @@ interface BlockOutput<out T> : BlockIO {
 }
 
 /** A basic implementation of [BlockOutput]. */
-class BasicBlockOutput<out T>(override val block: Block, override val outputIndex: Int) : BlockOutput<T>
+class BasicBlockOutput<out T>(override val block: Block, override val outputIndex: Int) :
+    BlockOutput<T>
 
 /**
  * An exception thrown when an illegal configuration is detected.

@@ -1,8 +1,7 @@
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.control.BaseBlocksConfig.BlockConnections
-import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_ALWAYS
-import org.futurerobotics.jargon.control.Block.Processing.OUT_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.BaseBlocksConfig.BlockConnections
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
 import org.futurerobotics.jargon.util.fillWith
 import org.futurerobotics.jargon.util.fixedSizeMutableListOfNulls
 import org.futurerobotics.jargon.util.replaceIf
@@ -54,7 +53,9 @@ internal fun MutableList<IndexedBlock>.rearranged(comparator: Comparator<Block>)
  *
  * This also verifies that there are no impossible loops within the connections.
  */
-internal fun Collection<BlockConnections>.toIndexedBlocks(): List<IndexedBlock> = IndexedBlocksCreator(this).result
+internal fun Collection<BlockConnections>.toIndexedBlocks(): List<IndexedBlock> = IndexedBlocksCreator(
+    this
+).result
 
 private class IndexedBlocksCreator(
     connections: Collection<BlockConnections>
@@ -92,7 +93,7 @@ private class IndexedBlocksCreator(
                 )
             }
             NOT_PROCESSED -> {
-                if (block.processing === OUT_FIRST_ALWAYS) {
+                if (block.processing.isOutFirst) {
                     traceStatus = PROCESSED //out first always valid.
                 } else {
                     traceStatus = PROCESSING
@@ -167,10 +168,8 @@ abstract class AbstractBlocksRunner(
     init {
         val indexedBlocks = connections.toIndexedBlocks()
         allRunners = indexedBlocks.map {
-            if (it.block.processing === OUT_FIRST_ALWAYS)
-                OutFirstBlock(it)
-            else
-                InFirstBlock(it)
+            if (it.block.processing.isOutFirst) OutFirstBlock(it)
+            else InFirstBlock(it)
         }.toTypedArray()
         @Suppress("UNCHECKED_CAST")
         alwaysRun = allRunners

@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat

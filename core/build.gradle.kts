@@ -19,9 +19,9 @@ dependencies {
     api(hipparchus("core"))
     testImplementation(junit5)
     testImplementation(junit5params)
-    testImplementation(strikt)
-    testImplementation(project(":test-util"))
     testRuntimeOnly(junit5engine)
+    testImplementation(project(":test-util"))
+    testImplementation(strikt)
 }
 tasks.withType<KotlinCompile> {
     kotlinOptions {

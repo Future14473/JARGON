@@ -1,7 +1,7 @@
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_ALWAYS
-import org.futurerobotics.jargon.control.Block.Processing.OUT_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST_ALWAYS
 import org.futurerobotics.jargon.util.forEachZipped
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat

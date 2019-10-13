@@ -1,7 +1,7 @@
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_ALWAYS
-import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_LAZY
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
 
 /**
  * A block that contains within itself another block sub-system, configured in [buildSubsystem]

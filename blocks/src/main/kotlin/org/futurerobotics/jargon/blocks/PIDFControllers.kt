@@ -1,8 +1,8 @@
 @file:Suppress("UNCHECKED_CAST", "DuplicatedCode")
 
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.coerceIn
@@ -38,7 +38,7 @@ class PIDFController(
         return null
     }
 
-    override fun getOutput(inputs: List<Any?>): Double {
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Double {
         val reference = inputs[0] as MotionState<Double>
         val currentState = inputs[1] as Double
         val loopTime = inputs[2] as Double
@@ -93,7 +93,7 @@ class VecPIDFController(
         return null
     }
 
-    override fun getOutput(inputs: List<Any?>): Vector2d {
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Vector2d {
         val reference = inputs[0] as MotionState<Vector2d>
         val currentState = inputs[1] as Vector2d
         val loopTime = inputs[2] as Double
@@ -138,7 +138,8 @@ class PosePIDFController(
     xCoeff: PIDFCoefficients,
     yCoeff: PIDFCoefficients,
     headingCoeff: PIDFCoefficients
-) : CompositeBlock(2, 1, IN_FIRST_ALWAYS), BlockOutput<Pose2d> {
+) : CompositeBlock(2, 1, IN_FIRST_ALWAYS),
+    BlockOutput<Pose2d> {
 
     private val axial = PIDFController(xCoeff) //x
     private val lateral = PIDFController(yCoeff) //y
@@ -150,8 +151,10 @@ class PosePIDFController(
     val state: BlockInput<Pose2d> get() = inputIndex(1)
 
     override fun BlocksConfig.buildSubsystem(sources: List<BlockOutput<Any?>>, outputs: List<BlockInput<Any?>>) {
-        val ref = SplitPoseMotionState().apply { connectFrom(sources[0] as BlockOutput<MotionState<Pose2d>>) }
-        val state = SplitPose().apply { connectFrom(sources[1] as BlockOutput<Pose2d>) }
+        val ref = SplitPoseMotionState()
+            .apply { connectFrom(sources[0] as BlockOutput<MotionState<Pose2d>>) }
+        val state = SplitPose()
+            .apply { connectFrom(sources[1] as BlockOutput<Pose2d>) }
 
         axial.reference connectFrom ref.x; axial.state connectFrom state.x
         lateral.reference connectFrom ref.y; lateral.state connectFrom state.y

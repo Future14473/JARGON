@@ -1,8 +1,8 @@
 package org.futurerobotics.jargon.statespace
 
-import org.futurerobotics.jargon.control.Block
-import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_ALWAYS
-import org.futurerobotics.jargon.control.ListStoreBlock
+import org.futurerobotics.jargon.blocks.Block
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.ListStoreBlock
 import org.futurerobotics.jargon.linalg.*
 import org.hipparchus.filtering.kalman.Measurement
 import org.hipparchus.filtering.kalman.ProcessEstimate
@@ -45,6 +45,7 @@ class KalmanFilter(
     private var stateCovariance = steadyStateKalmanErrorCov(model, Q, R)
     private var lastUpdate: ProcessEstimate? = null
     private var pastOutput: Vec? = null
+
     override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
         val measurement = inputs[0] as Vec
         val signal = inputs[0] as Vec

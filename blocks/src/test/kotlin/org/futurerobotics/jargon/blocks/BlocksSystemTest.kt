@@ -1,7 +1,7 @@
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_ALWAYS
-import org.futurerobotics.jargon.control.Block.Processing.OUT_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST_ALWAYS
 import org.futurerobotics.jargon.system.SimpleLoopSystemDriver
 import org.junit.jupiter.api.Test
 import strikt.api.expectCatching
@@ -17,7 +17,8 @@ internal abstract class AbstractBlockSystemTest {
         numOutputs: Int,
         processing: Block.Processing = Block.Processing.IN_FIRST_LAZY,
         requireAllInputs: Boolean = true
-    ): TestBlock = TestBlock(name, numInputs, numOutputs, processing, requireAllInputs)
+    ): TestBlock =
+        TestBlock(name, numInputs, numOutputs, processing, requireAllInputs)
 
     protected fun emptyBlock(
         processing: Block.Processing = Block.Processing.IN_FIRST_LAZY

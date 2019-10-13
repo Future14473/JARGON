@@ -1,6 +1,6 @@
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_LAZY
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
 import org.futurerobotics.jargon.util.value
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -17,7 +17,7 @@ class Constant<T>(private val value: T) : SingleOutputBlock<T>(
     0, IN_FIRST_LAZY
 ) {
     override fun doInit(): T? = value
-    override fun getOutput(inputs: List<Any?>): T = value
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): T = value
     override fun toString(): String = "Constant($value)"
 }
 
@@ -32,7 +32,7 @@ class ExternalValue<T>(@Volatile var value: T) : SingleOutputBlock<T>(
     0, IN_FIRST_LAZY
 ) {
     override fun doInit(): T? = null
-    override fun getOutput(inputs: List<Any?>): T = value
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): T = value
     override fun toString(): String = "ExternalConstant($value)"
 }
 
@@ -90,7 +90,8 @@ class Pulse : SingleOutputBlock<Boolean>(0, IN_FIRST_LAZY) {
         return false
     }
 
-    override fun getOutput(inputs: List<Any?>): Boolean = queuePulse.compareAndSet(true, false)
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Boolean =
+        queuePulse.compareAndSet(true, false)
 }
 
 /**
@@ -115,7 +116,7 @@ class ExternalQueue<T> private constructor(
         return null
     }
 
-    override fun getOutput(inputs: List<Any?>): T = queue.poll()
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): T = queue.poll()
 }
 
 /**

@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
 /**
  * Represents special inputs given to [Block]s that tap into the life of a [BlocksSystem] itself, and
@@ -15,7 +15,10 @@ interface SystemValues {
 /**
  * A block whose outputs directly correspond to [SystemValues], if such connections are desired.
  */
-class SystemValuesBlock : AbstractBlock(0, 2, Block.Processing.IN_FIRST_LAZY) {
+class SystemValuesBlock : AbstractBlock(
+    0, 2,
+    Block.Processing.IN_FIRST_LAZY
+) {
     private var systemValues: SystemValues? = null
     override fun init() {
         systemValues = null

@@ -1,6 +1,6 @@
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.control.Block.Processing.*
+import org.futurerobotics.jargon.blocks.Block.Processing.*
 import org.futurerobotics.jargon.util.fixedSizeMutableListOfNulls
 import kotlin.reflect.KProperty
 
@@ -54,6 +54,7 @@ interface Block {
      * will process.
      *
      * @property isAlwaysProcess if this [Processing] is an _always process_.
+     * @property isOutFirst if this [Processing] is OutFirst.
      */
     enum class Processing(val isAlwaysProcess: Boolean, val isOutFirst: Boolean) {
 
@@ -212,7 +213,8 @@ abstract class ListStoreBlock @JvmOverloads constructor(
 abstract class SingleOutputBlock<T> @JvmOverloads constructor(
     numInputs: Int,
     processing: Block.Processing = IN_FIRST_LAZY
-) : AbstractBlock(numInputs, 1, processing), BlockOutput<T> {
+) : AbstractBlock(numInputs, 1, processing),
+    BlockOutput<T> {
 
     private var value: T? = null
     override val block: Block get() = this
@@ -222,7 +224,7 @@ abstract class SingleOutputBlock<T> @JvmOverloads constructor(
     }
 
     final override fun process(inputs: List<Any?>, systemValues: SystemValues) {
-        value = getOutput(inputs)
+        value = getOutput(inputs, systemValues)
     }
 
     final override fun getOutput(index: Int): Any? {
@@ -240,7 +242,7 @@ abstract class SingleOutputBlock<T> @JvmOverloads constructor(
     /**
      * Processes this block using the given [inputs] and returns the (only) output of this block.
      */
-    protected abstract fun getOutput(inputs: List<Any?>): T
+    protected abstract fun getOutput(inputs: List<Any?>, systemValues: SystemValues): T
 }
 
 /**
@@ -264,7 +266,9 @@ abstract class SingleOutputBlock<T> @JvmOverloads constructor(
  *
  * ```
  */
-abstract class DelegatedPropertiesBlock(override val processing: Block.Processing) : Block {
+@Suppress("NOTHING_TO_INLINE")
+abstract class DelegatedPropertiesBlock(override val processing: Block.Processing) :
+    Block {
 
     private val inputs: MutableList<InputDelegate<*>> = ArrayList()
     private val outputs: MutableList<OutputDelegate<*>> = ArrayList()
@@ -381,7 +385,7 @@ abstract class Pipe<T, R> : SingleOutputBlock<R>(
 
     override fun doInit(): R? = null
     @Suppress("UNCHECKED_CAST")
-    override fun getOutput(inputs: List<Any?>): R = pipe(inputs[0] as T)
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): R = pipe(inputs[0] as T)
 
     /**
      * Transforms the input value to the output value.
@@ -407,7 +411,7 @@ abstract class Combine<A, B, R> : SingleOutputBlock<R>(2, IN_FIRST_LAZY) {
 
     override fun doInit(): R? = null
     @Suppress("UNCHECKED_CAST")
-    override fun getOutput(inputs: List<Any?>): R = combine(inputs[0] as A, inputs[1] as B)
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): R = combine(inputs[0] as A, inputs[1] as B)
 
     /**
      * Combines two input values to the output value.
