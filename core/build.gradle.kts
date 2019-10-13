@@ -1,5 +1,7 @@
 @file:Suppress("PublicApiImplicitType", "KDocMissingDocumentation", "SpellCheckingInspection")
 
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 val ext = project.rootProject.extra
 val hipparchus: ((String) -> String) by ext
 val junit5: String by ext

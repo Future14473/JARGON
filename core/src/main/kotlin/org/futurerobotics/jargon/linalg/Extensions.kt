@@ -150,10 +150,6 @@ fun Mat.getSolver(): DecompositionSolver = when {
     else -> QRDecomposition(this).solver
 }
 
-fun Mat.inv(): Mat {
-    return MatrixUtils.inverse(this)
-}
+fun Mat.inv(): Mat = MatrixUtils.inverse(this)
 
-fun Mat.pinv(): Mat {
-    return SingularValueDecomposition(this).solver.inverse
-}
+fun Mat.pinv(): Mat = SingularValueDecomposition(this).solver.inverse

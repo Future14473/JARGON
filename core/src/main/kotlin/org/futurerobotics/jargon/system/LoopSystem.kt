@@ -12,11 +12,7 @@ interface LoopSystem : InitStoppable {
      * Runs one cycle of the loop, also using the [loopTime] of the last loop; or Double.NAN if not known
      * (first loop).
      *
-     * Returns if the loop should break:
-     *
-     * If returns `true`, the loop will end (break).
-     * If returns `false`, the loop will continue.
-     *
+     * Return value tells if to stop looping; returns `true` to indicate to break the loop, `false` to continue.
      */
     fun loop(loopTime: Double = Double.NaN): Boolean
 }

@@ -6,14 +6,14 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
-/** An inline alternative to [takeIf] that avoids boxing of primitives. */
+/** An inline alternative to [takeUnless] that avoids boxing of primitives. */
 @UseExperimental(ExperimentalContracts::class)
-inline fun <T> T.replaceIf(condition: (T) -> Boolean, alternate: (T) -> T): T {
+inline fun <T> T.replaceIf(predicate: (T) -> Boolean, alternate: (T) -> T): T {
     contract {
-        callsInPlace(condition, InvocationKind.EXACTLY_ONCE)
+        callsInPlace(predicate, InvocationKind.EXACTLY_ONCE)
         callsInPlace(alternate, InvocationKind.AT_MOST_ONCE)
     }
-    return if (condition(this)) alternate(this) else this
+    return if (predicate(this)) alternate(this) else this
 }
 
 /**
