@@ -5,8 +5,7 @@ package org.futurerobotics.jargon.control
 import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_LAZY
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.mechanics.MotionState
-import org.futurerobotics.jargon.mechanics.ValueMotionState
+import org.futurerobotics.jargon.mechanics.*
 
 /**
  * A block that takes a [MotionState] and splits it into its components in order.
@@ -163,4 +162,28 @@ class CreatePoseFromVec : SingleOutputBlock<Pose2d>(1, IN_FIRST_LAZY) {
     val vec: BlockInput<Vector2d> get() = inputIndex(0)
     /** y value [BlockInput] */
     val heading: BlockInput<Double> get() = inputIndex(1)
+}
+
+/**
+ * A block that splits a [MotionState]<[Pose2d]> into 3 [LinearMotionState], each representing a component of [Pose2d]
+ */
+class SplitPoseMotionState : ListStoreBlock(1, 3, IN_FIRST_LAZY), BlockInput<MotionState<Pose2d>> {
+    override fun init(outputs: MutableList<Any?>) {}
+
+    override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
+        val state = inputs[0] as MotionState<Pose2d>
+        outputs[0] = state.x()
+        outputs[1] = state.y()
+        outputs[2] = state.heading()
+    }
+
+    /** x MotionState [BlockOutput] */
+    val x: BlockOutput<LinearMotionState> get() = outputIndex(0)
+    /** y MotionState [BlockOutput] */
+    val y: BlockOutput<LinearMotionState> get() = outputIndex(1)
+    /** heading MotionState [BlockOutput] */
+    val heading: BlockOutput<LinearMotionState> get() = outputIndex(2)
+
+    override val block: Block get() = this
+    override val inputIndex: Int get() = 0
 }

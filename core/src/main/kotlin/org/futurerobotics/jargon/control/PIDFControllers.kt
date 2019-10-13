@@ -3,6 +3,7 @@
 package org.futurerobotics.jargon.control
 
 import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.coerceIn
 import org.futurerobotics.jargon.math.coerceLengthAtMost
@@ -117,44 +118,58 @@ class VecPIDFController(
         }
     }
 }
-//
-//
-///**
-// * A PIDF controller for [Pose2d]'s that uses separate [PIDFController]s for axial, lateral, and heading components of
-// * a pose.
-// *
-// * Input can be either global or local position, and output is a Pose2d (velocity) that is supposed to move the state
-// * towards the reference, _in the same coordinate frame_.
-// *
-// * Keep in mind this uses North-West-Up orientation, so axial is the x-axis (up/down) and lateral is the y-axis
-// * (left/right).
-// *
-// * @param axialCoeff the axial PIDF coefficients
-// * @param lateralCoeff the lateral PIDF coefficients
-// * @param headingCoeff the heading PIDF coefficients
-// */
-//class ThreePartPIDFController(
-//    axialCoeff: PIDFCoefficients,
-//    lateralCoeff: PIDFCoefficients,
-//    headingCoeff: PIDFCoefficients
-//) : BaseStandardController<Pose2d, Pose2d>() {
-//
-//    private val axial = PIDFController(axialCoeff) //x
-//    private val lateral = PIDFController(lateralCoeff) //y
-//    private val heading = PIDFController(headingCoeff)
-//
-//    override fun getSignal(reference: MotionState<Pose2d>, currentState: Pose2d, loopTime: Double): Pose2d {
-//        return Pose2d(
-//            axial.updateAndGetSignal(reference.x(), currentState.x, loopTime),
-//            lateral.updateAndGetSignal(reference.y(), currentState.y, loopTime),
-//            heading.updateAndGetSignal(reference.heading(), currentState.heading, loopTime)
-//        )
-//    }
-//
-//    override fun init() {
-//        axial.init()
-//        lateral.init()
-//        heading.init()
-//        output = null
-//    }
-//}
+
+
+/**
+ * A PIDF controller for [Pose2d]'s that uses separate [PIDFController]s for axial, lateral, and heading components of
+ * a pose.
+ *
+ * Input can be either global or local position, and output is a Pose2d (velocity) that is supposed to move the state
+ * towards the reference, _in the same coordinate frame_.
+ *
+ * Keep in mind this uses North-West-Up orientation, so axial is the x-axis (up/down) and lateral is the y-axis
+ * (left/right).
+ *
+ * @param xCoeff the axial PIDF coefficients
+ * @param yCoeff the lateral PIDF coefficients
+ * @param headingCoeff the heading PIDF coefficients
+ */
+class PosePIDFController(
+    xCoeff: PIDFCoefficients,
+    yCoeff: PIDFCoefficients,
+    headingCoeff: PIDFCoefficients
+) : CompositeBlock(2, 1, IN_FIRST_ALWAYS), BlockOutput<Pose2d> {
+
+    private val axial = PIDFController(xCoeff) //x
+    private val lateral = PIDFController(yCoeff) //y
+    private val heading = PIDFController(headingCoeff)
+
+    /** Reference pose MotionState [BlockInput] */
+    val reference: BlockInput<MotionState<Pose2d>> get() = inputIndex(0)
+    /** State pose [BlockInput] */
+    val state: BlockInput<Pose2d> get() = inputIndex(1)
+
+    override fun BlocksConfig.buildSubsystem(sources: List<BlockOutput<Any?>>, outputs: List<BlockInput<Any?>>) {
+        val ref = SplitPoseMotionState().apply { connectFrom(sources[0] as BlockOutput<MotionState<Pose2d>>) }
+        val state = SplitPose().apply { connectFrom(sources[1] as BlockOutput<Pose2d>) }
+
+        axial.reference connectFrom ref.x; axial.state connectFrom state.x
+        lateral.reference connectFrom ref.y; lateral.state connectFrom state.y
+        heading.reference connectFrom ref.heading; heading.state connectFrom state.heading
+
+        outputs[0] connectFrom CreatePoseFromComp().apply {
+            x connectFrom axial
+            y connectFrom lateral
+            heading connectFrom this@PosePIDFController.heading
+        }
+    }
+
+    override fun init() {
+        axial.init()
+        lateral.init()
+        heading.init()
+    }
+
+    override val block: Block get() = this
+    override val outputIndex: Int get() = 0
+}
