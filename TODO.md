@@ -4,16 +4,11 @@ Simulations
 - The actual flippin simulations
 
 
-Control systems
+Control
 -
-- All the state space stuff
-    - system blocks
-    - LQR
-    - Kalman filter
-    - Automated Augmentation, maybe
-- Better control chain links
+- Automated model augmentation, maybe
+- Better control
     - StateSpace 
-    - Wrap pass
 - Other localization support
     - Gryos
     - Odometry wheels
@@ -24,9 +19,8 @@ Pathing
 - Model based constraints
     - Max motor velocity, acceleration <--> torque, voltage, current?
 - PathGraph
-    - kotlin DSL, java builder
+    - kotlin DSL, java config
 - Dynamic Path/Trajectory generation
-- State insertion (for example with CV)
 
 Systems
 -

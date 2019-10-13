@@ -88,9 +88,7 @@ class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDe
     }
 
     /** {@inheritDoc}  */
-    override fun getVT(): FieldMatrix<Complex> {
-        return v.transpose()
-    }
+    override fun getVT(): FieldMatrix<Complex> = v.transpose()
 }
 
 

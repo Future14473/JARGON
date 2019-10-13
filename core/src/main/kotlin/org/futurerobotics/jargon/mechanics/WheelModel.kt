@@ -82,8 +82,6 @@ class FixedWheelModel private constructor(
             position: Vector2d,
             radius: Double,
             angle: Double
-        ): FixedWheelModel {
-            return FixedWheelModel(transmission, position, radius, Vector2d.polar(1.0, angle))
-        }
+        ): FixedWheelModel = FixedWheelModel(transmission, position, radius, Vector2d.polar(1.0, angle))
     }
 }

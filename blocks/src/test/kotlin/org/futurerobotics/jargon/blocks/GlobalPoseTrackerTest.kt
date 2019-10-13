@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
 import org.futurerobotics.jargon.math.*
 import org.junit.jupiter.api.Test
@@ -13,9 +13,9 @@ internal class GlobalPoseTrackerTest {
         //    x
         //    |
         // y<-+
-        val (system, velocity, position) = getSystem(Pose2d(0.0, -1.0, 0.0))
+        val (system, velocity, position) = getSystem(Pose2d(1.0, 0.0, 0.0))
         system.init()
-        velocity.value = Pose2d(1.0, 0.0, 1.0)//1 radian per second CCW, 1 unit per second, forward
+        velocity.value = Pose2d(0.0, 1.0, 1.0)//1 radian per second CCW, 1 unit per second, forward
         expectThat(position) {
             val random = Random("unit circle walk".hashCode())
             var angle = 0.0
@@ -52,15 +52,14 @@ internal class GlobalPoseTrackerTest {
         }
     }
 
-    private fun getSystem(initialPose: Pose2d): Triple<BlockSystem, ExternalInput<Pose2d>, Monitor<Pose2d>> {
-        val input = ExternalInput(Pose2d.ZERO)
-        var monitor: Monitor<Pose2d>? = null
-        return Triple(buildBlockSystem {
-            val velocity = input.add().output<Pose2d>()
-            val tracker = GlobalPoseTracker(initialPose).add()
-            tracker.connectAll(velocity, loopTime)
-            monitor = tracker.output<Pose2d>().monitor()
-        }, input, monitor!!)
+    private fun getSystem(initialPose: Pose2d): Triple<BlocksSystem, ExternalValue<Pose2d>, Monitor<Pose2d>> {
+        val input = ExternalValue(Pose2d.ZERO)
+        var monitor: Monitor<Pose2d>
+        return Triple(buildBlocksSystem {
+            val tracker = GlobalPoseTracker(initialPose)
+            tracker.velocityIn connectFrom input
+            monitor = tracker.monitor()
+        }, input, monitor)
     }
 
 

@@ -1,5 +1,7 @@
 @file:Suppress("PublicApiImplicitType", "KDocMissingDocumentation", "SpellCheckingInspection")
 
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 val ext = project.rootProject.extra
 val hipparchus: ((String) -> String) by ext
 val junit5: String by ext
@@ -15,12 +17,11 @@ plugins {
 
 dependencies {
     api(hipparchus("core"))
-//    testCompileOnly(junit)
     testImplementation(junit5)
     testImplementation(junit5params)
-    testImplementation(strikt)
-    testImplementation(project(":test-util"))
     testRuntimeOnly(junit5engine)
+    testImplementation(project(":test-util"))
+    testImplementation(strikt)
 }
 tasks.withType<KotlinCompile> {
     kotlinOptions {
@@ -55,16 +56,16 @@ publishing {
     publications {
         create<MavenPublication>("publish") {
             from(components["java"])
-//            artifact(dokkaJar)
+            artifact(dokkaJar)
             artifact(sourcesJar)
-//            versionMapping {
-//                usage("java-api") {
-//                    fromResolutionOf("runtimeClasspath")
-//                }
-//                usage("java-runtime") {
-//                    fromResolutionResult()
-//                }
-//            }
+            versionMapping {
+                usage("java-api") {
+                    fromResolutionOf("runtimeClasspath")
+                }
+                usage("java-runtime") {
+                    fromResolutionResult()
+                }
+            }
         }
     }
 }

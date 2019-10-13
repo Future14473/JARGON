@@ -1,6 +1,6 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.mechanics.FixedDriveModel
@@ -11,7 +11,7 @@ import org.futurerobotics.jargon.mechanics.FixedDriveModel
  *
  * Maybe pass through a filter first.
  */
-class FixedDriveMotorPoseToBotDiff(private val model: FixedDriveModel) : PipeBlock<List<Double>, Pose2d>() {
+class FixedDriveMotorPoseToBotDiff(private val model: FixedDriveModel) : Pipe<List<Double>, Pose2d>() {
     private var pastPositions: List<Double>? = null
     override fun pipe(input: List<Double>): Pose2d {
         val pastPositions = pastPositions
@@ -28,9 +28,6 @@ class FixedDriveMotorPoseToBotDiff(private val model: FixedDriveModel) : PipeBlo
  *
  * Maybe pass through a filter first.
  */
-class FixedDriveMotorToBotVel(private val model: FixedDriveModel) :
-    PipeBlock<List<Double>, Pose2d>() {
-    override fun pipe(input: List<Double>): Pose2d {
-        return model.getEstimatedVelocity(input)
-    }
+class FixedDriveMotorToBotVel(private val model: FixedDriveModel) : Pipe<List<Double>, Pose2d>() {
+    override fun pipe(input: List<Double>): Pose2d = model.getEstimatedVelocity(input)
 }

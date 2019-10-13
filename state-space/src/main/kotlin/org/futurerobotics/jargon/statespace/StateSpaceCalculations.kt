@@ -47,30 +47,22 @@ fun steadyStateKalmanErrorCov(A: Mat, B: Mat, C: Mat, Q: Mat, R: Mat): Mat {
 /**
  * Solves the continuous LQR K gain
  */
-fun continuousLQR(model: ContinuousLinSSModel, cost: QRCost): Mat {
-    return continuousLQR(model.A, model.B, cost.Q, cost.R)
-}
+fun continuousLQR(model: ContinuousLinSSModel, cost: QRCost): Mat = continuousLQR(model.A, model.B, cost.Q, cost.R)
 
 /**
  * Solves the discrete LQR K gain
  */
-fun continuousLQR(A: Mat, B: Mat, Q: Mat, R: Mat): Mat {
-    return RiccatiEquationSolverImpl(A, B, Q, R).k
-}
+fun continuousLQR(A: Mat, B: Mat, Q: Mat, R: Mat): Mat = RiccatiEquationSolverImpl(A, B, Q, R).k
 
 /**
  * Solves the discrete LQR K gain
  */
-fun discreteLQR(model: DiscreteLinSSModel, cost: QRCost): Mat {
-    return discreteLQR(model.A, model.B, cost.Q, cost.R)
-}
+fun discreteLQR(model: DiscreteLinSSModel, cost: QRCost): Mat = discreteLQR(model.A, model.B, cost.Q, cost.R)
 
 /**
  * Solves the discrete LQR K gain
  */
-fun discreteLQR(A: Mat, B: Mat, Q: Mat, R: Mat): Mat {
-    return DiscreteRicattiEquationSolverImpl(A, B, Q, R).k
-}
+fun discreteLQR(A: Mat, B: Mat, Q: Mat, R: Mat): Mat = DiscreteRicattiEquationSolverImpl(A, B, Q, R).k
 
 /**
  * Solves the LQR gain, either continuous or discrete based on the model.

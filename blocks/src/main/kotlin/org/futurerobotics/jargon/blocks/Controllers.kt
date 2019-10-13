@@ -1,6 +1,6 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package org.futurerobotics.jargon.control
+package org.futurerobotics.jargon.blocks
 
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.mechanics.FixedDriveModel
@@ -26,7 +26,7 @@ class BangBangController<State, Signal>(
     private val lessThanOutput: Signal,
     private val greaterThanOutput: Signal,
     private val equalOutput: Signal
-) : CombineBlock<State, State, Signal>() where State : Comparable<State>, State : Any {
+) : Combine<State, State, Signal>() where State : Comparable<State>, State : Any {
 
     override fun combine(a: State, b: State): Signal {
         val comp = b.compareTo(a)
@@ -36,26 +36,30 @@ class BangBangController<State, Signal>(
             else -> equalOutput
         }
     }
+
+
+    /** The reference [BlockInput] */
+    val reference: BlockInput<State> get() = first
+    /** The state [BlockInput] */
+    val state: BlockInput<State> get() = second
+    /** the signal [BlockOutput] */
+    val signal: BlockOutput<Signal> = this
+
 }
 
 /**
  * A open-loop controller for a [FixedDriveModel], that takes the [MotionOnly] of Pose as references,
  * and produces the modeled motor voltages as a list of doubles, using the [model].
  *
- * This will throw NullPointerException if input is null.
- *
  *Inputs:
  *  1. the current pose [MotionOnly]
  *
  * Outputs
  *  1. the modeled motor voltages as a [List] of Doubles
- *
  */
 class FixedDriveOpenController(private val model: FixedDriveModel) :
-    PipeBlock<MotionOnly<Pose2d>, List<Double>>() {
+    Pipe<MotionOnly<Pose2d>, List<Double>>() {
 
-    override fun pipe(input: MotionOnly<Pose2d>): List<Double> {
-        return model.getModeledVoltages(input)
-    }
+    override fun pipe(input: MotionOnly<Pose2d>): List<Double> = model.getModeledVoltages(input)
 
 }

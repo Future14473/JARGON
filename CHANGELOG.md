@@ -7,7 +7,20 @@ and this project (will eventually) adheres to [Semantic Versioning](https://semv
 Until a version that makes sense, everything will be version [Early#].
 At that point, a new changelog will be made and this will be renamed to old_changelog.
 
-## [Early4]
+## [Unreleased] 
+### Added
+- New block systems!!
+
+### Changed
+- Completely revised block systems.
+- Improved docs
+- There is now no `MotionState2`, only `MotionState` which used to be `MotionState3`
+
+### Fixed
+- A lot of random things
+
+
+## [Early4] 9/29/2019
 ### Changed
 - MotionState is now State; and an interface; ValueMotion and ValueState are implementations.
 - Replace `Stopwatch` with `LoopRegulator`

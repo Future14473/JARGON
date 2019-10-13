@@ -27,8 +27,10 @@ dependencies {
 }
 
 tasks.test {
+    dependsOn("cleanTest")
     useJUnitPlatform()
 }
+
 tasks.named("cleanTest") {
     doLast {
         delete("graphs")

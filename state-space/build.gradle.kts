@@ -1,8 +1,7 @@
-@file:Suppress("KDocMissingDocumentation")
+@file:Suppress("KDocMissingDocumentation", "PublicApiImplicitType")
 
 val ext = project.rootProject.extra
 
-@Suppress("PublicApiImplicitType")
 val hipparchus: ((String) -> String) by ext
 val junit: String by ext
 
@@ -14,6 +13,7 @@ plugins {
 
 dependencies {
     api(project(":core"))
+    api(project(":blocks"))
     implementation(hipparchus("filtering"))
     testImplementation(junit)
 }
