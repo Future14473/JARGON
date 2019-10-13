@@ -8,7 +8,7 @@ import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
 internal class TestCompositeBlock : CompositeBlock(2, 2, IN_FIRST_ALWAYS) {
-    override fun BlocksConfig.configureSystem(sources: List<BlockOutput<Any?>>, outputs: List<BlockInput<Any?>>) {
+    override fun BlocksConfig.buildSubsystem(sources: List<BlockOutput<Any?>>, outputs: List<BlockInput<Any?>>) {
         forEachZipped(sources, outputs) { a, b ->
             a connectTo b
         }

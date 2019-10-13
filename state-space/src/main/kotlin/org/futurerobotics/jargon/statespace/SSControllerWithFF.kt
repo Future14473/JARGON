@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.control.BlockInput
-import org.futurerobotics.jargon.control.CombineBlock
+import org.futurerobotics.jargon.control.Combine
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.matches
 import org.futurerobotics.jargon.math.squared
@@ -26,7 +26,7 @@ class SSControllerWithFF(
     private val model: DiscreteLinSSModel,
     kGain: Mat,
     feedForwardQRCost: QRCost? = null
-) : CombineBlock<Any, Vec, Vec>() {
+) : Combine<Any, Vec, Vec>() {
 
     init {
         require(kGain.matches(model.stateStructure, model.inputStructure))

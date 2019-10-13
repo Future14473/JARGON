@@ -1,8 +1,11 @@
 package org.futurerobotics.jargon.control
 
 import org.futurerobotics.jargon.control.BaseBlocksConfig.BlockConnections
+import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_ALWAYS
 import org.futurerobotics.jargon.control.Block.Processing.OUT_FIRST_ALWAYS
 import org.futurerobotics.jargon.util.fillWith
+import org.futurerobotics.jargon.util.fixedSizeMutableListOfNulls
+import org.futurerobotics.jargon.util.replaceIf
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -51,11 +54,8 @@ internal fun MutableList<IndexedBlock>.rearranged(comparator: Comparator<Block>)
  *
  * This also verifies that there are no impossible loops within the connections.
  */
-internal fun Collection<BlockConnections>.toIndexedBlocks(): List<IndexedBlock> {
-    return IndexedBlocksCreator(this).result
-}
+internal fun Collection<BlockConnections>.toIndexedBlocks(): List<IndexedBlock> = IndexedBlocksCreator(this).result
 
-/** Creates [IndexedBlock]s */
 private class IndexedBlocksCreator(
     connections: Collection<BlockConnections>
 ) {
@@ -67,8 +67,6 @@ private class IndexedBlocksCreator(
     private val BlockIO.nodeBlock
         get() = nodeBlocks[block] ?: throw IllegalArgumentException("Reference to not included block ($block)")
 
-    private val needTrace: Queue<NodeBlock> = LinkedList<NodeBlock>()
-
     init {
         traceAll()
         result = createConnectedBlocks()
@@ -76,13 +74,8 @@ private class IndexedBlocksCreator(
 
     private fun traceAll() {
         val roots = nodeBlocks.values.filter { it.block.processing.isAlwaysProcess }
-        needTrace += roots
-        while (needTrace.isNotEmpty()) {
-            needTrace.remove().run {
-                if (traceStatus == STORED)
-                    traceStatus = STORED_PROCESS_NOW
-                trace()
-            }
+        roots.forEach {
+            it.trace()
         }
     }
 
@@ -90,7 +83,7 @@ private class IndexedBlocksCreator(
      * unresolvable loops.*/
     private fun NodeBlock.trace(): Unit = run {
         when (traceStatus) {
-            PROCESSED, STORED, STORED_PROCESSING -> return
+            PROCESSED -> return
             PROCESSING -> { //can't get inputs if needs inputs
                 throw IllegalBlockConfigurationException(
                     "Loop at component ${this}. Consider making a block in " +
@@ -98,16 +91,9 @@ private class IndexedBlocksCreator(
                             "up the loop."
                 )
             }
-            STORED_PROCESS_NOW -> {
-                traceStatus = STORED_PROCESSING
-                inputSources.forEach { it?.nodeBlock?.trace() }
-                traceStatus = PROCESSED
-            }
             NOT_PROCESSED -> {
                 if (block.processing === OUT_FIRST_ALWAYS) {
-                    //if out first, store outputs first.
-                    traceStatus = STORED
-                    needTrace.add(this) //and update later.
+                    traceStatus = PROCESSED //out first always valid.
                 } else {
                     traceStatus = PROCESSING
                     inputSources.forEach { it?.nodeBlock?.trace() }
@@ -161,10 +147,7 @@ private class IndexedBlocksCreator(
     companion object {
         private const val NOT_PROCESSED = 0
         private const val PROCESSING = 1
-        private const val STORED = 2
-        private const val STORED_PROCESS_NOW = 3
-        private const val STORED_PROCESSING = 4
-        private const val PROCESSED = 5
+        private const val PROCESSED = 3
     }
 }
 
@@ -178,25 +161,31 @@ abstract class AbstractBlocksRunner(
     connections: Collection<BlockConnections>
 ) {
     private val allRunners: Array<BlockRunner>
-    private val alwaysRun: Array<BlockRunner>
+    private val alwaysRun: Array<InFirstBlock>
+    private val outFirst: Array<OutFirstBlock>
 
     init {
         val indexedBlocks = connections.toIndexedBlocks()
         allRunners = indexedBlocks.map {
-            if (it.block.processing == OUT_FIRST_ALWAYS)
+            if (it.block.processing === OUT_FIRST_ALWAYS)
                 OutFirstBlock(it)
             else
                 InFirstBlock(it)
         }.toTypedArray()
-
-        alwaysRun = allRunners.filter { it.block.processing.isAlwaysProcess }.toTypedArray()
+        @Suppress("UNCHECKED_CAST")
+        alwaysRun = allRunners
+            .filter { it.block.processing === IN_FIRST_ALWAYS }
+            .let { it as List<InFirstBlock> }
+            .toTypedArray()
+        outFirst = allRunners.filterIsInstance<OutFirstBlock>().toTypedArray()
     }
 
-    private val updateQueue: Queue<BlockRunner> = ArrayDeque<BlockRunner>()
-
-    /** The loop number; used to track if blocks are updated. Incremented on [processOnce]. Change with caution*/
+    /** The loop number; used to track if blocks are updated. Incremented on [processOnce] */
     protected var loopNumber: Int = -1
         private set
+
+    /** The [SystemValues] to be given to the blocks */
+    protected abstract val systemValues: SystemValues
 
     /** `init`s all the blocks. */
     protected open fun init() {
@@ -207,10 +196,9 @@ abstract class AbstractBlocksRunner(
     /** Process through all the blocks once, also increments [loopNumber] */
     protected fun processOnce() {
         loopNumber++
-        updateQueue.addAll(alwaysRun)
-        while (updateQueue.isNotEmpty()) {
-            updateQueue.remove().ensureProcessed()
-        }
+        alwaysRun.forEach { it.ensureProcessed() }
+        outFirst.forEach { it.fillInputs() }
+        outFirst.forEach { it.process() }
     }
 
     /** stops all the blocks and does some cleanup. */
@@ -219,121 +207,94 @@ abstract class AbstractBlocksRunner(
         allRunners.forEach { it.stop() }
     }
 
-    /**
-     * A wrapper a [block] that actually processes it.
-     */
-    protected abstract inner class BlockRunner internal constructor(inner: IndexedBlock) {
-        private val sourceBlockIndices = inner.sourceBlockIndices
-        private val sourceOutputIndices = inner.sourceOutputIndices
+    /** A wrapper a [block] that actually processes it. */
+    private abstract inner class BlockRunner internal constructor(inner: IndexedBlock) {
+        protected val sourceBlockIndices = inner.sourceBlockIndices
+        protected val sourceOutputIndices = inner.sourceOutputIndices
 
-        /** The block used */
         @JvmField
         val block: Block = inner.block
-        /** The last lostNumber this has been processed */
-        @JvmField
-        protected var lastProcess: Int = -1
-        /** The inputs to this block; calling [get] may poll other blocks. */
-        @JvmField
-        protected val inputs: List<Any?> = object : AbstractList<Any?>() {
-            override val size: Int
-                get() = block.numInputs
 
-            override fun get(index: Int): Any? {
-                return sourceBlockIndices[index].let {
-                    if (it == -1) null
-                    else allRunners[it].getOutputLazy(sourceOutputIndices[index])
-                }
-            }
-        }
-        /**
-         * Where the outputs to this block are stored.
-         */
+        /** Where the outputs to this block are stored. NO_OUTPUT if not polled this loop. */
         @JvmField
-        protected var outputs: Array<Any?> = arrayOfNulls(block.numOutputs)
+        protected var outputs: Array<Any?> = Array(block.numOutputs) { NO_OUTPUT }
 
-        /**
-         * Initializes the block.
-         */
         open fun init() {
-            lastProcess = -1
-            outputs.fill(null)
+            outputs.fill(NO_OUTPUT)
             block.init()
         }
 
-        /** Stops and cleans up on this block. */
-        fun stop() {
-            lastProcess = -1
+        open fun stop() {
             outputs.fill(null)
+        }
+
+        /** Gets into to this block. lazy. */
+        protected fun getInputLazy(index: Int): Any? = sourceBlockIndices[index].let {
+            if (it == -1) null
+            else allRunners[it].getOutputLazy(sourceOutputIndices[index])
         }
 
         /** Gets output at this index; may or may not process. */
         fun getOutputLazy(index: Int): Any? {
-            ensureOutput(index)
-            return outputs[index].also { assert(it !== NO_OUTPUT) }
+            ensureProcessed()
+            return outputs[index].replaceIf({ it === NO_OUTPUT }) {
+                block.getOutput(index).also { outputs[index] = it }
+            }
         }
 
-        /**
-         * Ensure that this block is only processed. Called externally from queue only, and [getOutputLazy] may have
-         * never been called.
-         * */
+        /** Ensure that this block has been processed. */
         abstract fun ensureProcessed()
-
-        /**
-         * Ensure that this block has the output at the given index. Called on request from another block.
-         */
-        protected abstract fun ensureOutput(index: Int)
-
     }
 
     private inner class InFirstBlock(inner: IndexedBlock) : BlockRunner(inner) {
-
+        /** The last loop number this has been processed */
+        private var lastProcess: Int = -1
         /** assertion purposes only */
         private var processing = false
+        private val inputs: List<Any?> = object : AbstractList<Any?>() {
+            override val size: Int
+                get() = block.numInputs
+
+            override fun get(index: Int): Any? = getInputLazy(index)
+        }
 
         override fun init() {
             super.init()
+            lastProcess = -1
             processing = false
         }
 
         override fun ensureProcessed() {
             if (lastProcess == loopNumber) return
-            //not PROCESSED
+
             assert(!processing) { "loop in block system" }
 
-            processing = true //= PROCESSING
-            block.process(inputs)
+            processing = true
+            block.process(inputs, systemValues)
+            outputs.fill(NO_OUTPUT)
             processing = false
 
-            lastProcess = loopNumber //= PROCESSED
-            outputs.fill(NO_OUTPUT)
-            //PROCESSED
-        }
-
-        override fun ensureOutput(index: Int) {
-            ensureProcessed()
-            if (outputs[index] === NO_OUTPUT) outputs[index] = block.getOutput(index, inputs)
+            lastProcess = loopNumber
         }
     }
 
     private inner class OutFirstBlock(inner: IndexedBlock) : BlockRunner(inner) {
-
-        override fun ensureProcessed() {
-            ensureOutput(0)
-            block.process(inputs)
+        internal val inputs = fixedSizeMutableListOfNulls<Any>(block.numInputs)
+        fun fillInputs() {
+            inputs.fillWith { getInputLazy(it) }
         }
 
-        override fun ensureOutput(index: Int) {
-            if (lastProcess == loopNumber) return
-            //NOT_PROCESSED
-            lastProcess = loopNumber
-            outputs.fillWith {
-                block.getOutput(it, emptyList()) //either: STORED
-            }
-            //PROCESSED, STORED, STORED_PROCESSING
+        fun process() {
+            block.process(inputs, systemValues)
+            outputs.fill(NO_OUTPUT)
+        }
+
+        override fun ensureProcessed() {
+            //do nothing
         }
     }
 
-    private companion object {
+    companion object {
         private val NO_OUTPUT = Any()
     }
 }

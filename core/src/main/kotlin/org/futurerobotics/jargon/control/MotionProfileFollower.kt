@@ -44,7 +44,7 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
         currentStepper = null
     }
 
-    final override fun process(inputs: List<Any?>) {
+    final override fun process(inputs: List<Any?>, systemValues: SystemValues) {
         var currentStepper = currentStepper
         if (inputs[1] as Boolean? == true || currentStepper == null) {//always poll inputs[1]; so doesn't store up
             val newProfiledMaybe = inputs[0] ?: return
@@ -65,13 +65,11 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
         processFurther(inputs)
     }
 
-    override fun getOutput(index: Int, inputs: List<Any?>): Any? {
-        if (index !in 0..numOutputs) throw IndexOutOfBoundsException(index)
-        return when (index) {
-            0 -> profileOutput
-            1 -> currentTime / endTime
-            else -> getMoreOutput(index, inputs)
-        }
+    override fun getOutput(index: Int): Any? = when (index) {
+        !in 0..numOutputs -> IndexOutOfBoundsException(index)
+        0 -> profileOutput
+        1 -> currentTime / endTime
+        else -> getMoreOutput(index)
     }
 
     /** The motion profile [BlockInput]. See [MotionProfileFollower]*/
@@ -97,15 +95,11 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
      */
     protected abstract fun getNextTime(currentTime: Double, lastOutput: Any, inputs: List<Any?>): Double
 
-    /**
-     * Performs any additional possible processing.
-     */
+    /** Performs any additional possible processing. */
     protected abstract fun processFurther(inputs: List<Any?>)
 
-    /**
-     * Gets any additional possible outputs, starting with index 2.
-     */
-    protected abstract fun getMoreOutput(index: Int, inputs: List<Any?>)
+    /** Gets any additional possible outputs, starting with index 2. */
+    protected abstract fun getMoreOutput(index: Int)
 }
 
 /**
@@ -127,19 +121,12 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
 class TimeOnlyMotionProfileFollower<T : Any>(initialIdleOutput: T) :
     MotionProfileFollower<T>(3, 2, initialIdleOutput) {
 
-    override fun selfConfig(config: BlocksConfig) {
-        config.apply {
-            inputIndex<Double>(2) connectFrom systemValues.loopTime
-        }
-    }
-
-    override fun getNextTime(currentTime: Double, lastOutput: Any, inputs: List<Any?>): Double {
-        return currentTime + inputs[2] as Double
-    }
+    override fun getNextTime(currentTime: Double, lastOutput: Any, inputs: List<Any?>): Double =
+        currentTime + inputs[2] as Double
 
     override fun processFurther(inputs: List<Any?>) {
     }
 
-    override fun getMoreOutput(index: Int, inputs: List<Any?>) {
+    override fun getMoreOutput(index: Int) {
     }
 }

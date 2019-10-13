@@ -101,9 +101,7 @@ class SplitVector : ListStoreBlock(1, 2, IN_FIRST_LAZY), BlockInput<Vector2d> {
 class CreateVector : SingleOutputBlock<Vector2d>(1, IN_FIRST_LAZY) {
     override fun doInit(): Vector2d? = null
 
-    override fun getOutput(inputs: List<Any?>): Vector2d {
-        return Vector2d(inputs[0] as Double, inputs[1] as Double)
-    }
+    override fun getOutput(inputs: List<Any?>): Vector2d = Vector2d(inputs[0] as Double, inputs[1] as Double)
 
     /** x value [BlockInput] */
     val x: BlockInput<Double> get() = inputIndex(0)
@@ -141,9 +139,8 @@ class SplitPose : ListStoreBlock(1, 3, IN_FIRST_LAZY), BlockInput<Pose2d> {
 class CreatePoseFromComp : SingleOutputBlock<Pose2d>(1, IN_FIRST_LAZY) {
     override fun doInit(): Pose2d? = null
 
-    override fun getOutput(inputs: List<Any?>): Pose2d {
-        return Pose2d(inputs[0] as Double, inputs[1] as Double, inputs[2] as Double)
-    }
+    override fun getOutput(inputs: List<Any?>): Pose2d =
+        Pose2d(inputs[0] as Double, inputs[1] as Double, inputs[2] as Double)
 
     /** x value [BlockInput] */
     val x: BlockInput<Double> get() = inputIndex(0)
@@ -160,9 +157,7 @@ class CreatePoseFromComp : SingleOutputBlock<Pose2d>(1, IN_FIRST_LAZY) {
 class CreatePoseFromVec : SingleOutputBlock<Pose2d>(1, IN_FIRST_LAZY) {
     override fun doInit(): Pose2d? = null
 
-    override fun getOutput(inputs: List<Any?>): Pose2d {
-        return Pose2d(inputs[0] as Vector2d, inputs[1] as Double)
-    }
+    override fun getOutput(inputs: List<Any?>): Pose2d = Pose2d(inputs[0] as Vector2d, inputs[1] as Double)
 
     /** x value [BlockInput] */
     val vec: BlockInput<Vector2d> get() = inputIndex(0)

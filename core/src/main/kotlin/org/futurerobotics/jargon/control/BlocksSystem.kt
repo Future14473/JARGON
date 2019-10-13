@@ -6,38 +6,57 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
 /**
- * A system made up of several connected [Block]s, which are processed accordingly.
+ * A system made up of several connected [Block]s, which are processed accordingly to their [processing][Block.processing].
  *
- * This is the bridge to _systems_ via [LoopSystem]
+ * Use [BlocksSystemBuilder] to create, configuring connections using functions/methods in [BlocksConfig].
  *
- * Use [BlocksSystemBuilder] to create, configuring connections in [BlocksConfig].
+ * This system also supports all [SpecialBlock]s.
+ *
+ * This is the bridge to _systems_ via [LoopSystem]. Hurray for decoupling.
  */
 @Suppress("RedundantVisibilityModifier")
 class BlocksSystem internal constructor(
-    connections: Collection<BaseBlocksConfig.BlockConnections>,
-    private val systemValues: SystemValuesBlock
+    connections: Collection<BaseBlocksConfig.BlockConnections>
 ) : AbstractBlocksRunner(connections), LoopSystem {
+    private val specials: Map<Class<*>, SpecialBlock>
+    private val _systemInputs = object : SystemValues {
+        override var loopTime: Double = Double.NaN
+        override var loopNumber: Int = 0
+    }
+    override val systemValues: SystemValues = _systemInputs
 
+
+    init {
+        val specials =
+            connections.map { it.block }.filterIsInstance<SpecialBlock>()
+        specials.groupByTo(HashMap()) { it.javaClass }.forEach { (type, list) ->
+            require(list.size == 1) {
+                "cannot have more than 1 of each type of special block in a system, " +
+                        "found ${list.size} instances of ${type.simpleName}"
+            }
+        }
+        this.specials = specials.associateByTo(HashMap()) { it.javaClass }
+    }
 
     public override fun init() {
         super.init()
     }
 
     override fun loop(loopTime: Double): Boolean {
-
-        systemValues.loopNumberVal = loopNumber + 1
-        systemValues.loopTimeVal = loopTime
+        _systemInputs.loopNumber = loopNumber + 1
+        _systemInputs.loopTime = loopTime
 
         processOnce()
 
-        return systemValues.shutdownVal
+        return specials[Shutdown::class.java]?.let {
+            (it as Shutdown).shutDownSignal
+        } == true
     }
 
     public override fun stop() {
         super.stop()
     }
 }
-
 
 /**
  * Builds a [BlocksSystem]. Connect blocks using the functions in (the superclass) [BlocksConfig], then run [build].
@@ -48,51 +67,15 @@ class BlocksSystem internal constructor(
  */
 class BlocksSystemBuilder : BaseBlocksConfig() {
 
-
-    private val _systemValues = SystemValuesBlock()
-    override val systemValues: SystemValues get() = _systemValues
-
-    init {
-        _systemValues.ensureAdded()
-    }
-
     private var built = false
     /** Builds a [BlocksSystem] with the current configurations. */
     fun build(): BlocksSystem {
         check(!built) { "Already built!" }
         built = true
         verifyConfig()
-        return BlocksSystem(connections, _systemValues)
+        return BlocksSystem(connections)
     }
 }
-
-internal class SystemValuesBlock : AbstractBlock(1, 2, Block.Processing.OUT_FIRST_ALWAYS), SystemValues {
-    override val shutdown: BlockInput<Boolean?> = inputIndex(0)
-    var shutdownVal: Boolean = false
-    override fun process(inputs: List<Any?>) {
-        shutdownVal = inputs[0] as Boolean? ?: false
-    }
-
-    override var loopNumber: BlockOutput<Int> = outputIndex(0)
-    var loopNumberVal: Int = 0
-    override var loopTime: BlockOutput<Double> = outputIndex(1)
-    var loopTimeVal: Double = Double.NaN
-    override fun getOutput(index: Int, inputs: List<Any?>): Any? = when (index) {
-        0 -> loopNumberVal
-        1 -> loopTimeVal
-        else -> throw IndexOutOfBoundsException(index)
-    }
-
-    override fun init() {
-        loopNumberVal = 0
-        loopTimeVal = Double.NaN
-    }
-
-    override fun verifyConfig(config: BlocksConfig) {
-        //do nothing
-    }
-}
-
 
 /**
  * DSL to build a block system.

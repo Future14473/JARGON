@@ -1,24 +1,38 @@
 package org.futurerobotics.jargon.control
 
-
 /**
- * An interface that provides [BlockInput] and [BlockOutput]s for information that taps directly into
- * the life of the system.
+ * Represents special inputs given to [Block]s that tap into the life of a [BlocksSystem] itself, and
+ * so are special input values.
  */
 interface SystemValues {
-    /**
-     * Shutdown; when inputted 'true', will tell the system to stop running next cycle.
-     */
-    val shutdown: BlockInput<Boolean?>
+    /** The time in seconds the last loop has taken to run. */
+    val loopTime: Double
 
-    /**
-     * Output for the number of the current loop, starting with 0 when the system first starts.
-     */
-    val loopNumber: BlockOutput<Int>
+    /** The number of the current loop run since `init`, starting from 0. */
+    val loopNumber: Int
+}
 
-    /**
-     * Output for the time it took for the last loop to run; effectively the best estimate of how fast the
-     * system is running.
-     */
-    val loopTime: BlockOutput<Double>
+/**
+ * A block whose outputs directly correspond to [SystemValues], if such connections are desired.
+ */
+class SystemValuesBlock : AbstractBlock(0, 2, Block.Processing.IN_FIRST_LAZY) {
+    private var systemValues: SystemValues? = null
+    override fun init() {
+        systemValues = null
+    }
+
+    override fun process(inputs: List<Any?>, systemValues: SystemValues) {
+        this.systemValues = systemValues
+    }
+
+    override fun getOutput(index: Int): Any? = systemValues!!.run {
+        when (index) {
+            0 -> loopTime
+            1 -> loopNumber
+            else -> throw IndexOutOfBoundsException(index)
+        }
+    }
+
+    val loopTime: BlockOutput<Double> get() = outputIndex(0)
+    val loopNumber: BlockOutput<Int> get() = outputIndex(1)
 }

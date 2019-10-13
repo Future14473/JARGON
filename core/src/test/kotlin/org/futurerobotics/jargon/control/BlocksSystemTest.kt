@@ -17,9 +17,7 @@ internal abstract class AbstractBlockSystemTest {
         numOutputs: Int,
         processing: Block.Processing = Block.Processing.IN_FIRST_LAZY,
         requireAllInputs: Boolean = true
-    ): TestBlock {
-        return TestBlock(name, numInputs, numOutputs, processing, requireAllInputs)
-    }
+    ): TestBlock = TestBlock(name, numInputs, numOutputs, processing, requireAllInputs)
 
     protected fun emptyBlock(
         processing: Block.Processing = Block.Processing.IN_FIRST_LAZY
@@ -89,11 +87,11 @@ internal class BlocksSystemTest : AbstractBlockSystemTest() {
         val externalConstant = ExternalValue(4)
         val system = buildBlocksSystem {
 
-            systemValues.shutdown connectFrom CombineBlock<Int, Int, Boolean> { a, b -> a == b }.apply {
-                first connectFrom externalConstant; second connectFrom systemValues.loopNumber
+            Shutdown() connectFrom Combine<Int, Int, Boolean> { a, b -> a == b }.apply {
+                first connectFrom externalConstant; second connectFrom SystemValuesBlock().loopNumber
             }
 
-            monitor = systemValues.loopNumber.monitor()
+            monitor = SystemValuesBlock().loopNumber.monitor()
         }
         repeat(10) { i ->
             externalConstant.value = i

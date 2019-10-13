@@ -71,11 +71,6 @@ interface BlocksConfig {
     fun <T> BlockInput<T>.source(): BlockOutput<T>?
 
     /**
-     * Obtains [SystemValues] for this config.
-     */
-    val systemValues: SystemValues
-
-    /**
      * Creates and connects a [Monitor] from [this] [BlockOutput], and returns it.
      *
      * Note that if the block has a processing of [Block.Processing.IN_FIRST_LAZY], it will now always be processed.
@@ -161,24 +156,21 @@ abstract class BaseBlocksConfig : BlocksConfig {
     }
 
     /**
-     * Lets every block [verifyConfig][Block.verifyConfig] itself.
+     * Lets every block [verifyConfig][Block.prepareAndVerify] itself.
      */
     protected fun verifyConfig() {
         connections.forEach {
-            it.block.verifyConfig(this)
+            it.block.prepareAndVerify(this)
         }
     }
 
     override fun Block.ensureAdded() {
         if (this !in connectionsMap) {
             connectionsMap[this] = BlockConnections(this)
-            selfConfig(this@BaseBlocksConfig)
         }
     }
 
-    override fun Block.isAdded(): Boolean {
-        return connectionsMap.containsKey(this)
-    }
+    override fun Block.isAdded(): Boolean = connectionsMap.containsKey(this)
 
     override fun <T> BlockOutput<T>.connectTo(input: BlockInput<T>) {
         val inputNode = input.connection
@@ -219,9 +211,8 @@ abstract class BaseBlocksConfig : BlocksConfig {
         connectionsMap[block]?.isOutConnected?.get(outputIndex) == true //not null and true
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T> BlockInput<T>.source(): BlockOutput<T>? {
-        return connectionsMap[block]?.inputSources?.get(inputIndex) as? BlockOutput<T>?
-    }
+    override fun <T> BlockInput<T>.source(): BlockOutput<T>? =
+        connectionsMap[block]?.inputSources?.get(inputIndex) as? BlockOutput<T>?
 
     override fun <T> BlockOutput<T>.monitor(): Monitor<T> = Monitor<T>().apply {
         connectTo(this)

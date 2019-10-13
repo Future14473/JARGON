@@ -23,7 +23,7 @@ import org.futurerobotics.jargon.mechanics.MotionState
  * Outputs:
  * 1. the currently estimated global pose.
  */
-class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : SingleOutputBlock<Pose2d>(3, IN_FIRST_ALWAYS) {
+class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : SingleOutputBlock<Pose2d>(2, IN_FIRST_ALWAYS) {
     private var currentPose: Pose2d = initialPose
 
     override fun doInit(): Pose2d? = null
@@ -32,7 +32,7 @@ class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : SingleOutputBlock<P
         val maybeOverride = inputs[1]
         currentPose = if (maybeOverride != null) maybeOverride as Pose2d else {
             val velocity = inputs[0] as Pose2d
-            val elapsedSeconds = inputs[2] as Double
+            //TODO
             val (v, dTheta) = velocity * elapsedSeconds
             val (x, y) = v
             val sinc = sinc(dTheta)
@@ -44,11 +44,7 @@ class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : SingleOutputBlock<P
         return currentPose
     }
 
-    override fun selfConfig(config: BlocksConfig): Unit = config.run {
-        inputIndex<Double>(2) connectFrom config.systemValues.loopTime
-    }
-
-    override fun verifyConfig(config: BlocksConfig): Unit = config.run {
+    override fun prepareAndVerify(config: BlocksConfig): Unit = config.run {
         repeat(2) {
             if (!inputIndex<Any>(0).isConnected()) throw IllegalBlockConfigurationException()
         }
@@ -73,10 +69,8 @@ class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : SingleOutputBlock<P
  * Outputs:
  * 1. [MotionState] from the bot's perspective
  */
-class GlobalToBotReference : CombineBlock<MotionState<Pose2d>, Pose2d, MotionState<Pose2d>>() {
-    override fun combine(a: MotionState<Pose2d>, b: Pose2d): MotionState<Pose2d> {
-        return GlobalToBot.referenceMotion(a, b)
-    }
+class GlobalToBotReference : Combine<MotionState<Pose2d>, Pose2d, MotionState<Pose2d>>() {
+    override fun combine(a: MotionState<Pose2d>, b: Pose2d): MotionState<Pose2d> = GlobalToBot.referenceMotion(a, b)
 
     /** The pose reference [BlockInput] */
     val referenceIn: BlockInput<MotionState<Pose2d>> get() = first

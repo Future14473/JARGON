@@ -4,53 +4,98 @@ import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_ALWAYS
 import org.futurerobotics.jargon.control.Block.Processing.IN_FIRST_LAZY
 
 /**
- * A block that contains within itself another block sub-system.
- *
- * As of now [SystemValues]s cannot be retrieved from within this block.
+ * A block that contains within itself another block sub-system, configured in [buildSubsystem]
  *
  * When this block is processed it will process the entire sub-system.
+ *
+ * The subsystem does not support [SpecialBlock]s.
  */
 //experimental
-internal abstract class CompositeBlock(
-    private val subNumInputs: Int,
-    private val subNumOutputs: Int,
-    processing: Block.Processing
-) : AbstractBlock(subNumInputs + ADDITIONAL_INPUTS, subNumOutputs + ADDITIONAL_OUTPUTS, processing) {
+abstract class CompositeBlock(numInputs: Int, numOutputs: Int, processing: Block.Processing) :
+    AbstractBlock(numInputs, numOutputs, processing) {
     private lateinit var subsystem: Subsystem
-    override fun init() {
-        subsystem.init()
+    override fun init(): Unit = subsystem.init()
+
+    override fun process(inputs: List<Any?>, systemValues: SystemValues): Unit = subsystem.process(inputs, systemValues)
+
+    override fun getOutput(index: Int): Any? = subsystem.getOutput(index)
+
+    private inner class Subsystem(
+        connections: Collection<BaseBlocksConfig.BlockConnections>,
+        private val sources: Sources,
+        private val outputs: Outputs
+    ) : AbstractBlocksRunner(connections) {
+        override lateinit var systemValues: SystemValues
+
+        public override fun init() = super.init()
+        public override fun stop() = super.stop()
+
+        fun process(outsideSources: List<Any?>?, systemValues: SystemValues) {
+            this.systemValues = systemValues
+            sources.outsideSources = outsideSources
+            processOnce()
+        }
+
+        fun getOutput(index: Int): Any? = outputs.extractFromSystem!![index]
     }
 
-    override fun process(inputs: List<Any?>) {
-        subsystem.process(inputs)
+
+    private inner class Sources : AbstractBlock(0, numInputs, IN_FIRST_LAZY) {
+        var outsideSources: List<Any?>? = null
+
+        fun allOutputs() = List(this.numOutputs) { outputIndex<Any?>(it) }
+
+        override fun init() {
+            outsideSources = null
+        }
+
+        override fun process(inputs: List<Any?>, systemValues: SystemValues) {}
+
+        override fun getOutput(index: Int): Any? = outsideSources!![index]
     }
 
-    override fun getOutput(index: Int, inputs: List<Any?>): Any? {
-        return subsystem.getOutput(index) //also contains additional outputs.
+    private inner class Outputs : AbstractBlock(numOutputs, 0, IN_FIRST_ALWAYS) {
+        var extractFromSystem: List<Any?>? = null
+            private set
+
+        fun allInputs() = List(this.numInputs) { inputIndex<Any?>(it) }
+
+        override fun init() {
+            extractFromSystem = null
+        }
+
+        override fun process(inputs: List<Any?>, systemValues: SystemValues) {
+            extractFromSystem = inputs
+        }
+
+        override fun getOutput(index: Int): Any? {
+            throw IndexOutOfBoundsException(index)
+        }
     }
 
     /**
-     * Configures the sub-system using the given [BlocksConfig],
-     * and the [sources] from the outside world and [outputs] to the outside world, in order.
+     * Configures the sub-system using the given [BlocksConfig], the [BlockOutput] from the giving value [sources] from
+     * the outside world, and [BlockInput] for given [outputs] to the outside world.
+     *
+     * Note that these inputs/outputs only work in the given subsystem. Having blocks in both the input and the output
+     * subsystems leads to undefined behavior.
      */
-    protected abstract fun BlocksConfig.configureSystem(
+    protected abstract fun BlocksConfig.buildSubsystem(
         sources: List<BlockOutput<Any?>>,
         outputs: List<BlockInput<Any?>>
     )
 
-    final override fun selfConfig(config: BlocksConfig) {
-        val subsystemConfig = SubsystemConfig().apply {
-            configureSystem(sources.regularOutputs(), outputs.regularInputs())
-            config.apply {
-                if (outputs.additionalOutput<Any?>(0).isConnected())
-                    config.systemValues.shutdown connectFrom super.outputIndex(subNumOutputs + 0)
-
-                config.systemValues.loopNumber connectTo super.inputIndex(subNumInputs + 0)
-                config.systemValues.loopTime connectTo super.inputIndex(subNumInputs + 1)
-            }
-
+    override fun prepareAndVerify(config: BlocksConfig) {
+        subsystem = SubsystemConfig().run {
+            buildSubsystem(sources.allOutputs(), outputs.allInputs())
+            getSystem()
         }
-        subsystem = subsystemConfig.build()
+        doVerifyConfig(config)
+    }
+
+    /** Same thing as [doVerifyConfig] */
+    protected open fun doVerifyConfig(config: BlocksConfig) {
+        super.prepareAndVerify(config)
     }
 
     private inner class SubsystemConfig : BaseBlocksConfig() {
@@ -62,98 +107,10 @@ internal abstract class CompositeBlock(
             outputs.ensureAdded()
         }
 
-        override val systemValues: SystemValues = object : SystemValues {
-            override val shutdown: BlockInput<Boolean?>
-                get() = outputs.additionalOutput(0)
-            override val loopNumber: BlockOutput<Int>
-                get() = sources.additionalInput(0)
-            override val loopTime: BlockOutput<Double>
-                get() = sources.additionalInput(1)
-        }
-
-        fun build() = Subsystem(connections, sources, outputs)
-    }
-
-    override fun <T> inputIndex(index: Int): BlockInput<T> {
-        if (index !in 0..subNumInputs) throw IndexOutOfBoundsException(index) //do not allow for additional
-        return BasicBlockInput(this, index)
-    }
-
-    override fun <T> outputIndex(index: Int): BlockOutput<T> {
-        if (index !in 0..subNumOutputs) throw IndexOutOfBoundsException(index) //do not allow for additional
-        return BasicBlockOutput(this, index)
-    }
-
-    private inner class Subsystem(
-        connections: Collection<BaseBlocksConfig.BlockConnections>,
-        private val sources: Sources,
-        private val outputs: Outputs
-    ) : AbstractBlocksRunner(connections) {
-
-        public override fun init() = super.init()
-
-        public override fun stop() = super.stop()
-
-        fun process(outsideSources: List<Any?>?) {
-            sources.outsideSources = outsideSources
-            processOnce()
-        }
-
-        fun getOutput(index: Int): Any? {
-            return outputs.extractFromSystem!![index] //also contains additional outputs.
-        }
+        fun getSystem() = Subsystem(connections, sources, outputs)
     }
 
 
-    private inner class Sources :
-        AbstractBlock(0, subNumInputs + ADDITIONAL_INPUTS, IN_FIRST_LAZY) {
-        var outsideSources: List<Any?>? = null //also contains additional inputs.
-
-        fun regularOutputs() = List(subNumInputs) { outputIndex<Any?>(it) }
-        fun <T> additionalInput(index: Int) = outputIndex<T>(index + subNumInputs)
-
-
-        override fun init() {
-            outsideSources = null
-        }
-
-        override fun process(inputs: List<Any?>) {}
-
-        override fun getOutput(index: Int, inputs: List<Any?>): Any? = outsideSources!![index]
-    }
-
-    private inner class Outputs : AbstractBlock(subNumOutputs + ADDITIONAL_OUTPUTS, 0, IN_FIRST_ALWAYS) {
-        var extractFromSystem: List<Any?>? = null //also contains additional outputs.
-            private set
-
-        fun regularInputs() = List(subNumOutputs) { inputIndex<Any?>(it) }
-        fun <T> additionalOutput(index: Int) = inputIndex<T>(index + subNumOutputs)
-
-        override fun init() {
-            extractFromSystem = null
-        }
-
-        override fun process(inputs: List<Any?>) {
-            extractFromSystem = inputs
-        }
-
-        override fun getOutput(index: Int, inputs: List<Any?>): Any? {
-            throw IndexOutOfBoundsException(index)
-        }
-
-        override fun verifyConfig(config: BlocksConfig) = config.run {
-            repeat(subNumInputs) {
-                //ignore additional outputs.
-                if (!inputIndex<Any>(it).isConnected())
-                    throw IllegalBlockConfigurationException("All inputs to $this must be connected.")
-            }
-        }
-    }
-
-    companion object {
-        private const val ADDITIONAL_INPUTS = 2
-        private const val ADDITIONAL_OUTPUTS = 1
-    }
 }
 
 

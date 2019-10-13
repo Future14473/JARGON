@@ -3,7 +3,7 @@ package org.futurerobotics.jargon.control
 import org.futurerobotics.jargon.util.fillWith
 
 internal class TestBlock(
-    val name: String,
+    private val name: String,
     numInputs: Int,
     numOutputs: Int,
     processing: Block.Processing = Block.Processing.IN_FIRST_LAZY,
@@ -11,7 +11,6 @@ internal class TestBlock(
 ) : ListStoreBlock(numInputs, numOutputs, processing) {
     private var updateNum = 0
     override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
-
         val list = if (processing == Block.Processing.OUT_FIRST_ALWAYS) {
             List(numInputs) {
                 inputs[it].let { str ->
@@ -29,15 +28,14 @@ internal class TestBlock(
         outputs.fillWith { "$name$it-" }
     }
 
-    override fun toString(): String {
-        return name
-    }
+    override fun toString(): String = name
 
     fun output(index: Int = 0): BlockOutput<String> = outputIndex(index)
 
     fun input(index: Int = 0): BlockInput<Any?> = inputIndex(index)
 
-    override fun verifyConfig(config: BlocksConfig) {
-        if (requireAllInputs) super.verifyConfig(config)
+    override fun prepareAndVerify(config: BlocksConfig) {
+        if (requireAllInputs) super.prepareAndVerify(config)
     }
 }
+
