@@ -97,7 +97,7 @@ private class IndexedBlocksCreator(
                     traceStatus = PROCESSED //out first always valid.
                 } else {
                     traceStatus = PROCESSING
-                    inputSources.forEach { it?.nodeBlock?.trace() }
+                    inputSources.forEach { it?.nodeBlock.trace() }
                     traceStatus = PROCESSED
                 }
             }
@@ -115,11 +115,11 @@ private class IndexedBlocksCreator(
             val sources = node.inputSources
 
             val sourceBlockIndexes = sources.mapToIntArray { out ->
-                out?.nodeBlock?.finalIndex?.also {
+                out?.nodeBlock.finalIndex.also {
                     assert(it != -1) { "all sources should have index" }
                 } ?: -1
             }
-            val sourceOutputIndexes = sources.mapToIntArray { it?.outputIndex ?: -1 }
+            val sourceOutputIndexes = sources.mapToIntArray { it?.index ?: -1 }
 
             IndexedBlock(
                 block = node.block,

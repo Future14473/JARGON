@@ -23,6 +23,8 @@ fun pureDiag(vararg v: Double): Mat = DiagonalMatrix(v, false)
 
 fun createVec(v: DoubleArray, copy: Boolean = true): Vec = ArrayRealVector(v, copy)
 fun createVec(v: List<Double>): Vec = ArrayRealVector(v.toDoubleArray(), false)
+fun List<Double>.toVec(): Vec = createVec(this)
+
 @JvmName("createVecVararg")
 fun createVec(vararg v: Double): Vec = ArrayRealVector(v, false)
 

@@ -18,10 +18,8 @@ fun Vec.asMutableList(): MutableList<Double> = object : AbstractMutableList<Doub
 
     override fun get(index: Int): Double = this@asMutableList[index]
 
-    override fun set(index: Int, element: Double): Double {
-        return this@asMutableList[index].also {
-            this@asMutableList[index] = element
-        }
+    override fun set(index: Int, element: Double): Double = this@asMutableList[index].also {
+        this@asMutableList[index] = element
     }
 
     override fun removeAt(index: Int): Double {

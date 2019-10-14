@@ -40,13 +40,13 @@ internal class BlocksSystemTest : AbstractBlockSystemTest() {
             val g = testBlock("G", 2, 1, IN_FIRST_ALWAYS)
             val h = testBlock("H", 2, 1)
 
-            b.connectFromAll(Constant("A"), e.output(0))
-            c.connectFromAll(b.output(0))
-            d.connectFromAll(h.output(0))
-            e.connectFromAll(f.output(1))
-            f.connectFromAll(b.output(1), d.output(0))
-            g.connectFromAll(c.output(0), f.output(0))
-            h.connectFromAll(c.output(0), g.output(0))
+            b.fromAll(Constant("A"), e.output(0))
+            c.fromAll(b.output(0))
+            d.fromAll(h.output(0))
+            e.fromAll(f.output(1))
+            f.fromAll(b.output(1), d.output(0))
+            g.fromAll(c.output(0), f.output(0))
+            h.fromAll(c.output(0), g.output(0))
             monitor = d.input().monitor()
         }
 
@@ -74,10 +74,10 @@ internal class BlocksSystemTest : AbstractBlockSystemTest() {
                 val b = testBlock("1", 1, 1)
                 val c = testBlock("1", 1, 1)
                 val d = testBlock("1", 1, 1)
-                a.connectFromAll(b.output(0))
-                b.connectFromAll(c.output(0))
-                c.connectFromAll(d.output(0))
-                d.connectFromAll(a.output(0))
+                a.fromAll(b.output(0))
+                b.fromAll(c.output(0))
+                c.fromAll(d.output(0))
+                d.fromAll(a.output(0))
             }
         }.failed().isA<IllegalBlockConfigurationException>()
     }
@@ -88,8 +88,8 @@ internal class BlocksSystemTest : AbstractBlockSystemTest() {
         val externalConstant = ExternalValue(4)
         val system = buildBlocksSystem {
 
-            Shutdown() connectFrom Combine<Int, Int, Boolean> { a, b -> a == b }.apply {
-                first connectFrom externalConstant; second connectFrom SystemValuesBlock().loopNumber
+            Shutdown() from Combine<Int, Int, Boolean> { a, b -> a == b }.apply {
+                first from externalConstant; second from SystemValuesBlock().loopNumber
             }
 
             monitor = SystemValuesBlock().loopNumber.monitor()

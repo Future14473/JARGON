@@ -19,7 +19,7 @@ sealed class SpecialBlock(numInputs: Int, numOutputs: Int, processing: Block.Pro
  * This [SpecialBlock], when inputted a value of `true`, will tell the system to shutdown.
  */
 class Shutdown : SpecialBlock(1, 0, IN_FIRST_ALWAYS),
-    BlockInput<Boolean?> {
+    BlocksConfig.Input<Boolean?> {
     /** If this block received  shutdown signal or not. */
     var shutDownSignal: Boolean = false
         private set
@@ -35,5 +35,5 @@ class Shutdown : SpecialBlock(1, 0, IN_FIRST_ALWAYS),
     override fun getOutput(index: Int): Any? = throw IndexOutOfBoundsException(index)
 
     override val block: Block get() = this
-    override val inputIndex: Int get() = 0
+    override val index: Int get() = 0
 }

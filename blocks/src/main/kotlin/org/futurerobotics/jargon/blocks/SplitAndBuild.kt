@@ -6,6 +6,7 @@ import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.mechanics.*
+import sun.jvm.hotspot.oops.CellTypeState.value
 
 /**
  * A block that takes a [MotionState] and splits it into its components in order.
@@ -19,7 +20,7 @@ import org.futurerobotics.jargon.mechanics.*
  * 3. acceleration
  */
 class SplitMotionState<T : Any> : ListStoreBlock(1, 3, IN_FIRST_LAZY),
-    BlockInput<MotionState<T>> {
+    BlocksConfig.Input<MotionState<T>> {
     override fun init(outputs: MutableList<Any?>) {}
 
     @Suppress("UNCHECKED_CAST")
@@ -33,14 +34,23 @@ class SplitMotionState<T : Any> : ListStoreBlock(1, 3, IN_FIRST_LAZY),
     }
 
     override val block: Block get() = this
-    override val inputIndex: Int get() = 0
+    override val index: Int get() = 0
 
-    /** The value [BlockOutput] */
-    val value: BlockOutput<T> get() = outputIndex(0)
-    /** The velocity [BlockOutput] */
-    val vel: BlockOutput<T> get() = outputIndex(1)
-    /** The acceleration [BlockOutput] */
-    val accel: BlockOutput<T> get() = outputIndex(2)
+    /** The value [BlocksConfig.Output] */
+    val value: BlocksConfig.Output<T> get() = outputIndex(0)
+    /** The velocity [BlocksConfig.Output] */
+    val vel: BlocksConfig.Output<T> get() = outputIndex(1)
+    /** The acceleration [BlocksConfig.Output] */
+    val accel: BlocksConfig.Output<T> get() = outputIndex(2)
+
+    /** [value] */
+    operator fun component1(): BlocksConfig.Output<T> = value
+
+    /** [vel] */
+    operator fun component2(): BlocksConfig.Output<T> = vel
+
+    /** [accel] */
+    operator fun component3(): BlocksConfig.Output<T> = accel
 }
 
 /**
@@ -58,27 +68,107 @@ class SplitMotionState<T : Any> : ListStoreBlock(1, 3, IN_FIRST_LAZY),
 class CreateMotionState<T : Any> : SingleOutputBlock<MotionState<T>>(3, IN_FIRST_LAZY) {
     override fun doInit(): MotionState<T>? = null
 
-    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): MotionState<T> {
-        return ValueMotionState(
-            inputs[0] as T,
-            inputs[1] as T,
-            inputs[2] as T
-        )
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): MotionState<T> = ValueMotionState(
+        inputs[0] as T,
+        inputs[1] as T,
+        inputs[2] as T
+    )
+
+    /** The value [BlocksConfig.Input] */
+    val value: BlocksConfig.Input<T> get() = inputIndex(0)
+    /** The velocity [BlocksConfig.Input] */
+    val vel: BlocksConfig.Input<T> get() = inputIndex(1)
+    /** The acceleration [BlocksConfig.Input] */
+    val accel: BlocksConfig.Input<T> get() = inputIndex(2)
+
+    /** [value] */
+    operator fun component1(): BlocksConfig.Input<T> = value
+
+    /** [vel] */
+    operator fun component2(): BlocksConfig.Input<T> = vel
+
+    /** [accel] */
+    operator fun component3(): BlocksConfig.Input<T> = accel
+}
+
+
+/**
+ * A block that takes a [MotionState] and splits it into its components in order.
+ *
+ * Inputs:
+ * 1. A [MotionState] of [T].
+ *
+ * Outputs:
+ * 1. value
+ * 2. velocity
+ * 3. acceleration
+ */
+class SplitMotionOnly<T : Any> : ListStoreBlock(1, 2, IN_FIRST_LAZY),
+    BlocksConfig.Input<MotionOnly<T>> {
+    override fun init(outputs: MutableList<Any?>) {}
+
+    @Suppress("UNCHECKED_CAST")
+    override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
+        run {
+            val t = inputs[0] as MotionOnly<T>
+            outputs[0] = t.v
+            outputs[1] = t.a
+        }
     }
 
-    /** The value [BlockInput] */
-    val value: BlockInput<T> get() = inputIndex(0)
-    /** The velocity [BlockInput] */
-    val vel: BlockInput<T> get() = inputIndex(1)
-    /** The acceleration [BlockInput] */
-    val accel: BlockInput<T> get() = inputIndex(2)
+    override val block: Block get() = this
+    override val index: Int get() = 0
+
+    /** The velocity [BlocksConfig.Output] */
+    val vel: BlocksConfig.Output<T> get() = outputIndex(0)
+    /** The acceleration [BlocksConfig.Output] */
+    val accel: BlocksConfig.Output<T> get() = outputIndex(1)
+
+    /** [vel] */
+    operator fun component1(): BlocksConfig.Output<T> = vel
+
+    /** [accel] */
+    operator fun component2(): BlocksConfig.Output<T> = accel
+
+}
+
+/**
+ * A block that takes the value, velocity, and acceleration and combines it into a [MotionState]
+ *
+ * Inputs:
+ *
+ * 1. value
+ * 2. velocity
+ * 3. acceleration
+ *
+ * Outputs:
+ * 1. A [MotionState] of [T].
+ */
+class CreateMotionOnly<T : Any> : SingleOutputBlock<MotionOnly<T>>(2, IN_FIRST_LAZY) {
+    override fun doInit(): MotionOnly<T>? = null
+
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): MotionOnly<T> = ValueMotionOnly(
+        inputs[0] as T,
+        inputs[1] as T
+    )
+
+    /** The velocity [BlocksConfig.Input] */
+    val vel: BlocksConfig.Input<T> get() = inputIndex(0)
+    /** The acceleration [BlocksConfig.Input] */
+    val accel: BlocksConfig.Input<T> get() = inputIndex(1)
+
+    /** [value] */
+    operator fun component1(): BlocksConfig.Input<T> = vel
+
+    /** [vel] */
+    operator fun component2(): BlocksConfig.Input<T> = accel
 }
 
 /**
  * A block that takes in a [Vector2d] and splits it into its parts.
  */
 class SplitVector : ListStoreBlock(1, 2, IN_FIRST_LAZY),
-    BlockInput<Vector2d> {
+    BlocksConfig.Input<Vector2d> {
     override fun init(outputs: MutableList<Any?>) {}
 
     override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
@@ -88,12 +178,19 @@ class SplitVector : ListStoreBlock(1, 2, IN_FIRST_LAZY),
     }
 
     override val block: Block get() = this
-    override val inputIndex: Int get() = 0
+    override val index: Int get() = 0
 
-    /** x value [BlockOutput] */
-    val x: BlockOutput<Double> get() = outputIndex(0)
-    /** y value [BlockOutput] */
-    val y: BlockOutput<Double> get() = outputIndex(1)
+    /** x value [BlocksConfig.Output] */
+    val x: BlocksConfig.Output<Double> get() = outputIndex(0)
+    /** y value [BlocksConfig.Output] */
+    val y: BlocksConfig.Output<Double> get() = outputIndex(1)
+
+    /** [x] */
+    operator fun component1(): BlocksConfig.Output<Double> = x
+
+    /** [y] */
+    operator fun component2(): BlocksConfig.Output<Double> = y
+
 }
 
 /**
@@ -105,10 +202,16 @@ class CreateVector : SingleOutputBlock<Vector2d>(1, IN_FIRST_LAZY) {
     override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Vector2d =
         Vector2d(inputs[0] as Double, inputs[1] as Double)
 
-    /** x value [BlockInput] */
-    val x: BlockInput<Double> get() = inputIndex(0)
-    /** y value [BlockInput] */
-    val y: BlockInput<Double> get() = inputIndex(1)
+    /** x value [BlocksConfig.Input] */
+    val x: BlocksConfig.Input<Double> get() = inputIndex(0)
+    /** y value [BlocksConfig.Input] */
+    val y: BlocksConfig.Input<Double> get() = inputIndex(1)
+
+    /** [x] */
+    operator fun component1(): BlocksConfig.Input<Double> = x
+
+    /** [y] */
+    operator fun component2(): BlocksConfig.Input<Double> = y
 }
 
 
@@ -116,7 +219,7 @@ class CreateVector : SingleOutputBlock<Vector2d>(1, IN_FIRST_LAZY) {
  * A block that takes in a [Pose2d] and splits it into its parts.
  */
 class SplitPose : ListStoreBlock(1, 3, IN_FIRST_LAZY),
-    BlockInput<Pose2d> {
+    BlocksConfig.Input<Pose2d> {
     override fun init(outputs: MutableList<Any?>) {}
 
     override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
@@ -126,14 +229,23 @@ class SplitPose : ListStoreBlock(1, 3, IN_FIRST_LAZY),
     }
 
     override val block: Block get() = this
-    override val inputIndex: Int get() = 0
+    override val index: Int get() = 0
 
-    /** x value [BlockOutput] */
-    val x: BlockOutput<Double> get() = outputIndex(0)
-    /** y value [BlockOutput] */
-    val y: BlockOutput<Double> get() = outputIndex(1)
-    /** heading value [BlockOutput] */
-    val heading: BlockOutput<Double> get() = outputIndex(2)
+    /** x value [BlocksConfig.Output] */
+    val x: BlocksConfig.Output<Double> get() = outputIndex(0)
+    /** y value [BlocksConfig.Output] */
+    val y: BlocksConfig.Output<Double> get() = outputIndex(1)
+    /** heading value [BlocksConfig.Output] */
+    val heading: BlocksConfig.Output<Double> get() = outputIndex(2)
+
+    /** [x] */
+    operator fun component1(): BlocksConfig.Output<Double> = x
+
+    /** [y] */
+    operator fun component2(): BlocksConfig.Output<Double> = y
+
+    /** [heading] */
+    operator fun component3(): BlocksConfig.Output<Double> = heading
 }
 
 /**
@@ -145,12 +257,21 @@ class CreatePoseFromComp : SingleOutputBlock<Pose2d>(1, IN_FIRST_LAZY) {
     override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Pose2d =
         Pose2d(inputs[0] as Double, inputs[1] as Double, inputs[2] as Double)
 
-    /** x value [BlockInput] */
-    val x: BlockInput<Double> get() = inputIndex(0)
-    /** y value [BlockInput] */
-    val y: BlockInput<Double> get() = inputIndex(1)
-    /** y value [BlockInput] */
-    val heading: BlockInput<Double> get() = inputIndex(2)
+    /** x value [BlocksConfig.Input] */
+    val x: BlocksConfig.Input<Double> get() = inputIndex(0)
+    /** y value [BlocksConfig.Input] */
+    val y: BlocksConfig.Input<Double> get() = inputIndex(1)
+    /** y value [BlocksConfig.Input] */
+    val heading: BlocksConfig.Input<Double> get() = inputIndex(2)
+
+    /** [x] */
+    operator fun component1(): BlocksConfig.Input<Double> = x
+
+    /** [y] */
+    operator fun component2(): BlocksConfig.Input<Double> = y
+
+    /** [heading] */
+    operator fun component3(): BlocksConfig.Input<Double> = heading
 }
 
 
@@ -163,17 +284,24 @@ class CreatePoseFromVec : SingleOutputBlock<Pose2d>(1, IN_FIRST_LAZY) {
     override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Pose2d =
         Pose2d(inputs[0] as Vector2d, inputs[1] as Double)
 
-    /** x value [BlockInput] */
-    val vec: BlockInput<Vector2d> get() = inputIndex(0)
-    /** y value [BlockInput] */
-    val heading: BlockInput<Double> get() = inputIndex(1)
+    /** x value [BlocksConfig.Input] */
+    val vec: BlocksConfig.Input<Vector2d> get() = inputIndex(0)
+    /** y value [BlocksConfig.Input] */
+    val heading: BlocksConfig.Input<Double> get() = inputIndex(1)
+
+    /** [vec] */
+    operator fun component1(): BlocksConfig.Input<Vector2d> = vec
+
+    /** [heading] */
+    operator fun component2(): BlocksConfig.Input<Double> = heading
+
 }
 
 /**
  * A block that splits a [MotionState]<[Pose2d]> into 3 [LinearMotionState], each representing a component of [Pose2d]
  */
 class SplitPoseMotionState : ListStoreBlock(1, 3, IN_FIRST_LAZY),
-    BlockInput<MotionState<Pose2d>> {
+    BlocksConfig.Input<MotionState<Pose2d>> {
     override fun init(outputs: MutableList<Any?>) {}
 
     override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
@@ -183,13 +311,22 @@ class SplitPoseMotionState : ListStoreBlock(1, 3, IN_FIRST_LAZY),
         outputs[2] = state.heading()
     }
 
-    /** x MotionState [BlockOutput] */
-    val x: BlockOutput<LinearMotionState> get() = outputIndex(0)
-    /** y MotionState [BlockOutput] */
-    val y: BlockOutput<LinearMotionState> get() = outputIndex(1)
-    /** heading MotionState [BlockOutput] */
-    val heading: BlockOutput<LinearMotionState> get() = outputIndex(2)
+    /** x MotionState [BlocksConfig.Output] */
+    val x: BlocksConfig.Output<LinearMotionState> get() = outputIndex(0)
+    /** y MotionState [BlocksConfig.Output] */
+    val y: BlocksConfig.Output<LinearMotionState> get() = outputIndex(1)
+    /** heading MotionState [BlocksConfig.Output] */
+    val heading: BlocksConfig.Output<LinearMotionState> get() = outputIndex(2)
+
+    /** [x] */
+    operator fun component1(): BlocksConfig.Output<LinearMotionState> = x
+
+    /** [y] */
+    operator fun component2(): BlocksConfig.Output<LinearMotionState> = y
+
+    /** [heading] */
+    operator fun component3(): BlocksConfig.Output<LinearMotionState> = heading
 
     override val block: Block get() = this
-    override val inputIndex: Int get() = 0
+    override val index: Int get() = 0
 }

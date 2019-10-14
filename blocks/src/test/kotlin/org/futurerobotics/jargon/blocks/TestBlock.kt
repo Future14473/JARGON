@@ -30,9 +30,9 @@ internal class TestBlock(
 
     override fun toString(): String = name
 
-    fun output(index: Int = 0): BlockOutput<String> = outputIndex(index)
+    fun output(index: Int = 0): BlocksConfig.Output<String> = outputIndex(index)
 
-    fun input(index: Int = 0): BlockInput<Any?> = inputIndex(index)
+    fun input(index: Int = 0): BlocksConfig.Input<Any?> = inputIndex(index)
 
     override fun prepareAndVerify(config: BlocksConfig) {
         if (requireAllInputs) super.prepareAndVerify(config)
