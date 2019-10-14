@@ -54,7 +54,7 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
             currentStepper = newProfiled.stepper()
             this.currentStepper = currentStepper
         } else {
-            currentTime = getNextTime(currentTime, profileOutput, inputs)
+            currentTime = getNextTime(currentTime, profileOutput, inputs, systemValues)
         }
         if (currentTime >= endTime) {
             currentTime = endTime
@@ -65,24 +65,8 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
         processFurther(inputs)
     }
 
-    override fun getOutput(index: Int): Any? = when (index) {
-        !in 0..numOutputs -> IndexOutOfBoundsException(index)
-        0 -> profileOutput
-        1 -> currentTime / endTime
-        else -> getMoreOutput(index)
-    }
-
-    /** The motion profile [BlockInput]. See [MotionProfileFollower]*/
-    val profileInput: BlockInput<MotionProfiled<T>> get() = inputIndex(0)
-
-    /** The stop input [BlockInput]. See [MotionProfileFollower] */
-    val stopInput: BlockInput<Boolean?> get() = inputIndex(1)
-
-    /** The [BlockOutput] of this [MotionProfileFollower] */
-    val output: BlockOutput<T> get() = outputIndex(0)
-
-    /** The progress [BlockOutput] of this [MotionProfileFollower] */
-    val progress: BlockOutput<Double> get() = outputIndex(1)
+    /** Performs any additional possible processing. */
+    protected abstract fun processFurther(inputs: List<Any?>)
 
     /**
      * Gets the next time to use to get the value out of the [MotionProfiled] object;
@@ -93,13 +77,41 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
      * Following the motion profile ends if [getNextTime] returns a time longer past the current motion profiled's
      * duration.
      */
-    protected abstract fun getNextTime(currentTime: Double, lastOutput: Any, inputs: List<Any?>): Double
+    protected abstract fun getNextTime(
+        currentTime: Double,
+        lastOutput: Any,
+        inputs: List<Any?>,
+        systemValues: SystemValues
+    ): Double
 
-    /** Performs any additional possible processing. */
-    protected abstract fun processFurther(inputs: List<Any?>)
+    override fun getOutput(index: Int): Any? = when (index) {
+        !in 0..numOutputs -> IndexOutOfBoundsException(index)
+        0 -> profileOutput
+        1 -> currentTime / endTime
+        else -> getMoreOutput(index)
+    }
 
     /** Gets any additional possible outputs, starting with index 2. */
     protected abstract fun getMoreOutput(index: Int)
+
+    override fun prepareAndVerify(config: BlocksConfig) = config.run {
+        if (!profileInput.isConnected())
+            throw IllegalBlockConfigurationException("Motion profile input to ${this@MotionProfileFollower} must be connected.")
+    }
+
+    /** The motion profile [BlocksConfig.Input]. See [MotionProfileFollower]*/
+    val profileInput: BlocksConfig.Input<MotionProfiled<T>> get() = inputIndex(0)
+
+    /** The stop input [BlocksConfig.Input]. See [MotionProfileFollower] */
+    val stop: BlocksConfig.Input<Boolean?> get() = inputIndex(1)
+
+    /** The [BlocksConfig.Output] of this [MotionProfileFollower] */
+    val output: BlocksConfig.Output<T> get() = outputIndex(0)
+
+    /** The progress [BlocksConfig.Output] of this [MotionProfileFollower] */
+    val progress: BlocksConfig.Output<Double> get() = outputIndex(1)
+
+
 }
 
 /**
@@ -110,7 +122,6 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
  *      WILL ONLY BE POLLED upon reaching end of the previous motion profile, or input #2 is pulsed:
  * 2. Boolean to stop following motion profile. When given `true`, will immediately cancel following the
  *      current motion profile and the next profile will be polled. Recommended using [Pulse] to accomplish
- * 3. The loop time.
  *
  * Outputs:
  * 1. The current output of the motion profiled object.
@@ -119,10 +130,14 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
  * @param initialIdleOutput the initial value to be outputted when no motion profile has been ever given.
  */
 class TimeOnlyMotionProfileFollower<T : Any>(initialIdleOutput: T) :
-    MotionProfileFollower<T>(3, 2, initialIdleOutput) {
+    MotionProfileFollower<T>(2, 2, initialIdleOutput) {
 
-    override fun getNextTime(currentTime: Double, lastOutput: Any, inputs: List<Any?>): Double =
-        currentTime + inputs[2] as Double
+    override fun getNextTime(
+        currentTime: Double,
+        lastOutput: Any,
+        inputs: List<Any?>,
+        systemValues: SystemValues
+    ): Double = currentTime + systemValues.loopTime
 
     override fun processFurther(inputs: List<Any?>) {
     }

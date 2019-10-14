@@ -41,7 +41,7 @@ open class PIDCoefficients(
 }
 
 /**
- * PIDF coefficients, _with feed forward on velocity and acceleration_,
+ * PID**FF** coefficients, _with feed forward on velocity and acceleration_,
  * with more optional options like some regulation on that pesky [i] term.
  *
  * @see [PIDCoefficients]

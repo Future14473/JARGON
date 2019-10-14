@@ -8,9 +8,12 @@ import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
 internal class TestCompositeBlock : CompositeBlock(2, 2, IN_FIRST_ALWAYS) {
-    override fun BlocksConfig.buildSubsystem(sources: List<BlockOutput<Any?>>, outputs: List<BlockInput<Any?>>) {
+    override fun BlocksConfig.buildSubsystem(
+        sources: List<BlocksConfig.Output<Any?>>,
+        outputs: List<BlocksConfig.Input<Any?>>
+    ) {
         forEachZipped(sources, outputs) { a, b ->
-            a connectTo b
+            a into b
         }
     }
 
@@ -34,16 +37,16 @@ internal class CompositeBlockTest : AbstractBlockSystemTest() {
             val h = testBlock("H", 2, 1)
 
             val pipe = TestCompositeBlock()
-            e.output(0) connectTo pipe.input(0)
-            d.output(0) connectTo pipe.input(1)
+            e.output(0) into pipe.input(0)
+            d.output(0) into pipe.input(1)
 
-            b.connectFromAll(Constant("A"), pipe.output(0))
-            c.connectFromAll(b.output(0))
-            d.connectFromAll(h.output(0))
-            e.connectFromAll(f.output(1))
-            f.connectFromAll(b.output(1), pipe.output(1))
-            g.connectFromAll(c.output(0), f.output(0))
-            h.connectFromAll(c.output(0), g.output(0))
+            b.fromAll(Constant("A"), pipe.output(0))
+            c.fromAll(b.output(0))
+            d.fromAll(h.output(0))
+            e.fromAll(f.output(1))
+            f.fromAll(b.output(1), pipe.output(1))
+            g.fromAll(c.output(0), f.output(0))
+            h.fromAll(c.output(0), g.output(0))
             monitor = d.input().monitor()
         }
 

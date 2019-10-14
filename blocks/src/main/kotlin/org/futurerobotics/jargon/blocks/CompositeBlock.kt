@@ -74,15 +74,18 @@ abstract class CompositeBlock(numInputs: Int, numOutputs: Int, processing: Block
     }
 
     /**
-     * Configures the sub-system using the given [BlocksConfig], the [BlockOutput] from the giving value [sources] from
-     * the outside world, and [BlockInput] for given [outputs] to the outside world.
+     * Configures the sub-system using the given [BlocksConfig], the [BlocksConfig.Output] from the giving value [sources] from
+     * the outside world, and [BlocksConfig.Input] for given [outputs] to the outside world.
      *
      * Note that these inputs/outputs only work in the given subsystem. Having blocks in both the input and the output
      * subsystems leads to undefined behavior.
+     *
+     *
+     * note: using [BaseBlocksConfig] for inline functions for those who care
      */
-    protected abstract fun BlocksConfig.buildSubsystem(
-        sources: List<BlockOutput<Any?>>,
-        outputs: List<BlockInput<Any?>>
+    protected abstract fun BaseBlocksConfig.buildSubsystem(
+        sources: List<BlocksConfig.Output<Any?>>,
+        outputs: List<BlocksConfig.Input<Any?>>
     )
 
     override fun prepareAndVerify(config: BlocksConfig) {

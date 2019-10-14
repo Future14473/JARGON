@@ -57,7 +57,7 @@ internal class GlobalPoseTrackerTest {
         var monitor: Monitor<Pose2d>
         return Triple(buildBlocksSystem {
             val tracker = GlobalPoseTracker(initialPose)
-            tracker.velocityIn connectFrom input
+            tracker.velocityIn from input
             monitor = tracker.monitor()
         }, input, monitor)
     }

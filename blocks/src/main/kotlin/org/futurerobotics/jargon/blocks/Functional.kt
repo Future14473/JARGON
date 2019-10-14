@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * A block with one constant output [value].
  *
- * This is itself a [BlockOutput] representing this block's only output.
+ * This is itself a [BlocksConfig.Output] representing this block's only output.
  *
  * @param value the constant value
  */
@@ -24,7 +24,7 @@ class Constant<T>(private val value: T) : SingleOutputBlock<T>(
 /**
  * A block with only one output, [value], which can be changed externally.
  *
- * This is itself a [BlockOutput] representing this block's only output.
+ * This is itself a [BlocksConfig.Output] representing this block's only output.
  *
  * @param value the value outputted
  */
@@ -40,12 +40,12 @@ class ExternalValue<T>(@Volatile var value: T) : SingleOutputBlock<T>(
  * A block with only one input, and stores the value inputted in [value]. Useful for extracting information
  * out of a system.
  *
- * This is itself a [BlockInput] representing its only input.
+ * This is itself a [BlocksConfig.Input] representing its only input.
  */
 @Suppress("UNCHECKED_CAST")
 class Monitor<T> : AbstractBlock(
     1, 0, Block.Processing.IN_FIRST_ALWAYS
-), BlockInput<T> {
+), BlocksConfig.Input<T> {
     @Volatile
     private var _value: T? = null
     /**
@@ -65,7 +65,7 @@ class Monitor<T> : AbstractBlock(
     override fun getOutput(index: Int): Any? = throw IndexOutOfBoundsException(index)
 
     override val block: Block get() = this
-    override val inputIndex: Int get() = 0
+    override val index: Int get() = 0
     override fun toString(): String = "Monitor($value)"
 }
 

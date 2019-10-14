@@ -1,4 +1,4 @@
-@file:Suppress("KDocMissingDocumentation", "PublicApiImplicitType")
+@file:Suppress("KDocMissingDocumentation", "PublicApiImplicitType", "SpellCheckingInspection")
 
 val ext = project.rootProject.extra
 

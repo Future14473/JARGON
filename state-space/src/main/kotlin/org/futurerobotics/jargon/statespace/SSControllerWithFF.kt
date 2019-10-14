@@ -1,6 +1,5 @@
 package org.futurerobotics.jargon.statespace
 
-import org.futurerobotics.jargon.blocks.BlockInput
 import org.futurerobotics.jargon.blocks.Combine
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.matches
@@ -53,8 +52,8 @@ class SSControllerWithFF(
         else -> throw ClassCastException()
     }
 
-    /** Reference [BlockInput] */
-    val reference: BlockInput<Any> get() = first
-    /** State [BlockInput] */
-    val state: BlockInput<Vec> get() = second
+    /** Reference [BlocksConfig.Input] */
+    val reference: BlocksConfig.Input<Any> get() = first
+    /** State [BlocksConfig.Input] */
+    val state: BlocksConfig.Input<Vec> get() = second
 }

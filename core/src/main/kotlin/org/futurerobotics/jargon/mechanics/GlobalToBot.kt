@@ -44,11 +44,12 @@ object GlobalToBot {
     @JvmStatic
     fun referenceMotion(reference: MotionState<Pose2d>, globalPose: Pose2d): MotionState<Pose2d> {
         val (s, v, a) = reference
-        val rs = (s - globalPose).vecRotated(-globalPose.heading)
-        val rv = v.vecRotated(-globalPose.heading)
+        val globalHeading = globalPose.heading
+        val rs = (s - globalPose).vecRotated(-globalHeading)
+        val rv = v.vecRotated(-globalHeading)
         val ra = Pose2d(
-            a.vec.rotated(-globalPose.heading) +
-                    v.vec.rotated(-globalPose.heading + PI / 2) * -v.heading,
+            a.vec.rotated(-globalHeading) +
+                    v.vec.rotated(-globalHeading + PI / 2) * -v.heading,
             a.heading
         )
         return ValueMotionState(rs, rv, ra)

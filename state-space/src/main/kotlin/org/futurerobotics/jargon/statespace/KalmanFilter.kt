@@ -2,7 +2,8 @@ package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
-import org.futurerobotics.jargon.blocks.ListStoreBlock
+import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.blocks.SystemValues
 import org.futurerobotics.jargon.linalg.*
 import org.hipparchus.filtering.kalman.Measurement
 import org.hipparchus.filtering.kalman.ProcessEstimate
@@ -12,6 +13,7 @@ import org.hipparchus.filtering.kalman.linear.LinearProcess
 import org.hipparchus.linear.CholeskyDecomposer
 import org.hipparchus.linear.CholeskyDecomposition
 import org.hipparchus.linear.RealVector
+import kotlin.math.roundToInt
 
 private val DECOMP = CholeskyDecomposer(
     CholeskyDecomposition.DEFAULT_RELATIVE_SYMMETRY_THRESHOLD,
@@ -37,7 +39,7 @@ class KalmanFilter(
     private val model: DiscreteLinSSModel,
     private val Q: Mat,
     private val R: Mat
-) : ListStoreBlock(2, 1, IN_FIRST_ALWAYS) {
+) : SingleOutputBlock<Vec>(2, IN_FIRST_ALWAYS) {
 
     private var filter: LinearKalmanFilter<Measurement>? = null
     private val measurementObj = TheMeasurement()
@@ -45,16 +47,22 @@ class KalmanFilter(
     private var stateCovariance = steadyStateKalmanErrorCov(model, Q, R)
     private var lastUpdate: ProcessEstimate? = null
     private var pastOutput: Vec? = null
+    override fun doInit(): Vec? {
+        lastUpdate?.covariance?.let {
+            stateCovariance = it
+        }
+        lastUpdate = null
+        filter = null //reset filter with new state, perhaps.
+        return null
+    }
 
-    override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
+    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Vec {
         val measurement = inputs[0] as Vec
         val signal = inputs[0] as Vec
-
-        measurementObj.value = measurement
-        process.signal = signal
-
-        if (filter == null) {
-            filter = LinearKalmanFilter(
+        repeat((systemValues.loopTime / model.period).roundToInt().coerceAtLeast(1)) {
+            measurementObj.value = measurement
+            process.signal = signal
+            val filter = filter ?: LinearKalmanFilter(
                 DECOMP,
                 process,
                 ProcessEstimate(
@@ -62,24 +70,18 @@ class KalmanFilter(
                     pastOutput ?: model.C.solve(measurement),
                     stateCovariance
                 )
-            )
-        }
+            ).also { filter = it }
 
-        filter!!.let {
-            it.estimationStep(measurementObj)
-            val corrected = it.corrected
-            lastUpdate = corrected
-            outputs[0] = corrected.state
+            filter.estimationStep(measurementObj)
+            lastUpdate = filter.corrected
         }
+        return lastUpdate!!.state
     }
 
-    override fun init(outputs: MutableList<Any?>) {
-        lastUpdate?.covariance?.let {
-            stateCovariance = it
-        }
-        lastUpdate = null
-        filter = null //reset filter with new state, perhaps.
-    }
+    /** Measurement Vec [BlocksConfig.Input] */
+    val measurement: BlocksConfig.Input<Vec> get() = inputIndex(0)
+    /** Signal Vec [BlocksConfig.Input] */
+    val signal: BlocksConfig.Input<Vec> get() = inputIndex(1)
 
     private inner class TheMeasurement : Measurement {
         @JvmField

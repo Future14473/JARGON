@@ -5,6 +5,21 @@ package org.futurerobotics.jargon.blocks
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.mechanics.FixedDriveModel
 import org.futurerobotics.jargon.mechanics.MotionOnly
+import org.futurerobotics.jargon.mechanics.MotionState
+import org.futurerobotics.jargon.mechanics.ValueMotionOnly
+
+/**
+ * A block that represents a controller, taking in a [Reference], comparing it with [State], and producing a [Signal].
+ *
+ * This interface is so it can be used by other people.
+ */
+interface Controller<Reference, State, Signal> : Block, BlocksConfig.Output<Signal> {
+
+    /** The reference [BlocksConfig.Input] */
+    val reference: BlocksConfig.Input<Reference>
+    /** The state [BlocksConfig.Input] */
+    val state: BlocksConfig.Input<State>
+}
 
 
 /**
@@ -26,7 +41,9 @@ class BangBangController<State, Signal>(
     private val lessThanOutput: Signal,
     private val greaterThanOutput: Signal,
     private val equalOutput: Signal
-) : Combine<State, State, Signal>() where State : Comparable<State>, State : Any {
+) : Combine<State, State, Signal>(),
+    Controller<State, State, Signal>
+        where State : Comparable<State>, State : Any {
 
     override fun combine(a: State, b: State): Signal {
         val comp = b.compareTo(a)
@@ -37,14 +54,8 @@ class BangBangController<State, Signal>(
         }
     }
 
-
-    /** The reference [BlockInput] */
-    val reference: BlockInput<State> get() = first
-    /** The state [BlockInput] */
-    val state: BlockInput<State> get() = second
-    /** the signal [BlockOutput] */
-    val signal: BlockOutput<Signal> = this
-
+    override val reference: BlocksConfig.Input<State> get() = first
+    override val state: BlocksConfig.Input<State> get() = second
 }
 
 /**
@@ -58,8 +69,65 @@ class BangBangController<State, Signal>(
  *  1. the modeled motor voltages as a [List] of Doubles
  */
 class FixedDriveOpenController(private val model: FixedDriveModel) :
-    Pipe<MotionOnly<Pose2d>, List<Double>>() {
+    Combine<MotionOnly<Pose2d>, Nothing, List<Double>>(),
+    Controller<MotionOnly<Pose2d>, Nothing, List<Double>> {
 
-    override fun pipe(input: MotionOnly<Pose2d>): List<Double> = model.getModeledVoltages(input)
+    override fun combine(a: MotionOnly<Pose2d>, b: Nothing): List<Double> = model.getModeledVoltages(a)
 
+    override val reference: BlocksConfig.Input<MotionOnly<Pose2d>> get() = first
+    /** Do not use; connects to nothing */
+    @Deprecated("This doesn't connect to anything", ReplaceWith(""), DeprecationLevel.WARNING)
+    override val state: BlocksConfig.Input<Nothing>
+        get() = second
+}
+
+/**
+ * A controller that wraps another nonFFController that outputs _velocities_ of [T], and turns it into
+ * a feed forward controller that takes in [MotionState] as reference and outputs [MotionOnly].
+ *
+ *
+ * It does it by splitting the [MotionState] into its components, passing the value component
+ * into the controller, and takes its control output adds it to the reference velocity to get the final velocity.
+ *
+ * The acceleration is simply passed only.
+ */
+abstract class FeedForwardController<T : Any>(private val nonFFController: Controller<T, T, T>) :
+    CompositeBlock(2, 1, Block.Processing.IN_FIRST_ALWAYS),
+    Controller<MotionState<T>, T, MotionOnly<T>> {
+    override fun BlocksConfig.buildSubsystem(
+        sources: List<BlocksConfig.Output<Any?>>,
+        outputs: List<BlocksConfig.Input<Any?>>
+    ) {
+        val reference = sources[0] as BlocksConfig.Output<MotionState<T>>
+        val state = sources[1] as BlocksConfig.Output<T>
+
+        val (refS, refV, refA) = SplitMotionState<T>().also { it from reference }
+
+        nonFFController.let { it.reference from refS; it.state from state }
+
+        val finalV = combineThisIt(refV, nonFFController) { this + it }
+        outputs[0] from combine(finalV, refA, ::ValueMotionOnly)
+    }
+
+    /** Adds t1 and t2 together. Unfortunately 'Double' doesn't implement an addable interface so we sad. */
+    protected abstract operator fun T.plus(other: T): T
+
+    override val reference: BlocksConfig.Input<MotionState<T>> get() = inputIndex(0)
+    override val state: BlocksConfig.Input<T> get() = inputIndex(1)
+    override val block: Block get() = this
+    override val index: Int get() = 0
+
+    companion object {
+        /**
+         * Creates a [FeedForwardController] with the given [adder] function to add.
+         */
+        @JvmStatic
+        inline fun <T : Any> withAdder(
+            nonFFController: Controller<T, T, T>,
+            crossinline adder: T.(T) -> T
+        ): FeedForwardController<T> =
+            object : FeedForwardController<T>(nonFFController) {
+                override fun T.plus(other: T): T = adder(other)
+            }
+    }
 }

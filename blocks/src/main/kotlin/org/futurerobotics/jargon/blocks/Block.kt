@@ -12,11 +12,11 @@ import kotlin.reflect.KProperty
  * [numOutputs]. Several blocks can then be connected during _configuration_ within the context of a [BlocksConfig],
  * to form a [BlocksSystem] which then can be run. **Blocks can only be run after they have been configured**
  *
- * Each input and output to a block is associated with a given index; corresponding to the index in [BlockInput] and
- * [BlockOutput]. This input index is the same as in the list given during [process], and the output index the same
+ * Each input and output to a block is associated with a given index; corresponding to the index in [BlocksConfig.Input] and
+ * [BlocksConfig.Output]. This input index is the same as in the list given during [process], and the output index the same
  * when polled in [getOutput].
  *
- * **Subclasses should provide methods for retrieving [BlockInput]/[BlockOutput]s for configuration**.
+ * **Subclasses should provide methods for retrieving [BlocksConfig.Input]/[BlocksConfig.Output]s for configuration**.
  *
  * When a block is run within a [BlocksSystem], it will be run repeatedly in _loops_.
  * - [init] will always be run when the entire system first starts.
@@ -24,7 +24,7 @@ import kotlin.reflect.KProperty
  *   It may be possible for a block to not process every loop, allowing for more dynamic behavior.
  *
  * Type checking of inputs/outputs is only done at runtime; but can be _assisted_ at compile time using
- * the types of [BlockInput] and [BlockOutput]
+ * the types of [BlocksConfig.Input] and [BlocksConfig.Output]
  *
  * Subclasses should explain what each input and output is and the block's behavior.
  *
@@ -32,6 +32,8 @@ import kotlin.reflect.KProperty
  * @see ListStoreBlock
  * @see SingleOutputBlock
  * @see SpecialBlock
+ *
+ * TODO REVISE DOC
  */
 interface Block {
     /** The number of inputs to this block;*/
@@ -116,6 +118,12 @@ interface Block {
      */
     fun getOutput(index: Int): Any?
 
+    /** A list of the [Class]es of this block's inputs; in order. Used to verify types.*/
+    val inputTypes: List<Class<*>>
+    /** A list of the [Class]es of this block's outputs; in order. Used to verify types.*/
+    val outputTypes: List<Class<*>>
+
+    val outputByIndex(index: Int):
     /**
      * Does any possible necessary preperation for this block to actualy run from the given [config]. Also, verifies
      * that the current configuration on the given [BlocksConfig] is valid (for example, all required inputs are
@@ -148,25 +156,25 @@ abstract class AbstractBlock constructor(
      */
     protected fun requireAllConnected(config: BlocksConfig): Unit = config.run {
         repeat(numInputs) {
-            if (!BasicBlockInput<Any>(this@AbstractBlock, it).isConnected())
+            if (!BlocksConfig.Input<Any>(this@AbstractBlock, it).isConnected())
                 throw IllegalBlockConfigurationException("All inputs to ${this@AbstractBlock} must be connected.")
         }
     }
 
     /**
-     * Gets a [BlockOutput] for this block, with the given input [index].
+     * Gets a [BlocksConfig.Output] for this block, with the given input [index].
      */
-    protected open fun <T> inputIndex(index: Int): BlockInput<T> {
+    protected open fun <T> inputIndex(index: Int): BlocksConfig.Input<T> {
         if (index !in 0..numInputs) throw IndexOutOfBoundsException(index)
-        return BasicBlockInput(this, index)
+        return BlocksConfig.Input(this, index)
     }
 
     /**
-     * Gets a [BlockOutput] for this block, with the given output [index].
+     * Gets a [BlocksConfig.Output] for this block, with the given output [index].
      */
-    protected open fun <T> outputIndex(index: Int): BlockOutput<T> {
+    protected open fun <T> outputIndex(index: Int): BlocksConfig.Output<T> {
         if (index !in 0..numOutputs) throw IndexOutOfBoundsException(index)
-        return BasicBlockOutput(this, index)
+        return BlocksConfig.Output(this, index)
     }
 }
 
@@ -208,28 +216,18 @@ abstract class ListStoreBlock @JvmOverloads constructor(
 /**
  * A block that has a single output, which simplifies processing.
  *
- * This is also itself a [BlockOutput] representing its only output.
+ * This is also itself a [BlocksConfig.Output] representing its only output.
  */
 abstract class SingleOutputBlock<T> @JvmOverloads constructor(
     numInputs: Int,
     processing: Block.Processing = IN_FIRST_LAZY
 ) : AbstractBlock(numInputs, 1, processing),
-    BlockOutput<T> {
+    BlocksConfig.Output<T> {
 
     private var value: T? = null
-    override val block: Block get() = this
-    override val outputIndex: Int get() = 0
+
     final override fun init() {
         value = doInit()
-    }
-
-    final override fun process(inputs: List<Any?>, systemValues: SystemValues) {
-        value = getOutput(inputs, systemValues)
-    }
-
-    final override fun getOutput(index: Int): Any? {
-        if (index != 0) throw IndexOutOfBoundsException(index)
-        return value
     }
 
     /**
@@ -239,10 +237,23 @@ abstract class SingleOutputBlock<T> @JvmOverloads constructor(
      */
     protected abstract fun doInit(): T?
 
+    final override fun process(inputs: List<Any?>, systemValues: SystemValues) {
+        value = getOutput(inputs, systemValues)
+    }
+
     /**
      * Processes this block using the given [inputs] and returns the (only) output of this block.
      */
     protected abstract fun getOutput(inputs: List<Any?>, systemValues: SystemValues): T
+
+
+    final override fun getOutput(index: Int): Any? {
+        if (index != 0) throw IndexOutOfBoundsException(index)
+        return value
+    }
+
+    override val block: Block get() = this
+    override val index: Int get() = 0
 }
 
 /**
@@ -287,8 +298,8 @@ abstract class DelegatedPropertiesBlock(override val processing: Block.Processin
      */
     protected fun <T> output(): Output<T> = OutputDelegate()
 
-    /** Represents a delegate for one of this block's inputs. Also is a [BlockInput] for configuration. */
-    protected interface Input<T> : BlockInput<T> {
+    /** Represents a delegate for one of this block's inputs. Also is a [BlocksConfig.Input] for configuration. */
+    protected interface Input<T> : BlocksConfig.Input<T> {
 
         /** Gets the value of the current input. */
         val value: T
@@ -300,18 +311,18 @@ abstract class DelegatedPropertiesBlock(override val processing: Block.Processin
     @Suppress("UNCHECKED_CAST")
     private inner class InputDelegate<T> : Input<T> {
 
-        override val inputIndex = numInputs //NOT get
+        override val index = numInputs //NOT get
 
         init {
             inputs += this
         }
 
-        override val value: T = outsideInputs!![inputIndex] as T
+        override val value: T = outsideInputs!![index] as T
         override val block: Block get() = this@DelegatedPropertiesBlock
     }
 
-    /** Represents a delegate for one of this block's outputs.  Also is a [BlockOutput] for configuration.*/
-    protected interface Output<T> : BlockOutput<T> {
+    /** Represents a delegate for one of this block's outputs.  Also is a [BlocksConfig.Output] for configuration.*/
+    protected interface Output<T> : BlocksConfig.Output<T> {
 
         /** Sets the current value of this output. */
         var value: T
@@ -328,7 +339,7 @@ abstract class DelegatedPropertiesBlock(override val processing: Block.Processin
     @Suppress("UNCHECKED_CAST")
     private inner class OutputDelegate<T> : Output<T> {
 
-        override val outputIndex = numOutputs //NOT get
+        override val index = numOutputs //NOT get
 
         init {
             outputs += this
@@ -377,11 +388,11 @@ abstract class DelegatedPropertiesBlock(override val processing: Block.Processin
 /**
  * A block that has 1 input and 1 output, where the output is strictly the input run through the [pipe] function.
  *
- * This itself if both a [BlockInput] and [BlockOutput] representing its input and output.
+ * This itself if both a [BlocksConfig.Input] and [BlocksConfig.Output] representing its input and output.
  * */
 abstract class Pipe<T, R> : SingleOutputBlock<R>(
     1, IN_FIRST_LAZY
-), BlockInput<T> {
+), BlocksConfig.Input<T> {
 
     override fun doInit(): R? = null
     @Suppress("UNCHECKED_CAST")
@@ -391,8 +402,6 @@ abstract class Pipe<T, R> : SingleOutputBlock<R>(
      * Transforms the input value to the output value.
      */
     protected abstract fun pipe(input: T): R
-
-    override val inputIndex: Int get() = 0
 
     companion object {
         /**
@@ -406,12 +415,22 @@ abstract class Pipe<T, R> : SingleOutputBlock<R>(
     }
 }
 
+
+/**
+ * Creates a block that pipes this output through the given [transform] (usually using a [Pipe] block), connects
+ * it, and returns the pipe's output.
+ */
+inline fun <T, R> BlocksConfig.pipe(from: BlocksConfig.Output<T>, crossinline transform: (T) -> R): Pipe<T, R> =
+    Pipe(transform).apply { from into this }
+
+
 /** A block that has 1 input and 1 output, where the output is a the input run through the [combine] function. */
 abstract class Combine<A, B, R> : SingleOutputBlock<R>(2, IN_FIRST_LAZY) {
 
-    override fun doInit(): R? = null
+    final override fun doInit(): R? = null
     @Suppress("UNCHECKED_CAST")
-    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): R = combine(inputs[0] as A, inputs[1] as B)
+    final override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): R =
+        combine(inputs[0] as A, inputs[1] as B)
 
     /**
      * Combines two input values to the output value.
@@ -419,9 +438,9 @@ abstract class Combine<A, B, R> : SingleOutputBlock<R>(2, IN_FIRST_LAZY) {
     protected abstract fun combine(a: A, b: B): R
 
     /** The first input to this combine block. */
-    val first: BlockInput<A> get() = inputIndex(0)
+    val first: BlocksConfig.Input<A> get() = inputIndex(0)
     /** The second input to this second block. */
-    val second: BlockInput<B> get() = inputIndex(1)
+    val second: BlocksConfig.Input<B> get() = inputIndex(1)
 
     companion object {
         /**
@@ -434,3 +453,14 @@ abstract class Combine<A, B, R> : SingleOutputBlock<R>(2, IN_FIRST_LAZY) {
             }
     }
 }
+
+/**
+ * Combines the [firstOutput] and [secondOutput] [BlocksConfig.Output]s through the given [combine] function and
+ * returns [BlocksConfig.Output] representing the result of that combination.
+ *
+ * This is done through a [Combine] block, where the inputs are already connected.
+ */
+inline fun <A, B, R> BlocksConfig.combine(
+    firstOutput: BlocksConfig.Output<A>, secondOutput: BlocksConfig.Output<B>,
+    crossinline combine: (A, B) -> R
+): Combine<A, B, R> = Combine(combine).apply { firstOutput.into(first); secondOutput.into(second) }
