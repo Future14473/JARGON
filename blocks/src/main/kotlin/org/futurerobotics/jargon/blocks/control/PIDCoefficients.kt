@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.blocks
+package org.futurerobotics.jargon.blocks.control
 
 import org.futurerobotics.jargon.math.Interval
 

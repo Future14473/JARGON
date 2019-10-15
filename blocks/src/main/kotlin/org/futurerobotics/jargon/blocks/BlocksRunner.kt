@@ -10,12 +10,12 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 /*
- * Classes to represent the assembly of block systems.
+ * Classes to represent the preparation of block systems to be run.
  *
  * Originally intended so that can reuse parts for composite blocks, but that has problems with SpecialBlocks.
  */
 /**
- * A highly processed block with connects directly indicated as as indexes in a list.
+ * A highly processed block with connections directly indicated as indexes, in a list.
  * **This class only makes sense in the context of a list.**
  *
  * @param sourceBlockIndices a array of the same size as the [block]'s inputs, giving the _index within a list_ of another
@@ -53,9 +53,8 @@ internal fun MutableList<IndexedBlock>.rearranged(comparator: Comparator<Block>)
  *
  * This also verifies that there are no impossible loops within the connections.
  */
-internal fun Collection<BlockConnections>.toIndexedBlocks(): List<IndexedBlock> = IndexedBlocksCreator(
-    this
-).result
+internal fun Collection<BlockConnections>.toIndexedBlocks(): List<IndexedBlock> =
+    IndexedBlocksCreator(this).result
 
 private class IndexedBlocksCreator(
     connections: Collection<BlockConnections>
@@ -65,7 +64,7 @@ private class IndexedBlocksCreator(
     private var nodeBlocks: Map<Block, NodeBlock> =
         connections.associateTo(IdentityHashMap()) { it.block to NodeBlock(it) }
 
-    private val BlockIO.nodeBlock
+    private val BlocksConfig.BlockIO.nodeBlock
         get() = nodeBlocks[block] ?: throw IllegalArgumentException("Reference to not included block ($block)")
 
     init {
@@ -73,6 +72,7 @@ private class IndexedBlocksCreator(
         result = createConnectedBlocks()
     }
 
+    /** Verifies no bad loops */
     private fun traceAll() {
         val roots = nodeBlocks.values.filter { it.block.processing.isAlwaysProcess }
         roots.forEach {
@@ -97,7 +97,7 @@ private class IndexedBlocksCreator(
                     traceStatus = PROCESSED //out first always valid.
                 } else {
                     traceStatus = PROCESSING
-                    inputSources.forEach { it?.nodeBlock.trace() }
+                    inputSources.forEach { it?.nodeBlock?.trace() }
                     traceStatus = PROCESSED
                 }
             }
@@ -115,8 +115,10 @@ private class IndexedBlocksCreator(
             val sources = node.inputSources
 
             val sourceBlockIndexes = sources.mapToIntArray { out ->
-                out?.nodeBlock.finalIndex.also {
-                    assert(it != -1) { "all sources should have index" }
+                out?.run {
+                    nodeBlock.finalIndex.also {
+                        assert(it != -1) { "all sources should have index" }
+                    }
                 } ?: -1
             }
             val sourceOutputIndexes = sources.mapToIntArray { it?.index ?: -1 }
@@ -139,7 +141,7 @@ private class IndexedBlocksCreator(
 
     private inner class NodeBlock(val connections: BlockConnections) {
         inline val block get() = connections.block
-        inline val inputSources get() = connections.inputSources
+        inline val inputSources get() = connections.sources
         var traceStatus = NOT_PROCESSED
         var finalIndex = -1
     }
@@ -195,7 +197,7 @@ abstract class AbstractBlocksRunner(
     /** Process through all the blocks once, also increments [loopNumber] */
     protected fun processOnce() {
         loopNumber++
-        alwaysRun.forEach { it.ensureProcessed() }
+        alwaysRun.forEach { it.ensureHasOutput() }
         outFirst.forEach { it.fillInputs() }
         outFirst.forEach { it.process() }
     }
@@ -235,14 +237,14 @@ abstract class AbstractBlocksRunner(
 
         /** Gets output at this index; may or may not process. */
         fun getOutputLazy(index: Int): Any? {
-            ensureProcessed()
+            ensureHasOutput()
             return outputs[index].replaceIf({ it === NO_OUTPUT }) {
                 block.getOutput(index).also { outputs[index] = it }
             }
         }
 
         /** Ensure that this block has been processed. */
-        abstract fun ensureProcessed()
+        abstract fun ensureHasOutput()
     }
 
     private inner class InFirstBlock(inner: IndexedBlock) : BlockRunner(inner) {
@@ -263,7 +265,7 @@ abstract class AbstractBlocksRunner(
             processing = false
         }
 
-        override fun ensureProcessed() {
+        override fun ensureHasOutput() {
             if (lastProcess == loopNumber) return
 
             assert(!processing) { "loop in block system" }
@@ -288,7 +290,7 @@ abstract class AbstractBlocksRunner(
             outputs.fill(NO_OUTPUT)
         }
 
-        override fun ensureProcessed() {
+        override fun ensureHasOutput() {
             //do nothing
         }
     }

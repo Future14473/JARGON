@@ -1,8 +1,12 @@
 @file:Suppress("UNCHECKED_CAST", "DuplicatedCode")
 
-package org.futurerobotics.jargon.blocks
+package org.futurerobotics.jargon.blocks.control
 
+import org.futurerobotics.jargon.blocks.*
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.functional.CreatePoseFromComp
+import org.futurerobotics.jargon.blocks.functional.SplitPose
+import org.futurerobotics.jargon.blocks.functional.SplitPoseMotionState
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.coerceIn
@@ -38,7 +42,7 @@ class PIDController(
         return null
     }
 
-    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Double {
+    override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Double {
         val s = inputs[0] as Double
         val currentState = inputs[1] as Double
         val loopTime = inputs[2] as Double
@@ -63,9 +67,9 @@ class PIDController(
     }
 
     /** The reference motion [BlocksConfig.Input] */
-    override val reference: BlocksConfig.Input<Double> = inputIndex(0)
+    override val reference: BlocksConfig.Input<Double> = configInput(0)
     /** The state [BlocksConfig.Input] */
-    override val state: BlocksConfig.Input<Double> = inputIndex(1)
+    override val state: BlocksConfig.Input<Double> = configInput(1)
 
 }
 
@@ -98,7 +102,7 @@ class VecPIDController(
         return null
     }
 
-    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Vector2d {
+    override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Vector2d {
         val s = inputs[0] as Vector2d
         val currentState = inputs[1] as Vector2d
         val loopTime = inputs[2] as Double
@@ -123,9 +127,9 @@ class VecPIDController(
     }
 
     /** The reference motion [BlocksConfig.Input] */
-    override val reference: BlocksConfig.Input<Vector2d> = inputIndex(0)
+    override val reference: BlocksConfig.Input<Vector2d> = configInput(0)
     /** The state [BlocksConfig.Input] */
-    override val state: BlocksConfig.Input<Vector2d> = inputIndex(1)
+    override val state: BlocksConfig.Input<Vector2d> = configInput(1)
 }
 
 
@@ -185,9 +189,9 @@ class PosePIDController(
     }
 
     /** The reference motion [BlocksConfig.Input] */
-    override val reference: BlocksConfig.Input<Pose2d> = inputIndex(0)
+    override val reference: BlocksConfig.Input<Pose2d> = configInput(0)
     /** The state [BlocksConfig.Input] */
-    override val state: BlocksConfig.Input<Pose2d> = inputIndex(1)
+    override val state: BlocksConfig.Input<Pose2d> = configInput(1)
 
     override val block: Block get() = this
     override val index: Int get() = 0
@@ -219,7 +223,7 @@ class PIDFController(
         return null
     }
 
-    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Double {
+    override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Double {
         val reference = inputs[0] as MotionState<Double>
         val currentState = inputs[1] as Double
         val loopTime = inputs[2] as Double
@@ -245,9 +249,9 @@ class PIDFController(
     }
 
     /** The reference motion [BlocksConfig.Input] */
-    override val reference: BlocksConfig.Input<MotionState<Double>> = inputIndex(0)
+    override val reference: BlocksConfig.Input<MotionState<Double>> = configInput(0)
     /** The state [BlocksConfig.Input] */
-    override val state: BlocksConfig.Input<Double> = inputIndex(1)
+    override val state: BlocksConfig.Input<Double> = configInput(1)
 
 }
 
@@ -278,7 +282,7 @@ class VecPIDFController(
         return null
     }
 
-    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Vector2d {
+    override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Vector2d {
         val reference = inputs[0] as MotionState<Vector2d>
         val currentState = inputs[1] as Vector2d
         val loopTime = inputs[2] as Double
@@ -304,9 +308,9 @@ class VecPIDFController(
     }
 
     /** The reference motion [BlocksConfig.Input] */
-    override val reference: BlocksConfig.Input<MotionState<Vector2d>> = inputIndex(0)
+    override val reference: BlocksConfig.Input<MotionState<Vector2d>> = configInput(0)
     /** The state [BlocksConfig.Input] */
-    override val state: BlocksConfig.Input<Vector2d> = inputIndex(1)
+    override val state: BlocksConfig.Input<Vector2d> = configInput(1)
 }
 
 
@@ -330,7 +334,8 @@ class PosePIDFController(
     xCoeff: PIDFCoefficients,
     yCoeff: PIDFCoefficients,
     headingCoeff: PIDFCoefficients
-) : CompositeBlock(2, 1, IN_FIRST_ALWAYS), Controller<MotionState<Pose2d>, Pose2d, Pose2d> {
+) : CompositeBlock(2, 1, IN_FIRST_ALWAYS),
+    Controller<MotionState<Pose2d>, Pose2d, Pose2d> {
 
     private val xController = PIDFController(xCoeff) //x
     private val yController = PIDFController(yCoeff) //y
@@ -364,9 +369,9 @@ class PosePIDFController(
     }
 
     /** The reference motion [BlocksConfig.Input] */
-    override val reference: BlocksConfig.Input<MotionState<Pose2d>> = inputIndex(0)
+    override val reference: BlocksConfig.Input<MotionState<Pose2d>> = configInput(0)
     /** The state [BlocksConfig.Input] */
-    override val state: BlocksConfig.Input<Pose2d> = inputIndex(1)
+    override val state: BlocksConfig.Input<Pose2d> = configInput(1)
 
     override val block: Block get() = this
     override val index: Int get() = 0

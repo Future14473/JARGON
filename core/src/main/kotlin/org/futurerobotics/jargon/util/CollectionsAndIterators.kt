@@ -1,5 +1,8 @@
 package org.futurerobotics.jargon.util
 
+import java.util.*
+import kotlin.collections.ArrayList
+
 
 /** Fills an array using the given [generator]. */
 inline fun <T> Array<T>.fillWith(generator: (Int) -> T) {
@@ -35,6 +38,15 @@ inline fun <reified T> fixedSizeMutableList(size: Int, init: (Int) -> T): Mutabl
  * Creates a mutable list with a fixed size, initializing with nulls.
  */
 inline fun <reified T> fixedSizeMutableListOfNulls(size: Int): MutableList<T?> = arrayOfNulls<T>(size).asMutableList()
+
+/** Wraps this list in [Collections.unmodifiableList]. */
+fun <T> List<T>.asUnmodifiableList(): List<T> = Collections.unmodifiableList(this)
+
+/**
+ * Until kotlinx.immutableCollections becomes stable, turns this list into an effectively immutable list
+ * by wrapping a copy of this list in [asUnmodifiableList]. Call sparingly.
+ */
+fun <T> List<T>.toImmutableList(): List<T> = toList().asUnmodifiableList()
 
 /**
  * Creates a new list where the elements are viewed as a [mapping] of the original list.

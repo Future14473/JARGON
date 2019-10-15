@@ -36,6 +36,8 @@ class SystemValuesBlock : AbstractBlock(
         }
     }
 
-    val loopTime: BlocksConfig.Output<Double> get() = outputIndex(0)
-    val loopNumber: BlocksConfig.Output<Int> get() = outputIndex(1)
+    /** The loopTime output */
+    val loopTime: BlocksConfig.Output<Double> get() = configOutput(0)
+    /** the loopNumber output */
+    val loopNumber: BlocksConfig.Output<Int> get() = configOutput(1)
 }

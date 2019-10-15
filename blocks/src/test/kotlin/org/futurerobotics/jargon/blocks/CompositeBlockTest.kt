@@ -17,8 +17,8 @@ internal class TestCompositeBlock : CompositeBlock(2, 2, IN_FIRST_ALWAYS) {
         }
     }
 
-    fun input(index: Int) = inputIndex<Any?>(index)
-    fun output(index: Int) = outputIndex<Any?>(index)
+    fun input(index: Int) = configInput<Any?>(index)
+    fun output(index: Int) = configOutput<Any?>(index)
 }
 
 

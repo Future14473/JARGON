@@ -1,8 +1,10 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package org.futurerobotics.jargon.blocks
+package org.futurerobotics.jargon.blocks.control
 
 import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.ListStoreBlock
+import org.futurerobotics.jargon.blocks.SystemValues
 import org.futurerobotics.jargon.hardware.DcMotor
 
 /**
@@ -29,7 +31,11 @@ class MotorsBlock(private val motors: List<DcMotor>) : ListStoreBlock(1, 2, OUT_
         writeMeasurements(outputs)
     }
 
-    override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
+    override fun process(
+        inputs: List<Any?>,
+        systemValues: SystemValues,
+        outputs: MutableList<Any?>
+    ) {
         (inputs[0] as List<Double>).let {
             require(it.size == motors.size) { "Given voltage list is not the right size " }
             motors.forEachIndexed { index, dcMotor ->

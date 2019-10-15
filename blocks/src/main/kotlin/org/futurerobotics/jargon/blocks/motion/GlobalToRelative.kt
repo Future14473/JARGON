@@ -1,7 +1,8 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package org.futurerobotics.jargon.blocks
+package org.futurerobotics.jargon.blocks.motion
 
+import org.futurerobotics.jargon.blocks.*
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
@@ -28,7 +29,7 @@ class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : SingleOutputBlock<P
 
     override fun doInit(): Pose2d? = null
 
-    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Pose2d {
+    override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Pose2d {
         val maybeOverride = inputs[1]
         currentPose = if (maybeOverride != null) maybeOverride as Pose2d else {
             val velocity = inputs[0] as Pose2d
@@ -45,14 +46,14 @@ class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : SingleOutputBlock<P
 
     override fun prepareAndVerify(config: BlocksConfig): Unit = config.run {
         repeat(2) {
-            if (!inputIndex<Any>(0).isConnected()) throw IllegalBlockConfigurationException()
+            if (!configInput<Any>(0).isConnected()) throw IllegalBlockConfigurationException()
         }
     }
 
     /** The velocity [BlocksConfig.Input] */
-    val velocityIn: BlocksConfig.Input<Pose2d> get() = inputIndex(0)
+    val velocityIn: BlocksConfig.Input<Pose2d> get() = configInput(0)
     /** The pose override [BlocksConfig.Input] */
-    val poseOverride: BlocksConfig.Input<Pose2d?> get() = inputIndex(1)
+    val poseOverride: BlocksConfig.Input<Pose2d?> get() = configInput(1)
 }
 
 

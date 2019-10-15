@@ -1,8 +1,12 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package org.futurerobotics.jargon.blocks
+package org.futurerobotics.jargon.blocks.motion
 
+import org.futurerobotics.jargon.blocks.AbstractBlock
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.BlocksConfig
+import org.futurerobotics.jargon.blocks.IllegalBlockConfigurationException
+import org.futurerobotics.jargon.blocks.SystemValues
 import org.futurerobotics.jargon.profile.MotionProfiled
 import org.futurerobotics.jargon.util.Stepper
 
@@ -100,16 +104,16 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
     }
 
     /** The motion profile [BlocksConfig.Input]. See [MotionProfileFollower]*/
-    val profileInput: BlocksConfig.Input<MotionProfiled<T>> get() = inputIndex(0)
+    val profileInput: BlocksConfig.Input<MotionProfiled<T>> get() = configInput(0)
 
     /** The stop input [BlocksConfig.Input]. See [MotionProfileFollower] */
-    val stop: BlocksConfig.Input<Boolean?> get() = inputIndex(1)
+    val stop: BlocksConfig.Input<Boolean?> get() = configInput(1)
 
     /** The [BlocksConfig.Output] of this [MotionProfileFollower] */
-    val output: BlocksConfig.Output<T> get() = outputIndex(0)
+    val output: BlocksConfig.Output<T> get() = configOutput(0)
 
     /** The progress [BlocksConfig.Output] of this [MotionProfileFollower] */
-    val progress: BlocksConfig.Output<Double> get() = outputIndex(1)
+    val progress: BlocksConfig.Output<Double> get() = configOutput(1)
 
 
 }

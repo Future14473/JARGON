@@ -1,5 +1,8 @@
-package org.futurerobotics.jargon.blocks
+package org.futurerobotics.jargon.blocks.functional
 
+import org.futurerobotics.jargon.blocks.AbstractBlockSystemTest
+import org.futurerobotics.jargon.blocks.Monitor
+import org.futurerobotics.jargon.blocks.buildBlocksSystem
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isA

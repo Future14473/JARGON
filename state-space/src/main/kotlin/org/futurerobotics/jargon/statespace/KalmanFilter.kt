@@ -56,7 +56,7 @@ class KalmanFilter(
         return null
     }
 
-    override fun getOutput(inputs: List<Any?>, systemValues: SystemValues): Vec {
+    override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Vec {
         val measurement = inputs[0] as Vec
         val signal = inputs[0] as Vec
         repeat((systemValues.loopTime / model.period).roundToInt().coerceAtLeast(1)) {
@@ -79,9 +79,9 @@ class KalmanFilter(
     }
 
     /** Measurement Vec [BlocksConfig.Input] */
-    val measurement: BlocksConfig.Input<Vec> get() = inputIndex(0)
+    val measurement: BlocksConfig.Input<Vec> get() = configInput(0)
     /** Signal Vec [BlocksConfig.Input] */
-    val signal: BlocksConfig.Input<Vec> get() = inputIndex(1)
+    val signal: BlocksConfig.Input<Vec> get() = configInput(1)
 
     private inner class TheMeasurement : Measurement {
         @JvmField

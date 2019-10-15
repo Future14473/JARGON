@@ -5,11 +5,10 @@ import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
 
 /**
  * Special blocks tap into the life of [BlocksSystem]s themselves.
- * If a [BlocksSystem] sees a special block, it must do something with it.
  *
- * There can only be up to one of each kind of special block per blo
+ * There can only be up to one of each kind of special block per system.
  *
- * All special blocks must implement this interface.
+ * As of now the only [SpecialBlock] is [Shutdown]
  */
 sealed class SpecialBlock(numInputs: Int, numOutputs: Int, processing: Block.Processing) :
     AbstractBlock(numInputs, numOutputs, processing)
