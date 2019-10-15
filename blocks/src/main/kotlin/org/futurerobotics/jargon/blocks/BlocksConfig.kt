@@ -1,21 +1,14 @@
 package org.futurerobotics.jargon.blocks
 
 import org.futurerobotics.jargon.blocks.BaseBlocksConfig.BlockConnections
-import org.futurerobotics.jargon.blocks.BlocksConfig.Output.Companion.ofInfer
+import org.futurerobotics.jargon.blocks.BlocksConfig.Input
+import org.futurerobotics.jargon.blocks.BlocksConfig.Input.Companion.of
+import org.futurerobotics.jargon.blocks.BlocksConfig.Input.Companion.ofUnsafeCast
+import org.futurerobotics.jargon.blocks.BlocksConfig.Output
+import org.futurerobotics.jargon.blocks.BlocksConfig.Output.Companion.of
+import org.futurerobotics.jargon.blocks.BlocksConfig.Output.Companion.ofUnsafeCast
 import org.futurerobotics.jargon.util.let
 import java.util.*
-
-
-/**
- * Common interface for [Input] and [Output]; use those instead.
- */
-interface BlockIO {
-    /** The block that this input/output comes from */
-    val block: Block
-    /** The input/output index of this input. */
-    val index: Int
-}
-
 
 /**
  * An exception thrown when an illegal configuration is detected.
@@ -24,14 +17,19 @@ class IllegalBlockConfigurationException
 @JvmOverloads constructor(message: String? = null) : RuntimeException(message)
 
 /**
- * Coordinates the fitting together blocks together to build a system.
+ * Coordinates the fitting together blocks together to build a system using a DSL.
  *
- * For kotlin, make a context with `this` as this config to make use of extension functions, for example using
- * [kotlin.apply] or [kotlin.run], or in specifically making block systems, [buildBlocksSystem].
+ * This primarily works with [Input]s and [Output]s, which reference specific inputs and outputs of
+ * blocks, usually provided by [Block]s themselves.
+ *
+ * See the individual functions/methods of this class for more details.
  *
  * [BlocksSystemBuilder] is a subclass of this.
  *
  * This is an mostly abstract class instead of an interface to make use of certain inline functions.
+ *
+ * FOR KOTLIN, make a context with `this` as this config to make use of extension functions, for example using
+ * [kotlin.apply] or [kotlin.run], or in specifically making [BlocksSystem], [buildBlocksSystem].
  *
  * @see [BaseBlocksConfig]
  * @see [BlocksSystem]
@@ -47,18 +45,14 @@ abstract class BlocksConfig {
     /**
      * Connects the given [Output] _into_ the given [Input].
      *
-     * An input can only be connected once; throw [IllegalStateException] if otherwise.
-     *
-     * The types of [Output] and [Input] will be checked for compatibility.
+     * An input can only be connected once; throws [IllegalStateException] if otherwise.
      */
     abstract infix fun <T> Output<T>.into(input: Input<T>)
 
     /**
      * Connects the given [Input] _from_ the given [Output]
      *
-     * An input can only be connected once; throw [IllegalStateException] if otherwise.
-     *
-     * The types of [Output] and [Input] will be checked for compatibility.
+     * An input can only be connected once; throws [IllegalStateException] if otherwise.
      */
     open infix fun <T> Input<T>.from(output: Output<T>): Unit = output into this
 
@@ -68,11 +62,12 @@ abstract class BlocksConfig {
      * May throw [ClassCastException] if types are not compatible.
      */
     @Suppress("UNCHECKED_CAST")
+    @Deprecated("Non checked types; causes too many problems.")
     open fun Block.fromAll(vararg outputs: Output<*>) {
         require(outputs.size <= this.numInputs)
         { "the given number of outputs ${outputs.size} must not exceed the block's number of inputs $this.numInputs" }
         outputs.forEachIndexed { index, output ->
-            output into Input.ofAny(this, index) as Input<Any?>
+            output into Input.of(this, index) as Input<Any?>
         }
     }
 
@@ -85,19 +80,22 @@ abstract class BlocksConfig {
         }
     }
 
-    /**
-     * Returns if the given [Input] is connected.
-     */
-    open fun Input<*>.isConnected(): Boolean = source() != null
+    /** Returns if the block's input with the given [index] is connected. */
+    abstract fun Block.inputIsConnected(index: Int): Boolean
 
-    /**
-     * Returns if the given [Output] is connected.
-     */
-    abstract fun Output<*>.isConnected(): Boolean
+    /** Returns if the block's output with the given [index] is connected. */
+    abstract fun Block.outputIsConnected(index: Int): Boolean
 
-    /**
-     * Gets where this [this] block is connected from, or `null` if not added or connected.
-     */
+    /** Returns if the given [Input] is connected. */
+    open fun Input<*>.isConnected(): Boolean = block.inputIsConnected(index)
+
+    /** Returns if the given [Output] is connected. */
+    open fun Output<*>.isConnected(): Boolean = block.outputIsConnected(index)
+
+    /** Returns where the input to the block by the given [index] is connected from, or `null` if not connected. */
+    abstract fun Block.sourceOfInput(index: Int): Output<*>?
+
+    /** Gets where this [this] input is connected from, or `null` if not connected. */
     abstract fun <T> Input<T>.source(): Output<T>?
 
     /**
@@ -111,7 +109,7 @@ abstract class BlocksConfig {
     /**
      * Creates and connects a [Monitor] from the [source] of [this] [Input], and returns it.
      *
-     * *** The input must first be connected in order to have a source ***
+     * *** The input must first be connected in order to find the source ***
      *
      * Note that if the source has a processing of [Block.Processing.IN_FIRST_LAZY], it will now always be processed.
      */
@@ -119,117 +117,99 @@ abstract class BlocksConfig {
         ?: throw IllegalStateException("Input has not yet been connected, cannot deduce source")
 
     /**
-     * Creates a block that pipes this output through the given [transform] (usually using a [Pipe] block), connects
+     * Creates a [Pipe] block that pipes this output through the given [transform] function, connects
      * it, and returns the pipe's output.
      */
-    inline fun <T, R> Output<T>.pipe(crossinline transform: T.() -> R): Output<R> =
-        pipe(this, transform)
+    inline fun <T, R> Output<T>.pipe(
+        crossinline transform: T.() -> R
+    ): Output<R> = Pipe.of(transform).also { it from this }
 
     /**
-     * Creates this that combines [this] and [other] outputs through the given [combine] (usually using a [Combine] block)
+     * Creates a [Combine] block that combines [this] and [second] outputs through the given [combine] function,
      * and returns the combination's output.
      */
     inline fun <A, B, R> Output<A>.combine(
-        other: Output<B>,
+        second: Output<B>,
         crossinline combine: A.(B) -> R
-    ): Output<R> = combine(this, other, combine)
-
+    ): Output<R> =
+        Combine.of(combine).also { it.first from this; it.second from second }
 
     /**
-     * Common interface for [Input] and [Output]; use those instead.
+     * Common interface for [Input] and [Output]; use those.
      */
     interface BlockIO {
         /** The block that this input/output comes from */
         val block: Block
-        /** The input/output index of this input. */
+        /** The index of this input/output. */
         val index: Int
     }
 
     /**
-     * Represents a specific __output__ of a block; used in configuration, that takes in [type]-[T] (covariant).
-     *
-     * This must match the type in [Block.inputTypes].
-     *
-     * Usually [Block]s themselves should provide specific ways of getting [Input]/[Output] instead of manually
-     * creating, but it is possible using [ofInfer], which checks type upon creation.
-     */
-    interface Output<out T> : BlockIO {
-        /** The type of this [Output]. Covariant. */
-        val type: Class<out T>
-
-        companion object {
-            /** Creates a [Output] by providing values. The [typeVerify] is to confirm generics with the [block] for validity. */
-            fun <T> of(block: Block, index: Int, typeVerify: Class<T>): Output<T> {
-                if (index !in 0 until block.numOutputs)
-                    throw IndexOutOfBoundsException("Index $index not out block's number of outputs ${block.numOutputs}")
-                //out = something super T
-                val type = block.outputTypes[index].let {
-                    require(typeVerify.isAssignableFrom(it)) { "Given type for verification $typeVerify must be compatible with block's given type $it" }
-                    @Suppress("UNCHECKED_CAST") //checked above
-                    it as Class<out T>
-                }
-                return BasicOutput(block, index, type)
-            }
-
-            /** Creates a [Output] using reified generics; kotlin only. */
-            inline fun <reified T> ofInfer(block: Block, index: Int): Output<T> = of(block, index, T::class.java)
-
-            /** Creates a [Output] using the type specified in [Block], but type is not known at compile time */
-            fun ofAny(block: Block, index: Int): Output<*> = BasicOutput(block, index, block.outputTypes[index])
-        }
-    }
-
-
-    /**
-     * Represents a specific __input__ of a block; used in configuration.
-     *
-     * It takes in type [T]. The `typeVerify` parameter is there to enforce that your generics match
-     * the [block]'s type.
+     * Represents a specific __input__ of a specific block; used in configuration in [BlocksConfig].
      *
      * Usually [Block]s themselves should provide specific ways of getting [Input]/[Output] instead of manually creating
      * one here.
      *
      * It is not recommended to create instances of this outside of from a [Block], else types cannot be enforced.
+     *
+     * However, if necessary, [of] and [ofUnsafeCast] are provided.
      */
     interface Input<in T> : BlockIO {
-        /** The type of this [Input]. Contravariant. */
-        val type: Class<in T>
-
         companion object {
-            /** Creates a [Output] by providing values. The [typeVerify] is to confirm generics with the [block] for validity. */
-            fun <T> of(block: Block, index: Int, typeVerify: Class<T>): Input<T> {
+            /**
+             * Creates a [Input] by providing values. It is stated explicitly that casts are allowed.
+             * @see of
+             */
+            fun <T> ofUnsafeCast(block: Block, index: Int): Input<T> {
                 if (index !in 0 until block.numInputs)
-                    throw IndexOutOfBoundsException("Index $index not in block's number of inputs ${block.numInputs}")
-                //in = something super T
-                val actualType = block.inputTypes[index].let {
-                    require(it.isAssignableFrom(typeVerify))
-                    { "Given type for verification $typeVerify must be compatible with block's given type $it" }
-                    @Suppress("UNCHECKED_CAST") //checked above
-                    it as Class<in T>
+                    throw IndexOutOfBoundsException("Index $index not out block's number of inputs ${block.numInputs}")
+                return object : Input<T> {
+                    override val block: Block get() = block
+                    override val index: Int get() = index
                 }
-                return BasicInput(block, index, actualType)
             }
 
-            /** Creates a [Input] using reified generics; kotlin only. */
-            inline fun <reified T> ofInfer(block: Block, index: Int): Input<T> = of(block, index, T::class.java)
+            /**
+             * Creates a [Input] using the type specified in [Block], but type is not known at compile time.
+             * @see ofUnsafeCast
+             */
+            fun of(block: Block, index: Int): Input<*> = ofUnsafeCast<Any>(block, index)
+        }
+    }
 
-            /** Creates a [Input] using the type specified in [Block], but type is not known at compile time */
-            fun ofAny(block: Block, index: Int): Input<*> = BasicInput(block, index, block.inputTypes[index])
+    /**
+     * Represents a specific __output__ of a specific block; used in configuration in [BlocksConfig]
+     *
+     * Usually [Block]s themselves should provide specific ways of getting [Input]/[Output] instead of manually creating
+     * one here.
+     *
+     * It is not recommended to create instances of this outside of from a [Block], else types cannot be enforced.
+     *
+     * However, if necessary, [of] and [ofUnsafeCast] are provided.
+     */
+    interface Output<out T> : BlockIO {
+        companion object {
+            /**
+             * Creates a [Output] by providing values. It is stated explicitly that casts are allowed.
+             * @see of
+             */
+            fun <T> ofUnsafeCast(block: Block, index: Int): Output<T> {
+                if (index !in 0 until block.numOutputs)
+                    throw IndexOutOfBoundsException("Index $index not out block's number of outputs ${block.numOutputs}")
+                return object : Output<T> {
+                    override val block: Block get() = block
+                    override val index: Int get() = index
+                }
+            }
+
+            /**
+             * Creates a [Output] using the type specified in [Block], but type is not known at compile time.
+             * @see ofUnsafeCast
+             */
+            fun of(block: Block, index: Int): Output<*> = ofUnsafeCast<Any>(block, index)
         }
     }
 }
-
-private class BasicOutput<out T>(
-    override val block: Block,
-    override val index: Int,
-    override val type: Class<out T>
-) : BlocksConfig.Output<T>
-
-private class BasicInput<in T>(
-    override val block: Block,
-    override val index: Int,
-    override val type: Class<in T>
-) : BlocksConfig.Input<T>
 
 /**
  * A base implementation of [BlocksConfig] that creates a set of [BlockConnections], which can
@@ -243,13 +223,13 @@ abstract class BaseBlocksConfig : BlocksConfig() {
     protected val connections: Collection<BlockConnections> = connectionsMap.values
 
     /**
-     * Holds all the connections of a [Block]; use inside context of a [BaseBlocksConfig].
+     * Holds all the connections of a [Block]; used inside the context of a [BaseBlocksConfig].
      *
      * @param block the block
      */
     class BlockConnections(val block: Block) {
         /** The sources of this block's inputs, or `null` if not (yet) connected. */
-        val inputSources: Array<Output<*>?> = arrayOfNulls<Output<*>?>(block.numInputs)
+        val sources: Array<Output<*>?> = arrayOfNulls<Output<*>?>(block.numInputs)
         /** An array of booleans that indicates if the outputs have been connected yet. */
         val isOutConnected: BooleanArray = BooleanArray(block.numOutputs)
     }
@@ -269,23 +249,21 @@ abstract class BaseBlocksConfig : BlocksConfig() {
     private val BlockIO.connection: BlockConnections get() = block.connection
 
     override fun <T> Output<T>.into(input: Input<T>) {
-        let(this.type, input.type) { sourceType, inputType ->
-            require(inputType.isAssignableFrom(sourceType))
-            { "Input type $inputType is not compatible with output type $sourceType" }
-        }
         let(this.connection, input.connection) { from, into ->
-            check(into.inputSources[input.index] == null)
+            check(into.sources[input.index] == null)
             { "Input at block (${into.block}) index (${input.index}) already connected!" }
-            into.inputSources[input.index] = this
+            into.sources[input.index] = this
             from.isOutConnected[index] = true
         }
     }
 
-    override fun Output<*>.isConnected(): Boolean =
-        connectionsMap[block]?.isOutConnected?.get(index) == true //not null and true
+    override fun Block.inputIsConnected(index: Int): Boolean = sourceOfInput(index) != null
+
+    override fun Block.outputIsConnected(index: Int): Boolean = connectionsMap[this]?.isOutConnected?.get(index) == true
+
+    override fun Block.sourceOfInput(index: Int): Output<*>? = connectionsMap[this]?.sources?.get(index)
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T> Input<T>.source(): Output<T>? =
-        connectionsMap[block]?.inputSources?.get(index) as? Output<T>?
+    override fun <T> Input<T>.source(): Output<T>? = block.sourceOfInput(index) as? Output<T>?
 
 }

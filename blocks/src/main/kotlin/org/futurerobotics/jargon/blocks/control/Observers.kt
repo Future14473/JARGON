@@ -1,7 +1,9 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package org.futurerobotics.jargon.blocks
+package org.futurerobotics.jargon.blocks.control
 
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
+import org.futurerobotics.jargon.blocks.Pipe
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.mechanics.FixedDriveModel
 
@@ -11,7 +13,7 @@ import org.futurerobotics.jargon.mechanics.FixedDriveModel
  *
  * Maybe pass through a filter first.
  */
-class FixedDriveMotorPoseToBotDiff(private val model: FixedDriveModel) : Pipe<List<Double>, Pose2d>() {
+class FixedDriveMotorPoseToBotDiff(private val model: FixedDriveModel) : Pipe<List<Double>, Pose2d>(IN_FIRST_LAZY) {
     private var pastPositions: List<Double>? = null
     override fun pipe(input: List<Double>): Pose2d {
         val pastPositions = pastPositions
@@ -28,6 +30,6 @@ class FixedDriveMotorPoseToBotDiff(private val model: FixedDriveModel) : Pipe<Li
  *
  * Maybe pass through a filter first.
  */
-class FixedDriveMotorToBotVel(private val model: FixedDriveModel) : Pipe<List<Double>, Pose2d>() {
+class FixedDriveMotorToBotVel(private val model: FixedDriveModel) : Pipe<List<Double>, Pose2d>(IN_FIRST_LAZY) {
     override fun pipe(input: List<Double>): Pose2d = model.getEstimatedVelocity(input)
 }

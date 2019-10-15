@@ -7,8 +7,9 @@ import kotlin.contracts.contract
 
 /**
  * A system made up of several connected [Block]s, which are processed accordingly to their [processing][Block.processing].
+ * See [Block] for more details.
  *
- * Use [BlocksSystemBuilder] to create, configuring connections using functions/methods in [BlocksConfig].
+ * Use [BlocksSystemBuilder] to create, configuring connections using the DSL of [BlocksConfig].
  *
  * This system also supports all [SpecialBlock]s.
  *

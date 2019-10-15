@@ -88,9 +88,7 @@ internal class BlocksSystemTest : AbstractBlockSystemTest() {
         val externalConstant = ExternalValue(4)
         val system = buildBlocksSystem {
 
-            Shutdown() from Combine<Int, Int, Boolean> { a, b -> a == b }.apply {
-                first from externalConstant; second from SystemValuesBlock().loopNumber
-            }
+            Shutdown() from externalConstant.combine(SystemValuesBlock().loopNumber) { this == it }
 
             monitor = SystemValuesBlock().loopNumber.monitor()
         }

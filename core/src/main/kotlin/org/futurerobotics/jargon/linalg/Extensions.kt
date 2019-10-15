@@ -57,6 +57,24 @@ inline operator fun Vec.minus(vec: Vec): Vec = this.subtract(vec)
 inline operator fun Mat.unaryMinus(): Mat = this * -1.0
 inline operator fun Vec.unaryMinus(): Vec = this * -1.0
 
+infix fun Vec.setTo(vec: Vec) {
+    require(dimension == vec.dimension) { "Dimension mismatch" }
+    repeat(dimension) {
+        this[it] = vec[it]
+    }
+}
+
+
+infix fun Mat.setTo(mat: Mat) {
+    require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
+    repeat(rows) { i ->
+        repeat(cols) { j ->
+            this[i, j] = mat[i, j]
+        }
+    }
+}
+
+
 fun Mat.epsEq(mat: Mat, epsilon: Double): Boolean {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
     repeat(rows) { i ->
@@ -67,10 +85,10 @@ fun Mat.epsEq(mat: Mat, epsilon: Double): Boolean {
     return true
 }
 
-infix fun Vec.epsEq(mat: Vec): Boolean {
-    require(dimension == mat.dimension) { "Dimension mismatch" }
+infix fun Vec.epsEq(vec: Vec): Boolean {
+    require(dimension == vec.dimension) { "Dimension mismatch" }
     repeat(dimension) { i ->
-        if (!(this[i] epsEq mat[i])) return false
+        if (!(this[i] epsEq vec[i])) return false
     }
     return true
 }

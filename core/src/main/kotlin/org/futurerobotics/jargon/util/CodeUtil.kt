@@ -83,3 +83,7 @@ inline fun <T, U, V, W, R> let(p1: T, p2: U, p3: V, p4: W, block: (T, U, V, W) -
     }
     return block(p1, p2, p3, p4)
 }
+
+/** Casts this to type [T] unchecked, but with type inference too. Use with caution. */
+@Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
+inline fun <T> Any?.unsafeCast(): T = this as T

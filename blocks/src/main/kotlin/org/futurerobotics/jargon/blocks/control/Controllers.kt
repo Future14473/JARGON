@@ -1,7 +1,13 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package org.futurerobotics.jargon.blocks
+package org.futurerobotics.jargon.blocks.control
 
+import org.futurerobotics.jargon.blocks.Block
+import org.futurerobotics.jargon.blocks.BlocksConfig
+import org.futurerobotics.jargon.blocks.Combine
+import org.futurerobotics.jargon.blocks.CompositeBlock
+import org.futurerobotics.jargon.blocks.control.FeedForwardController.Companion.withAdder
+import org.futurerobotics.jargon.blocks.functional.SplitMotionState
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.mechanics.FixedDriveModel
 import org.futurerobotics.jargon.mechanics.MotionOnly
@@ -11,9 +17,10 @@ import org.futurerobotics.jargon.mechanics.ValueMotionOnly
 /**
  * A block that represents a controller, taking in a [Reference], comparing it with [State], and producing a [Signal].
  *
- * This interface is so it can be used by other people.
+ * This interface is so it can be recognized by other things.
  */
-interface Controller<Reference, State, Signal> : Block, BlocksConfig.Output<Signal> {
+interface Controller<Reference, State, Signal> : Block,
+    BlocksConfig.Output<Signal> {
 
     /** The reference [BlocksConfig.Input] */
     val reference: BlocksConfig.Input<Reference>
@@ -27,8 +34,8 @@ interface Controller<Reference, State, Signal> : Block, BlocksConfig.Output<Sign
  * or greater than the reference.
  *
  * Inputs:
- *  1. the reference state, should not be null
- *  2. the current state, should not be null
+ *  1. reference
+ *  2. current state
  *
  * Outputs:
  *  1. the signal
@@ -45,6 +52,8 @@ class BangBangController<State, Signal>(
     Controller<State, State, Signal>
         where State : Comparable<State>, State : Any {
 
+    override val reference: BlocksConfig.Input<State> get() = first
+    override val state: BlocksConfig.Input<State> get() = second
     override fun combine(a: State, b: State): Signal {
         val comp = b.compareTo(a)
         return when {
@@ -53,9 +62,6 @@ class BangBangController<State, Signal>(
             else -> equalOutput
         }
     }
-
-    override val reference: BlocksConfig.Input<State> get() = first
-    override val state: BlocksConfig.Input<State> get() = second
 }
 
 /**
@@ -69,15 +75,15 @@ class BangBangController<State, Signal>(
  *  1. the modeled motor voltages as a [List] of Doubles
  */
 class FixedDriveOpenController(private val model: FixedDriveModel) :
-    Combine<MotionOnly<Pose2d>, Nothing, List<Double>>(),
-    Controller<MotionOnly<Pose2d>, Nothing, List<Double>> {
+    Combine<MotionOnly<Pose2d>, Any, List<Double>>(),
+    Controller<MotionOnly<Pose2d>, Any, List<Double>> {
 
-    override fun combine(a: MotionOnly<Pose2d>, b: Nothing): List<Double> = model.getModeledVoltages(a)
+    override fun combine(a: MotionOnly<Pose2d>, b: Any): List<Double> = model.getModeledVoltages(a)
 
     override val reference: BlocksConfig.Input<MotionOnly<Pose2d>> get() = first
     /** Do not use; connects to nothing */
     @Deprecated("This doesn't connect to anything", ReplaceWith(""), DeprecationLevel.WARNING)
-    override val state: BlocksConfig.Input<Nothing>
+    override val state: BlocksConfig.Input<Any>
         get() = second
 }
 
@@ -85,14 +91,18 @@ class FixedDriveOpenController(private val model: FixedDriveModel) :
  * A controller that wraps another nonFFController that outputs _velocities_ of [T], and turns it into
  * a feed forward controller that takes in [MotionState] as reference and outputs [MotionOnly].
  *
- *
  * It does it by splitting the [MotionState] into its components, passing the value component
- * into the controller, and takes its control output adds it to the reference velocity to get the final velocity.
+ * into the controller, taking the control output, and adding that to the reference velocity to get the final velocity.
  *
- * The acceleration is simply passed only.
+ * The acceleration is simply passed on.
+ *
+ * A function [plus] still needs to be defined. Can also be created directly using [withAdder]
  */
 abstract class FeedForwardController<T : Any>(private val nonFFController: Controller<T, T, T>) :
-    CompositeBlock(2, 1, Block.Processing.IN_FIRST_ALWAYS),
+    CompositeBlock(
+        2, 1,
+        Block.Processing.IN_FIRST_ALWAYS
+    ),
     Controller<MotionState<T>, T, MotionOnly<T>> {
     override fun BlocksConfig.buildSubsystem(
         sources: List<BlocksConfig.Output<Any?>>,
@@ -105,15 +115,15 @@ abstract class FeedForwardController<T : Any>(private val nonFFController: Contr
 
         nonFFController.let { it.reference from refS; it.state from state }
 
-        val finalV = combineThisIt(refV, nonFFController) { this + it }
-        outputs[0] from combine(finalV, refA, ::ValueMotionOnly)
+        val finalV = refV.combine(nonFFController) { this + it }
+        outputs[0] from finalV.combine(refA) { ValueMotionOnly(this, it) }
     }
 
     /** Adds t1 and t2 together. Unfortunately 'Double' doesn't implement an addable interface so we sad. */
     protected abstract operator fun T.plus(other: T): T
 
-    override val reference: BlocksConfig.Input<MotionState<T>> get() = inputIndex(0)
-    override val state: BlocksConfig.Input<T> get() = inputIndex(1)
+    override val reference: BlocksConfig.Input<MotionState<T>> get() = configInput(0)
+    override val state: BlocksConfig.Input<T> get() = configInput(1)
     override val block: Block get() = this
     override val index: Int get() = 0
 
