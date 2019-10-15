@@ -2,6 +2,7 @@ package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.BlocksConfig
 import org.futurerobotics.jargon.blocks.SingleOutputBlock
 import org.futurerobotics.jargon.blocks.SystemValues
 import org.futurerobotics.jargon.linalg.*
@@ -61,7 +62,7 @@ class KalmanFilter(
         val signal = inputs[0] as Vec
         repeat((systemValues.loopTime / model.period).roundToInt().coerceAtLeast(1)) {
             measurementObj.value = measurement
-            process.signal = signal
+            process.signal setTo signal
             val filter = filter ?: LinearKalmanFilter(
                 DECOMP,
                 process,

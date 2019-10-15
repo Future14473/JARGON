@@ -15,7 +15,7 @@ import kotlin.collections.HashMap
  * Originally intended so that can reuse parts for composite blocks, but that has problems with SpecialBlocks.
  */
 /**
- * A highly processed block with connections directly indicated as indexes, in a list.
+ * A highly processed block with connections directly indicated as indices, in a list.
  * **This class only makes sense in the context of a list.**
  *
  * @param sourceBlockIndices a array of the same size as the [block]'s inputs, giving the _index within a list_ of another
@@ -29,18 +29,18 @@ internal class IndexedBlock(
     val sourceOutputIndices: IntArray
 )
 
-/** Rearranges by sorting [IndexedBlock]s using the given [comparator] while keeping indexes in tact. */
+/** Rearranges by sorting [IndexedBlock]s using the given [comparator] while keeping indices in tact. */
 internal fun MutableList<IndexedBlock>.rearranged(comparator: Comparator<Block>) {
     val sorted = zip(indices).sortedWith(kotlin.Comparator { (o1), (o2) ->
         comparator.compare(o1.block, o2.block)
     })
-    val toNewIndexes =
+    val toNewIndices =
         sorted.mapIndexed { newIndex, (_, oldIndex) -> oldIndex to newIndex }.associateTo(HashMap()) { it }
-    toNewIndexes[-1] = -1
+    toNewIndices[-1] = -1
     sorted.forEach { (block) ->
-        val sourceBlockIndexes = block.sourceBlockIndices
-        repeat(sourceBlockIndexes.size) {
-            sourceBlockIndexes[it] = toNewIndexes[sourceBlockIndexes[it]]!!
+        val indices = block.sourceBlockIndices
+        repeat(indices.size) {
+            indices[it] = toNewIndices[indices[it]]!!
         }
     }
     clear()
@@ -114,19 +114,19 @@ private class IndexedBlocksCreator(
         return usedNodes.map { node ->
             val sources = node.inputSources
 
-            val sourceBlockIndexes = sources.mapToIntArray { out ->
+            val sourceBlockIndices = sources.mapToIntArray { out ->
                 out?.run {
                     nodeBlock.finalIndex.also {
                         assert(it != -1) { "all sources should have index" }
                     }
                 } ?: -1
             }
-            val sourceOutputIndexes = sources.mapToIntArray { it?.index ?: -1 }
+            val sourceOutputIndices = sources.mapToIntArray { it?.index ?: -1 }
 
             IndexedBlock(
                 block = node.block,
-                sourceBlockIndices = sourceBlockIndexes,
-                sourceOutputIndices = sourceOutputIndexes
+                sourceBlockIndices = sourceBlockIndices,
+                sourceOutputIndices = sourceOutputIndices
             )
         }
     }
