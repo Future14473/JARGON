@@ -3,24 +3,26 @@
 JARGON stands For **J**ust **A**nother **R**obot **G**uidance **O**peratio**N**
 ###### (A.K.A cha cha real smooth)
 
-This is a (currently) work in progress robotics library that is originally for creating semi-advanced
-control systems in FTC; although it could theoretically work in applications too.
+This is a (currently) work in progress robotics library that is intended for creating semi-advanced
+control systems in FTC.
+
+VERSION 0.1.0 COMING SOON
 
 This library will be extensively used by Future Robotics, Team 14473, in the upcoming 2019-2020 SkyStone competitions.
 
 _This may possibly be de-branded from Future robotics in the future._ No pun intended.
  
-#### Current implemented (though not yet fully tested) features include:
-- Robotics motion planning (paths, motion profiles, trajectories)
-- Advanced (well, advanced enough for high school level robotics) and customizable control systems, based off of MODELs
-  not just PID coefficients
-- Flexible and customizable/extendable trajectory constraints; for example maximum modeled wheel voltage/torque constraint
+#### Current beta features include:
+- Robotics motion planning (paths, motion profiles, trajectories) with model-based and extensible constraints (make your own)
+- Advanced and customizable control systems, based off of MODELs using the blocks system: inspired by taking block diagrams literally.
+- Use of State Space Stuff
+- Simple simulations
 
-#### Planned features include, in general order of planned development:
+#### Planned features include:
 - High level easy to understand abstractions of said above
-- Optional state-space theory applications (yay linear algebra)
-- Simulations
-- Concurrency frameworks
+- More advanced simulations
+- Concurrency framework/program management situation
+- Easy integration with CV stuff
 - Dynamic trajectory generation
 - High level TrajectoryManager class to streamline the pathing process
 - Support for:
@@ -29,14 +31,13 @@ _This may possibly be de-branded from Future robotics in the future._ No pun int
 - Parameter estimation
 - Tutorial/documentation
 - Short papers explaining all the math used
-- OpenCV frameworks
 - Visual interface (but that's like GUI stuff which takes time)
 
 
 #### Principles of design:
 - Intuitive at the same time as advanced
 - Extensible and customizable (no requirement to adhere to one implementation, create your own)
-- Adherence to SOLID
+- Adherence to SOLID; Decoupled code
 - Abstraction over performance (Sometimes another 10 ns is worth it), without neglecting performance (Another 3s is not worth it)
 
 This project is inspired by the following:
@@ -51,16 +52,13 @@ If you are interested in the current development, see TODO.md (maybe to be migra
 
 PFAQ (predicted frequently asked questions):
 -
-##### 1. If there already exists several robotics libraries and things on the internet publicly available now. Why do you want to go through the trouble of making your own version that might not be as great?
+##### 1. There already exists several robotics libraries and things on the internet publicly available now. Why do you want to go through the trouble of making your own version that might not be as great?
 
 A few reasons:
-   - This is a personal project as much as it is a team/public project. I like designing things my own way and seeing 
-        how they turn out and learning from the experience, and its not the same thing as stealing
-        someone else's code, or using it.
    - I try to invent new things and learn things from scratch rather than imitate whats already there. 
     Therefore, my version is subjectively better.
    - This library contains a lot more subjectively useful features than all the other applicable ones I see on the
-     internets
+     internet
    - One of the goals is to also try to clarify some of the complexity in these systems to make it more understandable,
     so to inspire more interest in some of these subjects to others
    - Friendly competition and bragging rights
@@ -71,7 +69,6 @@ believe it has now evolved into a entirely different creature.
 
 ##### 3. Can I use this in my own projects, endeavours, and plans to take over the world?
 Yes! Please do. All we ask is that you give attribution and credit where credit is due.
-Like control award.
 
 But keep in mind that until version 0.1.0 anything is subject to change at any time.
 Feedback is appreciated (open an issue).
@@ -83,14 +80,12 @@ licence and contribution info.
 #### UNTIL THEN
 
 This is currently developed by only one person (Benjamin Ye) who wishes for companions. If you feel you have the guts
-and the will to contribute to the development of this library before we open it up on purpose if at all,
-contact Future Robotics.
+and the will to contribute to the development of this library before we open it up on purpose, contact Future Robotics.
 
-'Guts' meaning having at least some of the following:
-- Know kotlin well (a language very much worth learning)
-- Understand what SOLID is and what it could look like in practice, which is not what roadrunner currently does
+'Guts' meaning _some_ of the following:
+- Know Kotlin (a language very much worth learning)
+- Understand what SOLID is and what it could look like in practice (look it up)
 - Know some calculus and/or physics
 - Know linear algebra and/or state-space theory (go read the state-space guide linked above somewhere)
-- Willing to proofread, document, or write tests
-
-When this is (somewhat) stable, we will release 0.1.0.
+- Willing to help proofread or document
+- Willing to at least attempt good git practices
