@@ -23,11 +23,11 @@ internal class PulseTest : AbstractBlockSystemTest() {
             system.init()
             repeat(5) {
                 repeat(5) {
-                    system.loop(0.0)
+                    system.loop()
                     get { value }.isA<Boolean>().isFalse()
                 }
                 pulse.pulse()
-                system.loop(0.0)
+                system.loop()
                 get { value }.isA<Boolean>().isTrue()
             }
         }

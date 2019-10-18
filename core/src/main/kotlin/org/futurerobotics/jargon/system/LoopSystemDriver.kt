@@ -26,10 +26,10 @@ class SimpleLoopSystemDriver(private val loopRegulator: LoopRegulator = LoopAsFa
             system.init()
             loopRegulator.start()
 
-            var elapsedTime: Double = Double.NaN
+            var loopTimeInNanos: Long = 0
             while (!Thread.interrupted()) {
-                if (system.loop(elapsedTime)) break
-                elapsedTime = loopRegulator.syncAndRestart()
+                if (system.loop(loopTimeInNanos)) break
+                loopTimeInNanos = loopRegulator.syncAndRestart()
             }
         } finally {
             thread = null
@@ -65,7 +65,7 @@ class LimitedLoopSystemDriver(
             system.init()
             loopRegulator.start()
 
-            var loopTime: Double = Double.NaN
+            var loopTime: Long = 0
             var i = 0
             while (i < maxTimes && !Thread.interrupted()) {
                 if (system.loop(loopTime)) break

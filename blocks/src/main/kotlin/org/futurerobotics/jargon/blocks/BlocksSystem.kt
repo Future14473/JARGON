@@ -21,8 +21,15 @@ class BlocksSystem internal constructor(
 ) : AbstractBlocksRunner(connections), LoopSystem {
     private val specials: Map<Class<*>, SpecialBlock>
     private val _systemValues = object : SystemValues {
-        override var loopTime: Double = Double.NaN
-        override var loopNumber: Int = 0
+        private var totalTimeNanos: Long = 0
+        var loopTimeInNanos: Long = 0
+            set(value) {
+                totalTimeNanos += value
+                field = value
+            }
+        override val loopTime: Double get() = loopTimeInNanos / 1e9
+        override val totalTime: Double get() = totalTimeNanos / 1e9
+        override val loopNumber: Int get() = this@BlocksSystem.loopNumber
     }
     override val systemValues: SystemValues = _systemValues
 
@@ -43,9 +50,8 @@ class BlocksSystem internal constructor(
         super.init()
     }
 
-    override fun loop(loopTime: Double): Boolean {
-        _systemValues.loopNumber = loopNumber + 1
-        _systemValues.loopTime = loopTime
+    override fun loop(loopTimeInNanos: Long): Boolean {
+        _systemValues.loopTimeInNanos = loopTimeInNanos
 
         processOnce()
 

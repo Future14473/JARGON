@@ -7,7 +7,8 @@ package org.futurerobotics.jargon.blocks
 interface SystemValues {
     /** The time in seconds the last loop has taken to run. */
     val loopTime: Double
-
+    /** The total amount of time elapsed since the block has first run. */
+    val totalTime: Double
     /** The number of the current loop run since `init`, starting from 0. */
     val loopNumber: Int
 }
@@ -31,13 +32,16 @@ class SystemValuesBlock : AbstractBlock(
     override fun getOutput(index: Int): Any? = systemValues!!.run {
         when (index) {
             0 -> loopTime
-            1 -> loopNumber
+            1 -> totalTime
+            2 -> loopNumber
             else -> throw IndexOutOfBoundsException(index)
         }
     }
 
     /** The loopTime output */
     val loopTime: BlocksConfig.Output<Double> get() = configOutput(0)
+    /** The totalTime output */
+    val totalTime: BlocksConfig.Output<Double> get() = configOutput(1)
     /** the loopNumber output */
-    val loopNumber: BlocksConfig.Output<Int> get() = configOutput(1)
+    val loopNumber: BlocksConfig.Output<Int> get() = configOutput(2)
 }

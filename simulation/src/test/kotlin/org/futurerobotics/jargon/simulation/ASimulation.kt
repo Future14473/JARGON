@@ -162,7 +162,7 @@ internal class ASimulation {
         val actualPositions = ArrayList<Vector2d>()
         val predictedPositions = ArrayList<Vector2d>()
         val toGraphValues = List(toGraph.size) { ArrayList<Double>() }
-        override fun loop(loopTime: Double): Boolean = false.after {
+        override fun loop(loopTimeInNanos: Long): Boolean = false.after {
             actualPositions += actualDrive.curGlobalPose.vec
             predictedPositions += estimatedPose.value!!.vec
             toGraph.forEachIndexed { i, (_, it) ->

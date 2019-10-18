@@ -16,7 +16,7 @@ private class RunTimes(var times: Int) : LoopSystem {
         number = 0
     }
 
-    override fun loop(loopTime: Double): Boolean {
+    override fun loop(loopTimeInNanos: Long): Boolean {
         number++
         return number >= times
     }

@@ -53,12 +53,12 @@ internal class BlocksSystemTest : AbstractBlockSystemTest() {
         expectThat(monitor) {
             repeat(4) { i ->
                 system.init()
-                system.loop(Double.NaN)
+                system.loop()
                 get { value }.describedAs("restart #$i")
                     .isEqualTo("H0[C0[B0[A, E0-, null]], G0[C0[B0[A, E0-, null]], F0[B1[A, E0-, null], D0-]]]")
 
                 repeat(4) {
-                    system.loop(Double.NaN)
+                    system.loop()
                     get { value }.describedAs("run #$it")
                         .isEqualTo("H0[C0[B0[A, E0[F1], null]], G0[C0[B0[A, E0[F1], null]], F0[B1[A, E0[F1], null], D0[H0]]]]")
                 }

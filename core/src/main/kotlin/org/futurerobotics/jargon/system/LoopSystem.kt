@@ -9,12 +9,11 @@ package org.futurerobotics.jargon.system
 interface LoopSystem : InitStoppable {
 
     /**
-     * Runs one cycle of the loop, also using the [loopTime] of the last loop; or Double.NAN if not known
-     * (first loop).
+     * Runs one cycle of the loop. Information about the last [loopTimeInNanos] should be given; 0 if not known (first loop).
      *
      * Return value tells if to stop looping; returns `true` to indicate to break the loop, `false` to continue.
      */
-    fun loop(loopTime: Double = Double.NaN): Boolean
+    fun loop(loopTimeInNanos: Long = 0L): Boolean
 }
 
 /**
@@ -35,10 +34,10 @@ class CompositeLoopSystem : LoopSystem {
         systems.forEach { it.init() }
     }
 
-    override fun loop(loopTime: Double): Boolean {
+    override fun loop(loopTimeInNanos: Long): Boolean {
         var shouldShutdown = false
         systems.forEach {
-            shouldShutdown = it.loop(loopTime) or shouldShutdown
+            shouldShutdown = it.loop(loopTimeInNanos) or shouldShutdown
         }
         return shouldShutdown
     }

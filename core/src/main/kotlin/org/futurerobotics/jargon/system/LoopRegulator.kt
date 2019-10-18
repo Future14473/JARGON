@@ -59,7 +59,7 @@ interface LoopRegulator {
      * and then returns the elapsed time in seconds.
      */
     @Throws(InterruptedException::class)
-    fun syncAndRestart(): Double
+    fun syncAndRestart(): Long
 
     /**
      * Stops typing.
@@ -76,9 +76,9 @@ class LoopAsFastAsPossible(private val clock: Clock = Clock.Default) : LoopRegul
         lastNanos = clock.nanoTime()
     }
 
-    override fun syncAndRestart(): Double {
+    override fun syncAndRestart(): Long {
         val nanos = clock.nanoTime()
-        return ((nanos - lastNanos) / 1e9)
+        return (nanos - lastNanos)
             .also { lastNanos = nanos }
     }
 
@@ -88,7 +88,10 @@ class LoopAsFastAsPossible(private val clock: Clock = Clock.Default) : LoopRegul
 
 /**
  * A [LoopRegulator] that limits its maximum speed to a certain number of cycles per second;
- * otherwise will stop thread.
+ * otherwise will sleep the running thread. Note that if the block is running slow it will attempt
+ * to catch up over the next cycles by not sleeping if possible.
+ *
+ * With the current implementation there is no limit to how much "catching up" might occur.
  *
  * @param maxHertz the maximum hertz to run the loop at.
  */
@@ -99,20 +102,19 @@ class LoopWithMaxSpeed(maxHertz: Double, private val clock: Clock = Clock.Defaul
         lastNanos = clock.nanoTime()
     }
 
-    override fun syncAndRestart(): Double {
+    override fun syncAndRestart(): Long {
         val nanos = clock.nanoTime()
         val elapsed = nanos - lastNanos
 
         return if (elapsed >= minNanos) {
             lastNanos = nanos
-            elapsed / 1e9
+            elapsed
         } else {
-
             val neededNanos = minNanos - elapsed
-            lastNanos = nanos + neededNanos
+            lastNanos += minNanos
 
             Thread.sleep(neededNanos / 1_000_000, (neededNanos % 1_000_000).toInt())
-            minNanos / 1e9
+            minNanos
         }
     }
 
