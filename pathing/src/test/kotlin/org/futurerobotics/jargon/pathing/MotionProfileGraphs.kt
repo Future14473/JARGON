@@ -39,7 +39,7 @@ class MotionProfileGraphs(
     @Before
     fun generateAndTimeProfile() {
         generationTime = measureNanoTime {
-            val constraints = TrajectoryConstraint(path, constraints)
+            val constraints = TrajectoryConstrainer(path, constraints)
             profile = generateDynamicProfile(
                 constraints, path.length, targetStartVel = 0.0, targetEndVel = 0.0, segmentSize = 0.02
             )
@@ -136,34 +136,19 @@ class MotionProfileGraphs(
             return MotionConstraintSet(
                 MaxVelocityConstraint(random.nextDouble(3.0, 5.0)),
                 MaxPathAngularVelocityConstraint(
-                    random.nextDouble(
-                        0.3,
-                        3.0
-                    )
+                    random.nextDouble(0.3, 3.0)
                 ),
                 MaxCentripetalAccelConstraint(
-                    random.nextDouble(
-                        1.0,
-                        3.0
-                    )
+                    random.nextDouble(1.0, 3.0)
                 ),
                 MaxTangentAccelConstraint(
-                    random.nextDouble(
-                        1.0,
-                        3.0
-                    )
+                    random.nextDouble(1.0, 3.0)
                 ),
                 MaxTotalAccelConstraint(
-                    random.nextDouble(
-                        1.0,
-                        3.0
-                    )
+                    random.nextDouble(1.0, 3.0)
                 ),
                 MaxAngularAccelConstraint(
-                    random.nextDouble(
-                        0.5,
-                        2.0
-                    )
+                    random.nextDouble(0.5, 2.0)
                 )
             )
         }

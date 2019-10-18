@@ -4,7 +4,7 @@ package org.futurerobotics.jargon.profile
 
 import org.futurerobotics.jargon.math.*
 import org.futurerobotics.jargon.util.extendingDownDoubleSearch
-import org.futurerobotics.jargon.util.localMap
+import org.futurerobotics.jargon.util.mapToSelf
 import org.futurerobotics.jargon.util.stepToAll
 import kotlin.math.ceil
 import kotlin.math.max
@@ -21,7 +21,7 @@ private const val BINARY_SEARCH_INITIAL_STEP_RATIO = 2
  *
  * [segmentSize] specifies the size of the segments used in the profile generation algorithm.
  *
- * [maxVelDueToAccelsSearchTolerance] specifies the tolerance in which the maximum velocities due to
+ * [maxVelSearchTolerance] specifies the tolerance in which the maximum velocities due to
  * satisfying acceleration constraints will be searched for, if needed. (heavy heuristic
  * binary search). If constraints are "non demanding", binary search will not happen.
  *
@@ -46,7 +46,7 @@ fun generateDynamicProfile(
     targetStartVel: Double = 0.0,
     targetEndVel: Double = 0.0,
     segmentSize: Double = 0.01,
-    maxVelDueToAccelsSearchTolerance: Double = 0.01
+    maxVelSearchTolerance: Double = 0.01
     //may introduce a class if start to have too many parameters
 ): MotionProfile {
     require(distance > 0) { "distance ($distance) must be > 0" }
@@ -54,25 +54,29 @@ fun generateDynamicProfile(
     require(targetEndVel >= 0) { "targetEndVel ($targetEndVel) must be >= 0" }
     require(segmentSize > 0) { "segmentSize ($segmentSize) must be > 0" }
     require(segmentSize <= distance) { "segmentSize ($$segmentSize) must be <= dist ($distance)" }
-    require(maxVelDueToAccelsSearchTolerance > 0) { "nonIntersectSearchTolerance ($maxVelDueToAccelsSearchTolerance) must be > 0" }
+    require(maxVelSearchTolerance > 0) { "maxVelSearchTolerance ($maxVelSearchTolerance) must be > 0" }
     val segments = ceil(distance / segmentSize).toInt()
     val points = DoubleProgression.fromNumSegments(0.0, distance, segments).toList()
     val pointConstraints: List<PointConstraint> = constrainer.stepToAll(points)
-    val maxVels = pointConstraints.mapTo(ArrayList(points.size)) { it.maxVelocity }
-    require(maxVels.all { it >= 0 }) { "All maximum velocities given by constrainer should be >= 0" }
+    val maxVels = pointConstraints.mapIndexedTo(ArrayList(points.size)) { i, it ->
+        it.maxVelocity.also {
+            require(it >= 0) { "All maximum velocities given by constrainer should be >= 0, got $it at segment $i" }
+        }
+    }
+
 
     maxVels[0] = min(maxVels[0], targetStartVel)
     maxVels.lastIndex.let {
         maxVels[it] = min(maxVels[it], targetEndVel)
     }
-    maxVels.localMap { min(it, MAX_VEL) }
+    maxVels.mapToSelf { min(it, MAX_VEL) }
 
-    accelerationPass(maxVels, pointConstraints, points, maxVelDueToAccelsSearchTolerance, false)
+    accelerationPass(maxVels, pointConstraints, points, maxVelSearchTolerance, false)
     accelerationPass( //reverse
         maxVels.asReversed(),
         pointConstraints.asReversed(),
         points.asReversed(),
-        maxVelDueToAccelsSearchTolerance,
+        maxVelSearchTolerance,
         true
     )
     val pointVelPairs = points.zip(maxVels)

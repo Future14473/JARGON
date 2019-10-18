@@ -4,9 +4,10 @@ package org.futurerobotics.jargon.linalg
 
 import org.futurerobotics.jargon.math.epsEq
 import org.hipparchus.linear.*
+import kotlin.math.abs
 
 
-//getset
+//get set
 inline operator fun Mat.get(row: Int, col: Int): Double = this.getEntry(row, col)
 
 inline operator fun Mat.get(rows: IntRange, cols: IntRange): Mat =
@@ -56,20 +57,38 @@ inline operator fun Vec.minus(vec: Vec): Vec = this.subtract(vec)
 inline operator fun Mat.unaryMinus(): Mat = this * -1.0
 inline operator fun Vec.unaryMinus(): Vec = this * -1.0
 
-infix fun Mat.epsEq(mat: Mat): Boolean {
+infix fun Vec.setTo(vec: Vec) {
+    require(dimension == vec.dimension) { "Dimension mismatch" }
+    repeat(dimension) {
+        this[it] = vec[it]
+    }
+}
+
+
+infix fun Mat.setTo(mat: Mat) {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
     repeat(rows) { i ->
         repeat(cols) { j ->
-            if (!(this[i, j] epsEq mat[i, j])) return false
+            this[i, j] = mat[i, j]
+        }
+    }
+}
+
+
+fun Mat.epsEq(mat: Mat, epsilon: Double): Boolean {
+    require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
+    repeat(rows) { i ->
+        repeat(cols) { j ->
+            if (abs(this[i, j] - mat[i, j]) >= epsilon) return false
         }
     }
     return true
 }
 
-infix fun Vec.epsEq(mat: Vec): Boolean {
-    require(dimension == mat.dimension) { "Dimension mismatch" }
+infix fun Vec.epsEq(vec: Vec): Boolean {
+    require(dimension == vec.dimension) { "Dimension mismatch" }
     repeat(dimension) { i ->
-        if (!(this[i] epsEq mat[i])) return false
+        if (!(this[i] epsEq vec[i])) return false
     }
     return true
 }
@@ -149,10 +168,6 @@ fun Mat.getSolver(): DecompositionSolver = when {
     else -> QRDecomposition(this).solver
 }
 
-fun Mat.inv(): Mat {
-    return MatrixUtils.inverse(this)
-}
+fun Mat.inv(): Mat = MatrixUtils.inverse(this)
 
-fun Mat.pinv(): Mat {
-    return SingularValueDecomposition(this).solver.inverse
-}
+fun Mat.pinv(): Mat = SingularValueDecomposition(this).solver.inverse

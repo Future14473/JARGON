@@ -11,8 +11,8 @@ repositories {
     mavenLocal()
 }
 dependencies {
-    implementation(project(":core"))
+    api(project(":core"))
 //    implementation(junit5)
-    implementation(xchart)
-    implementation(strikt)
+    api(xchart)
+    api(strikt)
 }

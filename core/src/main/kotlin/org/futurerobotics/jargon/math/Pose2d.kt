@@ -16,7 +16,13 @@ data class Pose2d(val vec: Vector2d, val heading: Double) {
     /** Constructs a pose from [x] and [y] position components, and [heading] */
     constructor(x: Double, y: Double, heading: Double) : this(Vector2d(x, y), heading)
 
-    constructor(values: DoubleArray) : this(values[0], values[1], values[2])
+    constructor(values: DoubleArray) : this(values[0], values[1], values[2]) {
+        require(values.size == 3) { "Give values must have size 3; got size ${values.size} instead" }
+    }
+
+    constructor(values: Vec) : this(values[0], values[1], values[2]) {
+        require(values.dimension == 3) { "Given vector must have size 3; got size ${values.dimension} instead" }
+    }
 
     /** The x component of the position ([vec]) of this Pose */
     val x: Double get() = vec.x
@@ -45,16 +51,12 @@ data class Pose2d(val vec: Vector2d, val heading: Double) {
     }
 
     /** If this pose is equal to another with epsilon leniency. */
-    infix fun epsEq(other: Pose2d): Boolean {
-        return vec epsEq other.vec && angleNorm(heading - other.heading) epsEq 0.0
-    }
+    infix fun epsEq(other: Pose2d): Boolean = vec epsEq other.vec && angleNorm(heading - other.heading) epsEq 0.0
 
     /** If all components are finite. */
     fun isFinite(): Boolean = vec.isFinite() && heading.isFinite()
 
-    fun toVector(): Vec {
-        return createVec(x, y, heading)
-    }
+    fun toVector(): Vec = createVec(x, y, heading)
 
     override fun toString(): String = "Pose2d(v:<%.4f, %.4f>, h: %.4f)".format(x, y, heading)
 

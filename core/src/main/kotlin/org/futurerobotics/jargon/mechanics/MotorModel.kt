@@ -21,10 +21,10 @@ import kotlin.math.sign
  *
  */
 class DcMotorModel private constructor(
-    private val kt: Double,
-    private val r: Double,
-    private val kv: Double,
-    private val i0: Double = 0.0
+    val kt: Double,
+    val r: Double,
+    val kv: Double,
+    val i0: Double = 0.0
 ) {
 
     init {
@@ -53,9 +53,8 @@ class DcMotorModel private constructor(
      *
      * May be negative.
      */
-    fun getVoltage(torque: Double, angVel: Double): Double {
-        return torque * voltsPerTorque + angVel * voltsPerAngVel + sign(angVel) * voltsForFriction
-    }
+    fun getVoltage(torque: Double, angVel: Double): Double =
+        torque * voltsPerTorque + angVel * voltsPerAngVel + sign(angVel) * voltsForFriction
 
     companion object {
         /**
@@ -67,9 +66,8 @@ class DcMotorModel private constructor(
          * @param i0 the i0 term
          */
         @JvmStatic
-        fun fromCoefficients(kt: Double, r: Double, kv: Double, i0: Double = 0.0): DcMotorModel {
-            return DcMotorModel(kt, r, kv, i0)
-        }
+        fun fromCoefficients(kt: Double, r: Double, kv: Double, i0: Double = 0.0): DcMotorModel =
+            DcMotorModel(kt, r, kv, i0)
 
         /**
          * Constructs a model based on data give on a motor data sheet.
@@ -174,8 +172,6 @@ class TransmissionModel private constructor(
             gearRatio: Double,
             constantTorqueLoss: Double = 0.0,
             ratioTorqueLoss: Double = 1.0
-        ): TransmissionModel {
-            return TransmissionModel(motor, gearRatio, constantTorqueLoss, ratioTorqueLoss)
-        }
+        ): TransmissionModel = TransmissionModel(motor, gearRatio, constantTorqueLoss, ratioTorqueLoss)
     }
 }

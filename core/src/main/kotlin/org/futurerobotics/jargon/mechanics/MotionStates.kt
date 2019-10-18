@@ -7,7 +7,7 @@ import org.futurerobotics.jargon.math.Vector2d
  * Represents the motion of some quantity representing type [T] (e.g. 1d motion, vector2d, pose, linear algebra vector).
  *
  * This contains velocity ([v]), and acceleration ([a])
- * @see [MotionState3]
+ * @see [MotionState]
  */
 interface MotionOnly<T : Any> {
     /** The velocity of this [MotionOnly] */
@@ -23,11 +23,11 @@ interface MotionOnly<T : Any> {
 }
 
 /**
- * Represents the motion state: current state (s), and derivative (v)
+ * Represents the motion state: current state (s), derivative (v), and second derivative [a]
  * of some quantity [T].
  */
-interface MotionState2<T : Any> {
-    /** The position of this [MotionState3] */
+interface MotionState<T : Any> {
+    /** The position of this [MotionState] */
     val s: T
     /** The velocity of this [MotionOnly] */
     val v: T
@@ -37,25 +37,17 @@ interface MotionState2<T : Any> {
 
     /** @return v */
     operator fun component2(): T = v
-}
 
-/**
- * Represents the motion state: current state (s), derivative (v), and second derivative [a]
- * of some quantity [T].
- *
- * This is a sub-interface of [MotionState2]
- */
-interface MotionState3<T : Any> : MotionState2<T> {
-    /** The acceleration of this [MotionState3] */
+    /** The acceleration of this [MotionState] */
     val a: T
 
     /** @return a */
     operator fun component3(): T = a
 
     /**
-     * Creates a [MotionOnly] with same v and a as this [MotionState3]
+     * Creates a [MotionOnly] with same v and a as this [MotionState]
      */
-    fun toMotionOnly(): ValueMotionOnly<T> = ValueMotionOnly(v,a)
+    fun toMotionOnly(): ValueMotionOnly<T> = ValueMotionOnly(v, a)
 }
 
 
@@ -64,45 +56,39 @@ open class ValueMotionOnly<T : Any>(override val v: T, override val a: T) : Moti
 
     override fun equals(other: Any?): Boolean = when {
         this === other -> true
-        other !is ValueMotionState3<*> -> false
+        other !is ValueMotionState<*> -> false
         else -> v == other.v && a == other.a
     }
 
     override fun hashCode(): Int = 31 * v.hashCode() + a.hashCode()
 }
 
-/** An simple implementation of [MotionOnly] that holds values in fields */
-open class ValueMotionState2<T : Any>(override val s: T, override val v: T) : MotionState2<T> {
-
+/** An simple implementation of [MotionState] that holds values in fields */
+open class ValueMotionState<T : Any>(override val s: T, override val v: T, override val a: T) : MotionState<T> {
     override fun equals(other: Any?): Boolean = when {
         this === other -> true
-        other !is ValueMotionState3<*> -> false
-        else -> s == other.s && v == other.v
-    }
-
-    override fun hashCode(): Int = 31 * s.hashCode() + v.hashCode()
-}
-
-/** An simple implementation of [MotionState3] that holds values in fields */
-open class ValueMotionState3<T : Any>(s: T, v: T, override val a: T) : ValueMotionState2<T>(s, v), MotionState3<T> {
-    override fun equals(other: Any?): Boolean = when {
-        this === other -> true
-        other !is ValueMotionState3<*> -> false
+        other !is ValueMotionState<*> -> false
         else -> s == other.s && v == other.v && a == other.a
     }
 
     override fun hashCode(): Int = 31 * super.hashCode() + s.hashCode()
+
+    companion object {
+        /** Creates a [ValueMotionState] with all s,v,a values equal to [value] */
+        @JvmStatic
+        fun <T : Any> ofAll(value: T): ValueMotionState<T> = ValueMotionState(value, value, value)
+    }
 }
 
 
-/** Extracts the vector [MotionState3] from this pose [MotionState3]. */
-fun MotionState3<Pose2d>.vec(): MotionState3<Vector2d> = ValueMotionState3(s.vec, v.vec, a.vec)
+/** Extracts the vector [MotionState] from this pose [MotionState]. */
+fun MotionState<Pose2d>.vec(): MotionState<Vector2d> = ValueMotionState(s.vec, v.vec, a.vec)
 
-/** Extracts the heading component from this pose [MotionState3]. */
-fun MotionState3<Pose2d>.heading(): LinearMotionState3 = LinearMotionState3(s.heading, v.heading, a.heading)
+/** Extracts the heading component from this pose [MotionState]. */
+fun MotionState<Pose2d>.heading(): LinearMotionState = LinearMotionState(s.heading, v.heading, a.heading)
 
-/** Extracts the x component from this pose [MotionState3]. */
-fun MotionState3<Pose2d>.x(): LinearMotionState3 = LinearMotionState3(s.x, v.x, a.x)
+/** Extracts the x component from this pose [MotionState]. */
+fun MotionState<Pose2d>.x(): LinearMotionState = LinearMotionState(s.x, v.x, a.x)
 
-/** Extracts the y component from this pose [MotionState3]. */
-fun MotionState3<Pose2d>.y(): LinearMotionState3 = LinearMotionState3(s.y, v.y, a.y)
+/** Extracts the y component from this pose [MotionState]. */
+fun MotionState<Pose2d>.y(): LinearMotionState = LinearMotionState(s.y, v.y, a.y)

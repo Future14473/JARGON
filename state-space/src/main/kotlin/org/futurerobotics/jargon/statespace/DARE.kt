@@ -22,7 +22,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("LocalVariableName", "PrivatePropertyName")
+@file:Suppress("LocalVariableName", "PrivatePropertyName", "KDocMissingDocumentation")
 
 package org.futurerobotics.jargon.statespace
 
@@ -88,9 +88,7 @@ class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDe
     }
 
     /** {@inheritDoc}  */
-    override fun getVT(): FieldMatrix<Complex> {
-        return v.transpose()
-    }
+    override fun getVT(): FieldMatrix<Complex> = v.transpose()
 }
 
 
@@ -110,7 +108,7 @@ class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDe
  * @param Q state cost matrix
  * @param R control cost matrix
  *
- * Except where said is modified, this is copied from [RiccatiEquationSolverImpl] and converted to kotlin.
+ * Except where said is modified, this is copied from [LenientRiccatiEquationSolverImpl] and converted to kotlin.
  * Unused methods were removed.
  */
 class DiscreteRicattiEquationSolverImpl(

@@ -59,6 +59,9 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
     /** If both components are finite */
     fun isFinite(): Boolean = x.isFinite() && y.isFinite()
 
+    /** If any component is NaN */
+    fun isNan(): Boolean = x.isNaN() || y.isNaN()
+
     /**
      * Returns the cross product of (this interpreted as a 3d vector with a z component of 0), and the 3d vector
      *  <0,0,[z]>`, as a 2d vector, ignoring the resulting z-component of 0.

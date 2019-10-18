@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.profile
 
-import org.futurerobotics.jargon.mechanics.LinearMotionState3
+import org.futurerobotics.jargon.mechanics.LinearMotionState
 import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
 
@@ -24,9 +24,9 @@ interface MotionProfiled<out State : Any> : Steppable<Double, State> {
 /**
  * Represents a Motion Profile: a graph/profile of velocity (and position and acceleration) over time or distance.
  *
- * This is also a [MotionProfiled] for one-dimensional motion (state type [LinearMotionState3])
+ * This is also a [MotionProfiled] for one-dimensional motion (state type [LinearMotionState])
  */
-interface MotionProfile : MotionProfiled<LinearMotionState3> {
+interface MotionProfile : MotionProfiled<LinearMotionState> {
 
     /**
      * the total distance an object travels on this profile.
@@ -34,8 +34,8 @@ interface MotionProfile : MotionProfiled<LinearMotionState3> {
     val distance: Double
 
     /**
-     * Returns the [LinearMotionState3] of this motion profile after traveling a distance of [distance]
+     * Returns the [LinearMotionState] of this motion profile after traveling a distance of [distance]
      */
-    fun atDistance(distance: Double): LinearMotionState3
+    fun atDistance(distance: Double): LinearMotionState
 }
 

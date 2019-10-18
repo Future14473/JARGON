@@ -25,9 +25,9 @@ infix fun Assertion.Builder<Pose2d>.isEpsEqTo(expected: Pose2d): Assertion.Build
     }
 
 /** Asserts that this [Mat] epsEq another. */
-infix fun Assertion.Builder<Mat>.isEpsEqTo(expected: Mat): Assertion.Builder<Mat> =
+fun Assertion.Builder<Mat>.isEpsEqTo(expected: Mat, epsilon: Double = EPSILON): Assertion.Builder<Mat> =
     assert("is epsEq to %s", expected) {
-        if (it epsEq expected) pass()
+        if (it.epsEq(expected, epsilon)) pass()
         else fail(actual = it)
     }
 

@@ -1,6 +1,9 @@
 package org.futurerobotics.jargon.mechanics
 
 import org.futurerobotics.jargon.math.Pose2d
+import org.futurerobotics.jargon.math.Vector2d
+import org.futurerobotics.jargon.math.cosc
+import org.futurerobotics.jargon.math.sinc
 import kotlin.math.PI
 
 /**
@@ -42,15 +45,34 @@ object GlobalToBot {
      * Pose2d.Zero), given the current [globalPose]
      */
     @JvmStatic
-    fun referenceMotion(reference: MotionState3<Pose2d>, globalPose: Pose2d): MotionState3<Pose2d> {
+    fun referenceMotion(reference: MotionState<Pose2d>, globalPose: Pose2d): MotionState<Pose2d> {
         val (s, v, a) = reference
-        val rs = (s - globalPose).vecRotated(-globalPose.heading)
-        val rv = v.vecRotated(-globalPose.heading)
+        val globalHeading = globalPose.heading
+        val rs = (s - globalPose).vecRotated(-globalHeading)
+        val rv = v.vecRotated(-globalHeading)
         val ra = Pose2d(
-            a.vec.rotated(-globalPose.heading) +
-                    v.vec.rotated(-globalPose.heading + PI / 2) * -v.heading,
+            a.vec.rotated(-globalHeading) +
+                    v.vec.rotated(-globalHeading + PI / 2) * -v.heading,
             a.heading
         )
-        return ValueMotionState3(rs, rv, ra)
+        return ValueMotionState(rs, rv, ra)
+    }
+
+    /**
+     * Non-linearly updates the current global pose, given the change in pose from the bot's perspective, [botPoseDelta].
+     * and the current global pose.
+     */
+    @JvmStatic
+    fun trackGlobalPose(
+        botPoseDelta: Pose2d,
+        currentGlobalPose: Pose2d
+    ): Pose2d {
+        val (v, dTheta) = botPoseDelta
+        val (x, y) = v
+        val sinc = sinc(dTheta)
+        val cosc = cosc(dTheta)
+        val relativeDiff = Vector2d(sinc * x - cosc * y, cosc * x + sinc * y)
+        val dPose = Pose2d(relativeDiff.rotated(currentGlobalPose.heading), dTheta)
+        return (currentGlobalPose + dPose).normalizeAngle()
     }
 }

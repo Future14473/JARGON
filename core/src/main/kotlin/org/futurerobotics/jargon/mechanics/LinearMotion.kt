@@ -32,21 +32,21 @@ class LinearMotion
 }
 
 /**
- * Represents a [MotionState3] in [Double], with position [s], velocity [v], and acceleration [a].
+ * Represents a [MotionState] in [Double], with position [s], velocity [v], and acceleration [a].
  * @param s position of this state
  * @param v velocity of this state
  * @param a acceleration of this state
  */
-class LinearMotionState3
+class LinearMotionState
 @JvmOverloads constructor(
     override val s: Double,
     override val v: Double,
     override val a: Double = 0.0
-) : MotionState3<Double> {
+) : MotionState<Double> {
 
     /** Returns the new state after time [t], assuming constant acceleration. */
-    fun afterTime(t: Double): LinearMotionState3 =
-        LinearMotionState3(s + v * t + a * t.squared() / 2, v + a * t, a)
+    fun afterTime(t: Double): LinearMotionState =
+        LinearMotionState(s + v * t + a * t.squared() / 2, v + a * t, a)
 
     /**
      * Returns the state, the case with positive velocity, after moving a displacement
@@ -54,14 +54,14 @@ class LinearMotionState3
      *
      * This may return a velocity of NaN if this state will never reach a displacement of [s] relative to here.
      */
-    fun afterForwardDist(s: Double): LinearMotionState3 =
-        LinearMotionState3(this.s + s, sqrt(v.squared() + 2 * a * s), a)
+    fun afterForwardDist(s: Double): LinearMotionState =
+        LinearMotionState(this.s + s, sqrt(v.squared() + 2 * a * s), a)
 
     /**
      * Returns the state, the case with positive velocity, when this state reaches a position of [s].
      *
      * This may return a velocity of NaN if this state will never reach a position of [s]
      */
-    fun atDist(s: Double): LinearMotionState3 =
-        LinearMotionState3(s, sqrt(v.squared() + 2 * a * (s - this.s)), a)
+    fun atDist(s: Double): LinearMotionState =
+        LinearMotionState(s, sqrt(v.squared() + 2 * a * (s - this.s)), a)
 }

@@ -106,9 +106,9 @@ private constructor(
             val size = samples.size
             val sSamples = DoubleArray(size)
             val tSamples = DoubleArray(size)
-            samples.forEachIndexed { i, pair ->
-                sSamples[i] = pair.first
-                tSamples[i] = pair.second
+            samples.forEachIndexed { i, (first, second) ->
+                sSamples[i] = first
+                tSamples[i] = second
             }
             return SamplesReparamMapping(sSamples, tSamples)
         }

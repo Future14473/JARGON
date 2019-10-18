@@ -97,7 +97,9 @@ data class Interval(val a: Double, val b: Double) {
          */
         @JvmStatic
         fun of(a: Double, b: Double): Interval {
-            if (a.isNaN() || b.isNaN() || b < a) return EMPTY
+            require(!a.isNaN()) { "a is NaN" }
+            require(!b.isNaN()) { "b is NaN" }
+            if (b < a) return EMPTY
             return Interval(a, b)
         }
 
@@ -110,7 +112,8 @@ data class Interval(val a: Double, val b: Double) {
          */
         @JvmStatic
         fun ofRegular(a: Double, b: Double): Interval {
-            if (a.isNaN() || b.isNaN()) return EMPTY
+            require(!a.isNaN()) { "a is NaN" }
+            require(!b.isNaN()) { "b is NaN" }
             return if (b > a) Interval(a, b) else Interval(b, a)
         }
 
@@ -124,7 +127,9 @@ data class Interval(val a: Double, val b: Double) {
         @JvmOverloads
         @JvmStatic
         fun symmetric(radius: Double, center: Double = 0.0): Interval {
-            if (radius.isNaN() || center.isNaN() || radius < 0) return EMPTY
+            require(!radius.isNaN()) { "radius is NaN" }
+            require(!center.isNaN()) { "center is NaN" }
+            if (radius < 0) return EMPTY
             if (radius == Double.POSITIVE_INFINITY) return REAL
             return Interval(center - radius, center + radius)
         }
