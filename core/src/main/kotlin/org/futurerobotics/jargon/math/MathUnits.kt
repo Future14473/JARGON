@@ -53,6 +53,8 @@ const val newtons: Double = kg * m / s
 const val N: Double = newtons
 const val poundsForce: Double = pounds * 9.80665
 const val lbf: Double = poundsForce
+const val ouncesForce: Double = poundsForce / 16
+const val ozf: Double = ouncesForce
 //basic electrical, for fluency
 const val volts: Double = 1.0
 const val V: Double = volts

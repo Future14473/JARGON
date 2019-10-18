@@ -94,9 +94,10 @@ class MaxPathAngularAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) 
     override fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval {
         //second derivative chain rule, solve for s''(t)
         val deriv = point.tanAngleDeriv
-        return Interval.symmetricRegular(
-            max / deriv, -point.tanAngleSecondDeriv * curVelocity.squared() / deriv
-        )
+        return if (deriv == 0.0) Interval.REAL else
+            Interval.symmetricRegular(
+                max / deriv, -point.tanAngleSecondDeriv * curVelocity.squared() / deriv
+            )
     }
 }
 
@@ -117,9 +118,10 @@ class MaxAngularAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) {
 
     override fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval {
         val deriv = point.headingDeriv
-        return Interval.symmetricRegular(
-            max / deriv, -point.headingSecondDeriv * curVelocity.squared() / deriv
-        )
+        return if (deriv == 0.0) Interval.REAL else
+            Interval.symmetricRegular(
+                max / deriv, -point.headingSecondDeriv * curVelocity.squared() / deriv
+            )
     }
 
     override fun toString(): String = "RobotAngularAccelConstraint(max=$max)"

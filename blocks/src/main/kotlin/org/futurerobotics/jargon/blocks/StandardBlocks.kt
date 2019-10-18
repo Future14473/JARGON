@@ -1,6 +1,7 @@
 package org.futurerobotics.jargon.blocks
 
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
+import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST_ALWAYS
 
 
 /**
@@ -58,4 +59,17 @@ class Monitor<T> : SingleInputBlock<T>(
     override fun getOutput(index: Int): Any? = throw IndexOutOfBoundsException(index)
 
     override fun toString(): String = "Monitor($value)"
+}
+
+/**
+ * A block that simply stores its input, and outputs it the next loop; so it is [OUT_FIRST_ALWAYS].
+ * This is useful for breaking up loops.
+ *
+ * An [initialValue] must be given.
+ *
+ * This is also usable with with [BlocksConfig.delay]
+ */
+class Delay<T>(private val initialValue: T) : Pipe<T, T>(OUT_FIRST_ALWAYS) {
+    override fun doInit(): T? = initialValue
+    override fun pipe(input: T): T = input
 }

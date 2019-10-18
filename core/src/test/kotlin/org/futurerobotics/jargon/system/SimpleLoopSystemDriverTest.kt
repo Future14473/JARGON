@@ -33,14 +33,14 @@ internal class SimpleLoopSystemDriverTest {
         expect {
             repeat(10) {
                 val system = RunTimes(it + 1)
-                SimpleLoopSystemDriver(system).run()
+                SimpleLoopSystemDriver().run(system)
                 that(system.finalNumber).isEqualTo(it + 1)
             }
         }
     }
 
     private fun warmup() {
-        SimpleLoopSystemDriver(RunTimes(5000)).run()
+        SimpleLoopSystemDriver().run(RunTimes(5000))
     }
 
     @RepeatedTest(4)
@@ -48,12 +48,12 @@ internal class SimpleLoopSystemDriverTest {
         val hertz = 100.0
         val regulator = LoopWithMaxSpeed(hertz)
         val system = RunTimes(1)//only regulated on 2nd cycle onward.
-        val driver = SimpleLoopSystemDriver(system, regulator)
+        val driver = SimpleLoopSystemDriver(regulator)
         warmup()
         for (times in 10..12) {
             system.times = times + 1 //regulated 1 less time.
             val time = measureNanoTime {
-                driver.run()
+                driver.run(system)
             } / 1e9
             expectThat(time).isIn((times / hertz).let { 0.95 * it..1.8 * it })//it might be slow
         }

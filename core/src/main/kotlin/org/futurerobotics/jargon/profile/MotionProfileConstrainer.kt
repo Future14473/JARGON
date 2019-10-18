@@ -36,10 +36,10 @@ interface PointConstraint {
  */
 @Suppress("FunctionName")
 inline fun PointConstraint(
-    maxVelocity: Double,
+    crossinline maxVelocity: () -> Double,
     crossinline accelRange: (curVelocity: Double) -> Interval
 ): PointConstraint = object : PointConstraint {
-    override val maxVelocity: Double = maxVelocity
+    override val maxVelocity: Double = maxVelocity()
     override fun accelRange(curVelocity: Double): Interval = accelRange(curVelocity)
 }
 
@@ -59,6 +59,9 @@ abstract class ComponentsMotionProfileConstrainer : MotionProfileConstrainer {
 
     override fun stepper(): Stepper<Double, PointConstraint> =
         Stepper {
-            PointConstraint(getMaxVelocity(it)) { vel -> getMaxAccel(it, vel) }
+            object : PointConstraint {
+                override val maxVelocity: Double = getMaxVelocity(it)
+                override fun accelRange(curVelocity: Double): Interval = getMaxAccel(it, curVelocity)
+            }
         }
 }

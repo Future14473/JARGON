@@ -30,6 +30,17 @@ class ManualClock(var nanoTime: Long = 0) : Clock {
 }
 
 /**
+ * A clock that always outputs a time [nanos] nanoseconds after the previous.
+ */
+class FixedTestClock(var nanos: Long) : Clock {
+    private var time = 0L
+    override fun nanoTime(): Long {
+        time += nanos
+        return time
+    }
+}
+
+/**
  * A [LoopRegulator] is used in control systems to control how the control loop is run.
  *
  * It both keeps track of elapsed time per cycle, and possibly enforces a cycle to be run at a certain speed.

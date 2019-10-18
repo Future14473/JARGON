@@ -11,15 +11,14 @@ import org.hipparchus.filtering.kalman.ProcessEstimate
 import org.hipparchus.filtering.kalman.linear.LinearEvolution
 import org.hipparchus.filtering.kalman.linear.LinearKalmanFilter
 import org.hipparchus.filtering.kalman.linear.LinearProcess
-import org.hipparchus.linear.CholeskyDecomposer
-import org.hipparchus.linear.CholeskyDecomposition
+import org.hipparchus.linear.LUDecomposer
 import org.hipparchus.linear.RealVector
 import kotlin.math.roundToInt
 
-private val DECOMP = CholeskyDecomposer(
+private val DECOMP = LUDecomposer(1e-11)/*CholeskyDecomposer(
     CholeskyDecomposition.DEFAULT_RELATIVE_SYMMETRY_THRESHOLD,
     CholeskyDecomposition.DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD
-)
+)*/
 
 /**
  * A Kalman Filter [Block]. Assumes that the system always runs at the model's period.
@@ -59,24 +58,27 @@ class KalmanFilter(
 
     override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Vec {
         val measurement = inputs[0] as Vec
-        val signal = inputs[0] as Vec
-        repeat((systemValues.loopTime / model.period).roundToInt().coerceAtLeast(1)) {
-            measurementObj.value = measurement
-            process.signal setTo signal
-            val filter = filter ?: LinearKalmanFilter(
-                DECOMP,
-                process,
-                ProcessEstimate(
-                    0.0,
-                    pastOutput ?: model.C.solve(measurement),
-                    stateCovariance
-                )
-            ).also { filter = it }
+        val filter = filter ?: LinearKalmanFilter(
+            DECOMP,
+            process,
+            ProcessEstimate(
+                0.0,
+                pastOutput ?: model.C.solve(measurement),
+                stateCovariance
+            )
+        ).also { filter = it }
+        val loopTime = systemValues.loopTime
+        if (!loopTime.isNaN())
+            repeat((loopTime / model.period).roundToInt().coerceAtLeast(1)) {
+                measurementObj.value = measurement
 
-            filter.estimationStep(measurementObj)
-            lastUpdate = filter.corrected
-        }
-        return lastUpdate!!.state
+                val signal = inputs[1] as Vec
+                process.signal setTo signal
+
+                filter.estimationStep(measurementObj)
+            }
+        lastUpdate = filter.corrected
+        return filter.corrected!!.state
     }
 
     /** Measurement Vec [BlocksConfig.Input] */

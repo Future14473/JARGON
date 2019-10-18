@@ -4,18 +4,49 @@ package org.futurerobotics.jargon.blocks.motion
 
 import org.futurerobotics.jargon.blocks.*
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.control.FixedDriveMotorToBotDelta
+import org.futurerobotics.jargon.blocks.control.FixedDriveMotorToBotVel
 import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.cosc
-import org.futurerobotics.jargon.math.sinc
+import org.futurerobotics.jargon.math.notNaNOrElse
 import org.futurerobotics.jargon.mechanics.GlobalToBot
 import org.futurerobotics.jargon.mechanics.MotionOnly
 import org.futurerobotics.jargon.mechanics.MotionState
 
 /**
- * Non-linearly tracks the _global_ pose, given _bot_ pose velocities.
+ * Common parts of [GlobalPoseTrackerFromDelta] and [GlobalPoseTrackerFromVel]
+ */
+abstract class AbstractGlobalPoseTracker(initialPose: Pose2d) : SingleOutputBlock<Pose2d>(2, IN_FIRST_ALWAYS) {
+    /** The current pose tracked by this pose tracker */
+    protected var currentPose: Pose2d = initialPose
+    /** The pose override [BlocksConfig.Input] */
+    val poseOverride: BlocksConfig.Input<Pose2d?> get() = configInput(1)
+
+    override fun doInit(): Pose2d? = null
+    override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Pose2d {
+        val maybeOverride = inputs[1]
+        val newPose = if (maybeOverride != null) maybeOverride as Pose2d else {
+            val velocity = inputs[0] as Pose2d
+            val poseDelta = toPoseDelta(velocity, systemValues)
+            GlobalToBot.trackGlobalPose(poseDelta, currentPose)
+        }
+        return newPose.also { currentPose = it }
+    }
+
+    /** Converts input to pose delta. */
+    protected abstract fun toPoseDelta(input: Pose2d, systemValues: SystemValues): Pose2d
+
+    override fun prepareAndVerify(config: BlocksConfig): Unit = config.run {
+        if (!inputIsConnected(0))
+            throw IllegalBlockConfigurationException(
+                "Input at ${this@AbstractGlobalPoseTracker.javaClass.simpleName} not connected"
+            )
+    }
+}
+
+/**
+ * Non-linearly tracks the **global** pose, given **bot** pose **velocities** (for example from [FixedDriveMotorToBotVel])
  *
- * The [currentPose] can also be set manually.
+ * The [currentPose] can also be overridden using input.
  *
  * Inputs:
  * 1. the _bot's_ velocity in [Pose2d]
@@ -23,37 +54,39 @@ import org.futurerobotics.jargon.mechanics.MotionState
  *
  * Outputs:
  * 1. the currently estimated global pose.
+ *
+ * @see [GlobalPoseTrackerFromDelta]
  */
-class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : SingleOutputBlock<Pose2d>(2, IN_FIRST_ALWAYS) {
-    private var currentPose: Pose2d = initialPose
-
-    override fun doInit(): Pose2d? = null
-
-    override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Pose2d {
-        val maybeOverride = inputs[1]
-        currentPose = if (maybeOverride != null) maybeOverride as Pose2d else {
-            val velocity = inputs[0] as Pose2d
-            val (v, dTheta) = velocity * systemValues.loopTime
-            val (x, y) = v
-            val sinc = sinc(dTheta)
-            val cosc = cosc(dTheta)
-            val relativeDiff = Vector2d(sinc * x - cosc * y, cosc * x + sinc * y)
-            val dPose = Pose2d(relativeDiff.rotated(currentPose.heading), dTheta)
-            (currentPose + dPose).normalizeAngle()
-        }
-        return currentPose
-    }
-
-    override fun prepareAndVerify(config: BlocksConfig): Unit = config.run {
-        repeat(2) {
-            if (!configInput<Any>(0).isConnected()) throw IllegalBlockConfigurationException()
-        }
-    }
+class GlobalPoseTrackerFromVel(initialPose: Pose2d = Pose2d.ZERO) : AbstractGlobalPoseTracker(initialPose) {
 
     /** The velocity [BlocksConfig.Input] */
     val velocityIn: BlocksConfig.Input<Pose2d> get() = configInput(0)
-    /** The pose override [BlocksConfig.Input] */
-    val poseOverride: BlocksConfig.Input<Pose2d?> get() = configInput(1)
+
+    override fun toPoseDelta(input: Pose2d, systemValues: SystemValues): Pose2d =
+        input * systemValues.loopTime.notNaNOrElse { 0.0 }
+
+
+}
+
+/**
+ * Non-linearly tracks the **global** pose, given **bot** pose **delta** (for example from [FixedDriveMotorToBotDelta]).
+ *
+ * The [currentPose] can also overridden using input.
+ *
+ * Inputs:
+ * 1. the _bot's_ velocity in [Pose2d]
+ * 2. If connected and not null, manual override of global Pose.
+ *
+ * Outputs:
+ * 1. the currently estimated global pose.
+ *
+ * @see GlobalPoseTrackerFromVel
+ */
+class GlobalPoseTrackerFromDelta(initialPose: Pose2d = Pose2d.ZERO) : AbstractGlobalPoseTracker(initialPose) {
+    /** The velocity [BlocksConfig.Input] */
+    val deltaIn: BlocksConfig.Input<Pose2d> get() = configInput(0)
+
+    override fun toPoseDelta(input: Pose2d, systemValues: SystemValues): Pose2d = input
 }
 
 
@@ -71,7 +104,7 @@ class GlobalPoseTracker(initialPose: Pose2d = Pose2d.ZERO) : SingleOutputBlock<P
  * Outputs:
  * 1. [MotionState] from the bot's perspective
  *
- * @see GlobalToBotMotion
+ * @see GlobalToBotMotionReference
  */
 class GlobalToBotReference : Combine<MotionState<Pose2d>, Pose2d, MotionState<Pose2d>>() {
     override fun combine(a: MotionState<Pose2d>, b: Pose2d): MotionState<Pose2d> = GlobalToBot.referenceMotion(a, b)
@@ -95,9 +128,9 @@ class GlobalToBotReference : Combine<MotionState<Pose2d>, Pose2d, MotionState<Po
  * Outputs:
  * 1. [MotionState] from the bot's perspective
  *
- * @see GlobalToBotMotion
+ * @see GlobalToBotMotionReference
  */
-class GlobalToBotMotion : Combine<MotionOnly<Pose2d>, Pose2d, MotionOnly<Pose2d>>() {
+class GlobalToBotMotionReference : Combine<MotionOnly<Pose2d>, Pose2d, MotionOnly<Pose2d>>() {
     override fun combine(a: MotionOnly<Pose2d>, b: Pose2d): MotionOnly<Pose2d> = GlobalToBot.motion(a, b.heading)
 
     /** The pose reference [BlocksConfig.Input] */

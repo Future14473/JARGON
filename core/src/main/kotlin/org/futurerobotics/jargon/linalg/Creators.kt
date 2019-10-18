@@ -9,6 +9,13 @@ import java.util.*
 
 
 fun create(data: Array<DoubleArray>): Mat = MatrixUtils.createRealMatrix(data)
+fun create(rows: Int, cols: Int, func: (row: Int, col: Int) -> Double): Mat = zeros(rows, cols).apply {
+    repeat(rows) { i ->
+        repeat(cols) { j ->
+            this[i, j] = func(i, j)
+        }
+    }
+}
 
 fun zeros(numRows: Int, numCols: Int): Mat = MatrixUtils.createRealMatrix(numRows, numCols)
 fun pureZeroSquare(size: Int): Mat = DiagonalMatrix(DoubleArray(size), false)

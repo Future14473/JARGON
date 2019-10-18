@@ -62,7 +62,7 @@ inline fun <T, R> List<T>.mappedView(crossinline mapping: (T) -> R): List<R> = o
  * Maps all values of this [MutableList] through the [mapping] function, replacing the values
  * with their results.
  */
-inline fun <T> MutableList<T>.localMap(mapping: (T) -> T) {
+inline fun <T> MutableList<T>.mapToSelf(mapping: (T) -> T) {
     val iterator = listIterator()
     while (iterator.hasNext()) {
         iterator.set(mapping(iterator.next()))

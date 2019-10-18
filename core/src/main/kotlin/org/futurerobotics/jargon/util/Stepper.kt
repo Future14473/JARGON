@@ -67,6 +67,18 @@ fun <T, R> Steppable<T, R>.stepToAll(list: Iterable<T>): List<R> {
     return list.map(stepper::stepTo)
 }
 
+/**
+ * Returns a list corresponding to stepping through all the values in the specified [list], and applies
+ * the given [transform] function.
+ * This assumes that all values in [list] can be stepped through.
+ */
+fun <S, T, R> Steppable<S, T>.stepToAll(list: Iterable<S>, transform: (T) -> R): List<R> {
+    val stepper = stepper()
+    return list.map {
+        transform(stepper.stepTo(it))
+    }
+}
+
 
 /**
  * Returns a new Steppable which maps the output of [this] stepper through the given [outputMapping].

@@ -66,7 +66,7 @@ private constructor( //see factory methods
             require(step.isFinite()) { "step ($step) should be finite" }
             require(step != 0.0) { "Step ($step) must be non-zero" }
             val segments = (ceilIfClose((endInclusive - start) / step)).replaceIf({ it < 0 }) { -1 }
-            return DoubleProgression(start, step, start + step * segments, segments)
+            return DoubleProgression(start, start + step * segments, step, segments)
         }
 
         /**

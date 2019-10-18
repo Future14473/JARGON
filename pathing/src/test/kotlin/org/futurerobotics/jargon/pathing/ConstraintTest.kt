@@ -28,7 +28,7 @@ internal class ConstraintTest {
         MaxTotalAccelConstraint(1.0),
         MaxAngularAccelConstraint(0.2)
     )
-    private val constraint = TrajectoryConstraint(path, motionConstraints)
+    private val constraint = TrajectoryConstrainer(path, motionConstraints)
     private val steps = 1_000
     @Test
     fun `Something Fishy About Angular Accel Constraint`() {

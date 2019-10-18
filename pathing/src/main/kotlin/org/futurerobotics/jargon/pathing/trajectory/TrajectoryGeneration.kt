@@ -11,7 +11,7 @@ import org.futurerobotics.jargon.util.Stepper
 
 /**
  * A collection of [VelocityConstraint]s, [AccelConstraint]s, and (flattened) [MultipleConstraint] used to construct
- * a [TrajectoryConstraint] when paired with a Path for dynamic motion profile generation.
+ * a [TrajectoryConstrainer] when paired with a Path for dynamic motion profile generation.
  *
  * This class is here because it can be reused when creating trajectories; however since the path may change
  * the constraint cannot be reused.
@@ -69,7 +69,7 @@ class MotionConstraintSet(
  * This is separate from [MotionConstraintSet], which is (supposed to be) immutable,
  * since the path can differ while using the same constraints.
  */
-class TrajectoryConstraint(
+class TrajectoryConstrainer(
     private val path: Path, motionConstraintSet: MotionConstraintSet
 ) : MotionProfileConstrainer {
 
@@ -88,9 +88,9 @@ class TrajectoryConstraint(
         val pathStepper = path.stepper()
         return Stepper { x ->
             val point = pathStepper.stepTo(x)
-            val maxVel = getMaxVel(point)
-            return@Stepper PointConstraint(maxVel) { curVel ->
-                getMaxAccel(point, curVel)
+            object : PointConstraint {
+                override val maxVelocity: Double = getMaxVel(point)
+                override fun accelRange(curVelocity: Double): Interval = getMaxAccel(point, curVelocity)
             }
         }
     }
@@ -110,7 +110,7 @@ fun generateTrajectory(
     targetEndVel: Double = 0.0,
     segmentSize: Double = 0.01
 ): Trajectory {
-    val profileConstraint = TrajectoryConstraint(path, constraints)
+    val profileConstraint = TrajectoryConstrainer(path, constraints)
     val profile = generateDynamicProfile( //checks done here...
         profileConstraint, path.length, targetStartVel, targetEndVel, segmentSize
     )

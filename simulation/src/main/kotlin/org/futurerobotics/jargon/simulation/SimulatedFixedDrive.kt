@@ -1,14 +1,12 @@
 package org.futurerobotics.jargon.simulation
 
-import org.futurerobotics.jargon.control.AbstractBlock
-import org.futurerobotics.jargon.control.Block.InOutOrder.IN_FIRST
-import org.futurerobotics.jargon.control.Block.InOutOrder.OUT_FIRST
-import org.futurerobotics.jargon.control.Block.Processing.ALWAYS
-import org.futurerobotics.jargon.control.castToDoubleList
-import org.futurerobotics.jargon.control.castToVec
+import org.futurerobotics.jargon.blocks.*
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST_ALWAYS
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.mechanics.FixedDriveModel
+import org.futurerobotics.jargon.mechanics.GlobalToBot
 import org.futurerobotics.jargon.statespace.LinearDriveModels
 import java.util.*
 import kotlin.math.roundToInt
@@ -22,16 +20,16 @@ interface SimulatedDrive {
     /**
      * Gets the current positions of the wheels.
      */
-    val currentPositions: Vec
+    val curMotorPositions: Vec
     /**
      * Gets the current velocities of the wheels.
      */
-    val currentVelocities: Vec
+    val curMotorVelocities: Vec
 
     /**
      * Gets the current pose of the bot.
      */
-    val currentPose: Pose2d
+    val curGlobalPose: Pose2d
 
     /**
      * Updates the simulation, using the given [volts] vector and the loop [time] elapsed.
@@ -49,10 +47,10 @@ interface SimulatedDrive {
  */
 class SimulatedFixedDrive(
     private val driveModel: FixedDriveModel,
+    private val random: Random = Random(),
     private val voltageNoise: Mat,
     private val measurementNoise: Mat,
-    private val timeStep: Double = 0.01,
-    private val random: Random = Random()
+    private val timeStep: Double = 0.01
 ) : SimulatedDrive {
     constructor(
         model: FixedDriveModel,
@@ -61,7 +59,7 @@ class SimulatedFixedDrive(
         voltageNoise: Mat,
         measurementNoise: Mat,
         timeStep: Double = 0.01
-    ) : this(perturb.perturb(model, random), voltageNoise, measurementNoise, timeStep, random)
+    ) : this(perturb.perturb(model, random), random, voltageNoise, measurementNoise, timeStep)
 
     init {
         require(voltageNoise.isSquare) { "Voltage noise $voltageNoise must be square" }
@@ -69,26 +67,39 @@ class SimulatedFixedDrive(
         require(timeStep > 0) { "Time step $timeStep must be > 0" }
     }
 
-    override val currentPositions: Vec = zeroVec(driveModel.numWheels)
-    override var currentVelocities: Vec = zeroVec(driveModel.numWheels) //== state
-    override var currentPose: Pose2d = Pose2d.ZERO
+    private var curWheelVelocities: Vec = zeroVec(driveModel.numWheels)
+    private val curWheelPositions: Vec = zeroVec(driveModel.numWheels)
+
+    override val curMotorVelocities: Vec get() = driveModel.motorVelFromWheelVel * curWheelVelocities
+    override val curMotorPositions: Vec get() = driveModel.motorVelFromWheelVel * curWheelPositions
+
+    override var curGlobalPose: Pose2d = Pose2d.ZERO
     //wheel velocity controller
     private val wheelSSModel = LinearDriveModels.wheelVelocityController(driveModel).discretize(timeStep)
 
     override fun update(volts: Vec, time: Double) {
+        if (time.isNaN()) return
+//        require(!volts.isNaN)
         repeat((time / timeStep).roundToInt()) {
             singleStep(volts)
         }
     }
 
     private fun singleStep(volts: Vec) {
-        val realVolts = volts + voltageNoise * normRandVec(voltageNoise.rows)
-        val pastVelocities = currentVelocities
-        currentVelocities = wheelSSModel.processState(pastVelocities, realVolts)
-        val diff = (pastVelocities + currentVelocities) * (timeStep / 2)
-        currentPositions += diff
-        currentPose += driveModel.getEstimatedVelocity(diff.asList())
+        val realVolts = volts + getVoltageNoise()
+        val pastWheelVelocities = curWheelVelocities
+        curWheelVelocities = wheelSSModel.processState(pastWheelVelocities, realVolts)
+        val wheelDelta = (pastWheelVelocities + curWheelVelocities) * (timeStep / 2)
+        curWheelPositions += wheelDelta
+        val botPoseDelta = driveModel.getBotVelFromWheelVel(wheelDelta)
+        curGlobalPose = GlobalToBot.trackGlobalPose(botPoseDelta, curGlobalPose)
     }
+
+    /** Gets a measurement noise vector. */
+    fun getMeasurementNoise(): Vec = measurementNoise * normRandVec(measurementNoise.rows)
+
+    /** Gets a voltage noise vector. */
+    fun getVoltageNoise(): Vec = voltageNoise * normRandVec(voltageNoise.rows)
 }
 
 /**
@@ -96,26 +107,40 @@ class SimulatedFixedDrive(
  *
  * Inputs:
  * 1. Voltage inputs; either a [Vec], List<Double> or DoubleArray/double[]
- * 2. Elapsed time.
  *
  * Outputs:
  * 1. A List<Double> of motor positions in radians
  * 2. A List<Double> of motor velocities in radians
  */
-class SimulatedDriveInput(private val drive: SimulatedFixedDrive) : AbstractBlock(2, 1, OUT_FIRST, ALWAYS) {
-    private fun writeOutputs(outputs: MutableList<Any?>) {
-        outputs[0] = drive.currentPositions.castToDoubleList()
-        outputs[1] = drive.currentVelocities.castToDoubleList()
+class SimulatedDriveInput(private val drive: SimulatedFixedDrive) : AbstractBlock(1, 3, OUT_FIRST_ALWAYS),
+    BlocksConfig.Input<List<Double>> {
+
+    override fun init() {
     }
 
-    override fun init(outputs: MutableList<Any?>) {
-        writeOutputs(outputs)
+    override fun process(inputs: List<Any?>, systemValues: SystemValues) {
+        @Suppress("UNCHECKED_CAST")
+        drive.update(createVec(inputs[0] as List<Double>), systemValues.loopTime)
     }
 
-    override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
-        drive.update(outputs[0]!!.castToVec(), outputs[1] as Double)
-        writeOutputs(outputs)
+    override fun getOutput(index: Int): Any? = when (index) {
+        0 -> (drive.curMotorPositions + drive.getMeasurementNoise()).toList()
+        1 -> (drive.curMotorVelocities + drive.getMeasurementNoise()).toList()
+        2 -> drive.curGlobalPose
+        else -> throw IndexOutOfBoundsException(index)
     }
+
+
+    /** Motor positions [BlocksConfig.Output] */
+    val motorPos: BlocksConfig.Output<List<Double>> get() = configOutput(0)
+    /** Motor velocities [BlocksConfig.Output] */
+    val motorVel: BlocksConfig.Output<List<Double>> get() = configOutput(1)
+
+    /** The actual pose as monitored by the simulated drive. Usually will not have direct info about this; used for testing. */
+    val actualPose: BlocksConfig.Output<Pose2d> get() = configOutput(2)
+
+    override val block: Block get() = this
+    override val index: Int get() = 0
 }
 
 /**
@@ -125,15 +150,8 @@ class SimulatedGyro(
     private val drive: SimulatedFixedDrive,
     private val noiseStd: Double,
     private val random: Random = Random()
-) : AbstractBlock(
-    0, 1, IN_FIRST, ALWAYS
-) {
-    override fun init(outputs: MutableList<Any?>) {
-        outputs[0] = drive.currentPose.heading + random.nextGaussian() * noiseStd
-    }
-
-    override fun process(inputs: List<Any?>, outputs: MutableList<Any?>) {
-        outputs[0] = drive.currentPose.heading + random.nextGaussian() * noiseStd
-    }
-
+) : SingleOutputBlock<Double>(0, IN_FIRST_ALWAYS) {
+    override fun doInit(): Double? = null
+    override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Double =
+        drive.curGlobalPose.heading + random.nextGaussian() * noiseStd
 }

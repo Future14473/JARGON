@@ -249,7 +249,7 @@ class SplitPose : SingleInputListStoreBlock<Pose2d>(3, IN_FIRST_LAZY),
 /**
  * A block that creates a pose from x, y, and heading components.
  */
-class CreatePoseFromComp : SingleOutputBlock<Pose2d>(1, IN_FIRST_LAZY) {
+class CreatePoseFromComp : SingleOutputBlock<Pose2d>(3, IN_FIRST_LAZY) {
     override fun doInit(): Pose2d? = null
 
     override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Pose2d =

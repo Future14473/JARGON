@@ -94,7 +94,7 @@ internal class BlocksSystemTest : AbstractBlockSystemTest() {
         }
         repeat(10) { i ->
             externalConstant.value = i
-            SimpleLoopSystemDriver(system).run()
+            SimpleLoopSystemDriver().run(system)
             expectThat(monitor.value).isEqualTo(i)
         }
     }

@@ -221,7 +221,7 @@ abstract class Pipe<T, R>(processing: Block.Processing) : SingleOutputBlock<R>(
     1, processing
 ), BlocksConfig.Input<T> {
 
-    final override fun doInit(): R? = null
+    override fun doInit(): R? = null
     final override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): R = pipe(inputs[0].unsafeCast())
 
     /**
@@ -368,23 +368,27 @@ abstract class CompositeBlock(numInputs: Int, numOutputs: Int, processing: Block
         outputs: List<BlocksConfig.Input<Any?>>
     )
 
-    override fun prepareAndVerify(config: BlocksConfig) {
+    final override fun prepareAndVerify(config: BlocksConfig) {
         subsystem = SubsystemConfig().run {
             buildSubsystem(sources.allOutputs(), outputs.allInputs())
+
             getSystem()
         }
-        doVerifyConfig(config)
+        morePrepareAndVerify(config)
     }
 
-    /** Same thing as [doVerifyConfig] */
-    protected open fun doVerifyConfig(config: BlocksConfig) {
+    /** Does more. Only way to enforce "call". [prepareAndVerify] */
+    protected open fun morePrepareAndVerify(config: BlocksConfig) {
         super.prepareAndVerify(config)
     }
 
     private inner class SubsystemConfig : BaseBlocksConfig() {
         val sources = Sources()
         val outputs = Outputs()
-        fun getSystem() = Subsystem(connections, sources, outputs)
+        fun getSystem(): Subsystem {
+            verifyConfig()
+            return Subsystem(connections, sources, outputs)
+        }
     }
 }
 

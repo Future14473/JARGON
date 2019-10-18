@@ -10,7 +10,7 @@ import strikt.api.expectThat
 import kotlin.random.Random
 
 
-internal class GlobalPoseTrackerTest {
+internal class GlobalPoseTrackerFromVelTest {
 
     @Test
     fun `unit circle walk`() {
@@ -60,7 +60,7 @@ internal class GlobalPoseTrackerTest {
         val input = ExternalValue(Pose2d.ZERO)
         var monitor: Monitor<Pose2d>
         return Triple(buildBlocksSystem {
-            val tracker = GlobalPoseTracker(initialPose)
+            val tracker = GlobalPoseTrackerFromVel(initialPose)
             tracker.velocityIn from input
             monitor = tracker.monitor()
         }, input, monitor)

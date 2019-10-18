@@ -3,7 +3,9 @@
 val ext = project.rootProject.extra
 
 val hipparchus: ((String) -> String) by ext
-val junit: String by ext
+val junit5: String by ext
+val junit5engine: String by ext
+val strikt: String by ext
 
 plugins {
     kotlin("jvm")
@@ -15,9 +17,16 @@ dependencies {
     api(project(":core"))
     api(project(":blocks"))
     implementation(hipparchus("filtering"))
-    testImplementation(junit)
-}
+    testImplementation(junit5)
+    testRuntimeOnly(junit5engine)
+    testImplementation(project(":test-util"))
+    testImplementation(strikt)
 
+
+}
+tasks.test {
+    useJUnitPlatform()
+}
 
 tasks.dokka {
     outputFormat = "html"

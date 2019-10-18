@@ -24,7 +24,7 @@ interface DriveModel {
      */
     val moi: Double
     /**
-     * @return true if this robot can move in any direction AND rotate independently of each other.
+     * return true if this robot can move in any direction AND rotate independently of each other.
      */
     val isHolonomic: Boolean
 }
@@ -91,10 +91,11 @@ open class FixedDriveModel(
      */
     val voltsFromBotAccel: Mat by lazy { botAccelFromVolts.pinv() }
 
+    /** Transforms wheel velocities into bot velocities, least squares. */
+    val botVelFromWheelVel: Mat by lazy { wheelVelFromBotVel.pinv() }
     /** Transforms motor velocities into bot velocities; least squares. */
     val botVelFromMotorVel: Mat by lazy {
         val wheelVelFromMotorVel = pureDiag(wheels.map { 1 / it.motorVelPerWheelVel })
-        val botVelFromWheelVel = wheelVelFromBotVel.pinv()
         botVelFromWheelVel * wheelVelFromMotorVel
     }
     /** Transforms wheel velocities into motor velocities. */
@@ -121,15 +122,27 @@ open class FixedDriveModel(
     }
 
     /**
-     * Gets the estimated velocity based on the velocity in [motorVelocities].
+     * Gets the estimated bot velocity based on the the [motorVelocities] (angular velocity).
      *
-     * This also gets the estimated _difference_ in _local_ pose given a difference in [motorVelocities]
+     * This also gets the estimated _difference_ in _local_ pose given a difference in motor _positions_
      */
-    fun getEstimatedVelocity(motorVelocities: List<Double>): Pose2d {
-        require(motorVelocities.size == botVelFromMotorVel.columnDimension) {
+    fun getBotVelFromMotorVel(motorVelocities: Vec): Pose2d {
+        require(motorVelocities.dimension == botVelFromMotorVel.columnDimension) {
             "motorVelocities $motorVelocities should have same size as wheels $numWheels."
         }
-        return Pose2d(botVelFromMotorVel * motorVelocities.toDoubleArray())
+        return Pose2d(botVelFromMotorVel * motorVelocities)
+    }
+
+    /**
+     * Gets the estimated bot velocity based on the [wheelVelocities] (tangental velocity).
+     *
+     * This also gets the estimated _difference_ in _local_ pose given a difference in wheel _positions_
+     */
+    fun getBotVelFromWheelVel(wheelVelocities: Vec): Pose2d {
+        require(wheelVelocities.dimension == botVelFromWheelVel.columnDimension) {
+            "wheelVelocities $wheelVelocities should have same size as wheels $numWheels."
+        }
+        return Pose2d(botVelFromWheelVel * wheelVelocities)
     }
 }
 
@@ -155,7 +168,7 @@ object DriveModels {
                 transmission,
                 Vector2d(verticalRadius, horizontalRadius),
                 wheelRadius,
-                -45 * degrees
+                -44.99 * degrees //deviate to prevent problems with singular matrices.
             ),
             FixedWheelModel.fromWheelAngle(
                 transmission,

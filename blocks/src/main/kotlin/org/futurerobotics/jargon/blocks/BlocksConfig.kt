@@ -117,12 +117,30 @@ abstract class BlocksConfig {
         ?: throw IllegalStateException("Input has not yet been connected, cannot deduce source")
 
     /**
+     * Adds the given [pipeBlock], connects [this] input, and returns the pipe's output.
+     *
+     * Useful for quick transformations.
+     */
+    fun <T, R> Output<T>.pipe(pipeBlock: Pipe<T, R>): Output<R> = pipeBlock.also { this into it }
+
+    /**
      * Creates a [Pipe] block that pipes this output through the given [transform] function, connects
      * it, and returns the pipe's output.
+     *
+     * Useful for quick transformations.
      */
     inline fun <T, R> Output<T>.pipe(
         crossinline transform: T.() -> R
     ): Output<R> = Pipe.of(transform).also { it from this }
+
+    /**
+     * Adds the given [combineBlock], connects [this] and [second] to its first and second inputs, and returns the
+     * combine's output.
+     *
+     * Useful for quick transformations.
+     */
+    fun <A, B, R> Output<A>.pipe(second: Output<B>, combineBlock: Combine<A, B, R>): Output<R> =
+        combineBlock.also { this into it.first; second into it.second }
 
     /**
      * Creates a [Combine] block that combines [this] and [second] outputs through the given [combine] function,
@@ -131,9 +149,13 @@ abstract class BlocksConfig {
     inline fun <A, B, R> Output<A>.combine(
         second: Output<B>,
         crossinline combine: A.(B) -> R
-    ): Output<R> =
-        Combine.of(combine).also { it.first from this; it.second from second }
+    ): Output<R> = Combine.of(combine).also { this into it.first; second into it.second }
 
+    /**
+     * Create a [Delay] block with the given [initialValue], connects this output into it, and returns the delay's
+     * output.
+     */
+    fun <T> Output<T>.delay(initialValue: T): Output<T> = Delay(initialValue).also { this into it }
     /**
      * Common interface for [Input] and [Output]; use those.
      */

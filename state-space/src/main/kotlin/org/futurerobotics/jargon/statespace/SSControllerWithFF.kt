@@ -1,5 +1,6 @@
 package org.futurerobotics.jargon.statespace
 
+import org.futurerobotics.jargon.blocks.BlocksConfig
 import org.futurerobotics.jargon.blocks.Combine
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.matches
@@ -28,7 +29,12 @@ class SSControllerWithFF(
 ) : Combine<Any, Vec, Vec>() {
 
     init {
-        require(kGain.matches(model.stateStructure, model.inputStructure))
+        require(
+            kGain.matches(
+                model.inputStructure,
+                model.stateStructure
+            )
+        ) { "kGain must be compatible with this matrix" }
     }
 
     //flatten model
@@ -39,7 +45,7 @@ class SSControllerWithFF(
         //we don't care about elapsed seconds.
         val (r, r1) = getRefs(a)
         val x = b
-        return kGain(r - x) + kFF(r1 - model.A * r)
+        return kGain * (r - x) + kFF(r1 - model.A * r)
     }
 
     @Suppress("UNCHECKED_CAST")

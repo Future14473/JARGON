@@ -39,6 +39,7 @@ class ImmutableRealMatrix private constructor(private val mat: Mat) : RealMatrix
     ): Double = no
 
     override fun walkInRowOrder(visitor: RealMatrixChangingVisitor?): Double = no
+    override fun toString(): String = "Immutable $mat"
 
     companion object {
         /**

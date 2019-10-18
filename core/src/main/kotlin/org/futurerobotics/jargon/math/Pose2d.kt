@@ -16,7 +16,13 @@ data class Pose2d(val vec: Vector2d, val heading: Double) {
     /** Constructs a pose from [x] and [y] position components, and [heading] */
     constructor(x: Double, y: Double, heading: Double) : this(Vector2d(x, y), heading)
 
-    constructor(values: DoubleArray) : this(values[0], values[1], values[2])
+    constructor(values: DoubleArray) : this(values[0], values[1], values[2]) {
+        require(values.size == 3) { "Give values must have size 3; got size ${values.size} instead" }
+    }
+
+    constructor(values: Vec) : this(values[0], values[1], values[2]) {
+        require(values.dimension == 3) { "Given vector must have size 3; got size ${values.dimension} instead" }
+    }
 
     /** The x component of the position ([vec]) of this Pose */
     val x: Double get() = vec.x

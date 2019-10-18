@@ -23,7 +23,8 @@ import org.futurerobotics.jargon.util.Stepper
  * Outputs:
  * 1. The current output of the motion profiled object.
  * 2. The current progress along motion profiled object as a number from 0 to 1.
- * Subclasses may specify other outputs, starting with #3
+ * 3. Boolean; true if this follower is following a profile, false if idling..
+ * Subclasses may specify other outputs, starting with #4
  *
  * @param initialIdleOutput the initial output if the system is idle and no motion profiled has been given
  *              yet.
@@ -37,8 +38,8 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
     private var currentStepper: Stepper<Double, T>? = null //if null; means poll more.
 
     init {
-        require(numInputs >= 3) { "NumInputs should be >= 2" }
-        require(numOutputs >= 2) { "NumInputs should be >= 2" }
+        require(numInputs >= 2) { "NumInputs should be >= 2" }
+        require(numOutputs >= 3) { "NumOutputs should be >= 3" }
     }
 
     final override fun init() {
@@ -92,6 +93,7 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
         !in 0..numOutputs -> IndexOutOfBoundsException(index)
         0 -> profileOutput
         1 -> currentTime / endTime
+        2 -> currentStepper != null
         else -> getMoreOutput(index)
     }
 
@@ -115,6 +117,8 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
     /** The progress [BlocksConfig.Output] of this [MotionProfileFollower] */
     val progress: BlocksConfig.Output<Double> get() = configOutput(1)
 
+    /** True if this follower is following an output. */
+    val isFollowing: BlocksConfig.Output<Boolean> get() = configOutput(2)
 
 }
 
@@ -130,11 +134,12 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
  * Outputs:
  * 1. The current output of the motion profiled object.
  * 2. The current progress along motion profiled object as a number from 0 to 1.
+ * 3. Boolean; true if this follower is following a profile, false if idling..
  *
  * @param initialIdleOutput the initial value to be outputted when no motion profile has been ever given.
  */
 class TimeOnlyMotionProfileFollower<T : Any>(initialIdleOutput: T) :
-    MotionProfileFollower<T>(2, 2, initialIdleOutput) {
+    MotionProfileFollower<T>(2, 3, initialIdleOutput) {
 
     override fun getNextTime(
         currentTime: Double,

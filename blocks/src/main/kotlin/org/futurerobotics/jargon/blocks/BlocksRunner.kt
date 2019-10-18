@@ -74,35 +74,46 @@ private class IndexedBlocksCreator(
 
     /** Verifies no bad loops */
     private fun traceAll() {
-        val roots = nodeBlocks.values.filter { it.block.processing.isAlwaysProcess }
-        roots.forEach {
-            it.trace()
-        }
+        nodeBlocks.values
+            .forEach {
+                if (it.block.processing.isAlwaysProcess) {
+                    if (it.block.processing.isOutFirst)
+                        it.traceStatus = PROCESS_NOW
+                    it.trace()
+                }
+            }
     }
 
     /** Traces (dfs-type thing) all the inputs at the [this]; marking used blocks and making sure there are no
      * unresolvable loops.*/
-    private fun NodeBlock.trace(): Unit = run {
+    private fun NodeBlock.trace(): Unit {
         when (traceStatus) {
             PROCESSED -> return
+            NOT_PROCESSED -> if (!block.processing.isOutFirst) doTrace()
+            PROCESS_NOW -> doTrace()
             PROCESSING -> { //can't get inputs if needs inputs
-                throw IllegalBlockConfigurationException(
-                    "Loop at component ${this}. Consider making a block in " +
-                            "the loop out first (or adding one to the loop), or breaking " +
-                            "up the loop."
-                )
-            }
-            NOT_PROCESSED -> {
-                if (block.processing.isOutFirst) {
-                    traceStatus = PROCESSED //out first always valid.
-                } else {
-                    traceStatus = PROCESSING
-                    inputSources.forEach { it?.nodeBlock?.trace() }
-                    traceStatus = PROCESSED
-                }
+                if (!block.processing.isOutFirst)
+                    throw IllegalBlockConfigurationException(
+                        """
+                            Loop at component $block. 
+                            Consider:
+                            - Breaking up the loop
+                            - Changing to or adding a block with OUT_FIRST_ALWAYS
+                            - Inserting a [Delay] block using BlocksConfig.delay
+                            - Checking configuration
+                            """.trimIndent()
+                    )
+
             }
             else -> throw AssertionError()
         }
+    }
+
+
+    private fun NodeBlock.doTrace() {
+        traceStatus = PROCESSING
+        inputSources.forEach { it?.nodeBlock?.trace() }
+        traceStatus = PROCESSED
     }
 
     private fun createConnectedBlocks(): List<IndexedBlock> {
@@ -150,7 +161,8 @@ private class IndexedBlocksCreator(
     companion object {
         private const val NOT_PROCESSED = 0
         private const val PROCESSING = 1
-        private const val PROCESSED = 3
+        private const val PROCESSED = 2
+        private const val PROCESS_NOW = 3
     }
 }
 
@@ -229,7 +241,7 @@ abstract class AbstractBlocksRunner(
             outputs.fill(null)
         }
 
-        /** Gets into to this block. lazy. */
+        /** Gets inputs into this block, lazy. */
         protected fun getInputLazy(index: Int): Any? = sourceBlockIndices[index].let {
             if (it == -1) null
             else allRunners[it].getOutputLazy(sourceOutputIndices[index])

@@ -41,12 +41,12 @@ sealed class LinearStateSpaceModel constructor(
         require(B.rows == stateSize)
         { "B matrix must have same number of rows as state vector ($stateStructure.size)" }
         this.inputStructure = inputStructure?.also {
-            require(B.rows == it.size)
+            require(B.cols == it.size)
             { "B matrix must have same number of columns as output/signal vector (${it.size})" }
-        } ?: VectorStructure(B.rows)
-        require(C.rows == stateSize)
+        } ?: VectorStructure(B.cols)
+        require(C.cols == stateSize)
         { "C matrix must have same number of columns as state vector ($stateSize)" }
-        require(D.rows == inputSize)
+        require(D.cols == inputSize)
         { "D matrix must have same number of columns as input vector ($inputSize)" }
         this.outputStructure = outputStructure?.also {
             require(C.rows == it.size)
@@ -93,16 +93,23 @@ sealed class LinearStateSpaceModel constructor(
     /**
      * Gets either x-dot or x_k+1 given the current state vector [x] and signal vector [u]
      */
-    fun processState(x: Vec, u: Vec): Vec {
-        return A * x + B * u
-    }
+    fun processState(x: Vec, u: Vec): Vec = A * x + B * u
 
     /**
      * Gets the output/measurement vector given the current state vector [x] and signal vector [u]
      */
-    fun processOutput(x: Vec, u: Vec): Vec {
-        return C * x + D * u
-    }
+    fun processOutput(x: Vec, u: Vec): Vec = C * x + D * u
+
+    override fun toString(): String = """${this::class.java.simpleName}
+A: 
+${A.formatReadable()}
+B: 
+${B.formatReadable()}
+C:
+${C.formatReadable()}
+D: 
+${D.formatReadable()}
+"""
 
 }
 
@@ -128,8 +135,8 @@ open class ContinuousLinSSModel @JvmOverloads constructor(
         require(QRCost applicableTo this) { "Cost matrices must be applicable to this model" }
         val model = discretize(period)
 
-        val q = expm(MatConcat.square2x2(-A.T, QRCost.Q, 0, A)).let {
-            it.getQuad(1, 1) * it.getQuad(0, 1)
+        val q = expm(MatConcat.dynamic2x2Square(-A.T, QRCost.Q, 0, A) * period).let {
+            it.getQuad(A.rows, 1, 1) * it.getQuad(A.rows, 0, 1)
         }
         val r = QRCost.R / period
         return model to QRCost(q, r)
@@ -139,8 +146,8 @@ open class ContinuousLinSSModel @JvmOverloads constructor(
      *  Discretizes this [ContinuousLinSSModel] using the given [period]
      */
     fun discretize(period: Double): DiscreteLinSSModel {
-        val (ad, bd) = expm(MatConcat.square2x2(A, B, 0, 0)).let {
-            it.getQuad(0, 0) to it.getQuad(0, 1)
+        val (ad, bd) = expm(MatConcat.dynamic2x2Square(A, B, 0, 0) * period).let {
+            it.getQuad(A.rows, 0, 0) to it.getQuad(A.rows, 0, 1)
         }
         return DiscreteLinSSModel(ad, bd, C, D, period, stateStructure, inputStructure, outputStructure)
     }
@@ -181,7 +188,7 @@ object LinearDriveModels {
      * instead, and use [wheelVelocityController]
      */
     @Suppress("UnnecessaryVariable")
-        fun poseVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
+    fun poseVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
         require(driveModel.isHolonomic) { "Drive model must be holonomic" }
         val size = driveModel.numWheels
         val botDeccelFromBotVel = -driveModel.botAccelFromVolts * driveModel.voltsFromBotVel
@@ -193,7 +200,7 @@ object LinearDriveModels {
         val names = List(size) { "wheel$it" }
         return ContinuousLinSSModel(
             a, b, c, d,
-            stateStructure = VectorStructure(listOf("x", "y", "heading"), repeatedList(size, "")),
+            stateStructure = VectorStructure(listOf("x", "y", "heading"), repeatedList(3, "")),
             inputStructure = VectorStructure(names, repeatedList(size, "volts")),
             outputStructure = VectorStructure(names, repeatedList(size, "rad/s"))
         )
@@ -213,12 +220,12 @@ object LinearDriveModels {
      * In that case you have a holonomic drive, so use [poseVelocityController]
      */
     @Suppress("UnnecessaryVariable")
-        fun wheelVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
+    fun wheelVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
         val size = driveModel.numWheels
         val wheelDeccelFromWheelVel = -driveModel.wheelAccelFromVolts * driveModel.voltsFromWheelVel
         val a = wheelDeccelFromWheelVel
         val b = driveModel.wheelAccelFromVolts
-        val c = pureEye(size) //measure vel directly
+        val c = eye(size) //measure vel directly
         val d = zeros(size, size)
         val names = List(size) { "wheel$it" }
         val velStructure = VectorStructure(names, repeatedList(size, "rad/s"))

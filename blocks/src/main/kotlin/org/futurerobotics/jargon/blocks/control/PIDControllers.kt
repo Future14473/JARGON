@@ -45,9 +45,9 @@ class PIDController(
     override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Double {
         val s = inputs[0] as Double
         val currentState = inputs[1] as Double
-        val loopTime = inputs[2] as Double
-
         val curError = (s - currentState).coerceIn(coefficients.errorBounds)
+
+        val loopTime = systemValues.loopTime
         return if (loopTime.isNaN()) {
             prevError = curError
             0.0

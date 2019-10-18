@@ -3,11 +3,11 @@ package org.futurerobotics.jargon.pathing.reparam
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.function.VectorFunction
 import org.futurerobotics.jargon.math.notNaNOrElse
-import org.futurerobotics.jargon.math.squared
 import org.futurerobotics.jargon.math.zcross
 import org.futurerobotics.jargon.pathing.Curve
 import org.futurerobotics.jargon.pathing.CurvePoint
 import org.futurerobotics.jargon.util.Stepper
+import org.futurerobotics.jargon.util.replaceIf
 
 /**
  * A [Curve] that works by reparameterizing an arbitrary C2 continuous [VectorFunction] ([func]) and a [SamplesReparamMapping] ([mapping]) that maps
@@ -38,6 +38,7 @@ class ReparamCurve(private val func: VectorFunction, internal val mapping: Repar
         private var _positionDeriv: Vector2d? = null
         override val positionDeriv: Vector2d
             get() = _positionDeriv ?: v.normalized()
+                .replaceIf({ !it.isNan() }) { Vector2d.ZERO }
                 .also { _positionDeriv = it }
         override val positionSecondDeriv: Vector2d
             get() = tanAngleDeriv zcross positionDeriv
@@ -47,14 +48,15 @@ class ReparamCurve(private val func: VectorFunction, internal val mapping: Repar
         override val tanAngleDeriv: Double
             get() = _tanAngleDeriv.notNaNOrElse {
                 (v cross a / v.lengthPow(3.0))
+                    .notNaNOrElse { 0.0 }
                     .also { _tanAngleDeriv = it }
             }
         private var _tanAngleSecondDeriv = Double.NaN
         override val tanAngleSecondDeriv: Double
             get() = _tanAngleSecondDeriv.notNaNOrElse {
-                ((v cross j) / v.lengthSquared.squared() - 3 * tanAngleDeriv * (v dot a) / v.lengthPow(3.0)).also {
-                    _tanAngleSecondDeriv = it
-                }
+                ((v cross j) / v.lengthPow(4.0) - 3 * tanAngleDeriv * (v dot a) / v.lengthPow(3.0))
+                    .notNaNOrElse { 0.0 }
+                    .also { _tanAngleSecondDeriv = it }
             }
     }
 }

@@ -1,5 +1,3 @@
-@file:JvmName("LinAlg")
-
 package org.futurerobotics.jargon.linalg
 
 import org.hipparchus.linear.RealMatrix
@@ -11,7 +9,7 @@ typealias Mat = RealMatrix
 /** Shorthand for a [RealVector]. */
 typealias Vec = RealVector
 
-private val dummyArr = pureDiag(0.0)
+private val dummyMat = pureDiag(0.0)
 
 /**
  * Functions for concatenating matrices
@@ -28,7 +26,7 @@ object MatConcat {
         val numRows = numStops + 1
         val numCols = numElements / numRows
         if (numRows * numCols != numElements) throwNotEven()
-        val arr = Array(numRows) { Array(numCols) { dummyArr } }
+        val arr = Array(numRows) { Array(numCols) { dummyMat } }
         var curRow = 0
         var curCol = 0
         fun Any.convertToMat(): Mat = when (this) {
@@ -106,38 +104,77 @@ object MatConcat {
      *
      * This is also _dynamic_:
      * If at least one matrix is supplied and so the size can be determined, use the value 0 to indicate a zero
-     * matrix and the value 1 to indicate an identity matrix.
+     * matrix and the value 1 to indicate an identity matrix. (must be Int).
      * */
     @JvmStatic
-    fun square2x2(m11: Any, m12: Any, m21: Any, m22: Any): Mat {
-        var size: Int = -1
+    fun dynamic2x2Square(m11: Any, m12: Any, m21: Any, m22: Any): Mat {
         val all = arrayOf(m11, m12, m21, m22)
-        all.forEach {
+        val rows = intArrayOf(-1, -1)
+        val cols = intArrayOf(-1, -1)
+        all.forEachIndexed { i, it ->
             when (it) {
                 is Mat -> {
-                    require(it.isSquare) { "Matrix given must be square" }
-                    if (size == -1) size = it.rows
-                    else require(size == it.rows) { "All matrices give must be same size" }
+                    val rowI = i / 2
+                    val colI = i % 2
+                    if (rows[rowI] == -1) rows[rowI] = it.rows
+                    else require(it.rows == rows[rowI]) { "Row size at ${rowI + 1} must match" }
+                    if (cols[colI] == -1) cols[colI] = it.cols
+                    else require(it.cols == cols[colI]) { "Col size at ${colI + 1} must match" }
                 }
                 !is Number -> throwInvalidValue()
+                0, 1 -> Unit
+                else -> throwInvalidValue()
             }
         }
-        require(size != -1) { "At least one matrix must be given" }
-        fun convertToMat(any: Any, size: Int): Mat = when (any) {
-            is Mat -> any
-            !is Number -> throwInvalidValue()
-            0 -> pureZeroSquare(size)
-            1 -> pureEye(size)
-            else -> throw IllegalArgumentException(
-                "Number value given must be 0, for zero matrix, or 1, for identity matrix"
-            )
+        all.forEachIndexed { i, it ->
+            if (it != 1) return@forEachIndexed
+            val rowI = i / 2
+            val colI = i % 2
+            if (rows[rowI] != -1) rows[rowI].let {
+                if (cols[colI] == -1) cols[colI] = it
+                else require(cols[colI] == it) { "Size around identity matrix must be square" }
+            }
+            //rows[rowI] == -1
+            else cols[colI].let {
+                require(it != -1) { "not enough information to deduce size of identity matrix" }
+                rows[rowI] = it
+            }
         }
-        return zeros(size * 2, size * 2).apply {
-            this[0, 0] = convertToMat(m11, size)
-            this[size, 0] = convertToMat(m12, size)
-            this[0, size] = convertToMat(m21, size)
-            this[size, size] = convertToMat(m22, size)
+        val rowSum = if (rows.none { it == -1 }) rows.sum() else -1
+        val colSum = if (cols.none { it == -1 }) cols.sum() else -1
+        all.forEachIndexed { i, it ->
+            if (it != 0) return@forEachIndexed
+            val rowI = i / 2
+            val colI = i % 2
+            if (rows[rowI] == -1) {
+                require(colSum != -1) { "Not enough information to deduce size of zero matrix, even if assuming square" }
+                rows[rowI] = colSum - rows[rowI.flip]
+            }
+            //if ^ happened and succeded, this cannot happen.
+            if (cols[colI] == -1) {
+                require(rowSum != -1) { "Not enough information to deduce size of zero matrix, even if assuming square" }
+                cols[colI] = rowSum - cols[colI.flip]
+            }
         }
+        require(rows.none { it == -1 }) { "Not enough information to deduce # of rows" }
+        require(cols.none { it == -1 }) { "Not enough information to deduce # of cols" }
+        return zeros(rows.sum(), cols.sum()).apply {
+            this[0, 0] = convertToMat(m11, rows[0], cols[0])
+            this[0, cols[0]] = convertToMat(m12, rows[0], cols[1])
+            this[rows[0], 0] = convertToMat(m21, rows[1], cols[0])
+            this[rows[0], cols[0]] = convertToMat(m22, rows[1], cols[1])
+        }
+    }
+
+    private inline val Int.flip get() = if (this != 0) 0 else 1
+    private fun convertToMat(any: Any, rows: Int, cols: Int): Mat = when (any) {
+        is Mat -> any
+        0 -> zeros(rows, cols)
+        1 -> {
+            assert(rows == cols) { "Rows must equal cols for identity matrix" }
+            pureEye(rows)
+        }
+        else -> throw AssertionError()
     }
 
 

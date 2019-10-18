@@ -40,14 +40,14 @@ fun steadyStateKalmanErrorCov(A: Mat, B: Mat, C: Mat, Q: Mat, R: Mat): Mat {
     val prior = DiscreteRicattiEquationSolverImpl(A, B, Q, R).p
     val S = C * prior * C.T + R
     val K = prior * C.T * S.inv()
-    return (pureEye(A.cols) - K * C) * prior
+    return (eye(A.cols) - K * C) * prior
 }
 
 
 /**
  * Solves the continuous LQR K gain
  */
-fun continuousLQR(model: ContinuousLinSSModel, cost: QRCost): Mat = continuousLQR(model.A, model.B, cost.Q, cost.R)
+fun continuousLQR(model: LinearStateSpaceModel, cost: QRCost): Mat = continuousLQR(model.A, model.B, cost.Q, cost.R)
 
 /**
  * Solves the discrete LQR K gain

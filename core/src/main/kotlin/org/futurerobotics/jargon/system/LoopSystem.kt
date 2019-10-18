@@ -4,7 +4,7 @@ package org.futurerobotics.jargon.system
  * Represents something that can be run with a loop, using [init], then [loop] which is called repeatedly, and finally
  * [stop] methods.
  *
- * see [AbstractLoopSystemDriver]
+ * see [LoopSystemDriver]
  */
 interface LoopSystem : InitStoppable {
 
@@ -18,48 +18,32 @@ interface LoopSystem : InitStoppable {
 }
 
 /**
- * A driver for a [LoopSystem], [System], that implements [Runnable]
- * @param system the [LoopSystem]
+ * A loop system that is built up of a list of other [systems]. All will be inited, looped, and stopped in the same order.
  */
-abstract class AbstractLoopSystemDriver(protected val system: LoopSystem) : Runnable {
-    /**
-     * Runs the loop based system.
-     */
-    abstract override fun run()
-}
+class CompositeLoopSystem : LoopSystem {
+    private val systems: List<LoopSystem>
 
-/**
- * A [Runnable] around a [LoopSystem] that simply runs the system until completion or the thread is interrupted.
- *
- * [LoopSystem.stop] is placed in a finally block.
- */
-class SimpleLoopSystemDriver(system: LoopSystem, private val loopRegulator: LoopRegulator = LoopAsFastAsPossible()) :
-    AbstractLoopSystemDriver(system) {
-    @Volatile
-    private var thread: Thread? = null
-
-    override fun run() {
-        try {
-            thread = Thread.currentThread()
-            system.init()
-            loopRegulator.start()
-
-            var elapsedTime: Double = Double.NaN
-            while (!Thread.interrupted()) {
-                if (system.loop(elapsedTime)) break
-                elapsedTime = loopRegulator.syncAndRestart()
-            }
-        } finally {
-            thread = null
-            loopRegulator.stop()
-            system.stop()
-        }
+    constructor(systems: List<LoopSystem>) {
+        this.systems = systems.toList()
     }
 
-    /**
-     * Interrupts the current running thread of this driver, if any.
-     */
-    fun interrupt() {
-        thread?.interrupt()
+    constructor(vararg systems: LoopSystem) {
+        this.systems = systems.toList()
+    }
+
+    override fun init() {
+        systems.forEach { it.init() }
+    }
+
+    override fun loop(loopTime: Double): Boolean {
+        var shouldShutdown = false
+        systems.forEach {
+            shouldShutdown = it.loop(loopTime) or shouldShutdown
+        }
+        return shouldShutdown
+    }
+
+    override fun stop() {
+        systems.forEach { it.stop() }
     }
 }

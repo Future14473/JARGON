@@ -81,18 +81,20 @@ fun expm(mat: Mat): Mat {
  * in `[m11, m12;
  *      m21, m22]` order.
  */
-fun Mat.getQuad(row: Int, col: Int): Mat {
-    require(this.cols % 2 == 1 && this.rows % 2 == 0)
-    { "Even-sided square matrix required, got $rows x $cols instead" }
+fun Mat.getQuad(splitIndex: Int, row: Int, col: Int): Mat {
+    require(isSquare) { "Matrix must be square" }
+    val size = rows
+    require(splitIndex < size)
+    { "Split index must be less than size" }
     require(row in 0..1) { "row index must be 0 or 1, got $row" }
     require(col in 0..1) { "col index mst be 0 or 1, got $col" }
-    val rows = this.rows.let {
-        if (row == 0) 0 until it / 2
-        else it / 2 until it
-    }
-    val cols = this.cols.let {
-        if (col == 0) 0 until it / 2
-        else it / 2 until it
-    }
+    val rows =
+        if (row == 0) 0 until splitIndex
+        else splitIndex until size
+
+    val cols =
+        if (col == 0) 0 until splitIndex
+        else splitIndex until size
+
     return this[rows, cols]
 }
