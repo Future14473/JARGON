@@ -97,9 +97,9 @@ internal class ASimulation {
             toGraph += "Y reference pos" to follower.output.pipe { s.y }.monitor()
 //            toGraph += "X reference vel" to follower.output.pipe { v.x }.monitor()
 //            toGraph += "Y reference vel" to follower.output.pipe { v.y }.monitor()
-//            toGraph += "signals reference y" to follower.output.pipe { v.y }.monitor()
-//            toGraph += "signals velocity signal x" to positionController.pipe { v.x }.monitor()
-//            toGraph += "signals velocity signal y" to positionController.pipe { v.y }.monitor()
+//            toGraph += "Signals reference y" to follower.output.pipe { v.y }.monitor()
+//            toGraph += "Signals velocity signal x" to positionController.pipe { v.x }.monitor()
+//            toGraph += "Signals velocity signal y" to positionController.pipe { v.y }.monitor()
 
             val botMotion = GlobalToBotMotionReference().apply { reference from positionController }
             toGraph += "X vel signal" to botMotion.pipe { v.x }.monitor()
@@ -110,8 +110,8 @@ internal class ASimulation {
                 vel from refAPose.pipe { toVector() }
                 accel from Constant(zeroVec(3))
             }
-//            toGraph += "signals vec vel signal x" to ref.pipe { s[0] }.monitor()
-//            toGraph += "signals vec vel signal y" to ref.pipe { s[1] }.monitor()
+//            toGraph += "Signals vec vel signal x" to ref.pipe { s[0] }.monitor()
+//            toGraph += "Signals vec vel signal y" to ref.pipe { s[1] }.monitor()
             val ssController = SSControllerWithFF(ssModel, kGain).apply {
                 reference from ref
             }
@@ -121,12 +121,12 @@ internal class ASimulation {
                 this from ssController.pipe { asList() }
                     .also {
                         repeat(4) { i ->
-                            toGraph += "signals voltage signal $i" to it.pipe { this[i] }.monitor()
+                            toGraph += "Signals voltage signal $i" to it.pipe { this[i] }.monitor()
                         }
                     }
-                repeat(4) { i ->
-                    toGraph += "signals real wheel vel $i" to motorVel.pipe { this[i] }.monitor()
-                }
+//                repeat(4) { i ->
+//                    toGraph += "Signals real wheel vel $i" to motorVel.pipe { this[i] }.monitor()
+//                }
             }
 
             KalmanFilter(ssModel, eye(3) * 0.03, eye(4) * 0.05).apply {
@@ -199,7 +199,7 @@ internal class ASimulation {
         driver.run(systems)
 
         XYChartBuilder().apply {
-            title = "Some simulation"
+            title = "The first working simulation"
         }.build().apply {
             styler.apply {
                 //                xAxisMin = -1.0

@@ -8,6 +8,10 @@ control systems in FTC.
 
 VERSION 0.1.0 COMING SOON
 
+PROGRESS: (this is why you also use a gyro if available)
+![it works!](images/Path.png)
+![fancy graphs!](images/Signals.png)
+
 This library will be extensively used by Future Robotics, Team 14473, in the upcoming 2019-2020 SkyStone competitions.
 
 _This may possibly be de-branded from Future robotics in the future._ No pun intended.
