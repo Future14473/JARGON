@@ -25,12 +25,10 @@ interface SimulatedDrive {
      * Gets the current velocities of the wheels.
      */
     val curMotorVelocities: Vec
-
     /**
      * Gets the current pose of the bot.
      */
     val curGlobalPose: Pose2d
-
     /**
      * Updates the simulation, using the given [volts] vector and the loop [time] elapsed.
      */
@@ -78,7 +76,6 @@ class SimulatedFixedDrive(
     private val wheelSSModel = LinearDriveModels.wheelVelocityController(driveModel).discretize(timeStep)
 
     override fun update(volts: Vec, time: Double) {
-        if (time.isNaN()) return
 //        require(!volts.isNaN)
         repeat((time / timeStep).roundToInt()) {
             singleStep(volts)
