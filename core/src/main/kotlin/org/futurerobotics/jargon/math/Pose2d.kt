@@ -8,10 +8,14 @@ import org.futurerobotics.jargon.linalg.*
 /**
  * Represents a 2d pose, i.e. both position ([vec]) and orientation ([heading])
  *
+ * +y is counterclockwise of +x;
+ * We recommend using NorthWestUp orientation where forward is +x, and left is +y.
+ * This way math still checks out, and 0 degrees is forward.
+ *
  * @property vec The vector (position) component of this Pose
  * @property heading the heading (orientation) of this Pose
  */
-data class Pose2d(val vec: Vector2d, val heading: Double) {
+data class Pose2d(@JvmField val vec: Vector2d, @JvmField val heading: Double) {
 
     /** Constructs a pose from [x] and [y] position components, and [heading] */
     constructor(x: Double, y: Double, heading: Double) : this(Vector2d(x, y), heading)

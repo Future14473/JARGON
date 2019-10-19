@@ -17,10 +17,10 @@ const val GRAPH_DIR: String = "./graphs/"
 /**
  * Saves this graph at [GRAPH_DIR] location.
  */
-fun XYChart.saveGraph(name: String) {
+fun XYChart.saveGraph(name: String, dpi: Int = 72) {
     val file = File(Paths.get(GRAPH_DIR, name).toString())
     file.parentFile.mkdirs()
-    BitmapEncoder.saveBitmapWithDPI(this, file.absolutePath, BitmapEncoder.BitmapFormat.PNG, 400)
+    BitmapEncoder.saveBitmapWithDPI(this, file.absolutePath, BitmapEncoder.BitmapFormat.PNG, dpi)
 }
 
 /**

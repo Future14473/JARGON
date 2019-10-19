@@ -79,7 +79,7 @@ internal class VectorFunctionTest(private val curve: QuinticSpline) {
 
     private companion object {
 
-        const val steps = 200_000
+        const val steps = 50_000
         const val epsilon = 1e-6
         const val maxError = 0.001
         const val range = 20.0

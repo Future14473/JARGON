@@ -72,6 +72,7 @@ open class ValueMotionState<T : Any>(override val s: T, override val v: T, overr
     }
 
     override fun hashCode(): Int = 31 * super.hashCode() + s.hashCode()
+    override fun toString(): String = "ValueMotionState(s=$s, v=$v, a=$a)"
 
     companion object {
         /** Creates a [ValueMotionState] with all s,v,a values equal to [value] */

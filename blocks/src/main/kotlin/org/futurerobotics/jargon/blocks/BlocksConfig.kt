@@ -117,6 +117,12 @@ abstract class BlocksConfig {
         ?: throw IllegalStateException("Input has not yet been connected, cannot deduce source")
 
     /**
+     * Create a [Delay] block with the given [initialValue], connects this output into it, and returns the delay's
+     * output.
+     */
+    fun <T> Output<T>.delay(initialValue: T): Output<T> = Delay(initialValue).also { this into it }
+
+    /**
      * Adds the given [pipeBlock], connects [this] input, and returns the pipe's output.
      *
      * Useful for quick transformations.
@@ -131,7 +137,7 @@ abstract class BlocksConfig {
      */
     inline fun <T, R> Output<T>.pipe(
         crossinline transform: T.() -> R
-    ): Output<R> = Pipe.of(transform).also { it from this }
+    ): Output<R> = Pipe.of(transform).also { this into it }
 
     /**
      * Adds the given [combineBlock], connects [this] and [second] to its first and second inputs, and returns the
@@ -143,19 +149,25 @@ abstract class BlocksConfig {
         combineBlock.also { this into it.first; second into it.second }
 
     /**
-     * Creates a [Combine] block that combines [this] and [second] outputs through the given [combine] function,
+     * Creates a [Combine] block that combines the [a] and [b] outputs through the given [combine] function,
      * and returns the combination's output.
      */
-    inline fun <A, B, R> Output<A>.combine(
-        second: Output<B>,
-        crossinline combine: A.(B) -> R
-    ): Output<R> = Combine.of(combine).also { this into it.first; second into it.second }
+    inline fun <A, B, R> combine(a: Output<A>, b: Output<B>, crossinline combine: (A, B) -> R): Output<R> =
+        Combine.of(combine).also { a into it.first; b into it.second }
 
     /**
-     * Create a [Delay] block with the given [initialValue], connects this output into it, and returns the delay's
-     * output.
+     * Creates a [Combine] block that combines [this] and [other] outputs through the given [combine] function with the
+     * value of [this] as receiver, and returns the combination's output.
      */
-    fun <T> Output<T>.delay(initialValue: T): Output<T> = Delay(initialValue).also { this into it }
+    @JvmName("combineWithReceiver")
+    inline fun <A, B, R> Output<A>.combine(
+        other: Output<B>,
+        crossinline combine: A.(B) -> R
+    ): Output<R> = combine(this, other, combine)
+
+    /** Runs the [configuration] block on `this`, then returns it. kotlin DSL. */
+    inline operator fun <T : Block> T.invoke(configuration: T.() -> Unit): T = apply(configuration)
+
     /**
      * Common interface for [Input] and [Output]; use those.
      */
@@ -217,7 +229,7 @@ abstract class BlocksConfig {
              */
             fun <T> ofUnsafeCast(block: Block, index: Int): Output<T> {
                 if (index !in 0 until block.numOutputs)
-                    throw IndexOutOfBoundsException("Index $index not out block's number of outputs ${block.numOutputs}")
+                    throw IndexOutOfBoundsException("Index $index not in block's number of outputs ${block.numOutputs}")
                 return object : Output<T> {
                     override val block: Block get() = block
                     override val index: Int get() = index
@@ -228,7 +240,7 @@ abstract class BlocksConfig {
              * Creates a [Output] using the type specified in [Block], but type is not known at compile time.
              * @see ofUnsafeCast
              */
-            fun of(block: Block, index: Int): Output<*> = ofUnsafeCast<Any>(block, index)
+            fun of(block: Block, index: Int): Output<*> = ofUnsafeCast<Any?>(block, index)
         }
     }
 }
@@ -287,5 +299,4 @@ abstract class BaseBlocksConfig : BlocksConfig() {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> Input<T>.source(): Output<T>? = block.sourceOfInput(index) as? Output<T>?
-
 }

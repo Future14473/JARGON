@@ -17,7 +17,7 @@ interface SystemValues {
  * A block whose outputs directly correspond to [SystemValues], if such connections are desired.
  */
 class SystemValuesBlock : AbstractBlock(
-    0, 2,
+    0, 3,
     Block.Processing.IN_FIRST_LAZY
 ) {
     private var systemValues: SystemValues? = null

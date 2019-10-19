@@ -38,7 +38,7 @@ class ReparamCurve(private val func: VectorFunction, internal val mapping: Repar
         private var _positionDeriv: Vector2d? = null
         override val positionDeriv: Vector2d
             get() = _positionDeriv ?: v.normalized()
-                .replaceIf({ !it.isNan() }) { Vector2d.ZERO }
+                .replaceIf({ it.isNaN() }) { Vector2d.ZERO }
                 .also { _positionDeriv = it }
         override val positionSecondDeriv: Vector2d
             get() = tanAngleDeriv zcross positionDeriv

@@ -6,7 +6,11 @@ import kotlin.math.*
 import kotlin.random.Random
 
 /**
- * Represents a 2d vector with values [x] and [y].
+ * Represents a 2d vector in plane space with values [x] and [y].
+ *
+ * +y is counterclockwise of +x;
+ * We recommend using NorthWestUp orientation where forward is +x, and left is +y.
+ * This way math still checks out, and 0 degrees is forward.
  *
  * Some calculations use cross products, in which it is calculated with the z component being 0, and a portion of the
  * result.
@@ -60,7 +64,7 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
     fun isFinite(): Boolean = x.isFinite() && y.isFinite()
 
     /** If any component is NaN */
-    fun isNan(): Boolean = x.isNaN() || y.isNaN()
+    fun isNaN(): Boolean = x.isNaN() || y.isNaN()
 
     /**
      * Returns the cross product of (this interpreted as a 3d vector with a z component of 0), and the 3d vector

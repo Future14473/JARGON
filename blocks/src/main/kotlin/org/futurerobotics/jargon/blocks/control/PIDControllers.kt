@@ -48,7 +48,7 @@ class PIDController(
         val curError = (s - currentState).coerceIn(coefficients.errorBounds)
 
         val loopTime = systemValues.loopTime
-        return if (loopTime.isNaN()) {
+        return if (loopTime == 0.0) {
             prevError = curError
             0.0
         } else {
@@ -108,7 +108,7 @@ class VecPIDController(
         val loopTime = inputs[2] as Double
 
         val curError = (s - currentState) coerceLengthAtMost coefficients.errorBounds.b
-        return if (loopTime.isNaN()) {
+        return if (loopTime == 0.0) {
             prevError = curError
             Vector2d.ZERO
         } else {
@@ -229,7 +229,7 @@ class PIDFController(
         val loopTime = inputs[2] as Double
         val (s, v, a) = reference
         val curError = (s - currentState).coerceIn(coefficients.errorBounds)
-        return if (loopTime.isNaN()) {
+        return if (loopTime == 0.0) {
             prevError = curError
             0.0
         } else {
@@ -288,7 +288,7 @@ class VecPIDFController(
         val loopTime = inputs[2] as Double
         val (s, v, a) = reference
         val curError = (s - currentState) coerceLengthAtMost coefficients.errorBounds.b
-        return if (loopTime.isNaN()) {
+        return if (loopTime == 0.0) {
             prevError = curError
             Vector2d.ZERO
         } else {

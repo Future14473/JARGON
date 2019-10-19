@@ -7,6 +7,7 @@ import org.futurerobotics.jargon.blocks.buildBlocksSystem
 import org.futurerobotics.jargon.math.*
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
+import kotlin.math.roundToLong
 import kotlin.random.Random
 
 
@@ -26,7 +27,7 @@ internal class GlobalPoseTrackerFromVelTest {
             repeat(200) {
                 val angleStep = random.nextDouble(0.0, 2 * TAU)
                 angle = angleNorm(angle + angleStep)
-                system.loop(angleStep)
+                system.loop((angleStep * 1e9).roundToLong())
                 get { value!! }.isEpsEqTo(Pose2d(Vector2d.polar(1, angle), angle))
             }
         }
@@ -39,7 +40,8 @@ internal class GlobalPoseTrackerFromVelTest {
         var expectedPose = Pose2d.ZERO
         system.init()
         repeat(200) {
-            val time = random.nextDouble()
+            val timeNanos = random.nextLong(0, 1_000_000_000)
+            val time = timeNanos / 1e9
             if (random.nextInt(3) == 0) {
                 //rotate
                 val rotate = random.nextDouble(-TAU, TAU)
@@ -51,7 +53,7 @@ internal class GlobalPoseTrackerFromVelTest {
                 velocity.value = Pose2d(move, 0.0)
                 expectedPose += Pose2d(move.rotated(expectedPose.heading) * time, 0.0)
             }
-            system.loop(time)
+            system.loop(timeNanos)
             expectThat(position.value!!).describedAs("position").isEpsEqTo(expectedPose)
         }
     }

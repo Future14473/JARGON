@@ -60,3 +60,10 @@ subprojects {
         }
     }
 }
+
+tasks.create("testAll") {
+    group = "verification"
+    dependsOn(
+        rootProject.subprojects.map { it.tasks.withType<Test>() }
+    )
+}

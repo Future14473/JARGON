@@ -15,10 +15,7 @@ import org.hipparchus.linear.LUDecomposer
 import org.hipparchus.linear.RealVector
 import kotlin.math.roundToInt
 
-private val DECOMP = LUDecomposer(1e-11)/*CholeskyDecomposer(
-    CholeskyDecomposition.DEFAULT_RELATIVE_SYMMETRY_THRESHOLD,
-    CholeskyDecomposition.DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD
-)*/
+private val DECOMP = LUDecomposer(1e-11)
 
 /**
  * A Kalman Filter [Block]. Assumes that the system always runs at the model's period.
@@ -68,7 +65,7 @@ class KalmanFilter(
             )
         ).also { filter = it }
         val loopTime = systemValues.loopTime
-        if (!loopTime.isNaN())
+        if (loopTime != 0.0)
             repeat((loopTime / model.period).roundToInt().coerceAtLeast(1)) {
                 measurementObj.value = measurement
 

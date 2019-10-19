@@ -211,7 +211,6 @@ internal class ASimulation {
 
             val div = DoubleProgression.fromClosedRange(0.0, traj.duration, 0.05)
             val trajPoints = traj.stepToAll(div).map { it.s.vec }
-            val stepper = traj.stepper()
             addSeries("Trajectory", trajPoints.map { it.x }, trajPoints.map { it.y }).apply {
                 marker = None()
             }

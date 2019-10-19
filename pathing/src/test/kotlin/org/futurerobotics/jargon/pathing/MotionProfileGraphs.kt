@@ -153,7 +153,7 @@ class MotionProfileGraphs(
             )
         }
 
-        private val paths: List<Path> = List(10) {
+        private val paths: List<Path> = List(5) {
             var path: Path? = null
             measureNanoTime {
                 val segs = List(5) {

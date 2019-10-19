@@ -18,10 +18,10 @@ class FixedDriveMotorToBotDelta(private val model: FixedDriveModel) : Pipe<List<
     private var pastPositions: Vec? = null
     override fun pipe(input: List<Double>): Pose2d {
         val pastPositions = pastPositions
-        val input = createVec(input)
-        this.pastPositions = input
+        val inputVec = createVec(input)
+        this.pastPositions = inputVec
         return if (pastPositions == null) Pose2d.ZERO else {
-            model.getBotVelFromMotorVel(input - pastPositions)
+            model.getBotVelFromMotorVel(inputVec - pastPositions)
         }
     }
 }

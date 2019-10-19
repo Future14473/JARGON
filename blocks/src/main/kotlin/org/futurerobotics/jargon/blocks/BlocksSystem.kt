@@ -72,11 +72,11 @@ class BlocksSystem internal constructor(
  *
  * Alternatively, use [buildBlocksSystem] which does both of the above in one go.
  */
-class BlocksSystemBuilder : BaseBlocksConfig() {
+open class BlocksSystemBuilder : BaseBlocksConfig() {
 
     private var built = false
     /** Builds a [BlocksSystem] with the current configurations. */
-    fun build(): BlocksSystem {
+    open fun build(): BlocksSystem {
         check(!built) { "Already built!" }
         built = true
         verifyConfig()
@@ -86,7 +86,7 @@ class BlocksSystemBuilder : BaseBlocksConfig() {
 
 /**
  * DSL to build a block system.
- * Runs the [configuration] block on a [BlocksSystemBuilder] then returns its result.
+ * Runs the [configuration] block on a [BlocksSystemBuilder] then returns the built [BlocksSystem].
  */
 @UseExperimental(ExperimentalContracts::class)
 inline fun buildBlocksSystem(configuration: BlocksSystemBuilder.() -> Unit): BlocksSystem {

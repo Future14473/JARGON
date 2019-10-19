@@ -9,11 +9,6 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-/*
- * Classes to represent the preparation of block systems to be run.
- *
- * Originally intended so that can reuse parts for composite blocks, but that has problems with SpecialBlocks.
- */
 /**
  * A highly processed block with connections directly indicated as indices, in a list.
  * **This class only makes sense in the context of a list.**
