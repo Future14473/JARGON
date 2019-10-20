@@ -243,7 +243,7 @@ abstract class InputOnlyBlock<T> : SingleInputBlock<T>(0, IN_FIRST_ALWAYS) {
  *
  * A lambda version of this is available in [BlocksConfig.combine] for easier use.
  * */
-abstract class Pipe<T, R>(processing: Block.Processing) : SingleOutputBlock<R>(
+abstract class PipeBlock<T, R>(processing: Block.Processing) : SingleOutputBlock<R>(
     1, processing
 ), BlocksConfig.Input<T> {
 
@@ -256,10 +256,10 @@ abstract class Pipe<T, R>(processing: Block.Processing) : SingleOutputBlock<R>(
     protected abstract fun pipe(input: T): R
 
     companion object {
-        /** Creates a [Pipe] using the given [pipe] function. */
+        /** Creates a [PipeBlock] using the given [pipe] function. */
         @JvmStatic
-        inline fun <T, R> of(crossinline pipe: (T) -> R): Pipe<T, R> =
-            object : Pipe<T, R>(IN_FIRST_LAZY) {
+        inline fun <T, R> of(crossinline pipe: (T) -> R): PipeBlock<T, R> =
+            object : PipeBlock<T, R>(IN_FIRST_LAZY) {
                 override fun pipe(input: T): R = pipe(input)
             }
     }
@@ -277,7 +277,7 @@ abstract class Pipe<T, R>(processing: Block.Processing) : SingleOutputBlock<R>(
  *
  * A lambda version of this is available in [BlocksConfig.combine] for easier use.
  */
-abstract class Combine<A, B, R>(processing: Block.Processing = IN_FIRST_LAZY) :
+abstract class CombineBlock<A, B, R>(processing: Block.Processing = IN_FIRST_LAZY) :
     SingleOutputBlock<R>(2, processing) {
 
     final override fun doInit(): R? = null
@@ -295,12 +295,12 @@ abstract class Combine<A, B, R>(processing: Block.Processing = IN_FIRST_LAZY) :
     val secondInput: BlocksConfig.Input<B> get() = configInput(1)
 
     companion object {
-        /** Creates a [Combine] using the given [combine] function. */
+        /** Creates a [CombineBlock] using the given [combine] function. */
         @JvmStatic
         inline fun <A, B, R> of(
             crossinline combine: (A, B) -> R
-        ): Combine<A, B, R> =
-            object : Combine<A, B, R>(IN_FIRST_LAZY) {
+        ): CombineBlock<A, B, R> =
+            object : CombineBlock<A, B, R>(IN_FIRST_LAZY) {
                 override fun combine(a: A, b: B): R = combine(a, b)
             }
 

@@ -129,16 +129,16 @@ abstract class BlocksConfig {
      *
      * Useful for quick transformations.
      */
-    fun <T, R> Output<T>.pipe(pipeBlock: Pipe<T, R>): Output<R> = pipeBlock.also { this into it }
+    fun <T, R> Output<T>.pipe(pipeBlock: PipeBlock<T, R>): Output<R> = pipeBlock.also { this into it }
 
     /**
-     * Creates a [Pipe] block that pipes this output through the given [transform] function, connects
+     * Creates a [PipeBlock] block that pipes this output through the given [transform] function, connects
      * it, and returns the pipe's output.
      *
      * Useful for quick transformations.
      */
     inline fun <T, R> Output<T>.pipe(crossinline transform: T.() -> R): Output<R> =
-        Pipe.of(transform).also { this into it }
+        PipeBlock.of(transform).also { this into it }
 
     /**
      * Adds the given [combineBlock], connects [this] and [other] to its first and second inputs, and returns the
@@ -146,15 +146,15 @@ abstract class BlocksConfig {
      *
      * Useful for quick transformations.
      */
-    fun <A, B, R> Output<A>.combine(other: Output<B>, combineBlock: Combine<A, B, R>): Output<R> =
+    fun <A, B, R> Output<A>.combine(other: Output<B>, combineBlock: CombineBlock<A, B, R>): Output<R> =
         combineBlock.also { this into it.firstInput; other into it.secondInput }
 
     /**
-     * Creates a [Combine] block that combines [this] and [other] outputs through the given [combine] function with the
+     * Creates a [CombineBlock] block that combines [this] and [other] outputs through the given [combine] function with the
      * value of [this] as receiver, and returns the combination's output.
      */
     inline fun <A, B, R> Output<A>.combine(other: Output<B>, crossinline combine: A.(B) -> R): Output<R> =
-        Combine.of(combine).also { this into it.firstInput; other into it.secondInput }
+        CombineBlock.of(combine).also { this into it.firstInput; other into it.secondInput }
 
     /** Runs the [configuration] block on `this`, then returns it. kotlin DSL. */
     inline operator fun <T : Block> T.invoke(configuration: T.() -> Unit): T = apply(configuration)

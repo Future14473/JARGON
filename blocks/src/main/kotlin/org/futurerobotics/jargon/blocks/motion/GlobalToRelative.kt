@@ -132,7 +132,8 @@ class GlobalPoseTrackerFromDeltaAndGyro(initialPose: Pose2d = Pose2d.ZERO) : Abs
  *
  * @see GlobalToBotMotion
  */
-class GlobalToBotReference : Combine<MotionState<Pose2d>, Pose2d, MotionState<Pose2d>>(Block.Processing.IN_FIRST_LAZY) {
+class GlobalToBotReference :
+    CombineBlock<MotionState<Pose2d>, Pose2d, MotionState<Pose2d>>(Block.Processing.IN_FIRST_LAZY) {
     override fun combine(a: MotionState<Pose2d>, b: Pose2d): MotionState<Pose2d> = GlobalToBot.referenceMotion(a, b)
 
     /** The pose reference [BlocksConfig.Input] */
@@ -157,7 +158,7 @@ class GlobalToBotReference : Combine<MotionState<Pose2d>, Pose2d, MotionState<Po
  * @see GlobalToBotReference
  */
 class GlobalToBotMotion :
-    Combine<MotionOnly<Pose2d>, Pose2d, MotionOnly<Pose2d>>(Block.Processing.IN_FIRST_LAZY) {
+    CombineBlock<MotionOnly<Pose2d>, Pose2d, MotionOnly<Pose2d>>(Block.Processing.IN_FIRST_LAZY) {
     override fun combine(a: MotionOnly<Pose2d>, b: Pose2d): MotionOnly<Pose2d> = GlobalToBot.motion(a, b.heading)
 
     /** The pose reference [BlocksConfig.Input] */

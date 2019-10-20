@@ -66,7 +66,7 @@ class Monitor<T> : InputOnlyBlock<T>() {
  *
  * This is also creatable from [BlocksConfig.delay]
  */
-class Delay<T>(private val initialValue: T) : Pipe<T, T>(OUT_FIRST_ALWAYS) {
+class Delay<T>(private val initialValue: T) : PipeBlock<T, T>(OUT_FIRST_ALWAYS) {
     override fun doInit(): T? = initialValue
     override fun pipe(input: T): T = input
 }

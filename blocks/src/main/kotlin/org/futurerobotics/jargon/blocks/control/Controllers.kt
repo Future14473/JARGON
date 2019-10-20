@@ -5,7 +5,7 @@ package org.futurerobotics.jargon.blocks.control
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
 import org.futurerobotics.jargon.blocks.BlocksConfig
-import org.futurerobotics.jargon.blocks.Combine
+import org.futurerobotics.jargon.blocks.CombineBlock
 import org.futurerobotics.jargon.blocks.CompositeBlock
 import org.futurerobotics.jargon.blocks.control.FeedForwardController.Companion.withAdder
 import org.futurerobotics.jargon.blocks.functional.SplitMotionState
@@ -49,7 +49,7 @@ class BangBangController<State, Signal>(
     private val lessThanOutput: Signal,
     private val greaterThanOutput: Signal,
     private val equalOutput: Signal
-) : Combine<State, State, Signal>(IN_FIRST_LAZY),
+) : CombineBlock<State, State, Signal>(IN_FIRST_LAZY),
     Controller<State, State, Signal>
         where State : Comparable<State>, State : Any {
 
@@ -76,7 +76,7 @@ class BangBangController<State, Signal>(
  *  1. the modeled motor voltages as a [List] of Doubles
  */
 class FixedDriveOpenController(private val model: FixedDriveModel) :
-    Combine<MotionOnly<Pose2d>, Any, List<Double>>(IN_FIRST_LAZY),
+    CombineBlock<MotionOnly<Pose2d>, Any, List<Double>>(IN_FIRST_LAZY),
     Controller<MotionOnly<Pose2d>, Any, List<Double>> {
 
     override fun combine(a: MotionOnly<Pose2d>, b: Any): List<Double> = model.getModeledVoltages(a)

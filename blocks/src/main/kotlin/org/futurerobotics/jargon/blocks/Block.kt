@@ -60,9 +60,9 @@ package org.futurerobotics.jargon.blocks
  * - [SingleInputBlock] for a block with a single output; slightly more strongly typed.
  * - [ListStoreBlock] for blocks that store all their outputs upon [process] (have no need for lazy getOutput)
  * - [SingleInputListStoreBlock] which is a combination of the two above
- * - [Pipe] for one-input, one-output blocks. Quick inline lambda versions of this are also available in
+ * - [PipeBlock] for one-input, one-output blocks. Quick inline lambda versions of this are also available in
  *   [BlocksConfig.pipe]
- * - [Combine] for two-input, one-output blocks. Quick inline lambda versions of this are also available in
+ * - [CombineBlock] for two-input, one-output blocks. Quick inline lambda versions of this are also available in
  *   [BlocksConfig.combine]
  * - [CompositeBlock] that is a block made up of an entire sub-system of blocks.
  */

@@ -4,19 +4,19 @@ package org.futurerobotics.jargon.blocks.control
 
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
 import org.futurerobotics.jargon.blocks.BlocksConfig
-import org.futurerobotics.jargon.blocks.Combine
-import org.futurerobotics.jargon.blocks.Pipe
+import org.futurerobotics.jargon.blocks.CombineBlock
+import org.futurerobotics.jargon.blocks.PipeBlock
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.mechanics.FixedDriveModel
 
 
 /**
- * A [Pipe] block that takes in motor _positions_ to estimate _bot pose difference_ with a drive [model].
+ * A [PipeBlock] block that takes in motor _positions_ to estimate _bot pose difference_ with a drive [model].
  *
  * Maybe pass through a filter first.
  */
-class FixedDriveMotorToBotDelta(private val model: FixedDriveModel) : Pipe<List<Double>, Pose2d>(IN_FIRST_LAZY) {
+class FixedDriveMotorToBotDelta(private val model: FixedDriveModel) : PipeBlock<List<Double>, Pose2d>(IN_FIRST_LAZY) {
     private var pastPositions: Vec? = null
     override fun pipe(input: List<Double>): Pose2d {
         val pastPositions = pastPositions
@@ -29,13 +29,13 @@ class FixedDriveMotorToBotDelta(private val model: FixedDriveModel) : Pipe<List<
 }
 
 /**
- * A [Combine] block that takes in motor _positions_ and _gyro readings_ to estimate _bot pose difference_
+ * A [CombineBlock] block that takes in motor _positions_ and _gyro readings_ to estimate _bot pose difference_
  * with a drive [model].
  *
  * Maybe pass through a filter first.
  */
 class FixedDriveMotorAndGyroToBotDelta(private val model: FixedDriveModel) :
-    Combine<List<Double>, Double, Pose2d>(IN_FIRST_LAZY) {
+    CombineBlock<List<Double>, Double, Pose2d>(IN_FIRST_LAZY) {
     private var pastPositions: Vec? = null
     private var pastAngle: Double = Double.NaN
     override fun combine(a: List<Double>, b: Double): Pose2d {
@@ -61,6 +61,6 @@ class FixedDriveMotorAndGyroToBotDelta(private val model: FixedDriveModel) :
  *
  * Maybe pass through a filter first.
  */
-class FixedDriveMotorToBotVel(private val model: FixedDriveModel) : Pipe<List<Double>, Pose2d>(IN_FIRST_LAZY) {
+class FixedDriveMotorToBotVel(private val model: FixedDriveModel) : PipeBlock<List<Double>, Pose2d>(IN_FIRST_LAZY) {
     override fun pipe(input: List<Double>): Pose2d = model.getBotVelFromMotorVel(createVec(input))
 }
