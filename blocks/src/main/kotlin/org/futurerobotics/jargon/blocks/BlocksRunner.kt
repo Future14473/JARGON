@@ -1,6 +1,5 @@
 package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.blocks.BaseBlocksConfig.BlockConnections
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
 import org.futurerobotics.jargon.util.fillWith
 import org.futurerobotics.jargon.util.fixedSizeMutableListOfNulls
@@ -48,11 +47,11 @@ internal fun MutableList<IndexedBlock>.rearranged(comparator: Comparator<Block>)
  *
  * This also verifies that there are no impossible loops within the connections.
  */
-internal fun Collection<BlockConnections>.toIndexedBlocks(): List<IndexedBlock> =
+internal fun Collection<BlocksConfig.Connections>.toIndexedBlocks(): List<IndexedBlock> =
     IndexedBlocksCreator(this).result
 
 private class IndexedBlocksCreator(
-    connections: Collection<BlockConnections>
+    connections: Collection<BlocksConfig.Connections>
 ) {
     val result: List<IndexedBlock>
 
@@ -81,7 +80,7 @@ private class IndexedBlocksCreator(
 
     /** Traces (dfs-type thing) all the inputs at the [this]; marking used blocks and making sure there are no
      * unresolvable loops.*/
-    private fun NodeBlock.trace(): Unit {
+    private fun NodeBlock.trace() {
         when (traceStatus) {
             PROCESSED -> return
             NOT_PROCESSED -> if (!block.processing.isOutFirst) doTrace()
@@ -137,7 +136,7 @@ private class IndexedBlocksCreator(
         }
     }
 
-    private inline fun <T> Array<T>.mapToIntArray(mapping: (T) -> Int): IntArray {
+    private inline fun <T> List<T>.mapToIntArray(mapping: (T) -> Int): IntArray {
         return IntArray(size).also {
             this.forEachIndexed { index, t ->
                 it[index] = mapping(t)
@@ -145,7 +144,7 @@ private class IndexedBlocksCreator(
         }
     }
 
-    private inner class NodeBlock(val connections: BlockConnections) {
+    private inner class NodeBlock(val connections: BlocksConfig.Connections) {
         inline val block get() = connections.block
         inline val inputSources get() = connections.sources
         var traceStatus = NOT_PROCESSED
@@ -168,14 +167,15 @@ private class IndexedBlocksCreator(
  * Common components of [BlocksSystem] and [CompositeBlock]. Use those instead unless you know what you're doing.
  */
 abstract class AbstractBlocksRunner(
-    connections: Collection<BlockConnections>
+    config: BlocksConfig
 ) {
     private val allRunners: Array<BlockRunner>
     private val alwaysRun: Array<InFirstBlock>
     private val outFirst: Array<OutFirstBlock>
 
     init {
-        val indexedBlocks = connections.toIndexedBlocks()
+        config.verifyConfig()
+        val indexedBlocks = config.connections.values.toIndexedBlocks()
         allRunners = indexedBlocks.map {
             if (it.block.processing.isOutFirst) OutFirstBlock(it)
             else InFirstBlock(it)

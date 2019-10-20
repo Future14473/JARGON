@@ -7,6 +7,8 @@ import org.futurerobotics.jargon.blocks.BlocksConfig.Input.Companion.ofUnsafeCas
 import org.futurerobotics.jargon.blocks.BlocksConfig.Output
 import org.futurerobotics.jargon.blocks.BlocksConfig.Output.Companion.of
 import org.futurerobotics.jargon.blocks.BlocksConfig.Output.Companion.ofUnsafeCast
+import org.futurerobotics.jargon.util.asUnmodifiableList
+import org.futurerobotics.jargon.util.asUnmodifiableMap
 import org.futurerobotics.jargon.util.let
 import java.util.*
 
@@ -16,15 +18,15 @@ import java.util.*
 class IllegalBlockConfigurationException
 @JvmOverloads constructor(message: String? = null) : RuntimeException(message)
 
+
 /**
- * Coordinates the fitting together blocks together to build a system using a DSL.
+ * Coordinates the connection of blocks together to build a system, using a DSL. This can then, for instance,
+ * be passed on to a [BlocksSystem],
  *
  * This primarily works with [Input]s and [Output]s, which reference specific inputs and outputs of
  * blocks, usually provided by [Block]s themselves.
  *
  * See the individual functions/methods of this class for more details.
- *
- * [BlocksSystemBuilder] is a subclass of this.
  *
  * This is an mostly abstract class instead of an interface to make use of certain inline functions.
  *
@@ -37,10 +39,18 @@ class IllegalBlockConfigurationException
 abstract class BlocksConfig {
 
     /**
-     *  Returns if this block is present in this config;
-     *  in other words there is at least one connection to or from it within this config.
+     * Returns if this block is present in this config;
+     * in other words there is at least one connection to or from it within this config.
      */
     abstract fun Block.isPresent(): Boolean
+
+    /**
+     * Gets a map of blocks to [Connections] of that block.
+     */
+    abstract val connections: Map<Block, Connections>
+
+    /** Verifies all the current block configurations by calling [Block.prepareAndVerify] on all blocks present. */
+    abstract fun verifyConfig()
 
     /**
      * Connects the given [Output] _into_ the given [Input].
@@ -71,9 +81,7 @@ abstract class BlocksConfig {
         }
     }
 
-    /**
-     * Connects [this] [Output] to all of the given [inputs].
-     */
+    /** Connects [this] [Output] to all of the given [inputs]. */
     open fun <T> Output<T>.toAll(vararg inputs: Input<T>) {
         inputs.forEach {
             this into it
@@ -117,8 +125,17 @@ abstract class BlocksConfig {
         ?: throw IllegalStateException("Input has not yet been connected, cannot deduce source")
 
     /**
+     * Runs the given the given [operation] function on this output loop. Useful for quick operations; but use wisely.
+     *
+     * Note that if the source has a processing of [Block.Processing.IN_FIRST_LAZY], it will now always be processed.
+     */
+    inline fun <T> Output<T>.process(crossinline operation: (T) -> Unit) {
+        this into InputOnlyBlock.of(operation)
+    }
+
+    /**
      * Create a [Delay] block with the given [initialValue], connects this output into it, and returns the delay's
-     * output.
+     * output. Can be used to break up loop.s
      */
     fun <T> Output<T>.delay(initialValue: T): Output<T> = Delay(initialValue).also { this into it }
 
@@ -135,27 +152,24 @@ abstract class BlocksConfig {
      *
      * Useful for quick transformations.
      */
-    inline fun <T, R> Output<T>.pipe(
-        crossinline transform: T.() -> R
-    ): Output<R> = Pipe.of(transform).also { this into it }
+    inline fun <T, R> Output<T>.pipe(crossinline transform: T.() -> R): Output<R> =
+        Pipe.of(transform).also { this into it }
 
     /**
-     * Adds the given [combineBlock], connects [this] and [second] to its first and second inputs, and returns the
+     * Adds the given [combineBlock], connects [this] and [other] to its first and second inputs, and returns the
      * combine's output.
      *
      * Useful for quick transformations.
      */
-    fun <A, B, R> Output<A>.pipe(second: Output<B>, combineBlock: Combine<A, B, R>): Output<R> =
-        combineBlock.also { this into it.first; second into it.second }
+    fun <A, B, R> Output<A>.combine(other: Output<B>, combineBlock: Combine<A, B, R>): Output<R> =
+        combineBlock.also { this into it.first; other into it.second }
 
     /**
      * Creates a [Combine] block that combines [this] and [other] outputs through the given [combine] function with the
      * value of [this] as receiver, and returns the combination's output.
      */
-    inline fun <A, B, R> Output<A>.combine(
-        other: Output<B>,
-        crossinline combine: A.(B) -> R
-    ): Output<R> = Combine.of(combine).also { this into it.first; other into it.second }
+    inline fun <A, B, R> Output<A>.combine(other: Output<B>, crossinline combine: A.(B) -> R): Output<R> =
+        Combine.of(combine).also { this into it.first; other into it.second }
 
     /** Runs the [configuration] block on `this`, then returns it. kotlin DSL. */
     inline operator fun <T : Block> T.invoke(configuration: T.() -> Unit): T = apply(configuration)
@@ -235,60 +249,85 @@ abstract class BlocksConfig {
             fun of(block: Block, index: Int): Output<*> = ofUnsafeCast<Any?>(block, index)
         }
     }
+
+    /** Represents configured connections into and out of a block. */
+    interface Connections {
+        /** The block that this [Connections] is representing. */
+        val block: Block
+        /**
+         * The sources (other block's outputs) to which are connected to the inputs of this block, or `null`
+         * if not connected, with the same index as the block input.
+         *
+         * Should be same size as [Block.numInputs],
+         */
+        val sources: List<Output<*>?>
+
+        /**
+         * A list of booleans that represent if the output of the current block is connected, with the same index
+         * as the block output.
+         *
+         * Should be same size as [Block.numOutputs]
+         */
+        val isOutputConnected: List<Boolean>
+    }
 }
 
 /**
  * A base implementation of [BlocksConfig] that creates a set of [BlockConnections], which can
  * then be further processed.
  */
-abstract class BaseBlocksConfig : BlocksConfig() {
-    /** A hash map of existing [Block]s to [BlockConnections], representing its connections. */
+open class BaseBlocksConfig : BlocksConfig() {
     private val connectionsMap: IdentityHashMap<Block, BlockConnections> = IdentityHashMap()
-
-    /** A collection of all the [BlockConnections] configured in this block so far. */
-    protected val connections: Collection<BlockConnections> = connectionsMap.values
-
-    /**
-     * Holds all the connections of a [Block]; used inside the context of a [BaseBlocksConfig].
-     *
-     * @param block the block
-     */
-    class BlockConnections(val block: Block) {
-        /** The sources of this block's inputs, or `null` if not (yet) connected. */
-        val sources: Array<Output<*>?> = arrayOfNulls<Output<*>?>(block.numInputs)
-        /** An array of booleans that indicates if the outputs have been connected yet. */
-        val isOutConnected: BooleanArray = BooleanArray(block.numOutputs)
-    }
+    override val connections: Map<Block, Connections> = connectionsMap.asUnmodifiableMap()
 
     /**
      * Lets every block [verifyConfig][Block.prepareAndVerify] itself.
      */
-    protected fun verifyConfig() {
-        connections.forEach {
-            it.block.prepareAndVerify(this)
+    override fun verifyConfig() {
+        connections.forEach { (block) ->
+            block.prepareAndVerify(this)
         }
     }
 
     override fun Block.isPresent(): Boolean = connectionsMap.containsKey(this)
 
-    private val Block.connection: BlockConnections get() = connectionsMap.getOrPut(this) { BlockConnections(this) }
+    private val Block.connection: BlockConnections
+        get() = connectionsMap.getOrPut(this) {
+            BlockConnections(
+                this
+            )
+        }
     private val BlockIO.connection: BlockConnections get() = block.connection
 
     override fun <T> Output<T>.into(input: Input<T>) {
         let(this.connection, input.connection) { from, into ->
-            check(into.sources[input.index] == null)
+            check(into._sources[input.index] == null)
             { "Input at block (${into.block}) index (${input.index}) already connected!" }
-            into.sources[input.index] = this
-            from.isOutConnected[index] = true
+            into._sources[input.index] = this
+            from._isOutputConnected[index] = true
         }
     }
 
     override fun Block.inputIsConnected(index: Int): Boolean = sourceOfInput(index) != null
 
-    override fun Block.outputIsConnected(index: Int): Boolean = connectionsMap[this]?.isOutConnected?.get(index) == true
+    override fun Block.outputIsConnected(index: Int): Boolean =
+        connectionsMap[this]?._isOutputConnected?.get(index) == true
 
-    override fun Block.sourceOfInput(index: Int): Output<*>? = connectionsMap[this]?.sources?.get(index)
+    override fun Block.sourceOfInput(index: Int): Output<*>? = connectionsMap[this]?._sources?.get(index)
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> Input<T>.source(): Output<T>? = block.sourceOfInput(index) as? Output<T>?
+
+    @Suppress("PropertyName")
+    private class BlockConnections(override val block: Block) : Connections {
+        internal val _sources: Array<Output<*>?> = arrayOfNulls(block.numInputs)
+
+        override val sources: List<Output<*>?>
+            get() = _sources.asList().asUnmodifiableList()
+
+        internal val _isOutputConnected: BooleanArray = BooleanArray(block.numOutputs)
+
+        override val isOutputConnected: List<Boolean>
+            get() = _isOutputConnected.asList().asUnmodifiableList()
+    }
 }

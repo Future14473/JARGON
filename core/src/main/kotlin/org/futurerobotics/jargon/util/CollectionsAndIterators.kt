@@ -39,8 +39,11 @@ inline fun <reified T> fixedSizeMutableList(size: Int, init: (Int) -> T): Mutabl
  */
 inline fun <reified T> fixedSizeMutableListOfNulls(size: Int): MutableList<T?> = arrayOfNulls<T>(size).asMutableList()
 
-/** Wraps this list in [Collections.unmodifiableList]. */
+/** Wraps this list as a [Collections.unmodifiableList]. */
 fun <T> List<T>.asUnmodifiableList(): List<T> = Collections.unmodifiableList(this)
+
+/** Wraps this list as a [Collections.unmodifiableMap]. */
+fun <T, R> Map<T, R>.asUnmodifiableMap(): Map<T, R> = Collections.unmodifiableMap(this)
 
 /**
  * Until kotlinx.immutableCollections becomes stable, turns this list into an effectively immutable list

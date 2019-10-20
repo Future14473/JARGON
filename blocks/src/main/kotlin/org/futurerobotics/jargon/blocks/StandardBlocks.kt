@@ -37,26 +37,23 @@ class ExternalValue<T>(@Volatile var value: T) : SingleOutputBlock<T>(0, IN_FIRS
  * This is itself a [BlocksConfig.Input] representing its only input.
  */
 @Suppress("UNCHECKED_CAST")
-class Monitor<T> : SingleInputBlock<T>(
-    1, Block.Processing.IN_FIRST_ALWAYS
-) {
-    @Volatile
-    private var _value: T? = null
+class Monitor<T> : InputOnlyBlock<T>() {
     /**
      * The last value given to this monitor. Will be `null` if nothing has been received yet (or the given value
      * is null).
      */
-    val value: T? get() = _value
+    @Volatile
+    var value: T? = null
+        private set
+
 
     override fun init() {
-        _value = null
+        value = null
     }
 
     override fun processInput(input: T, systemValues: SystemValues) {
-        _value = input
+        value = input
     }
-
-    override fun getOutput(index: Int): Any? = throw IndexOutOfBoundsException(index)
 
     override fun toString(): String = "Monitor($value)"
 }
@@ -65,9 +62,9 @@ class Monitor<T> : SingleInputBlock<T>(
  * A block that simply stores its input, and outputs it the next loop; so it is [OUT_FIRST_ALWAYS].
  * This is useful for breaking up loops.
  *
- * An [initialValue] must be given.
+ * An [initialValue] must be given, which will be the first output when the system has just started.
  *
- * This is also usable with with [BlocksConfig.delay]
+ * This is also creatable from [BlocksConfig.delay]
  */
 class Delay<T>(private val initialValue: T) : Pipe<T, T>(OUT_FIRST_ALWAYS) {
     override fun doInit(): T? = initialValue

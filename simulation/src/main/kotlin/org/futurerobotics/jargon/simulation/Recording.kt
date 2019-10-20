@@ -19,7 +19,7 @@ private typealias RecordingsMap<T> = MutableMap<String, RecordingsGroup<T>>
  * Recordings can be put in _groups_, and every group corresponds to a graph. Every group/graph can have multiple
  * recordings with different names.
  *
- * Obtained with [RecordingBlocksSystemBuilder].
+ * Obtained with [RecordingBlocksConfig].
  */
 class Recordings internal constructor(
     private val yRecordingsMap: RecordingsMap<Double>,
@@ -90,7 +90,7 @@ class Recordings internal constructor(
  * A block with a single input that records the values it received every loop.
  * Usually used for graphing.
  */
-class RecordingBlock<T> : SingleInputBlock<T>(0, Block.Processing.IN_FIRST_ALWAYS) {
+class RecordingBlock<T> : InputOnlyBlock<T>() {
     private val _values = ArrayList<T>()
     /** The values recorded by this block */
     val values: List<T> = _values.asUnmodifiableList()
@@ -101,25 +101,23 @@ class RecordingBlock<T> : SingleInputBlock<T>(0, Block.Processing.IN_FIRST_ALWAY
     override fun processInput(input: T, systemValues: SystemValues) {
         _values += input
     }
-
-    override fun getOutput(index: Int): Any? = throw IndexOutOfBoundsException(index)
 }
 
 /**
- * A subclass of [BlocksSystemBuilder] that provides additional DSL functions for recording values of blocks.
+ * A [BlocksConfig] that provides additional DSL functions for recording values of blocks.
  */
-class RecordingBlocksSystemBuilder : BlocksSystemBuilder() {
+class RecordingBlocksConfig : BaseBlocksConfig() {
     private val yRecordingsMap: RecordingsMap<Double> = HashMap()
     private val xyRecordingsMap: RecordingsMap<Vector2d> = HashMap()
 
     /**
-     * The [Recordings] that are maintained by this [RecordingBlocksSystemBuilder]. Any newly added recordings will
+     * The [Recordings] that are maintained by this [RecordingBlocksConfig]. Any newly added recordings will
      * be reflected in this Records.
      */
     val recordings: Recordings
 
     init {
-        val times = (RecordingBlock<Double>()) { this from SystemValuesBlock().totalTime }
+        val times = RecordingBlock<Double>()() { this from SystemValuesBlock().totalTime }
         recordings = Recordings(yRecordingsMap, xyRecordingsMap, times)
     }
 
@@ -149,17 +147,18 @@ class RecordingBlocksSystemBuilder : BlocksSystemBuilder() {
 
 /**
  * DSL to build a block system.
- * Runs the [configuration] block on a [BlocksSystemBuilder] then returns the built [BlocksSystem].
+ * Runs the [configuration] block on a [RecordingBlocksConfig] then returns the built [BlocksSystem] and [Recordings].
  */
 @UseExperimental(ExperimentalContracts::class)
 inline fun buildBlocksRecordingSystem(
-    configuration: RecordingBlocksSystemBuilder.() -> Unit
+    configuration: RecordingBlocksConfig.() -> Unit
 ): Pair<BlocksSystem, Recordings> {
     contract {
         callsInPlace(configuration, InvocationKind.EXACTLY_ONCE)
     }
-    return RecordingBlocksSystemBuilder().run {
+    return RecordingBlocksConfig().run {
         configuration()
-        build() to recordings
+        verifyConfig()
+        BlocksSystem(this) to recordings
     }
 }

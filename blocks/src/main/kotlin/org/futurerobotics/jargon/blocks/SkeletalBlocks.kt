@@ -208,6 +208,32 @@ abstract class SingleInputListStoreBlock<T>(
 }
 
 /**
+ * A block that ONLY takes in a single input of type [T], and runs [processInput] with it.
+ *
+ * Will always be [IN_FIRST_ALWAYS].
+ */
+abstract class InputOnlyBlock<T> : SingleInputBlock<T>(0, IN_FIRST_ALWAYS) {
+    /** Processes the input to this block. */
+    abstract override fun processInput(input: T, systemValues: SystemValues)
+
+    override fun init() {
+    }
+
+    final override fun getOutput(index: Int): Any? = throw IndexOutOfBoundsException(index)
+
+    companion object {
+        /**
+         * Creates an [InputOnlyBlock] that only runs the given [operation] on the inputs it receives.
+         */
+        inline fun <T> of(crossinline operation: (T) -> Unit): InputOnlyBlock<T> = object : InputOnlyBlock<T>() {
+            override fun processInput(input: T, systemValues: SystemValues) {
+                operation(input)
+            }
+        }
+    }
+}
+
+/**
  * A block that has 1 input of type [T] and 1 output of type [R], where the output is strictly the input run through
  * the [pipe] function.
  *
@@ -215,7 +241,7 @@ abstract class SingleInputListStoreBlock<T>(
  *
  * This itself if both a [BlocksConfig.Input] and [BlocksConfig.Output] representing its input and output.
  *
- * A lambda version of this is available in [BlocksConfig.pipe] for easier use.
+ * A lambda version of this is available in [BlocksConfig.combine] for easier use.
  * */
 abstract class Pipe<T, R>(processing: Block.Processing) : SingleOutputBlock<R>(
     1, processing
@@ -236,7 +262,6 @@ abstract class Pipe<T, R>(processing: Block.Processing) : SingleOutputBlock<R>(
             object : Pipe<T, R>(IN_FIRST_LAZY) {
                 override fun pipe(input: T): R = pipe(input)
             }
-
     }
 }
 
@@ -301,10 +326,10 @@ abstract class CompositeBlock(numInputs: Int, numOutputs: Int, processing: Block
     override fun getOutput(index: Int): Any? = subsystem.getOutput(index)
 
     private inner class Subsystem(
-        connections: Collection<BaseBlocksConfig.BlockConnections>,
+        config: BlocksConfig,
         private val sources: Sources,
         private val outputs: Outputs
-    ) : AbstractBlocksRunner(connections) {
+    ) : AbstractBlocksRunner(config) {
         override lateinit var systemValues: SystemValues
 
         public override fun init() = super.init()
@@ -369,26 +394,18 @@ abstract class CompositeBlock(numInputs: Int, numOutputs: Int, processing: Block
     )
 
     final override fun prepareAndVerify(config: BlocksConfig) {
-        subsystem = SubsystemConfig().run {
-            buildSubsystem(sources.allOutputs(), outputs.allInputs())
-
-            getSystem()
-        }
+        val sources = Sources()
+        val outputs = Outputs()
+        val subConfig = BaseBlocksConfig()
+        subConfig.buildSubsystem(sources.allOutputs(), outputs.allInputs())
+        subConfig.verifyConfig()
+        subsystem = Subsystem(subConfig, sources, outputs)
         morePrepareAndVerify(config)
     }
 
-    /** Does more. Only way to enforce "call". [prepareAndVerify] */
+    /** Performs additional [prepareAndVerify] actions. Only way to enforce "super call". */
     protected open fun morePrepareAndVerify(config: BlocksConfig) {
         super.prepareAndVerify(config)
-    }
-
-    private inner class SubsystemConfig : BaseBlocksConfig() {
-        val sources = Sources()
-        val outputs = Outputs()
-        fun getSystem(): Subsystem {
-            verifyConfig()
-            return Subsystem(connections, sources, outputs)
-        }
     }
 }
 
