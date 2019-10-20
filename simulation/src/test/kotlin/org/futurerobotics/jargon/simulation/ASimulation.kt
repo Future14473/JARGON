@@ -89,7 +89,7 @@ internal class ASimulation {
             4.0, 0.0, 0.0,
             errorBounds = Interval.symmetric(0.5)
         )
-        val (system, recordings) = buildBlocksRecordingSystem {
+        val (system, recordings) = buildRecordingBlocksSystem {
             val queue = trajectories
             val follower =
                 TimeOnlyMotionProfileFollower<MotionState<Pose2d>>(ValueMotionState.ofAll(Pose2d.ZERO)).apply {

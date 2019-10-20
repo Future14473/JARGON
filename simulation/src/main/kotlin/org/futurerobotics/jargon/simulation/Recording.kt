@@ -150,7 +150,7 @@ class RecordingBlocksConfig : BaseBlocksConfig() {
  * Runs the [configuration] block on a [RecordingBlocksConfig] then returns the built [BlocksSystem] and [Recordings].
  */
 @UseExperimental(ExperimentalContracts::class)
-inline fun buildBlocksRecordingSystem(
+inline fun buildRecordingBlocksSystem(
     configuration: RecordingBlocksConfig.() -> Unit
 ): Pair<BlocksSystem, Recordings> {
     contract {
