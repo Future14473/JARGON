@@ -1,8 +1,12 @@
 package org.futurerobotics.jargon.simulation
 
-import org.futurerobotics.jargon.blocks.*
-import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.AbstractBlock
+import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.BlocksConfig
+import org.futurerobotics.jargon.blocks.SystemValues
+import org.futurerobotics.jargon.blocks.control.MotorsBlock
+import org.futurerobotics.jargon.hardware.Gyro
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.mechanics.FixedDriveModel
@@ -29,6 +33,7 @@ interface SimulatedDrive {
      * Gets the current pose of the bot.
      */
     val curGlobalPose: Pose2d
+
     /**
      * Updates the simulation, using the given [volts] vector and the loop [time] elapsed.
      */
@@ -65,6 +70,8 @@ class SimulatedFixedDrive(
         require(timeStep > 0) { "Time step $timeStep must be > 0" }
     }
 
+    /** The number of motors/wheels in this drive. */
+    val numMotors: Int get() = driveModel.numWheels
     private var curWheelVelocities: Vec = zeroVec(driveModel.numWheels)
     private val curWheelPositions: Vec = zeroVec(driveModel.numWheels)
 
@@ -109,8 +116,10 @@ class SimulatedFixedDrive(
  * 1. A List<Double> of motor positions in radians
  * 2. A List<Double> of motor velocities in radians
  */
-class SimulatedDriveInput(private val drive: SimulatedFixedDrive) : AbstractBlock(1, 3, OUT_FIRST_ALWAYS),
-    BlocksConfig.Input<List<Double>> {
+class SimulatedDriveBlock(private val drive: SimulatedFixedDrive) : AbstractBlock(1, 3, OUT_FIRST_ALWAYS),
+    MotorsBlock, BlocksConfig.Input<List<Double>> {
+    override val numMotors: Int
+        get() = drive.numMotors
 
     override fun init() {
     }
@@ -129,9 +138,9 @@ class SimulatedDriveInput(private val drive: SimulatedFixedDrive) : AbstractBloc
 
 
     /** Motor positions [BlocksConfig.Output] */
-    val motorPos: BlocksConfig.Output<List<Double>> get() = configOutput(0)
+    override val motorPositions: BlocksConfig.Output<List<Double>> get() = configOutput(0)
     /** Motor velocities [BlocksConfig.Output] */
-    val motorVel: BlocksConfig.Output<List<Double>> get() = configOutput(1)
+    override val motorVelocities: BlocksConfig.Output<List<Double>> get() = configOutput(1)
 
     /** The actual pose as monitored by the simulated drive. Usually will not have direct info about this; used for testing. */
     val actualPose: BlocksConfig.Output<Pose2d> get() = configOutput(2)
@@ -142,13 +151,20 @@ class SimulatedDriveInput(private val drive: SimulatedFixedDrive) : AbstractBloc
 
 /**
  * Simulated gyroscope measurement.
+ *
+ * Currently does not simulate drift.
  */
 class SimulatedGyro(
     private val drive: SimulatedFixedDrive,
-    private val noiseStd: Double,
+    private val noiseStd: Double = 0.0,
     private val random: Random = Random()
-) : SingleOutputBlock<Double>(0, IN_FIRST_ALWAYS) {
-    override fun doInit(): Double? = null
-    override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Double =
-        drive.curGlobalPose.heading + random.nextGaussian() * noiseStd
+) : Gyro {
+    override val currentAngle: Double
+        get() = drive.curGlobalPose.heading + random.nextGaussian() * noiseStd
+
+    override fun init() {
+    }
+
+    override fun stop() {
+    }
 }

@@ -252,8 +252,8 @@ abstract class Pipe<T, R>(processing: Block.Processing) : SingleOutputBlock<R>(
  *
  * A lambda version of this is available in [BlocksConfig.combine] for easier use.
  */
-abstract class Combine<A, B, R> :
-    SingleOutputBlock<R>(2, IN_FIRST_LAZY) {
+abstract class Combine<A, B, R>(processing: Block.Processing = IN_FIRST_LAZY) :
+    SingleOutputBlock<R>(2, processing) {
 
     final override fun doInit(): R? = null
     final override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): R =
@@ -275,7 +275,7 @@ abstract class Combine<A, B, R> :
         inline fun <A, B, R> of(
             crossinline combine: (A, B) -> R
         ): Combine<A, B, R> =
-            object : Combine<A, B, R>() {
+            object : Combine<A, B, R>(IN_FIRST_LAZY) {
                 override fun combine(a: A, b: B): R = combine(a, b)
             }
 

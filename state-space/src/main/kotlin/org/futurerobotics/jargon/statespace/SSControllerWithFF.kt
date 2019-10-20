@@ -1,5 +1,6 @@
 package org.futurerobotics.jargon.statespace
 
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
 import org.futurerobotics.jargon.blocks.BlocksConfig
 import org.futurerobotics.jargon.blocks.Combine
 import org.futurerobotics.jargon.linalg.*
@@ -26,7 +27,7 @@ class SSControllerWithFF(
     private val model: DiscreteLinSSModel,
     kGain: Mat,
     feedForwardQRCost: QRCost? = null
-) : Combine<Any, Vec, Vec>() {
+) : Combine<Any, Vec, Vec>(IN_FIRST_LAZY) {
 
     init {
         require(

@@ -2,14 +2,12 @@ package org.futurerobotics.jargon.simulation
 
 import org.futurerobotics.jargon.blocks.BlocksSystem
 import org.futurerobotics.jargon.blocks.Constant
-import org.futurerobotics.jargon.blocks.control.FeedForwardController
-import org.futurerobotics.jargon.blocks.control.FixedDriveMotorToBotDelta
-import org.futurerobotics.jargon.blocks.control.PIDCoefficients
-import org.futurerobotics.jargon.blocks.control.PosePIDController
+import org.futurerobotics.jargon.blocks.Shutdown
+import org.futurerobotics.jargon.blocks.control.*
 import org.futurerobotics.jargon.blocks.functional.CreateMotionState
 import org.futurerobotics.jargon.blocks.functional.ExternalQueue
 import org.futurerobotics.jargon.blocks.functional.SplitMotionOnly
-import org.futurerobotics.jargon.blocks.motion.GlobalPoseTrackerFromDelta
+import org.futurerobotics.jargon.blocks.motion.GlobalPoseTrackerFromDeltaAndGyro
 import org.futurerobotics.jargon.blocks.motion.GlobalToBotMotionReference
 import org.futurerobotics.jargon.blocks.motion.TimeOnlyMotionProfileFollower
 import org.futurerobotics.jargon.linalg.*
@@ -32,6 +30,24 @@ import kotlin.math.max
 import kotlin.math.roundToLong
 import kotlin.random.asKotlinRandom
 
+private val motorModel = DcMotorModel.fromMotorData(
+    12 * volts,
+    260 * ozf * `in`,
+    9.2 * A,
+    435 * rev / min,
+    0.25 * A
+)
+private val transmissionModel = TransmissionModel.fromTorqueLosses(motorModel, 2.0, 0.0, 0.9)
+private const val mass = 10.8 * lbs
+private val driveModel = DriveModels.mecanumLike(
+    mass,
+    mass / 6 * (18 * `in`).squared(),
+    transmissionModel,
+    2 * `in`,
+    16 * `in`,
+    14 * `in`
+)
+
 internal class ASimulation {
 
     private val period = 1.0 / 20
@@ -47,24 +63,12 @@ internal class ASimulation {
     private val recordings: Recordings
 
     init {
-        val driveModel: FixedDriveModel = DriveModels.mecanumLike(
-            5 * lbs, 10.0, TransmissionModel.fromTorqueLosses(
-                DcMotorModel.fromMotorData(
-                    12 * volts, 350 * ozf * `in`, 11.5 * A, 160 * rev / min, 0.5 * A
-                ),
-                1.0, 1.0, 0.9
-            ), 2 * `in`, 8 * `in`, 8 * `in`
-        )
-        val continuous = LinearDriveModels.poseVelocityController(driveModel)
-        val kGain = continuousLQR(continuous, QRCost(eye(3) * 3.0, eye(4)))
-
-        val ssModel: DiscreteLinSSModel = continuous.discretize(period)
-        val actualDrive = SimulatedFixedDrive(
+        val simulatedDrive = SimulatedFixedDrive(
             driveModel,
             FixedDriveModelPerturber(
                 0.005, 0.005, FixedWheelModelPerturb(
-                    0.005, 0.0, 0.05, TransmissionModelPerturb(
-                        0.005, 0.1, 0.05, DcMotorModelPerturb(0.0001)
+                    0.0005, 0.00001, 0.005, TransmissionModelPerturb(
+                        0.0005, 0.1, 0.005, DcMotorModelPerturb(0.0001)
                     )
                 )
             ),
@@ -73,6 +77,15 @@ internal class ASimulation {
             eye(4) * 0.05,
             0.005
         )
+
+        val motorsBlock = SimulatedDriveBlock(simulatedDrive)
+        val gyro = GyroBlock(SimulatedGyro(simulatedDrive))
+
+        val continuous = LinearDriveModels.poseVelocityController(driveModel)
+        val kGain = continuousLQR(continuous, QRCost(eye(3) * 3.0, eye(4)))
+
+        val ssModel: DiscreteLinSSModel = continuous.discretize(period)
+
         val coeff = PIDCoefficients(
             0.0, 0.0, 0.0,
             errorBounds = Interval.symmetric(0.5)
@@ -90,13 +103,16 @@ internal class ASimulation {
                 }
             follower.output.pipe { s.x }.recordY("x reference", "reference value")
             follower.output.pipe { s.y }.recordY("y reference", "reference value")
+            follower.output.pipe { s.heading }.recordY("heading reference", "reference value")
 
             follower.output.pipe { v.x }.recordY("x reference", "reference velocity")
             follower.output.pipe { v.y }.recordY("y reference", "reference velocity")
+//            follower.output.pipe { v.heading }.recordY("heading reference", "reference velocity")
 
             val botMotion = GlobalToBotMotionReference().apply { reference from positionController }
             botMotion.pipe { v.x }.recordY("x reference", "velocity signal")
             botMotion.pipe { v.y }.recordY("y reference", "velocity signal")
+//            botMotion.pipe { v.heading }.recordY("heading reference", "velocity signal")
             val (refVPose, refAPose) = SplitMotionOnly<Pose2d>()() { this from botMotion }
 
             val ref = CreateMotionState<Vec>().apply {
@@ -108,37 +124,42 @@ internal class ASimulation {
             val ssController = SSControllerWithFF(ssModel, kGain)() { reference from ref }
 //            ssController.pipe { println(asList()) }.monitor()
 
-            val simulated = SimulatedDriveInput(actualDrive).apply {
+            motorsBlock {
                 this from ssController.pipe { asList() }
-                    .also {
-                        //                        repeat(4) { i ->
-//                            it.pipe { this[i] }.recordY("Voltage signals", "Voltage $i")
-//                        }
-                    }
             }
 
-            KalmanFilter(ssModel, eye(3) * 0.03, eye(4) * 0.05).apply {
-                measurement from simulated.motorVel.pipe { toVec() }
+            KalmanFilter(ssModel, eye(3) * 0.03, eye(4) * 0.05)() {
+                measurement from motorsBlock.motorVelocities.pipe { toVec() }
                 signal from ssController.delay(zeroVec(4))
                 ssController.state from this
             }
-            val tracker = GlobalPoseTrackerFromDelta().apply {
-                deltaIn from simulated.motorPos.pipe(FixedDriveMotorToBotDelta(driveModel))
+            val delta = FixedDriveMotorToBotDelta(driveModel)() {
+                this from motorsBlock.motorPositions
+//                motorPositions from simulated.motorPos
+//                gyro from SimulatedGyro(simulatedDrive)
+            }
+            val tracker = GlobalPoseTrackerFromDeltaAndGyro()() {
+                deltaIn from delta
+                gyroIn from gyro
                 this into positionController.state
                 this into botMotion.globalPose
 
                 pipe { x }.recordY("x reference", "measured value")
                 pipe { y }.recordY("y reference", "measured value")
+                pipe { heading }.recordY("heading reference", "measured value")
 
             }
             val error = tracker.combine(follower.output.pipe { s }) {
                 max(this.vec distTo it.vec, (this.heading distTo it.heading))
             }
-//            Shutdown() from follower.isFollowing.combine(error) { !this && it < 0.03 }
+            Shutdown() from follower.isFollowing.combine(error) { !this && it < 0.1 }
 
             follower.output.pipe { s.vec }.recordXY("Path", "Reference")
             tracker.pipe { vec }.recordXY("Path", "Estimated pose")
-            simulated.actualPose.pipe { vec }.recordXY("Path", "Actual pose")
+            motorsBlock.actualPose.pipe { vec }.recordXY("Path", "Actual pose")
+            motorsBlock.actualPose.pipe { x }.recordY("x reference", "Actual value")
+            motorsBlock.actualPose.pipe { y }.recordY("y reference", "Actual value")
+            motorsBlock.actualPose.pipe { heading }.recordY("heading reference", "Actual value")
         }
         this.system = system
         this.recordings = recordings

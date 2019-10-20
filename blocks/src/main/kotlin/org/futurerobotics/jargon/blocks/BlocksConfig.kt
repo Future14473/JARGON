@@ -149,21 +149,13 @@ abstract class BlocksConfig {
         combineBlock.also { this into it.first; second into it.second }
 
     /**
-     * Creates a [Combine] block that combines the [a] and [b] outputs through the given [combine] function,
-     * and returns the combination's output.
-     */
-    inline fun <A, B, R> combine(a: Output<A>, b: Output<B>, crossinline combine: (A, B) -> R): Output<R> =
-        Combine.of(combine).also { a into it.first; b into it.second }
-
-    /**
      * Creates a [Combine] block that combines [this] and [other] outputs through the given [combine] function with the
      * value of [this] as receiver, and returns the combination's output.
      */
-    @JvmName("combineWithReceiver")
     inline fun <A, B, R> Output<A>.combine(
         other: Output<B>,
         crossinline combine: A.(B) -> R
-    ): Output<R> = combine(this, other, combine)
+    ): Output<R> = Combine.of(combine).also { this into it.first; other into it.second }
 
     /** Runs the [configuration] block on `this`, then returns it. kotlin DSL. */
     inline operator fun <T : Block> T.invoke(configuration: T.() -> Unit): T = apply(configuration)
