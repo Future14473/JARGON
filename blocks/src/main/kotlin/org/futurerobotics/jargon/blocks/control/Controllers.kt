@@ -53,8 +53,8 @@ class BangBangController<State, Signal>(
     Controller<State, State, Signal>
         where State : Comparable<State>, State : Any {
 
-    override val reference: BlocksConfig.Input<State> get() = first
-    override val state: BlocksConfig.Input<State> get() = second
+    override val reference: BlocksConfig.Input<State> get() = firstInput
+    override val state: BlocksConfig.Input<State> get() = secondInput
     override fun combine(a: State, b: State): Signal {
         val comp = b.compareTo(a)
         return when {
@@ -81,11 +81,11 @@ class FixedDriveOpenController(private val model: FixedDriveModel) :
 
     override fun combine(a: MotionOnly<Pose2d>, b: Any): List<Double> = model.getModeledVoltages(a)
 
-    override val reference: BlocksConfig.Input<MotionOnly<Pose2d>> get() = first
+    override val reference: BlocksConfig.Input<MotionOnly<Pose2d>> get() = firstInput
     /** Do not use; connects to nothing */
     @Deprecated("This doesn't connect to anything", ReplaceWith(""), DeprecationLevel.WARNING)
     override val state: BlocksConfig.Input<Any>
-        get() = second
+        get() = secondInput
 }
 
 /**
@@ -112,7 +112,7 @@ abstract class FeedForwardController<T : Any>(private val nonFFController: Contr
         val reference = sources[0] as BlocksConfig.Output<MotionState<T>>
         val state = sources[1] as BlocksConfig.Output<T>
 
-        val (refS, refV, refA) = SplitMotionState<T>().also { it from reference }
+        val (refS, refV, refA) = SplitMotionState<T>()() { this from reference }
 
         nonFFController.let { it.reference from refS; it.state from state }
 

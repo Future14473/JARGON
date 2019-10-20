@@ -9,9 +9,12 @@ import strikt.api.expectThat
 import strikt.assertions.failed
 import strikt.assertions.isA
 import strikt.assertions.isEqualTo
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
-internal abstract class AbstractBlockSystemTest {
-    protected fun testBlock(
+internal class TestBlocksConfig : BaseBlocksConfig() {
+    fun testBlock(
         name: String,
         numInputs: Int,
         numOutputs: Int,
@@ -20,18 +23,42 @@ internal abstract class AbstractBlockSystemTest {
     ): TestBlock =
         TestBlock(name, numInputs, numOutputs, processing, requireAllInputs)
 
-    protected fun emptyBlock(
+    fun emptyBlock(
         processing: Block.Processing = Block.Processing.IN_FIRST_LAZY
     ) = testBlock("Empty", 0, 0, processing)
+
+
+    /**
+     * Connects the inputs of [this] block to all the given [outputs], in order.
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun Block.fromAll(vararg outputs: Output<*>) {
+        require(outputs.size <= this.numInputs)
+        { "the given number of outputs ${outputs.size} must not exceed the block's number of inputs $this.numInputs" }
+        outputs.forEachIndexed { index, output ->
+            output into Input.of(this, index) as Input<Any?>
+        }
+    }
 }
 
-internal class BlocksSystemTest : AbstractBlockSystemTest() {
+@UseExperimental(ExperimentalContracts::class)
+internal inline fun buildTestBlocksSystem(configuration: TestBlocksConfig.() -> Unit): BlocksSystem {
+    contract {
+        callsInPlace(configuration, InvocationKind.EXACTLY_ONCE)
+    }
+    return TestBlocksConfig().run {
+        configuration()
+        BlocksSystem(this)
+    }
+}
+
+internal class BlocksSystemTest {
 
     @Test
     fun `update order test`() {
         val monitor: Monitor<String>
 
-        val system = buildBlocksSystem {
+        val system = buildTestBlocksSystem {
             val b = testBlock("B", 3, 2, requireAllInputs = false)
             val c = testBlock("C", 1, 2)
             val d = testBlock("D", 1, 1, OUT_FIRST_ALWAYS)
@@ -69,7 +96,7 @@ internal class BlocksSystemTest : AbstractBlockSystemTest() {
     @Test
     fun `loop no good`() {
         expectCatching {
-            buildBlocksSystem {
+            buildTestBlocksSystem {
                 val a = testBlock("1", 1, 1, IN_FIRST_ALWAYS)
                 val b = testBlock("1", 1, 1)
                 val c = testBlock("1", 1, 1)

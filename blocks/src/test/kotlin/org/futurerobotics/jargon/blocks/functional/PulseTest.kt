@@ -1,21 +1,20 @@
 package org.futurerobotics.jargon.blocks.functional
 
-import org.futurerobotics.jargon.blocks.AbstractBlockSystemTest
 import org.futurerobotics.jargon.blocks.Monitor
-import org.futurerobotics.jargon.blocks.buildBlocksSystem
+import org.futurerobotics.jargon.blocks.buildTestBlocksSystem
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isA
 import strikt.assertions.isFalse
 import strikt.assertions.isTrue
 
-internal class PulseTest : AbstractBlockSystemTest() {
+internal class PulseTest {
 
     @Test
     fun `pulse pulses`() {
         val monitor: Monitor<Boolean>
         val pulse = Pulse()
-        val system = buildBlocksSystem {
+        val system = buildTestBlocksSystem {
             monitor = pulse.monitor()
         }
 

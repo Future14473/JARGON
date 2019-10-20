@@ -8,7 +8,7 @@ import org.futurerobotics.jargon.blocks.functional.CreateMotionState
 import org.futurerobotics.jargon.blocks.functional.ExternalQueue
 import org.futurerobotics.jargon.blocks.functional.SplitMotionOnly
 import org.futurerobotics.jargon.blocks.motion.GlobalPoseTrackerFromDeltaAndGyro
-import org.futurerobotics.jargon.blocks.motion.GlobalToBotMotionReference
+import org.futurerobotics.jargon.blocks.motion.GlobalToBotMotion
 import org.futurerobotics.jargon.blocks.motion.TimeOnlyMotionProfileFollower
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.*
@@ -109,7 +109,7 @@ internal class ASimulation {
             follower.output.pipe { v.y }.recordY("y reference", "reference velocity")
 //            follower.output.pipe { v.heading }.recordY("heading reference", "reference velocity")
 
-            val botMotion = GlobalToBotMotionReference().apply { reference from positionController }
+            val botMotion = GlobalToBotMotion().apply { reference from positionController }
             botMotion.pipe { v.x }.recordY("x reference", "velocity signal")
             botMotion.pipe { v.y }.recordY("y reference", "velocity signal")
 //            botMotion.pipe { v.heading }.recordY("heading reference", "velocity signal")

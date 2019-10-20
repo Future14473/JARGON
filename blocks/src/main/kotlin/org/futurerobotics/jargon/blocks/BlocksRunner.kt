@@ -166,9 +166,7 @@ private class IndexedBlocksCreator(
  *
  * Common components of [BlocksSystem] and [CompositeBlock]. Use those instead unless you know what you're doing.
  */
-abstract class AbstractBlocksRunner(
-    config: BlocksConfig
-) {
+abstract class AbstractBlocksRunner(config: BlocksConfig) {
     private val allRunners: Array<BlockRunner>
     private val alwaysRun: Array<InFirstBlock>
     private val outFirst: Array<OutFirstBlock>

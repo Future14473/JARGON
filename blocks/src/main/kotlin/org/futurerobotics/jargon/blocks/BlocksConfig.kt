@@ -66,21 +66,6 @@ abstract class BlocksConfig {
      */
     open infix fun <T> Input<T>.from(output: Output<T>): Unit = output into this
 
-    /**
-     * Connects the inputs of [this] block to all the given [outputs], in order.
-     *
-     * May throw [ClassCastException] if types are not compatible.
-     */
-    @Suppress("UNCHECKED_CAST")
-    @Deprecated("Non checked types; causes too many problems.")
-    open fun Block.fromAll(vararg outputs: Output<*>) {
-        require(outputs.size <= this.numInputs)
-        { "the given number of outputs ${outputs.size} must not exceed the block's number of inputs $this.numInputs" }
-        outputs.forEachIndexed { index, output ->
-            output into Input.of(this, index) as Input<Any?>
-        }
-    }
-
     /** Connects [this] [Output] to all of the given [inputs]. */
     open fun <T> Output<T>.toAll(vararg inputs: Input<T>) {
         inputs.forEach {
@@ -162,14 +147,14 @@ abstract class BlocksConfig {
      * Useful for quick transformations.
      */
     fun <A, B, R> Output<A>.combine(other: Output<B>, combineBlock: Combine<A, B, R>): Output<R> =
-        combineBlock.also { this into it.first; other into it.second }
+        combineBlock.also { this into it.firstInput; other into it.secondInput }
 
     /**
      * Creates a [Combine] block that combines [this] and [other] outputs through the given [combine] function with the
      * value of [this] as receiver, and returns the combination's output.
      */
     inline fun <A, B, R> Output<A>.combine(other: Output<B>, crossinline combine: A.(B) -> R): Output<R> =
-        Combine.of(combine).also { this into it.first; other into it.second }
+        Combine.of(combine).also { this into it.firstInput; other into it.secondInput }
 
     /** Runs the [configuration] block on `this`, then returns it. kotlin DSL. */
     inline operator fun <T : Block> T.invoke(configuration: T.() -> Unit): T = apply(configuration)

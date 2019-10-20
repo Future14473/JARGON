@@ -60,7 +60,7 @@ class SSControllerWithFF(
     }
 
     /** Reference [BlocksConfig.Input] */
-    val reference: BlocksConfig.Input<Any> get() = first
+    val reference: BlocksConfig.Input<Any> get() = firstInput
     /** State [BlocksConfig.Input] */
-    val state: BlocksConfig.Input<Vec> get() = second
+    val state: BlocksConfig.Input<Vec> get() = secondInput
 }

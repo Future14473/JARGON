@@ -119,7 +119,7 @@ class GlobalPoseTrackerFromDeltaAndGyro(initialPose: Pose2d = Pose2d.ZERO) : Abs
 /**
  * Converts the [MotionState] of global pose (interpreted as a **reference**) into
  * an equivalent [MotionState] from the bot's perspective (where the bot's current "position" is always Pose2d.ZERO),
- * using the blots current pose.
+ * using the bot's current pose.
  *
  * This is how global reference is translated into bot reference.
  *
@@ -130,15 +130,15 @@ class GlobalPoseTrackerFromDeltaAndGyro(initialPose: Pose2d = Pose2d.ZERO) : Abs
  * Outputs:
  * 1. [MotionState] from the bot's perspective
  *
- * @see GlobalToBotMotionReference
+ * @see GlobalToBotMotion
  */
 class GlobalToBotReference : Combine<MotionState<Pose2d>, Pose2d, MotionState<Pose2d>>(Block.Processing.IN_FIRST_LAZY) {
     override fun combine(a: MotionState<Pose2d>, b: Pose2d): MotionState<Pose2d> = GlobalToBot.referenceMotion(a, b)
 
     /** The pose reference [BlocksConfig.Input] */
-    val referenceIn: BlocksConfig.Input<MotionState<Pose2d>> get() = first
+    val referenceIn: BlocksConfig.Input<MotionState<Pose2d>> get() = firstInput
     /** The actual global pose [BlocksConfig.Input] */
-    val globalPoseIn: BlocksConfig.Input<Pose2d> get() = second
+    val globalPoseIn: BlocksConfig.Input<Pose2d> get() = secondInput
 }
 
 /**
@@ -154,14 +154,14 @@ class GlobalToBotReference : Combine<MotionState<Pose2d>, Pose2d, MotionState<Po
  * Outputs:
  * 1. [MotionState] from the bot's perspective
  *
- * @see GlobalToBotMotionReference
+ * @see GlobalToBotReference
  */
-class GlobalToBotMotionReference :
+class GlobalToBotMotion :
     Combine<MotionOnly<Pose2d>, Pose2d, MotionOnly<Pose2d>>(Block.Processing.IN_FIRST_LAZY) {
     override fun combine(a: MotionOnly<Pose2d>, b: Pose2d): MotionOnly<Pose2d> = GlobalToBot.motion(a, b.heading)
 
     /** The pose reference [BlocksConfig.Input] */
-    val reference: BlocksConfig.Input<MotionOnly<Pose2d>> get() = first
+    val reference: BlocksConfig.Input<MotionOnly<Pose2d>> get() = firstInput
     /** The actual global pose [BlocksConfig.Input] */
-    val globalPose: BlocksConfig.Input<Pose2d> get() = second
+    val globalPose: BlocksConfig.Input<Pose2d> get() = secondInput
 }

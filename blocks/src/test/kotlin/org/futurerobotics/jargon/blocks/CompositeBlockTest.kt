@@ -22,12 +22,12 @@ internal class TestCompositeBlock : CompositeBlock(2, 2, IN_FIRST_ALWAYS) {
 }
 
 
-internal class CompositeBlockTest : AbstractBlockSystemTest() {
+internal class CompositeBlockTest {
     @Test
     fun `it works in the middle`() {
         val monitor: Monitor<String>
 
-        val system = buildBlocksSystem {
+        val system = buildTestBlocksSystem {
             val b = testBlock("B", 3, 2, requireAllInputs = false)
             val c = testBlock("C", 1, 2)
             val d = testBlock("D", 1, 1, OUT_FIRST_ALWAYS)

@@ -273,7 +273,7 @@ abstract class Pipe<T, R>(processing: Block.Processing) : SingleOutputBlock<R>(
  * This also defaults [doInit] to return `null`; override if this is not desired.
  *
  * This is itself a [BlocksConfig.Output] representing its only output,
- * and also provides [first] and [second] values representing its inputs.
+ * and also provides [firstInput] and [secondInput] values representing its inputs.
  *
  * A lambda version of this is available in [BlocksConfig.combine] for easier use.
  */
@@ -290,9 +290,9 @@ abstract class Combine<A, B, R>(processing: Block.Processing = IN_FIRST_LAZY) :
     protected abstract fun combine(a: A, b: B): R
 
     /** The first input to this combine block. */
-    val first: BlocksConfig.Input<A> get() = configInput(0)
+    val firstInput: BlocksConfig.Input<A> get() = configInput(0)
     /** The second input to this second block. */
-    val second: BlocksConfig.Input<B> get() = configInput(1)
+    val secondInput: BlocksConfig.Input<B> get() = configInput(1)
 
     companion object {
         /** Creates a [Combine] using the given [combine] function. */
@@ -398,7 +398,6 @@ abstract class CompositeBlock(numInputs: Int, numOutputs: Int, processing: Block
         val outputs = Outputs()
         val subConfig = BaseBlocksConfig()
         subConfig.buildSubsystem(sources.allOutputs(), outputs.allInputs())
-        subConfig.verifyConfig()
         subsystem = Subsystem(subConfig, sources, outputs)
         morePrepareAndVerify(config)
     }
