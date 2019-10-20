@@ -31,15 +31,14 @@ interface MotionState<T : Any> {
     val s: T
     /** The velocity of this [MotionOnly] */
     val v: T
+    /** The acceleration of this [MotionState] */
+    val a: T
 
     /** @return s */
     operator fun component1(): T = s
 
     /** @return v */
     operator fun component2(): T = v
-
-    /** The acceleration of this [MotionState] */
-    val a: T
 
     /** @return a */
     operator fun component3(): T = a

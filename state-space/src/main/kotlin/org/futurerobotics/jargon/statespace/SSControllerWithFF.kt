@@ -13,7 +13,7 @@ import org.futurerobotics.jargon.mechanics.MotionState
  * A state space controller using the given [model] and [kGain], with feed forward.
  *
  * Inputs:
- * 1. Either: reference vector or [MotionState] of the reference vector
+ * 1. Either: [MotionState] of the reference vector
  * 2. Current state vector
  *
  * Outputs:
@@ -27,7 +27,7 @@ class SSControllerWithFF(
     private val model: DiscreteLinSSModel,
     kGain: Mat,
     feedForwardQRCost: QRCost? = null
-) : CombineBlock<Any, Vec, Vec>(IN_FIRST_LAZY) {
+) : CombineBlock<MotionState<Vec>, Vec, Vec>(IN_FIRST_LAZY) {
 
     init {
         require(
@@ -42,25 +42,16 @@ class SSControllerWithFF(
     private val kGain = kGain.toImmutableMat()
     private val kFF = plantInversionKFF(model, feedForwardQRCost)
 
-    override fun combine(a: Any, b: Vec): Vec {
+    override fun combine(a: MotionState<Vec>, b: Vec): Vec {
         //we don't care about elapsed seconds.
-        val (r, r1) = getRefs(a)
+        val r = a.s
+        val r1 = a.s + a.v * model.period + a.a * (model.period.squared() / 2)
         val x = b
         return kGain * (r - x) + kFF(r1 - model.A * r)
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun getRefs(r: Any): Pair<Vec, Vec> = when (r) {
-        is MotionState<*> -> {
-            r as MotionState<Vec>
-            r.s to r.s + r.v * model.period + r.a * (model.period.squared() / 2)
-        }
-        is Vec -> r to r
-        else -> throw ClassCastException()
-    }
-
     /** Reference [BlocksConfig.Input] */
-    val reference: BlocksConfig.Input<Any> get() = firstInput
+    val reference: BlocksConfig.Input<MotionState<Vec>> get() = firstInput
     /** State [BlocksConfig.Input] */
     val state: BlocksConfig.Input<Vec> get() = secondInput
 }

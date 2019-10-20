@@ -1,21 +1,22 @@
 package org.futurerobotics.jargon.simulation
 
 import org.futurerobotics.jargon.blocks.BlocksSystem
-import org.futurerobotics.jargon.blocks.Constant
 import org.futurerobotics.jargon.blocks.Shutdown
 import org.futurerobotics.jargon.blocks.control.*
-import org.futurerobotics.jargon.blocks.functional.CreateMotionState
 import org.futurerobotics.jargon.blocks.functional.ExternalQueue
-import org.futurerobotics.jargon.blocks.functional.SplitMotionOnly
+import org.futurerobotics.jargon.blocks.functional.MapMotionOnly
+import org.futurerobotics.jargon.blocks.functional.ShiftMotionOnlyToState
 import org.futurerobotics.jargon.blocks.motion.GlobalPoseTrackerFromDeltaAndGyro
 import org.futurerobotics.jargon.blocks.motion.GlobalToBotMotion
 import org.futurerobotics.jargon.blocks.motion.TimeOnlyMotionProfileFollower
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.*
+import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.mechanics.*
-import org.futurerobotics.jargon.pathing.Line
-import org.futurerobotics.jargon.pathing.TangentHeading
+import org.futurerobotics.jargon.pathing.MultiplePath
+import org.futurerobotics.jargon.pathing.OffsetTangentHeading
 import org.futurerobotics.jargon.pathing.addHeading
+import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
 import org.futurerobotics.jargon.pathing.trajectory.*
 import org.futurerobotics.jargon.saveGraph
 import org.futurerobotics.jargon.statespace.*
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test
 import java.util.*
 import kotlin.math.max
 import kotlin.math.roundToLong
+import kotlin.random.asKotlinRandom
 
 private val motorModel = DcMotorModel.fromMotorData(
     12 * volts,
@@ -65,7 +67,7 @@ internal class ASimulation {
             FixedDriveModelPerturber(
                 0.005, 0.005, FixedWheelModelPerturb(
                     0.0005, 0.00001, 0.005, TransmissionModelPerturb(
-                        0.0005, 0.1, 0.005, DcMotorModelPerturb(0.01)
+                        0.005, 0.1, 0.005, DcMotorModelPerturb(0.001)
                     )
                 )
             ),
@@ -110,16 +112,12 @@ internal class ASimulation {
             botMotion.pipe { v.x }.recordY("x reference", "velocity signal")
             botMotion.pipe { v.y }.recordY("y reference", "velocity signal")
 //            botMotion.pipe { v.heading }.recordY("heading reference", "velocity signal")
-            val (refVPose, refAPose) = SplitMotionOnly<Pose2d>()() { this from botMotion }
 
-            val ref = CreateMotionState<Vec>().apply {
-                value from refVPose.pipe { toVector() }
-                vel from refAPose.pipe { toVector() }
-                accel from Constant(zeroVec(3))
-            }
+            val poseVelRef = botMotion
+                .pipe(MapMotionOnly.of<Pose2d, Vec> { it.toVector() })
+                .pipe(ShiftMotionOnlyToState(zeroVec(3)))
 
-            val ssController = SSControllerWithFF(ssModel, kGain)() { reference from ref }
-//            ssController.pipe { println(asList()) }.monitor()
+            val ssController = SSControllerWithFF(ssModel, kGain)() { reference from poseVelRef }
 
             motorsBlock {
                 this from ssController.pipe { asList() }
@@ -166,21 +164,21 @@ internal class ASimulation {
 
     @Test
     fun simulation() {
-//        val random = Random("The first simulation".hashCode().toLong()).asKotlinRandom()
-//        val segs =
-//            (listOf(ValueDerivatives(Vector2d.ZERO, Vector2d(1, 0), Vector2d.ZERO)) +
-//                    List(4) {
-//                        randomVectorDerivatives(random, 5.0)
-//                    }).zipWithNext { a, b ->
-//                QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(OffsetTangentHeading(74 * deg))
-//            }
-//        val path = MultiplePath(segs)
-//        val traj = generateTrajectory(path, constraints)
-//        trajectories.add(traj)
+        val random = Random("The continuing simulation".hashCode().toLong()).asKotlinRandom()
+        val segs =
+            (listOf(ValueDerivatives(Vector2d.ZERO, Vector2d(1, 0), Vector2d.ZERO)) +
+                    List(4) {
+                        randomVectorDerivatives(random, 5.0)
+                    }).zipWithNext { a, b ->
+                QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(OffsetTangentHeading(74 * deg))
+            }
+        val path = MultiplePath(segs)
+        val traj = generateTrajectory(path, constraints)
+        trajectories.add(traj)
 
-        val path = Line(Vector2d.ZERO, Vector2d(2, 0)).addHeading(TangentHeading)
-        val trajectory = constraints.generateTrajectory(path)
-        trajectories.add(trajectory)
+//        val path = Line(Vector2d.ZERO, Vector2d(2, 0)).addHeading(TangentHeading)
+//        val trajectory = constraints.generateTrajectory(path)
+//        trajectories.add(trajectory)
 
         val driver = LimitedLoopSystemDriver(5_000, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong())))
         driver.run(system)
