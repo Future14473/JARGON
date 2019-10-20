@@ -23,9 +23,14 @@ fun pureZeroSquare(size: Int): Mat = DiagonalMatrix(DoubleArray(size), false)
 fun eye(size: Int): Mat = MatrixUtils.createRealIdentityMatrix(size)
 fun pureEye(size: Int): Mat = DiagonalMatrix(DoubleArray(size) { 1.0 }, false)
 
+fun diag(v: DoubleArray): Mat = MatrixUtils.createRealDiagonalMatrix(v)
+fun diag(v: List<Double>): Mat = MatrixUtils.createRealDiagonalMatrix(v.toDoubleArray())
+@JvmName("diagVararg")
+fun diag(vararg v: Double): Mat = MatrixUtils.createRealDiagonalMatrix(v)
+
 fun pureDiag(v: DoubleArray): Mat = DiagonalMatrix(v)
 fun pureDiag(v: List<Double>): Mat = DiagonalMatrix(v.toDoubleArray(), false)
-@JvmName("createDiagVararg")
+@JvmName("pureDiagVararg")
 fun pureDiag(vararg v: Double): Mat = DiagonalMatrix(v, false)
 
 

@@ -12,12 +12,10 @@ import org.futurerobotics.jargon.blocks.motion.GlobalToBotMotion
 import org.futurerobotics.jargon.blocks.motion.TimeOnlyMotionProfileFollower
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.*
-import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.mechanics.*
-import org.futurerobotics.jargon.pathing.MultiplePath
-import org.futurerobotics.jargon.pathing.OffsetTangentHeading
+import org.futurerobotics.jargon.pathing.Line
+import org.futurerobotics.jargon.pathing.TangentHeading
 import org.futurerobotics.jargon.pathing.addHeading
-import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
 import org.futurerobotics.jargon.pathing.trajectory.*
 import org.futurerobotics.jargon.saveGraph
 import org.futurerobotics.jargon.statespace.*
@@ -28,7 +26,6 @@ import org.junit.jupiter.api.Test
 import java.util.*
 import kotlin.math.max
 import kotlin.math.roundToLong
-import kotlin.random.asKotlinRandom
 
 private val motorModel = DcMotorModel.fromMotorData(
     12 * volts,
@@ -68,7 +65,7 @@ internal class ASimulation {
             FixedDriveModelPerturber(
                 0.005, 0.005, FixedWheelModelPerturb(
                     0.0005, 0.00001, 0.005, TransmissionModelPerturb(
-                        0.0005, 0.1, 0.005, DcMotorModelPerturb(0.0001)
+                        0.0005, 0.1, 0.005, DcMotorModelPerturb(0.01)
                     )
                 )
             ),
@@ -87,7 +84,7 @@ internal class ASimulation {
         val ssModel: DiscreteLinSSModel = continuous.discretize(period)
 
         val coeff = PIDCoefficients(
-            0.0, 0.0, 0.0,
+            4.0, 0.0, 0.0,
             errorBounds = Interval.symmetric(0.5)
         )
         val (system, recordings) = buildBlocksRecordingSystem {
@@ -136,7 +133,7 @@ internal class ASimulation {
             val delta = FixedDriveMotorToBotDelta(driveModel)() {
                 this from motorsBlock.motorPositions
 //                motorPositions from simulated.motorPos
-//                gyro from SimulatedGyro(simulatedDrive)
+//                gyro from GyroBlock(gyro)
             }
             val tracker = GlobalPoseTrackerFromDeltaAndGyro()() {
                 deltaIn from delta
@@ -160,6 +157,7 @@ internal class ASimulation {
             motorsBlock.actualPose.pipe { x }.recordY("x reference", "Actual value")
             motorsBlock.actualPose.pipe { y }.recordY("y reference", "Actual value")
             motorsBlock.actualPose.pipe { heading }.recordY("heading reference", "Actual value")
+            motorsBlock.actualPose.listen { }
         }
         this.system = system
         this.recordings = recordings
@@ -168,17 +166,21 @@ internal class ASimulation {
 
     @Test
     fun simulation() {
-        val random = Random("The first simulation".hashCode().toLong()).asKotlinRandom()
-        val segs =
-            (listOf(ValueDerivatives(Vector2d.ZERO, Vector2d(1, 0), Vector2d.ZERO)) +
-                    List(4) {
-                        randomVectorDerivatives(random, 5.0)
-                    }).zipWithNext { a, b ->
-                QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(OffsetTangentHeading(74 * deg))
-            }
-        val path = MultiplePath(segs)
-        val traj = generateTrajectory(path, constraints)
-        trajectories.add(traj)
+//        val random = Random("The first simulation".hashCode().toLong()).asKotlinRandom()
+//        val segs =
+//            (listOf(ValueDerivatives(Vector2d.ZERO, Vector2d(1, 0), Vector2d.ZERO)) +
+//                    List(4) {
+//                        randomVectorDerivatives(random, 5.0)
+//                    }).zipWithNext { a, b ->
+//                QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(OffsetTangentHeading(74 * deg))
+//            }
+//        val path = MultiplePath(segs)
+//        val traj = generateTrajectory(path, constraints)
+//        trajectories.add(traj)
+
+        val path = Line(Vector2d.ZERO, Vector2d(2, 0)).addHeading(TangentHeading)
+        val trajectory = constraints.generateTrajectory(path)
+        trajectories.add(trajectory)
 
         val driver = LimitedLoopSystemDriver(5_000, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong())))
         driver.run(system)
