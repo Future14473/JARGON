@@ -106,12 +106,12 @@ internal class ASimulation {
 
             follower.output.pipe { v.x }.recordY("x reference", "reference velocity")
             follower.output.pipe { v.y }.recordY("y reference", "reference velocity")
-//            follower.output.pipe { v.heading }.recordY("heading reference", "reference velocity")
+            follower.output.pipe { v.heading }.recordY("heading reference", "reference velocity")
 
             val botMotion = GlobalToBotMotion().apply { reference from positionController }
             botMotion.pipe { v.x }.recordY("x reference", "velocity signal")
             botMotion.pipe { v.y }.recordY("y reference", "velocity signal")
-//            botMotion.pipe { v.heading }.recordY("heading reference", "velocity signal")
+            botMotion.pipe { v.heading }.recordY("heading reference", "velocity signal")
 
             val poseVelRef = botMotion
                 .pipe(MapMotionOnly.of<Pose2d, Vec> { it.toVector() })
@@ -121,18 +121,23 @@ internal class ASimulation {
 
             motorsBlock {
                 this from ssController.pipe { asList() }
+                    .apply {
+                        repeat(4) {
+                            pipe { this[it] }.recordY("Voltages", "Voltage $it")
+                        }
+                    }
             }
 
-            KalmanFilter(ssModel, eye(3) * 0.03, eye(4) * 0.05)() {
+            KalmanFilter(ssModel, eye(3) * 0.05, eye(4) * 0.05)() {
                 measurement from motorsBlock.motorVelocities.pipe { toVec() }
                 signal from ssController.delay(zeroVec(4))
                 ssController.state from this
             }
+
             val delta = FixedDriveMotorToBotDelta(driveModel)() {
                 this from motorsBlock.motorPositions
-//                motorPositions from simulated.motorPos
-//                gyro from GyroBlock(gyro)
             }
+
             val tracker = GlobalPoseTrackerFromDeltaAndGyro()() {
                 deltaIn from delta
                 gyroIn from gyro
