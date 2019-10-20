@@ -114,7 +114,7 @@ abstract class BlocksConfig {
      *
      * Note that if the source has a processing of [Block.Processing.IN_FIRST_LAZY], it will now always be processed.
      */
-    inline fun <T> Output<T>.process(crossinline operation: (T) -> Unit) {
+    inline fun <T> Output<T>.listen(crossinline operation: (T) -> Unit) {
         this into InputOnlyBlock.of(operation)
     }
 
