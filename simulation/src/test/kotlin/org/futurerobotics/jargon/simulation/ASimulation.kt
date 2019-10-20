@@ -159,7 +159,7 @@ internal class ASimulation {
             motorsBlock.actualPose.pipe { vec }.recordXY("Path", "Actual pose")
             motorsBlock.actualPose.pipe { x }.recordY("x reference", "Actual value")
             motorsBlock.actualPose.pipe { y }.recordY("y reference", "Actual value")
-            motorsBlock.actualPose.pipe { heading }.recordY("heading reference", "Actual value")
+//            motorsBlock.actualPose.pipe { heading }.recordY("heading reference", "Actual value")
             motorsBlock.actualPose.listen { }
         }
         this.system = system

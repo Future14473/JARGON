@@ -6,11 +6,12 @@ import org.futurerobotics.jargon.linalg.*
 
 
 /**
- * Represents a 2d pose, i.e. both position ([vec]) and orientation ([heading])
+ * Represents a 2d pose, i.e. both position ([vec]) and orientation ([heading]).
  *
  * +y is counterclockwise of +x;
  * We recommend using NorthWestUp orientation where forward is +x, and left is +y.
  * This way math still checks out, and 0 degrees is forward.
+ *
  *
  * @property vec The vector (position) component of this Pose
  * @property heading the heading (orientation) of this Pose
@@ -60,6 +61,7 @@ data class Pose2d(@JvmField val vec: Vector2d, @JvmField val heading: Double) {
     /** If all components are finite. */
     fun isFinite(): Boolean = vec.isFinite() && heading.isFinite()
 
+    /** Converts this to a linear algebra vector, in the order (x, y, heading). */
     fun toVector(): Vec = createVec(x, y, heading)
 
     override fun toString(): String = "Pose2d(v:<%.4f, %.4f>, h: %.4f)".format(x, y, heading)
@@ -72,5 +74,3 @@ data class Pose2d(@JvmField val vec: Vector2d, @JvmField val heading: Double) {
 
 operator fun Double.times(p: Pose2d): Pose2d = p * this
 operator fun Int.times(p: Pose2d): Pose2d = p * this
-
-

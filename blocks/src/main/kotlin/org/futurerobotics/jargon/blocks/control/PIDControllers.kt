@@ -7,10 +7,7 @@ import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
 import org.futurerobotics.jargon.blocks.functional.CreatePoseFromComp
 import org.futurerobotics.jargon.blocks.functional.SplitPose
 import org.futurerobotics.jargon.blocks.functional.SplitPoseMotionState
-import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.coerceIn
-import org.futurerobotics.jargon.math.coerceLengthAtMost
+import org.futurerobotics.jargon.math.*
 import org.futurerobotics.jargon.mechanics.MotionState
 
 private typealias ToilAndTrouble = Double
@@ -26,8 +23,9 @@ private typealias ToilAndTrouble = Double
  * 1. Signal: Double
  * @see PIDFController
  * @see FeedForwardController
+ * @see HeadingPIDController
  */
-class PIDController(
+open class PIDController(
     private val coefficients: PIDCoefficients
 ) : SingleOutputBlock<Double>(2, IN_FIRST_ALWAYS),
     Controller<Double, Double, ToilAndTrouble> {
@@ -43,34 +41,48 @@ class PIDController(
     }
 
     override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Double {
-        val s = inputs[0] as Double
+        val ref = inputs[0] as Double
         val currentState = inputs[1] as Double
-        val curError = (s - currentState).coerceIn(coefficients.errorBounds)
+        val curError = ref - currentState
 
         val loopTime = systemValues.loopTime
+        return doPID(loopTime, curError)
+    }
+
+    /** Does the PID. Room for modification in here. */
+    protected open fun doPID(loopTime: Double, curError: Double): Double {
+        val error = curError.coerceIn(coefficients.errorBounds)
         return if (loopTime == 0.0) {
-            prevError = curError
+            prevError = error
             0.0
         } else {
 
-            errorSum = if (curError <= coefficients.integralActivationThreshold) {
-                val curI = (curError + prevError) * (loopTime / 2)
+            errorSum = if (error <= coefficients.integralActivationThreshold) {
+                val curI = (error + prevError) * (loopTime / 2)
                 (errorSum + curI).coerceIn(-coefficients.maxErrorSum, coefficients.maxErrorSum)
             } else 0.0
 
-            val p = curError * coefficients.p
+            val p = error * coefficients.p
             val i = errorSum * coefficients.i
-            val d = (curError - prevError) * (coefficients.d / loopTime)
-            prevError = curError
+            val d = (error - prevError) * (coefficients.d / loopTime)
+            prevError = error
             (p + i + d).coerceIn(coefficients.outputBounds)
         }
     }
 
     /** The reference motion [BlocksConfig.Input] */
-    override val reference: BlocksConfig.Input<Double> = configInput(0)
+    override val reference: BlocksConfig.Input<Double> get() = configInput(0)
     /** The state [BlocksConfig.Input] */
-    override val state: BlocksConfig.Input<Double> = configInput(1)
+    override val state: BlocksConfig.Input<Double> get() = configInput(1)
 
+}
+
+/**
+ * A [PIDController] that doesn't go haywire when it sees different heading that are of a magnitude greater
+ * than PI -- it normalizes error.
+ */
+class HeadingPIDController(coefficients: PIDCoefficients) : PIDController(coefficients) {
+    override fun doPID(loopTime: Double, curError: Double): Double = super.doPID(loopTime, angleNorm(curError))
 }
 
 private typealias ToilAndTrector2d = Vector2d
@@ -103,11 +115,11 @@ class VecPIDController(
     }
 
     override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Vector2d {
-        val s = inputs[0] as Vector2d
+        val ref = inputs[0] as Vector2d
         val currentState = inputs[1] as Vector2d
         val loopTime = inputs[2] as Double
 
-        val curError = (s - currentState) coerceLengthAtMost coefficients.errorBounds.b
+        val curError = (ref - currentState) coerceLengthAtMost coefficients.errorBounds.b
         return if (loopTime == 0.0) {
             prevError = curError
             Vector2d.ZERO
@@ -159,7 +171,7 @@ class PosePIDController(
 
     private val xController = PIDController(xCoeff) //x
     private val yController = PIDController(yCoeff) //y
-    private val headingController = PIDController(headingCoeff)
+    private val headingController = HeadingPIDController(headingCoeff)
 
 
     override fun BlocksConfig.buildSubsystem(
@@ -206,9 +218,11 @@ class PosePIDController(
  *
  * Outputs:
  * 1. Signal: Double
+ * @see PIDController
  * @see FeedForwardController
+ * @see HeadingPIDFController
  */
-class PIDFController(
+open class PIDFController(
     private val coefficients: PIDFCoefficients
 ) : SingleOutputBlock<Double>(2, IN_FIRST_ALWAYS),
     Controller<MotionState<Double>, Double, Double> {
@@ -224,35 +238,50 @@ class PIDFController(
     }
 
     override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Double {
-        val reference = inputs[0] as MotionState<Double>
+        val ref = inputs[0] as MotionState<Double>
         val currentState = inputs[1] as Double
         val loopTime = inputs[2] as Double
-        val (s, v, a) = reference
-        val curError = (s - currentState).coerceIn(coefficients.errorBounds)
+        val (s, v, a) = ref
+        val curError = s - currentState
+        return doPID(loopTime, curError, v, a)
+    }
+
+    /** Does the PID. Room for modification in here. */
+    protected open fun doPID(loopTime: Double, curError: Double, v: Double, a: Double): Double {
+        val error = curError.coerceIn(coefficients.errorBounds)
         return if (loopTime == 0.0) {
-            prevError = curError
+            prevError = error
             0.0
         } else {
 
-            errorSum = if (curError <= coefficients.integralActivationThreshold) {
-                val curI = (curError + prevError) * (loopTime / 2)
+            errorSum = if (error <= coefficients.integralActivationThreshold) {
+                val curI = (error + prevError) * (loopTime / 2)
                 (errorSum + curI).coerceIn(-coefficients.maxErrorSum, coefficients.maxErrorSum)
             } else 0.0
 
-            val p = curError * coefficients.p
+            val p = error * coefficients.p
             val i = errorSum * coefficients.i
-            val d = (curError - prevError) * (coefficients.d / loopTime)
+            val d = (error - prevError) * (coefficients.d / loopTime)
             val f = v * coefficients.fv + a * coefficients.fa
-            prevError = curError
+            prevError = error
             (p + i + d + f).coerceIn(coefficients.outputBounds)
         }
     }
 
     /** The reference motion [BlocksConfig.Input] */
-    override val reference: BlocksConfig.Input<MotionState<Double>> = configInput(0)
+    override val reference: BlocksConfig.Input<MotionState<Double>> get() = configInput(0)
     /** The state [BlocksConfig.Input] */
-    override val state: BlocksConfig.Input<Double> = configInput(1)
+    override val state: BlocksConfig.Input<Double> get() = configInput(1)
 
+}
+
+/**
+ * A [PIDFController] that doesn't go haywire when it sees different heading that are of a magnitude greater
+ * than PI -- it normalizes error.
+ */
+class HeadingPIDFController(coefficients: PIDFCoefficients) : PIDFController(coefficients) {
+    override fun doPID(loopTime: Double, curError: Double, v: Double, a: Double): Double =
+        super.doPID(loopTime, angleNorm(curError), v, a)
 }
 
 
@@ -283,10 +312,10 @@ class VecPIDFController(
     }
 
     override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Vector2d {
-        val reference = inputs[0] as MotionState<Vector2d>
+        val ref = inputs[0] as MotionState<Vector2d>
         val currentState = inputs[1] as Vector2d
         val loopTime = inputs[2] as Double
-        val (s, v, a) = reference
+        val (s, v, a) = ref
         val curError = (s - currentState) coerceLengthAtMost coefficients.errorBounds.b
         return if (loopTime == 0.0) {
             prevError = curError
@@ -339,7 +368,7 @@ class PosePIDFController(
 
     private val xController = PIDFController(xCoeff) //x
     private val yController = PIDFController(yCoeff) //y
-    private val headingController = PIDFController(headingCoeff)
+    private val headingController = HeadingPIDFController(headingCoeff)
 
 
     override fun BlocksConfig.buildSubsystem(

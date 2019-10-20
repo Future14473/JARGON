@@ -3,6 +3,7 @@
 package org.futurerobotics.jargon.blocks.control
 
 import org.futurerobotics.jargon.blocks.Block
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
 import org.futurerobotics.jargon.blocks.BlocksConfig
 import org.futurerobotics.jargon.blocks.CombineBlock
@@ -100,10 +101,7 @@ class FixedDriveOpenController(private val model: FixedDriveModel) :
  * A function [plus] still needs to be defined. Can also be created directly using [withAdder]
  */
 abstract class FeedForwardController<T : Any>(private val nonFFController: Controller<T, T, T>) :
-    CompositeBlock(
-        2, 1,
-        Block.Processing.IN_FIRST_ALWAYS
-    ),
+    CompositeBlock(2, 1, IN_FIRST_ALWAYS),
     Controller<MotionState<T>, T, MotionOnly<T>> {
     override fun BlocksConfig.buildSubsystem(
         sources: List<BlocksConfig.Output<Any?>>,
