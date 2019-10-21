@@ -8,6 +8,7 @@ import org.futurerobotics.jargon.mechanics.TransmissionModel
 import org.junit.jupiter.api.Test
 import strikt.api.expectCatching
 import strikt.assertions.failed
+import strikt.assertions.succeeded
 
 private val motorModel = DcMotorModel.fromMotorData(
     12 * volts,
@@ -27,13 +28,17 @@ private val driveModel = DriveModels.mecanumLike(
     14 * `in`
 )
 
-internal class LqrTest {
+internal class DecoupledTest {
     @Test
     fun `will it converge`() {
-        val ssmodel = LinearDriveModels.wheelVelocityController(driveModel)
+        var ssModel = LinearDriveModels.wheelVelocityController(driveModel)
         //not controllable
         expectCatching {
-            continuousLQR(ssmodel, QRCost(diag(1.0, 2.0), diag(1.0, 2.0)))
+            continuousLQR(ssModel, QRCost(eye(ssModel.stateSize), eye(ssModel.inputSize)))
         }.failed()
+        ssModel = LinearDriveModels.decoupledWheelVelocityController(driveModel, 0.5)
+        expectCatching {
+            continuousLQR(ssModel, QRCost(eye(ssModel.stateSize), eye(ssModel.inputSize)))
+        }.succeeded()
     }
 }

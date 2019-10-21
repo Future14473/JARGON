@@ -176,6 +176,8 @@ open class DiscreteLinSSModel @JvmOverloads constructor(
 object LinearDriveModels {
 
     /**
+     * This is not recommended for anything beyond testing; use [decoupledWheelVelocityController] instead.
+     *
      * Derives a [ContinuousLinSSModel] from the given [driveModel] that:
      *
      * - _state_ is bot's pose velocity in [x, y, heading],
@@ -221,10 +223,41 @@ object LinearDriveModels {
      */
     @Suppress("UnnecessaryVariable")
     fun wheelVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
+        val wheelAccelFromVolts = driveModel.wheelAccelFromVolts
+        return getWheelVelocityController(driveModel, wheelAccelFromVolts)
+    }
+
+    /**
+     * Derives a [ContinuousLinSSModel] similar to in [wheelVelocityController]; while also "decoupling" wheel interactions
+     * by multiplying the coupling terms  a factor of [coupling]. 0 means complete decoupling, 1 means do nothing to the model.
+     *
+     * The reason this might be required is that the controller assumes that all wheels have perfect traction, so
+     * the resulting system is not controllable for many holonomic drives/drives with more 4 or more wheels (moving one
+     * wheel must move the other wheels, since the bot moves). This breaks the assumption that assumption; by
+     * reducing the "coupling" terms.
+     *
+     * Due to empirical tests, this model performs better [poseVelocityController].
+     */
+    fun decoupledWheelVelocityController(driveModel: FixedDriveModel, coupling: Double): ContinuousLinSSModel {
+        require(coupling in 0.0..1.0) { "coupling ($coupling) must be between 0 and 1, or else things don't make sense." }
+        val wheelAccelFromVolts = driveModel.wheelAccelFromVolts.copy().apply {
+            repeat(rows) { i ->
+                repeat(cols) { j ->
+                    if (i != j) this[i, j] *= coupling
+                }
+            }
+        }
+        return getWheelVelocityController(driveModel, wheelAccelFromVolts)
+    }
+
+    private fun getWheelVelocityController(
+        driveModel: FixedDriveModel,
+        wheelAccelFromVolts: Mat
+    ): ContinuousLinSSModel {
         val size = driveModel.numWheels
-        val wheelDeccelFromWheelVel = -driveModel.wheelAccelFromVolts * driveModel.voltsFromWheelVel
+        val wheelDeccelFromWheelVel = -wheelAccelFromVolts * driveModel.voltsFromWheelVel
         val a = wheelDeccelFromWheelVel
-        val b = driveModel.wheelAccelFromVolts
+        val b = wheelAccelFromVolts
         val c = eye(size) //measure vel directly
         val d = zeros(size, size)
         val names = List(size) { "wheel$it" }
