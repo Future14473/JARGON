@@ -12,7 +12,7 @@ import org.futurerobotics.jargon.hardware.Gyro
  *
  * This itself is a [BlocksConfig.Input] that takes in a list of motor voltages.
  */
-interface MotorsBlock : Block, BlocksConfig.Input<List<Double>> {
+interface MotorsBlock : Block, BlocksConfig.Input<List<Double>?> {
     /** The number of motors in this motors block */
     val numMotors: Int
     /** An output of a list of the measured motor positions, in radians. */
@@ -33,7 +33,8 @@ interface MotorsBlock : Block, BlocksConfig.Input<List<Double>> {
  * 2. A list of doubles of motor velocity (in radians/second)
  *
  */
-class MotorsListBlock(private val motors: List<DcMotor>) : SingleInputListStoreBlock<List<Double>>(2, OUT_FIRST_ALWAYS),
+class MotorsListBlock(private val motors: List<DcMotor>) :
+    SingleInputListStoreBlock<List<Double>?>(2, OUT_FIRST_ALWAYS),
     MotorsBlock {
     override val numMotors: Int get() = motors.size
 
@@ -47,12 +48,18 @@ class MotorsListBlock(private val motors: List<DcMotor>) : SingleInputListStoreB
         writeMeasurements(outputs)
     }
 
-    override fun processInput(input: List<Double>, systemValues: SystemValues, outputs: MutableList<Any?>) {
-        require(input.size == motors.size) { "Given voltage list is not the right size " }
-        motors.forEachIndexed { index, dcMotor ->
-            dcMotor.voltage = input[index]
+    override fun processInput(input: List<Double>?, systemValues: SystemValues, outputs: MutableList<Any?>) {
+        if (input != null) {
+            require(input.size == motors.size) { "Given voltage list is not the right size " }
+            motors.forEachIndexed { index, dcMotor ->
+                dcMotor.voltage = input[index]
+            }
         }
         writeMeasurements(outputs)
+    }
+
+    override fun prepareAndVerify(config: BlocksConfig) {
+        //do nothing.
     }
 
     override val motorPositions: BlocksConfig.Output<List<Double>> = configOutput(0)
