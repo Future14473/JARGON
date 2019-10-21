@@ -30,7 +30,7 @@ class FixedWheelModel private constructor(
     /**
      * The ratio between the motor angular velocity and the wheel's tangential velocity.
      */
-    val motorVelPerWheelVel: Double get() = transmission.motorAngVelPerOutputAngVel / radius
+    val motorVelPerWheelVel: Double get() = transmission.motorVelPerOutputVel / radius
     /**
      * Gets the expected amount of volts per force applied, assuming the wheel is not moving.
      */

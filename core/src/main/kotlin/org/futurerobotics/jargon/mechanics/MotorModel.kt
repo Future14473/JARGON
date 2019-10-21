@@ -96,7 +96,7 @@ class DcMotorModel private constructor(
  * This is a simple yet good enough model for most use cases.
  *
  * @param motor the model of the motor used
- * @param gearRatio the gear ratio of this transmission (Input/Output, higher ratio means faster/less torque)
+ * @param gearRatio the gear ratio of this transmission (higher ratio means more torque, less speed)
  * @param constantTorqueLoss the constant component of the torque required to overcome frictional forces.
  * @param ratioTorqueLoss the ratio from the output motor torque and the applied motor torque, due to frictional
  *                      or the "percentage of torque" that makes it to the output. In an ideal world, 1.0,
@@ -124,7 +124,7 @@ class TransmissionModel private constructor(
     /**
      * Gets the ratio of the motor's angular velocity to the output angular velocity.
      */
-    val motorAngVelPerOutputAngVel: Double get() = gearRatio
+    val motorVelPerOutputVel: Double get() = gearRatio
     /**
      * Gets the expected amount of volts per torque, assuming that the motor isn't moving.
      */
@@ -132,7 +132,7 @@ class TransmissionModel private constructor(
     /**
      * Gets the expected amount of volts per angVel needed to maintain a constant velocity, assuming no output torque.
      */
-    val voltsPerAngVel: Double get() = motor.voltsPerAngVel * motorAngVelPerOutputAngVel
+    val voltsPerAngVel: Double get() = motor.voltsPerAngVel * motorVelPerOutputVel
 
     /**
      * The extra volts needed to add to overcome frictional forces.

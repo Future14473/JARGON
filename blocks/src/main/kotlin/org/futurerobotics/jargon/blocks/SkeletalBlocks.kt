@@ -243,9 +243,8 @@ abstract class InputOnlyBlock<T> : SingleInputBlock<T>(0, IN_FIRST_ALWAYS) {
  *
  * A lambda version of this is available in [BlocksConfig.combine] for easier use.
  * */
-abstract class PipeBlock<T, R>(processing: Block.Processing) : SingleOutputBlock<R>(
-    1, processing
-), BlocksConfig.Input<T> {
+abstract class PipeBlock<T, R> @JvmOverloads constructor(processing: Block.Processing = IN_FIRST_LAZY) :
+    SingleOutputBlock<R>(1, processing), BlocksConfig.Input<T> {
 
     override fun doInit(): R? = null
     final override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): R = pipe(inputs[0].unsafeCast())

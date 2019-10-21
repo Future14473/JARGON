@@ -97,7 +97,7 @@ infix fun Vec.epsEq(vec: Vec): Boolean {
 @PublishedApi
 internal inline fun go(action: () -> Unit) = action()
 
-private inline fun Mat.combineToSelf(mat: Mat, func: Double.(Double) -> Double) {
+inline fun Mat.combineToSelf(mat: Mat, func: Double.(Double) -> Double) {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
     repeat(rows) { r ->
         repeat(cols) { c ->
@@ -106,7 +106,7 @@ private inline fun Mat.combineToSelf(mat: Mat, func: Double.(Double) -> Double) 
     }
 }
 
-private inline fun Mat.inlineMapToSelf(func: (Double) -> Double) {
+inline fun Mat.inlineMapToSelf(func: (Double) -> Double) {
     repeat(rows) { r ->
         repeat(cols) { c ->
             this[r, c] = func(this[r, c])
@@ -114,14 +114,14 @@ private inline fun Mat.inlineMapToSelf(func: (Double) -> Double) {
     }
 }
 
-private inline fun Vec.combineToSelf(other: Vec, func: Double.(Double) -> Double) {
+inline fun Vec.combineToSelf(other: Vec, func: Double.(Double) -> Double) {
     require(dimension == other.dimension) { "Dimension mismatch" }
     repeat(dimension) {
         this[it] = this[it].func(other[it])
     }
 }
 
-private inline fun Vec.inlineMapToSelf(func: (Double) -> Double) {
+inline fun Vec.inlineMapToSelf(func: (Double) -> Double) {
     repeat(dimension) { i ->
         this[i] = func(this[i])
     }

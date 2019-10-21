@@ -26,17 +26,17 @@ internal class ModelsSanityTest {
     @Test
     fun `transmission sanity check`() = expect {
         that(idealUnitTransmission) {
-            get { motorAngVelPerOutputAngVel }.isEpsEqTo(1.0)
+            get { motorVelPerOutputVel }.isEpsEqTo(1.0)
             get { motorTorquePerOutputTorque }.isEpsEqTo(1.0)
             get { motorVoltsPerOutputTorque }.isEpsEqTo(1.0)
         }
         that(halfLossTransmission) {
-            get { motorAngVelPerOutputAngVel }.isEpsEqTo(1.0)
+            get { motorVelPerOutputVel }.isEpsEqTo(1.0)
             get { motorTorquePerOutputTorque }.isEpsEqTo(2.0)
             get { motorVoltsPerOutputTorque }.isEpsEqTo(2.0)
         }
         that(negativeGearedTransmission) {
-            get { motorAngVelPerOutputAngVel }.isEpsEqTo(-2.0)
+            get { motorVelPerOutputVel }.isEpsEqTo(-2.0)
             get { motorTorquePerOutputTorque }.isEpsEqTo(-0.5)
             get { motorVoltsPerOutputTorque }.isEpsEqTo(-0.5)
         }
