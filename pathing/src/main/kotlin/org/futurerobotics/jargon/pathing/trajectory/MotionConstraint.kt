@@ -25,7 +25,7 @@ interface SingleConstraint : MotionConstraint {
      *
      * If not known, return false.
      */
-    fun otherIsRedundant(other: MotionConstraint): Boolean = false
+    fun otherIsRedundant(other: SingleConstraint): Boolean = false
 }
 
 /**
@@ -83,7 +83,7 @@ abstract class MaxBasedVelocityConstraint(protected val max: Double) : VelocityC
         require(max > 0) { "Max value $max gives impossible constraint" }
     }
 
-    override fun otherIsRedundant(other: MotionConstraint): Boolean =
+    override fun otherIsRedundant(other: SingleConstraint): Boolean =
         other is MaxBasedVelocityConstraint && this.javaClass == other.javaClass && this.max <= other.max
 
     override fun toString(): String = "${(javaClass.simpleName ?: "anonymous AccelConstraint")}(max=$max)"
@@ -101,7 +101,7 @@ abstract class MaxBasedAccelConstraint(protected val max: Double) : AccelConstra
         require(max > 0) { "Max value $max gives impossible constraint" }
     }
 
-    override fun otherIsRedundant(other: MotionConstraint): Boolean =
+    override fun otherIsRedundant(other: SingleConstraint): Boolean =
         other is MaxBasedAccelConstraint && this.javaClass == other.javaClass && this.max <= other.max
 
     override fun toString(): String = "${(javaClass.simpleName ?: "anonymous AccelConstraint")}(max=$max)"

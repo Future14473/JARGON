@@ -26,7 +26,7 @@ class FixedWheelModel private constructor(
     /**
      * The ratio between the motor torque and the force exerted by the wheel.
      */
-    val motorTorquePerOutputForce: Double get() = transmission.motorTorquePerOutputTorque * radius
+    val motorTorquePerWheelTorque: Double get() = transmission.motorTorquePerOutputTorque * radius
     /**
      * The ratio between the motor angular velocity and the wheel's tangential velocity.
      */

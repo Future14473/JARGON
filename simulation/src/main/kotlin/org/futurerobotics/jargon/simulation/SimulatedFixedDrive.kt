@@ -90,7 +90,7 @@ class SimulatedFixedDrive(
     }
 
     private fun singleStep(volts: Vec) {
-        val realVolts = volts + getVoltageNoise()
+        val realVolts = volts.map { it.coerceIn(-12.0, 12.0) } + getVoltageNoise()
         val pastWheelVelocities = curWheelVelocities
         curWheelVelocities = wheelSSModel.processState(pastWheelVelocities, realVolts)
         val wheelDelta = (pastWheelVelocities + curWheelVelocities) * (timeStep / 2)
@@ -116,8 +116,9 @@ class SimulatedFixedDrive(
  * 1. A List<Double> of motor positions in radians
  * 2. A List<Double> of motor velocities in radians
  */
-class SimulatedDriveBlock(private val drive: SimulatedFixedDrive) : AbstractBlock(1, 3, OUT_FIRST_ALWAYS),
-    MotorsBlock, BlocksConfig.Input<List<Double>> {
+class SimulatedDriveBlock(private val drive: SimulatedFixedDrive) :
+    AbstractBlock(1, 3, OUT_FIRST_ALWAYS),
+    MotorsBlock {
     override val numMotors: Int
         get() = drive.numMotors
 

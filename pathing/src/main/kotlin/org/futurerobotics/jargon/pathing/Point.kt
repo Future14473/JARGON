@@ -88,23 +88,21 @@ interface PathPoint : CurvePoint {
      * discontinuous.
      */
     val headingSecondDeriv: Double
+    /**
+     * The pose at this point, which includes both
+     * [position][PathPoint.position] and [heading][PathPoint.heading]
+     */
+    val pose: Pose2d get() = Pose2d(position, heading)
+    /**
+     * The pose's derivative w/rt arc length at this point, which includes both
+     * [positionDeriv][PathPoint.positionDeriv] and [headingDeriv][PathPoint.headingDeriv]
+     */
+    val poseDeriv: Pose2d get() = Pose2d(positionDeriv, headingDeriv)
+    /**
+     * The pose's derivative w/rt arc length at this point, which includes both
+     * [positionSecondDeriv][PathPoint.positionSecondDeriv] and [headingSecondDeriv][PathPoint.headingSecondDeriv]
+     */
+    val poseSecondDeriv: Pose2d get() = Pose2d(positionSecondDeriv, headingSecondDeriv)
 }
 
-/**
- * The pose at this point, which includes both
- * [position][PathPoint.position] and [heading][PathPoint.heading]
- */
-val PathPoint.pose: Pose2d
-    get() = Pose2d(position, heading)
-/**
- * The pose's derivative w/rt arc length at this point, which includes both
- * [positionDeriv][PathPoint.positionDeriv] and [headingDeriv][PathPoint.headingDeriv]
- */
-val PathPoint.poseDeriv: Pose2d
-    get() = Pose2d(positionDeriv, headingDeriv)
-/**
- * The pose's derivative w/rt arc length at this point, which includes both
- * [positionSecondDeriv][PathPoint.positionSecondDeriv] and [headingSecondDeriv][PathPoint.headingSecondDeriv]
- */
-val PathPoint.poseSecondDeriv: Pose2d
-    get() = Pose2d(positionSecondDeriv, headingSecondDeriv)
+

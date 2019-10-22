@@ -14,7 +14,7 @@ import kotlin.math.sign
  * @param driveModel the model used to get frictional forces
  */
 class MotorFrictionFF(driveModel: FixedDriveModel) : CombineBlock<List<Double>, List<Double>, List<Double>>() {
-    private val stallVolts: Vec = driveModel.stallVolts
+    private val stallVolts: Vec = driveModel.frictionAdditionalVolts
     @Suppress("UnnecessaryVariable")
     override fun combine(a: List<Double>, b: List<Double>): List<Double> {
         val voltages = a
