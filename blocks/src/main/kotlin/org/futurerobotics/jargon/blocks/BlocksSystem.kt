@@ -17,8 +17,8 @@ import kotlin.contracts.contract
  * This is the bridge to _systems_ via [LoopSystem]. Hurray for decoupling.
  */
 @Suppress("RedundantVisibilityModifier")
-class BlocksSystem(config: BlocksConfig) :
-    AbstractBlocksRunner(config), LoopSystem {
+class BlocksSystem(config: BlocksConfig) : AbstractBlocksRunner(config), LoopSystem {
+
     private val specials: Map<Class<*>, SpecialBlock>
     private val _systemValues = object : SystemValues {
         private var totalTimeNanos: Long = 0
@@ -33,14 +33,11 @@ class BlocksSystem(config: BlocksConfig) :
     }
     override val systemValues: SystemValues = _systemValues
 
-
     init {
-        val specials =
-            config.connections.keys.filterIsInstance<SpecialBlock>()
+        val specials = config.connections.keys.filterIsInstance<SpecialBlock>()
         specials.groupByTo(HashMap()) { it.javaClass }.forEach { (type, list) ->
             require(list.size == 1) {
-                "cannot have more than 1 of each type of special block in a system, " +
-                        "found ${list.size} instances of ${type.simpleName}"
+                "cannot have more than 1 of each type of special block in a system, " + "found ${list.size} instances of ${type.simpleName}"
             }
         }
         this.specials = specials.associateByTo(HashMap()) { it.javaClass }
@@ -67,7 +64,7 @@ class BlocksSystem(config: BlocksConfig) :
 
 /**
  * DSL to build a block system.
- * Runs the [configuration] block on a [BlocksSystemBuilder] then returns the built [BlocksSystem].
+ * Runs the [configuration] block on a [BaseBlocksConfig] then returns the built [BlocksSystem].
  */
 @UseExperimental(ExperimentalContracts::class)
 inline fun buildBlocksSystem(configuration: BlocksConfig.() -> Unit): BlocksSystem {

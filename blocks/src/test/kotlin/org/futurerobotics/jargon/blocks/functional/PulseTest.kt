@@ -9,7 +9,6 @@ import strikt.assertions.isFalse
 import strikt.assertions.isTrue
 
 internal class PulseTest {
-
     @Test
     fun `pulse pulses`() {
         val monitor: Monitor<Boolean>
@@ -30,6 +29,5 @@ internal class PulseTest {
                 get { value }.isA<Boolean>().isTrue()
             }
         }
-
     }
 }

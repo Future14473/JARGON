@@ -8,10 +8,9 @@ import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
 internal class TestCompositeBlock : CompositeBlock(2, 2, IN_FIRST_ALWAYS) {
-    override fun BlocksConfig.buildSubsystem(
-        sources: List<BlocksConfig.Output<Any?>>,
-        outputs: List<BlocksConfig.Input<Any?>>
-    ) {
+    override fun configSubsystem(
+        sources: List<BlocksConfig.Output<Any?>>, outputs: List<BlocksConfig.Input<Any?>>
+    ): BlocksConfig = BaseBlocksConfig().apply {
         forEachZipped(sources, outputs) { a, b ->
             a into b
         }
@@ -21,12 +20,10 @@ internal class TestCompositeBlock : CompositeBlock(2, 2, IN_FIRST_ALWAYS) {
     fun output(index: Int) = configOutput<Any?>(index)
 }
 
-
 internal class CompositeBlockTest {
     @Test
     fun `it works in the middle`() {
         val monitor: Monitor<String>
-
         val system = buildTestBlocksSystem {
             val b = testBlock("B", 3, 2, requireAllInputs = false)
             val c = testBlock("C", 1, 2)
@@ -35,7 +32,6 @@ internal class CompositeBlockTest {
             val f = testBlock("F", 2, 2)
             val g = testBlock("G", 2, 1, IN_FIRST_ALWAYS)
             val h = testBlock("H", 2, 1)
-
             val pipe = TestCompositeBlock()
             e.output(0) into pipe.input(0)
             d.output(0) into pipe.input(1)

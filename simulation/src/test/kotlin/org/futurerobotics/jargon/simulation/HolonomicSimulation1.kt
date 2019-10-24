@@ -45,7 +45,7 @@ internal abstract class PoseVelocityControllingSimulation(
     init {
         val numWheels = driveModel.numWheels
         val motorsBlock = SimulatedDriveBlock(simulatedDrive)
-        val gyro = GyroBlock(SimulatedGyro(simulatedDrive))
+        val gyro = GyroReading(SimulatedGyro(simulatedDrive))
 
         val continuous = LinearDriveModels.poseVelocityController(driveModel)
         val kGain = continuousLQR(continuous, lqrCost)
@@ -60,8 +60,7 @@ internal abstract class PoseVelocityControllingSimulation(
                     profileInput from queue
                 }
 
-            val positionController =
-                FeedForwardController.withAdder(nonFFController, Pose2d::plus).apply {
+            val positionController = FeedForwardWrapper.withAdder(nonFFController, Pose2d::plus).apply {
                     reference from follower.output
                 }
             follower.output.pipe { s.x }.recordY("x reference", "reference value")

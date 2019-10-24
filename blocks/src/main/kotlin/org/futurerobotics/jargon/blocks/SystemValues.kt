@@ -5,6 +5,7 @@ package org.futurerobotics.jargon.blocks
  * so are special input values.
  */
 interface SystemValues {
+
     /** The time in seconds the last loop has taken to run. */
     val loopTime: Double
     /** The total amount of time elapsed since the block has first run. */
@@ -16,11 +17,16 @@ interface SystemValues {
 /**
  * A block whose outputs directly correspond to [SystemValues], if such connections are desired.
  */
-class SystemValuesBlock : AbstractBlock(
-    0, 3,
-    Block.Processing.IN_FIRST_LAZY
-) {
+class SystemValuesBlock : AbstractBlock(0, 3, Block.Processing.IN_FIRST_LAZY) {
+
+    /** The loopTime output */
+    val loopTime: BlocksConfig.Output<Double> get() = configOutput(0)
+    /** The totalTime output */
+    val totalTime: BlocksConfig.Output<Double> get() = configOutput(1)
+    /** the loopNumber output */
+    val loopNumber: BlocksConfig.Output<Int> get() = configOutput(2)
     private var systemValues: SystemValues? = null
+
     override fun init() {
         systemValues = null
     }
@@ -37,11 +43,4 @@ class SystemValuesBlock : AbstractBlock(
             else -> throw IndexOutOfBoundsException(index)
         }
     }
-
-    /** The loopTime output */
-    val loopTime: BlocksConfig.Output<Double> get() = configOutput(0)
-    /** The totalTime output */
-    val totalTime: BlocksConfig.Output<Double> get() = configOutput(1)
-    /** the loopNumber output */
-    val loopNumber: BlocksConfig.Output<Int> get() = configOutput(2)
 }

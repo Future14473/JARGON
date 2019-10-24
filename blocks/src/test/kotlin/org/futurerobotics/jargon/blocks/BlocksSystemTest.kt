@@ -20,21 +20,18 @@ internal class TestBlocksConfig : BaseBlocksConfig() {
         numOutputs: Int,
         processing: Block.Processing = Block.Processing.IN_FIRST_LAZY,
         requireAllInputs: Boolean = true
-    ): TestBlock =
-        TestBlock(name, numInputs, numOutputs, processing, requireAllInputs)
+    ): TestBlock = TestBlock(name, numInputs, numOutputs, processing, requireAllInputs)
 
     fun emptyBlock(
         processing: Block.Processing = Block.Processing.IN_FIRST_LAZY
     ) = testBlock("Empty", 0, 0, processing)
-
 
     /**
      * Connects the inputs of [this] block to all the given [outputs], in order.
      */
     @Suppress("UNCHECKED_CAST")
     fun Block.fromAll(vararg outputs: Output<*>) {
-        require(outputs.size <= this.numInputs)
-        { "the given number of outputs ${outputs.size} must not exceed the block's number of inputs $this.numInputs" }
+        require(outputs.size <= numInputs) { "the given number of outputs ${outputs.size} must not exceed the block's number of inputs $this.numInputs" }
         outputs.forEachIndexed { index, output ->
             output into Input.of(this, index) as Input<Any?>
         }
@@ -53,11 +50,9 @@ internal inline fun buildTestBlocksSystem(configuration: TestBlocksConfig.() -> 
 }
 
 internal class BlocksSystemTest {
-
     @Test
     fun `update order test`() {
         val monitor: Monitor<String>
-
         val system = buildTestBlocksSystem {
             val b = testBlock("B", 3, 2, requireAllInputs = false)
             val c = testBlock("C", 1, 2)
@@ -114,7 +109,6 @@ internal class BlocksSystemTest {
         val monitor: Monitor<Int>
         val externalConstant = ExternalValue(4)
         val system = buildBlocksSystem {
-
             Shutdown() from externalConstant.combine(SystemValuesBlock().loopNumber) { this == it }
 
             monitor = SystemValuesBlock().loopNumber.monitor()

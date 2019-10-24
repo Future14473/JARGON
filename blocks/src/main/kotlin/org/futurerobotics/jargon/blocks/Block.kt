@@ -1,26 +1,26 @@
 package org.futurerobotics.jargon.blocks
 
 /**
- * # BLOCKS
- * This system was inspired by making block diagrams much more literal.
+ * # Blocks and Blocks SYSTEMS
+ * This system was inspired by making block diagrams more literal.
  *
- * The root of the blocks system is obviously, the [Block]. A [Block] can represent anything with a notion of _inputs_
- * or _outputs_: any process, calculation, value, measurement, interaction, etc. These can then be connected and run
- * together in a [BlocksSystem].
- *
+ * The root of the blocks system is the [Block]. A [Block] can represent anything with a notion of _inputs_
+ * or _outputs_: any process, calculation, value, measurement, interaction, etc. These can then be connected
+ * together within a [BlocksConfig], then run in a [BlocksSystem].
  *
  * A [Block] can have any number of _input_ and _outputs_, including 0, defined by [numInputs] and
  * [numOutputs]. Each input and output is then associated with a 0-based index, and this index is used everywhere
  * inputs/outputs are given.
  *
+ *
  * ## Running blocks and Block Systems.
  *
- * After a [BlocksSystem] is configured and built using multiple blocks. (see "Configuring blocks" below), blocks
- * can be run in a series of _loops_. In every loop, blocks will be processed and have inputs and outputs transferred
- * accordingly. Generally:
+ * After a [BlocksSystem] is configured and built, (see "Configuring blocks" below), blocks
+ * can be run in a series of _loops_. In every loop, blocks will (maybe) be processed and have inputs and
+ * values transferred accordingly. Generally:
  *
  * - [init] is called when the entire system first starts
- * - [process] will (maybe) be called with the block's inputs in a list, and also special values provided by
+ * - [process] will (maybe) be called with the block's inputs in a list, also special values provided by
  *   [SystemValues] will be given
  * - [getOutput] will then (maybe) called to extract the output values by index.
  *
@@ -30,19 +30,19 @@ package org.futurerobotics.jargon.blocks
  *
  * ## Configuring blocks
  *
- * [BlocksConfig] provides a java-usable kotlin DSL (Domain Specific Language) for block connecting blocks.
+ * [BlocksConfig] provides a java-usable kotlin DSL (Domain Specific Language) for connecting blocks.
  * Perhaps a GUI version of this will be available in the Future.
  *
- * Every input/output is usually associated with a specific class. Since there is no support for variable generics and
+ * Every input/output is usually associated with a specific class/type. Since there is no support for variable generics and
  * can only check at runtime. However, we have [BlocksConfig.Input] and [BlocksConfig.Output] with generics to _assist_
  * with type checking at compile time.
  *
  * **Subclasses should provide methods for retrieving [BlocksConfig.Input]/[BlocksConfig.Output]s for configuration**,
- * one for each input/output index.  Then, multiple blocks can have their inputs and outputs connected within a
+ * one for each input/output index. Then, multiple blocks can have their inputs and outputs connected within a
  * [BlocksConfig] to produce a [BlocksSystem] or similar construct.
  *
- * General rules for configuration are as follows:
- * 1. Generally, blocks should provide a way of obtaining a [BlocksConfig.Input] or [BlocksConfig.Output] for
+ * General rules for providing configuration are as follows:
+ * 1. Generally, blocks should provide a way of get a [BlocksConfig.Input] or [BlocksConfig.Output] for
  *    _every_ input and output.
  * 2. The generics of the blocks config should match exactly what is expected.
  * 3. A block with _exactly 1_ input/output is allowed to implement the [BlocksConfig.Input] or [BlocksConfig.Output]
@@ -52,10 +52,10 @@ package org.futurerobotics.jargon.blocks
  *
  * ## Other
  *
- * There are also [SpecialBlock]s which have special purposes, supported by [BlocksSystem].
+ * There are also [SpecialBlock]s which receive special treatment from [BlocksSystem].
  *
  * ## ***See the following for common implementations of blocks to make your life easier:***
- * - [AbstractBlock]; most blocks extend this, has good defaults.
+ * - [AbstractBlock]; most blocks extend this.
  * - [SingleOutputBlock] for a block with a single output; slightly more strongly typed.
  * - [SingleInputBlock] for a block with a single output; slightly more strongly typed.
  * - [ListStoreBlock] for blocks that store all their outputs upon [process] (have no need for lazy getOutput)
@@ -67,6 +67,7 @@ package org.futurerobotics.jargon.blocks
  * - [CompositeBlock] that is a block made up of an entire sub-system of blocks.
  */
 interface Block {
+
     /** The number of inputs to this block;*/
     val numInputs: Int
     /** The number of outputs to this block */
@@ -120,7 +121,6 @@ interface Block {
          * @see [Processing]
          */
         OUT_FIRST_ALWAYS(true, true);
-
         //There is no OUT_FIRST_LAZY since that causes problems and is rarely needed.
     }
 

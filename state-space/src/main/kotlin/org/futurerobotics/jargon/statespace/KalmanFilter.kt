@@ -44,7 +44,7 @@ class KalmanFilter(
     private var stateCovariance = steadyStateKalmanErrorCov(model, Q, R)
     private var lastUpdate: ProcessEstimate? = null
     private var pastOutput: Vec? = null
-    override fun doInit(): Vec? {
+    override fun initialValue(): Vec? {
         lastUpdate?.covariance?.let {
             stateCovariance = it
         }

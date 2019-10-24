@@ -9,7 +9,6 @@ import org.futurerobotics.jargon.mechanics.MotionState
 import org.futurerobotics.jargon.mechanics.ValueMotionOnly
 import org.futurerobotics.jargon.mechanics.ValueMotionState
 
-
 /**
  * A block that is inputted [MotionOnly]; and pipes it by "shifting" the velocity and acceleration
  * into position and velocity, respectively, in a [MotionState].
@@ -18,6 +17,7 @@ import org.futurerobotics.jargon.mechanics.ValueMotionState
  */
 class ShiftMotionOnlyToState<T : Any>(private val zero: T) :
     PipeBlock<MotionOnly<T>, MotionState<T>>(Block.Processing.IN_FIRST_LAZY) {
+
     override fun pipe(input: MotionOnly<T>): MotionState<T> = object : MotionState<T> {
         override val s: T
             get() = input.v
@@ -58,9 +58,7 @@ abstract class MapMotionState<T : Any, R : Any> :
 abstract class MapMotionOnly<T : Any, R : Any> :
     PipeBlock<MotionOnly<T>, MotionOnly<R>>(Block.Processing.IN_FIRST_LAZY) {
 
-    override fun pipe(input: MotionOnly<T>): MotionOnly<R> =
-        ValueMotionOnly(map(input.v), map(input.a))
-
+    override fun pipe(input: MotionOnly<T>): MotionOnly<R> = ValueMotionOnly(map(input.v), map(input.a))
     /** Maps the [value] into a new value; run on all components of a [MotionOnly]. */
     protected abstract fun map(value: T): R
 

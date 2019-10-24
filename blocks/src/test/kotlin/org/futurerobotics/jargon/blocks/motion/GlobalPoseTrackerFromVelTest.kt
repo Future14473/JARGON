@@ -10,9 +10,7 @@ import strikt.api.expectThat
 import kotlin.math.roundToLong
 import kotlin.random.Random
 
-
 internal class GlobalPoseTrackerFromVelTest {
-
     @Test
     fun `unit circle walk`() {
         //    x
@@ -67,6 +65,4 @@ internal class GlobalPoseTrackerFromVelTest {
             monitor = tracker.monitor()
         }, input, monitor)
     }
-
-
 }
