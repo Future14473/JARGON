@@ -13,6 +13,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 import kotlin.math.PI
+import kotlin.math.pow
 import kotlin.random.Random
 
 @RunWith(Parameterized::class)
@@ -44,7 +45,7 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
         testVector({
             val deriv = func.vecDeriv(it)
             val secondDeriv = func.vecSecondDeriv(it)
-            val z = (secondDeriv cross deriv) / deriv.lengthSquared.squared()
+                       val z = (secondDeriv cross deriv) / deriv.lengthSquared.pow(2)
             Vector2d(deriv.y * z, -deriv.x * z)
         }, { curve.pointAt(it).positionSecondDeriv }, 0.005, 0.001)
     }

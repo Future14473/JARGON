@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import strikt.api.expectCatching
 import strikt.assertions.failed
 import strikt.assertions.succeeded
+import kotlin.math.pow
 
 private val motorModel = DcMotorModel.fromMotorData(
     12 * volts,
@@ -21,7 +22,7 @@ private val transmissionModel = TransmissionModel.fromTorqueLosses(motorModel, 2
 private const val mass = 10.8 * lbs
 private val driveModel = DriveModels.mecanumLike(
     mass,
-    mass / 6 * (18 * `in`).squared(),
+    mass / 6 * (18 * `in`).pow(2),
     transmissionModel,
     2 * `in`,
     16 * `in`,
@@ -31,14 +32,14 @@ private val driveModel = DriveModels.mecanumLike(
 internal class DecoupledTest {
     @Test
     fun `will it converge`() {
-        var ssModel = LinearDriveModels.wheelVelocityController(driveModel)
+        var ssModel = LinearDriveModels.motorVelocityController(driveModel)
         //not controllable
         expectCatching {
-            continuousLQR(ssModel, QRCost(eye(ssModel.stateSize), eye(ssModel.inputSize)))
+            continuousLQR(ssModel, QRCost(idenMat(ssModel.stateSize), idenMat(ssModel.inputSize)))
         }.failed()
-        ssModel = LinearDriveModels.decoupledWheelVelocityController(driveModel, 0.5)
+        ssModel = LinearDriveModels.decoupledMotorVelocityController(driveModel, 0.5)
         expectCatching {
-            continuousLQR(ssModel, QRCost(eye(ssModel.stateSize), eye(ssModel.inputSize)))
+            continuousLQR(ssModel, QRCost(idenMat(ssModel.stateSize), idenMat(ssModel.inputSize)))
         }.succeeded()
     }
 }

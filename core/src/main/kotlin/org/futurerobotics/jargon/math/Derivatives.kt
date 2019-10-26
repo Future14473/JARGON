@@ -11,16 +11,19 @@ interface Derivatives<T> {
     val deriv: T
     /** The value's second derivative */
     val secondDeriv: T
+
+    /** [value] */
+    @JvmDefault
+    operator fun component1(): T = value
+
+    /** [deriv] */
+    @JvmDefault
+    operator fun component2(): T = deriv
+
+    /** [secondDeriv] */
+    @JvmDefault
+    operator fun component3(): T = secondDeriv
 }
-
-/** @return value */
-operator fun <T> Derivatives<T>.component1(): T = value
-
-/** @return deriv */
-operator fun <T> Derivatives<T>.component2(): T = deriv
-
-/** @return secondDeriv */
-operator fun <T> Derivatives<T>.component3(): T = secondDeriv
 
 /** A simple [Derivatives] implementation that holds values in fields */
 class ValueDerivatives<T>(override val value: T, override val deriv: T, override val secondDeriv: T) : Derivatives<T>

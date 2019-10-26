@@ -18,23 +18,24 @@ interface MotionProfiled<out State : Any> : Steppable<Double, State> {
     fun atTime(time: Double): State
 
     /** Gets a [Stepper] for [atTime] */
-    override fun stepper(): Stepper<Double, State> = Stepper(this::atTime)
+    @JvmDefault
+    override fun stepper(): Stepper<Double, State> = Stepper(::atTime)
 }
 
 /**
- * Represents a Motion Profile: a graph/profile of velocity (and position and acceleration) over time or distance.
+ * Represents a Motion Profile: a graph/profile of velocity (and position and acceleration) over time, or over a
+ * "distance" along _profiled path_. Distance values can be length or angle, or something else.
  *
  * This is also a [MotionProfiled] for one-dimensional motion (state type [LinearMotionState])
  */
 interface MotionProfile : MotionProfiled<LinearMotionState> {
 
-    /**
-     * the total distance an object travels on this profile.
-     */
+    /** The total distance/magnitude of the profiled path. */
     val distance: Double
 
     /**
-     * Returns the [LinearMotionState] of this motion profile after traveling a distance of [distance]
+     * Returns the [LinearMotionState] of this motion profile after traveling a certain [distance] along
+     * the profiled path.
      */
     fun atDistance(distance: Double): LinearMotionState
 }

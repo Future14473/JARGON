@@ -11,6 +11,7 @@ import org.hipparchus.linear.RealVector
  */
 @Suppress("KDocMissingDocumentation")
 class ImmutableRealMatrix private constructor(private val mat: Mat) : RealMatrix by mat {
+
     private val no: Nothing get() = throw UnsupportedOperationException("Matrix is immutable")
 
     override fun setEntry(row: Int, column: Int, value: Double): Unit = no

@@ -40,7 +40,7 @@ fun steadyStateKalmanErrorCov(A: Mat, B: Mat, C: Mat, Q: Mat, R: Mat): Mat {
     val prior = DiscreteRicattiEquationSolverImpl(A, B, Q, R).p
     val S = C * prior * C.T + R
     val K = prior * C.T * S.inv()
-    return (eye(A.cols) - K * C) * prior
+    return (idenMat(A.cols) - K * C) * prior
 }
 
 

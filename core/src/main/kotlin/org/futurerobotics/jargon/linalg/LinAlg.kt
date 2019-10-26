@@ -9,14 +9,17 @@ typealias Mat = RealMatrix
 /** Shorthand for a [RealVector]. */
 typealias Vec = RealVector
 
-private val dummyMat = pureDiag(0.0)
+private val dummyMat = zeroMat(1, 1)
 
 /**
  * Functions for concatenating matrices
  */
 object MatConcat {
+
     /**
-     * DSL using [] to concatenate matrices (or numbers which represent single elements), similar to [mat].
+     * DSL using [] to concatenate matrices (or numbers that represent single elements), similar to [mat].
+     *
+     * Use `[to]` to indicate end of a row
      *
      * Recommended use in kotlin only.
      */
@@ -31,7 +34,7 @@ object MatConcat {
         var curCol = 0
         fun Any.convertToMat(): Mat = when (this) {
             is Mat -> this
-            is Number -> pureDiag(toDouble())
+            is Number -> diagMat(toDouble())
             else -> throwInvalidValue()
         }
         elements.forEach { element ->
@@ -54,18 +57,17 @@ object MatConcat {
         return concat(arr)
     }
 
-
     /**
      * Takes a 2d array of [Mat]rices with compatible sizes, concatenating them into a single Matrix.
      */
     @JvmStatic
     fun concat(arr: Array<out Array<out Mat>>): Mat {
-        if (arr.isEmpty()) return zeros(0, 0)
+        if (arr.isEmpty()) return zeroMat(0, 0)
         val cols = arr.first().map { it.cols }
         val rows = arr.map { it.first().rows }
         val outRows = rows.sum()
         val outCols = cols.sum()
-        val out = zeros(outRows, outCols)
+        val out = zeroMat(outRows, outCols)
         var currentRow = 0
         arr.forEachIndexed { rowInd, row ->
             val requiredRows = rows[rowInd]
@@ -90,14 +92,13 @@ object MatConcat {
         require(m12.cols == m22.cols) { "Size must match" }
         val row = m11.rows
         val col = m11.cols
-        return zeros(row + m21.rows, col + m12.cols).apply {
+        return zeroMat(row + m21.rows, col + m12.cols).apply {
             this[0, 0] = m11
             this[row, 0] = m21
             this[0, col] = m12
             this[row, col] = m22
         }
     }
-
 
     /**
      * Common operation of concatenates 4 _square_ matrices of equal size into a single matrix.
@@ -150,7 +151,7 @@ object MatConcat {
                 require(colSum != -1) { "Not enough information to deduce size of zero matrix, even if assuming square" }
                 rows[rowI] = colSum - rows[rowI.flip]
             }
-            //if ^ happened and succeded, this cannot happen.
+            //if ^ happened and succeeded, this cannot happen.
             if (cols[colI] == -1) {
                 require(rowSum != -1) { "Not enough information to deduce size of zero matrix, even if assuming square" }
                 cols[colI] = rowSum - cols[colI.flip]
@@ -158,7 +159,7 @@ object MatConcat {
         }
         require(rows.none { it == -1 }) { "Not enough information to deduce # of rows" }
         require(cols.none { it == -1 }) { "Not enough information to deduce # of cols" }
-        return zeros(rows.sum(), cols.sum()).apply {
+        return zeroMat(rows.sum(), cols.sum()).apply {
             this[0, 0] = convertToMat(m11, rows[0], cols[0])
             this[0, cols[0]] = convertToMat(m12, rows[0], cols[1])
             this[rows[0], 0] = convertToMat(m21, rows[1], cols[0])
@@ -169,18 +170,16 @@ object MatConcat {
     private inline val Int.flip get() = if (this != 0) 0 else 1
     private fun convertToMat(any: Any, rows: Int, cols: Int): Mat = when (any) {
         is Mat -> any
-        0 -> zeros(rows, cols)
+        0 -> zeroMat(rows, cols)
         1 -> {
             assert(rows == cols) { "Rows must equal cols for identity matrix" }
-            pureEye(rows)
+            idenMat(rows)
         }
         else -> throw AssertionError()
     }
 
-
     private fun throwInvalidValue(): Nothing = throw IllegalArgumentException("Invalid value given")
 
     private fun throwNotEven(): Nothing = throw IllegalArgumentException("Even rows/cols not given")
-
 }
 

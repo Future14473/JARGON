@@ -42,7 +42,7 @@ object GlobalToBot {
 
     /**
      * Converts a global [reference] PoseMotionState to a bot reference (to where the bot's "current state" is
-     * Pose2d.Zero), given the current [globalPose]
+     * [Pose2d.ZERO], given the current [globalPose]
      */
     @JvmStatic
     fun referenceMotion(reference: MotionState<Pose2d>, globalPose: Pose2d): MotionState<Pose2d> {

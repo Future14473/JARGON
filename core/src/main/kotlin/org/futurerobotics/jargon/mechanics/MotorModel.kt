@@ -3,7 +3,8 @@ package org.futurerobotics.jargon.mechanics
 import kotlin.math.sign
 
 /**
- * A not-involving-complex-calculus first-order approximation model of a DC brushed motor following:
+ * A not-involving-complex-calculus first-order approximation model of a DC brushed motor, based off the given
+ * model:
  *
  * V = torque/[kt]*[r] + angvel/[kv] + sign(angvel) * [i0] * r
  *
@@ -80,10 +81,11 @@ class DcMotorModel private constructor(
             freeAngularVelocity: Double,
             freeCurrent: Double
         ): DcMotorModel {
+            val r = voltage / stallCurrent
             return DcMotorModel(
                 stallTorque / stallCurrent,
                 voltage / stallCurrent,
-                freeAngularVelocity / voltage,
+                freeAngularVelocity / (voltage - freeCurrent * r),
                 freeCurrent
             )
         }
@@ -108,6 +110,7 @@ class TransmissionModel private constructor(
     val constantTorqueLoss: Double = 0.0,
     val ratioTorqueLoss: Double = 1.0
 ) {
+
     //outSpeed = inSpeed * gearRatio
     //outTorque = inTorque * ratioFrictionalTorque / gearRatio
     init {

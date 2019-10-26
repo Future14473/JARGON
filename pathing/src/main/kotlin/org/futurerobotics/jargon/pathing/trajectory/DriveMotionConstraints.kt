@@ -2,13 +2,12 @@ package org.futurerobotics.jargon.pathing.trajectory
 
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Interval
-import org.futurerobotics.jargon.math.squared
 import org.futurerobotics.jargon.mechanics.FixedDriveModel
 import org.futurerobotics.jargon.pathing.PathPoint
 import org.futurerobotics.jargon.util.repeatedList
 import kotlin.math.abs
 import kotlin.math.min
-
+import kotlin.math.pow
 
 /**
  * Common components of all multiple-max based constraints.
@@ -24,7 +23,7 @@ abstract class MultipleMaxesConstraint(maxes: List<Double>) : SingleConstraint {
     override fun otherIsRedundant(other: SingleConstraint): Boolean {
         if (other.javaClass != this.javaClass) return false
         other as MultipleMaxesConstraint
-        return other.maxes.zip(this.maxes) { them, me -> them >= me }.all { it }
+        return other.maxes.zip(maxes) { them, me -> them >= me }.all { it }
     }
 }
 
@@ -49,7 +48,7 @@ abstract class DriveMaxVelocityConstraint : DriveModelConstraint, VelocityConstr
     constructor(driveModel: FixedDriveModel, max: Double) : super(driveModel, max)
 
     override fun maxVelocity(point: PathPoint): Double {
-        val factors = constrainedFromBotVel() * point.poseDeriv.toVector()
+        val factors = constrainedFromBotVel() * point.poseDeriv.toVec()
         var res = Double.POSITIVE_INFINITY
         maxes.forEachIndexed { i, max ->
             val factor = factors[i]
@@ -71,8 +70,8 @@ abstract class DriveMaxAccelConstraint : DriveModelConstraint, AccelConstraint {
 
     override fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval {
         val constrainedFromBotAccel = constrainedFromBotAccel()
-        val fromCentripetal = constrainedFromBotAccel * (point.poseSecondDeriv * curVelocity.squared()).toVector()
-        val fromTangentialFactors = constrainedFromBotAccel * (point.poseDeriv.toVector())
+        val fromCentripetal = constrainedFromBotAccel * (point.poseSecondDeriv * curVelocity.pow(2)).toVec()
+        val fromTangentialFactors = constrainedFromBotAccel * (point.poseDeriv.toVec())
         var res = Interval.REAL
         maxes.forEachIndexed { i, max ->
             val factor = fromTangentialFactors[i]
@@ -164,11 +163,11 @@ class MaxMotorVoltage : DriveMaxVelocityConstraint, MultipleConstraint {
     private inner class VoltageAccelConstraint : AccelConstraint {
         val owner get() = this@MaxMotorVoltage
         override fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval {
-            val fromMotion = driveModel.voltsFromBotVel * (point.poseDeriv * curVelocity).toVector()
+            val fromMotion = driveModel.voltsFromBotVel * (point.poseDeriv * curVelocity).toVec()
             //DRY?
             val fromCentripetal =
-                driveModel.voltsFromBotAccel * (point.poseSecondDeriv * curVelocity.squared()).toVector()
-            val fromTangentialFactors = driveModel.voltsFromBotAccel * point.poseDeriv.toVector()
+                driveModel.voltsFromBotAccel * (point.poseSecondDeriv * curVelocity.pow(2)).toVec()
+            val fromTangentialFactors = driveModel.voltsFromBotAccel * point.poseDeriv.toVec()
             var res = Interval.REAL
             maxes.forEachIndexed { i, max ->
                 val factor = fromTangentialFactors[i]

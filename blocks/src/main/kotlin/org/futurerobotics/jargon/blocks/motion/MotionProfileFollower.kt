@@ -106,7 +106,7 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
 
     /** The motion profile input. See [MotionProfileFollower]*/
     val profileInput: BlocksConfig.Input<MotionProfiled<T>> get() = configInput(0)
-    /** The stop input input. See [MotionProfileFollower] */
+    /** The stop input. See [MotionProfileFollower] */
     val stop: BlocksConfig.Input<Boolean?> get() = configInput(1)
     /** The [BlocksConfig.Output] of this [MotionProfileFollower] */
     val output: BlocksConfig.Output<T> get() = configOutput(0)

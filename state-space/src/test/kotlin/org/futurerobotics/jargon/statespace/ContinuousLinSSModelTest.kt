@@ -12,18 +12,18 @@ internal class ContinuousLinSSModelTest {
     fun discretize() {
         val random = Random("discretization test".hashCode())
         repeat(5) {
-            val A = create(3, 3) { _, _ ->
+            val A = createMat(3, 3) { _, _ ->
                 random.nextDouble(-5.0, 5.0)
             }
-            val B = create(3, 2) { _, _ ->
+            val B = createMat(3, 2) { _, _ ->
                 random.nextDouble(-5.0, 5.0)
             }
             val period = 0.5
 
-            val model = ContinuousLinSSModel(A, B, zeros(3, 3), zeros(3, 2))
+            val model = ContinuousLinSSModel(A, B, zeroMat(3, 3), zeroMat(3, 2))
             val discrete = model.discretize(period)
             expectThat(discrete.A).isEpsEqTo(expm(A * period))
-            val expectedB = A.inv()(discrete.A - eye(3)) * B
+            val expectedB = A.inv()(discrete.A - idenMat(3)) * B
             expectThat(discrete.B).isEpsEqTo(expectedB)
         }
     }

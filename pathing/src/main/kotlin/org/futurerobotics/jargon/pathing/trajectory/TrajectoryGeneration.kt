@@ -90,7 +90,7 @@ class TrajectoryConstrainer(
             val point = pathStepper.stepTo(x)
             object : PointConstraint {
                 override val maxVelocity: Double = getMaxVel(point)
-                override fun accelRange(curVelocity: Double): Interval = getMaxAccel(point, curVelocity)
+                override fun accelRange(currentVelocity: Double): Interval = getMaxAccel(point, currentVelocity)
             }
         }
     }

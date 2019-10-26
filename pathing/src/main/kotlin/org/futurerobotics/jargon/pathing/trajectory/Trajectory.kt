@@ -2,14 +2,15 @@ package org.futurerobotics.jargon.pathing.trajectory
 
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.epsEq
-import org.futurerobotics.jargon.math.squared
 import org.futurerobotics.jargon.mechanics.LinearMotionState
 import org.futurerobotics.jargon.mechanics.MotionState
 import org.futurerobotics.jargon.mechanics.ValueMotionState
-import org.futurerobotics.jargon.pathing.*
+import org.futurerobotics.jargon.pathing.Path
+import org.futurerobotics.jargon.pathing.PathPoint
 import org.futurerobotics.jargon.profile.MotionProfile
 import org.futurerobotics.jargon.profile.MotionProfiled
 import org.futurerobotics.jargon.util.Stepper
+import kotlin.math.pow
 
 /**
  * Represents a trajectory; that is a Path paired with time/velocity info on traversal (a [MotionProfiled]).
@@ -64,7 +65,7 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
         return ValueMotionState(
             pose,
             poseDeriv * state.v,
-            poseSecondDeriv * state.v.squared() + poseDeriv * state.a
+            poseSecondDeriv * state.v.pow(2) + poseDeriv * state.a
         )
     }
 }

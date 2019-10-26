@@ -4,10 +4,8 @@ import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
 import org.futurerobotics.jargon.blocks.BlocksConfig
 import org.futurerobotics.jargon.blocks.CombineBlock
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.math.matches
-import org.futurerobotics.jargon.math.squared
 import org.futurerobotics.jargon.mechanics.MotionState
-
+import kotlin.math.pow
 
 /**
  * A state space controller using the given [model] and [kGain], with feed forward.
@@ -30,12 +28,9 @@ class SSControllerWithFF(
 ) : CombineBlock<MotionState<Vec>, Vec, Vec>(IN_FIRST_LAZY) {
 
     init {
-        require(
-            kGain.matches(
-                model.inputStructure,
-                model.stateStructure
-            )
-        ) { "kGain must be compatible with this matrix" }
+        require(kGain.rows == model.inputSize && kGain.cols == model.stateSize) {
+            "kGain size (${kGain.rows} x ${kGain.cols}) must be compatible with this model"
+        }
     }
 
     //flatten model
@@ -45,7 +40,7 @@ class SSControllerWithFF(
     override fun combine(a: MotionState<Vec>, b: Vec): Vec {
         //we don't care about elapsed seconds.
         val r = a.s
-        val r1 = a.s + a.v * model.period + a.a * (model.period.squared() / 2)
+        val r1 = a.s + a.v * model.period + a.a * (model.period.pow(2) / 2)
         val x = b
         return kGain * (r - x) + kFF(r1 - model.A * r)
     }

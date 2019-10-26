@@ -6,15 +6,14 @@ import kotlin.math.*
 import kotlin.random.Random
 
 /**
- * Represents a 2d vector in plane space with values [x] and [y].
+ * Represents a 2d vector in the plane with values [x] and [y].
  *
- * +y is counterclockwise of +x;
+ * The standard is that +y is counterclockwise of +x, and positive angle is counter clockwise.
  * We recommend using NorthWestUp orientation where forward is +x, and left is +y.
  * This way math still checks out, and 0 degrees is forward.
  *
- * Some calculations use cross products, in which it is calculated with the z component being 0, and a portion of the
- * result.
- * There exists [Vector2d.ZERO] for people who don't like garbage, like me.
+ * Some calculations use cross products ([cross],[crossz]), in which it is calculated with interpreting vectors as 3d
+ * vectors with a z component of 0, and only a portion of the result (that is not zero) is returned.
  */
 data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
 

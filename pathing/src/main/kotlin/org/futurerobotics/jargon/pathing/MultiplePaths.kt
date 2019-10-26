@@ -5,7 +5,6 @@ package org.futurerobotics.jargon.pathing
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.epsEq
 import org.futurerobotics.jargon.util.Stepper
-import org.futurerobotics.jargon.util.get
 import org.futurerobotics.jargon.util.replaceIf
 
 /**
@@ -72,7 +71,7 @@ sealed class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>(
                 curStepper = paths[i].stepper()
             }
 
-            return curStepper[s - startLengths[i]] //ok if single threaded which is what we assume
+            return curStepper.stepTo(s - startLengths[i]) //ok if single threaded which is what we assume
         }
     }
 

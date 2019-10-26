@@ -17,26 +17,6 @@ inline fun <T> T.replaceIf(predicate: (T) -> Boolean, alternate: (T) -> T): T {
 }
 
 /**
- * Calls the [block], then returns this.
- *
- * Useful to put emphasis on return value; for example in builders
- * ```
- * fun addFoo(): ThisType = /*this.*/after {
- *   ...
- * }
- * ```
- * also equivalent to `also { _ -> ... }`
- */
-@UseExperimental(ExperimentalContracts::class)
-inline fun <T> T.after(block: () -> Unit): T {
-    contract {
-        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
-    }
-    block()
-    return this
-}
-
-/**
  * Calls the specified [block] with [p1] as its argument and returns its result.
  * Similar to [kotlin.let]. Useful for changing variable names.
  */
@@ -53,7 +33,7 @@ inline fun <T, R> let(p1: T, block: (T) -> R): R {
  * Similar to [kotlin.let]. Useful for changing variable names together or avoiding nested let statements.
  */
 @UseExperimental(ExperimentalContracts::class)
-inline fun <T, U, R> let(p1: T, p2: U, block: (T, U) -> R): R {
+inline fun <T1, T2, R> let(p1: T1, p2: T2, block: (T1, T2) -> R): R {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
@@ -65,7 +45,7 @@ inline fun <T, U, R> let(p1: T, p2: U, block: (T, U) -> R): R {
  * Similar to [kotlin.let]. Useful for changing variable names together or avoiding nested let statements.
  */
 @UseExperimental(ExperimentalContracts::class)
-inline fun <T, U, V, R> let(p1: T, p2: U, p3: V, block: (T, U, V) -> R): R {
+inline fun <T1, T2, T3, R> let(p1: T1, p2: T2, p3: T3, block: (T1, T2, T3) -> R): R {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
@@ -77,7 +57,7 @@ inline fun <T, U, V, R> let(p1: T, p2: U, p3: V, block: (T, U, V) -> R): R {
  * Similar to [kotlin.let]. Useful for changing variable names together or avoiding nested let statements.
  */
 @UseExperimental(ExperimentalContracts::class)
-inline fun <T, U, V, W, R> let(p1: T, p2: U, p3: V, p4: W, block: (T, U, V, W) -> R): R {
+inline fun <T1, T2, T3, T4, R> let(p1: T1, p2: T2, p3: T3, p4: T4, block: (T1, T2, T3, T4) -> R): R {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }

@@ -1,3 +1,5 @@
+@file:JvmName("MatFormat")
+
 package org.futurerobotics.jargon.linalg
 
 import java.text.DecimalFormat

@@ -18,7 +18,7 @@ internal class PulseTest {
         }
 
         expectThat(monitor) {
-            system.init()
+            system.start()
             repeat(5) {
                 repeat(5) {
                     system.loop()

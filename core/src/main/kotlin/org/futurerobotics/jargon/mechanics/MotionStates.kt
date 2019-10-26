@@ -4,12 +4,11 @@ import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
 
 /**
- * Represents the motion of some quantity representing type [T] (e.g. 1d motion, vector2d, pose, linear algebra vector).
- *
- * This contains velocity ([v]), and acceleration ([a])
+ * Represents the motion of some quantity of type [T], meaning velocity ([v]), and acceleration ([a])
  * @see [MotionState]
  */
 interface MotionOnly<T : Any> {
+
     /** The velocity of this [MotionOnly] */
     val v: T
     /** The acceleration of this [MotionOnly] */
@@ -27,6 +26,7 @@ interface MotionOnly<T : Any> {
  * of some quantity [T].
  */
 interface MotionState<T : Any> {
+
     /** The position of this [MotionState] */
     val s: T
     /** The velocity of this [MotionOnly] */
@@ -35,20 +35,23 @@ interface MotionState<T : Any> {
     val a: T
 
     /** @return s */
+    @JvmDefault
     operator fun component1(): T = s
 
     /** @return v */
+    @JvmDefault
     operator fun component2(): T = v
 
     /** @return a */
+    @JvmDefault
     operator fun component3(): T = a
 
     /**
      * Creates a [MotionOnly] with same v and a as this [MotionState]
      */
+    @JvmDefault
     fun toMotionOnly(): ValueMotionOnly<T> = ValueMotionOnly(v, a)
 }
-
 
 /** An simple implementation of [MotionOnly] that holds values in fields */
 open class ValueMotionOnly<T : Any>(override val v: T, override val a: T) : MotionOnly<T> {
@@ -64,6 +67,7 @@ open class ValueMotionOnly<T : Any>(override val v: T, override val a: T) : Moti
 
 /** An simple implementation of [MotionState] that holds values in fields */
 open class ValueMotionState<T : Any>(override val s: T, override val v: T, override val a: T) : MotionState<T> {
+
     override fun equals(other: Any?): Boolean = when {
         this === other -> true
         other !is ValueMotionState<*> -> false
@@ -79,7 +83,6 @@ open class ValueMotionState<T : Any>(override val s: T, override val v: T, overr
         fun <T : Any> ofAll(value: T): ValueMotionState<T> = ValueMotionState(value, value, value)
     }
 }
-
 
 /** Extracts the vector [MotionState] from this pose [MotionState]. */
 fun MotionState<Pose2d>.vec(): MotionState<Vector2d> = ValueMotionState(s.vec, v.vec, a.vec)

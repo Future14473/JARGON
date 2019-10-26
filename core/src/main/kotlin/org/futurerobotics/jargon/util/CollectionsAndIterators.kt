@@ -1,17 +1,20 @@
+@file:JvmName("MoreCollections")
+
 package org.futurerobotics.jargon.util
 
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 
-
-/** Fills an array using the given [generator]. */
+/** Fills an array using the given [generator], given indexes. */
 inline fun <T> Array<T>.fillWith(generator: (Int) -> T) {
     repeat(size) {
         this[it] = generator(it)
     }
 }
 
-/** Fills an mutable list using the given [generator]. */
+/** Fills a mutable list using the given [generator], given indexes. */
 inline fun <T> MutableList<T>.fillWith(generator: (Int) -> T) {
     val iterator = listIterator()
     var index = 0
@@ -27,7 +30,7 @@ inline fun <T> MutableList<T>.fillWith(generator: (Int) -> T) {
 fun <T> Array<T>.asMutableList(): MutableList<T> = asList() as MutableList<T>
 
 /**
- * Creates a mutable list with a fixed [size],  filling with init.
+ * Creates a mutable list with a fixed [size], filling using [init].
  */
 inline fun <reified T> fixedSizeMutableList(size: Int, init: (Int) -> T): MutableList<T> {
     @Suppress("UNCHECKED_CAST")
@@ -35,14 +38,14 @@ inline fun <reified T> fixedSizeMutableList(size: Int, init: (Int) -> T): Mutabl
 }
 
 /**
- * Creates a mutable list with a fixed size, initializing with nulls.
+ * Creates a mutable list with a fixed [size], initializing with nulls.
  */
 inline fun <reified T> fixedSizeMutableListOfNulls(size: Int): MutableList<T?> = arrayOfNulls<T>(size).asMutableList()
 
-/** Wraps this list as a [Collections.unmodifiableList]. */
+/** Wraps this list with [Collections.unmodifiableList]. */
 fun <T> List<T>.asUnmodifiableList(): List<T> = Collections.unmodifiableList(this)
 
-/** Wraps this list as a [Collections.unmodifiableMap]. */
+/** Wraps this list with [Collections.unmodifiableMap]. */
 fun <T, R> Map<T, R>.asUnmodifiableMap(): Map<T, R> = Collections.unmodifiableMap(this)
 
 /**
@@ -52,67 +55,60 @@ fun <T, R> Map<T, R>.asUnmodifiableMap(): Map<T, R> = Collections.unmodifiableMa
 fun <T> List<T>.toImmutableList(): List<T> = toList().asUnmodifiableList()
 
 /**
- * Creates a new list where the elements are viewed as a [mapping] of the original list.
+ * Replaces the values of this [MutableList] through the [mapping] function to itself, replacing values.
  */
-inline fun <T, R> List<T>.mappedView(crossinline mapping: (T) -> R): List<R> = object : AbstractList<R>() {
-    override val size: Int
-        get() = this@mappedView.size
-
-    override fun get(index: Int): R = mapping(this@mappedView[index])
-}
-
-/**
- * Maps all values of this [MutableList] through the [mapping] function, replacing the values
- * with their results.
- */
+@UseExperimental(ExperimentalContracts::class)
 inline fun <T> MutableList<T>.mapToSelf(mapping: (T) -> T) {
+    contract {
+        callsInPlace(mapping)
+    }
     val iterator = listIterator()
     while (iterator.hasNext()) {
         iterator.set(mapping(iterator.next()))
     }
 }
 
-/** @return true if the values given by this iterable are sorted. */
+/** @return true if the values given by this iterable is sorted. */
 fun <T> Iterable<T>.isSorted(): Boolean where T : Comparable<T> = isSortedBy { it }
 
-/** @return true if the values of this iterator is sorted by [which], inlined. */
-inline fun <T, V : Comparable<V>> Iterable<T>.isSortedBy(which: (T) -> V): Boolean = iterator().let {
-    var prev = if (it.hasNext()) which(it.next()) else return true
-    while (it.hasNext()) {
-        val cur = which(it.next())
+/** @return true if the values of this iterator is sorted with values given by the [selector], inlined. */
+@UseExperimental(ExperimentalContracts::class)
+inline fun <T, V : Comparable<V>> Iterable<T>.isSortedBy(selector: (T) -> V): Boolean {
+    contract {
+        callsInPlace(selector)
+    }
+    val iterator = iterator()
+    var prev = if (iterator.hasNext()) selector(iterator.next()) else return true
+    while (iterator.hasNext()) {
+        val cur = selector(iterator.next())
         if (cur < prev) return false
         prev = cur
     }
     return true
 }
 
-/**
- * Iterates over all
- */
+/** [forEach], but in reverse direction. */
+@UseExperimental(ExperimentalContracts::class)
 inline fun <T> List<T>.forEachReversed(action: (T) -> Unit) {
-    val listIt = listIterator(size)
-    while (listIt.hasPrevious()) {
-        action(listIt.previous())
+    contract {
+        callsInPlace(action)
+    }
+    val iterator = listIterator(size)
+    while (iterator.hasPrevious()) {
+        action(iterator.previous())
     }
 }
 
 /**
- * Runs forEach on each of the iterables [p1], [p2], zipped.
+ * Runs forEach on each of the iterables [this], [p2], zipped.
  */
-inline fun <T, V> forEachZipped(p1: Iterable<T>, p2: Iterable<V>, action: (T, V) -> Unit) {
-    let(p1.iterator(), p2.iterator()) { it1, it2 ->
-        while (it1.hasNext() && it2.hasNext()) {
-            action(it1.next(), it2.next())
-        }
+@UseExperimental(ExperimentalContracts::class)
+inline fun <T, V> Iterable<T>.zipForEachIndexed(p2: Iterable<V>, action: (index: Int, T, V) -> Unit) {
+    contract {
+        callsInPlace(action)
     }
-}
-
-/**
- * Runs forEach on each of the iterables [p1], [p2], zipped, and indexed.
- */
-inline fun <T, V> forEachZippedIndexed(p1: Iterable<T>, p2: Iterable<V>, action: (index: Int, T, V) -> Unit) {
     var i = 0
-    let(p1.iterator(), p2.iterator()) { it1, it2 ->
+    let(this.iterator(), p2.iterator()) { it1, it2 ->
         while (it1.hasNext() && it2.hasNext()) {
             if (i < 0) throw ArithmeticException("Index overflow")
             action(i++, it1.next(), it2.next())
@@ -123,23 +119,26 @@ inline fun <T, V> forEachZippedIndexed(p1: Iterable<T>, p2: Iterable<V>, action:
 /**
  * Runs forEach on each of the iterables [this], [p2], zipped.
  */
-inline fun <T, V> Iterable<T>.zipForEach(p2: Iterable<V>, action: (T, V) -> Unit): Unit =
-    forEachZipped(this, p2, action)
+@UseExperimental(ExperimentalContracts::class)
+inline fun <T, V> Iterable<T>.zipForEach(p2: Iterable<V>, action: (T, V) -> Unit) {
+    contract {
+        callsInPlace(action)
+    }
+    let(this.iterator(), p2.iterator()) { it1, it2 ->
+        while (it1.hasNext() && it2.hasNext()) {
+            action(it1.next(), it2.next())
+        }
+    }
+}
 
 /**
- * Runs forEach on each of the iterables [this], [p2], zipped.
+ * Returns a list of all possible pairs of elements from the given lists.
  */
-inline fun <T, V> Iterable<T>.zipForEachIndexed(p2: Iterable<V>, action: (index: Int, T, V) -> Unit): Unit =
-    forEachZippedIndexed(this, p2, action)
-
-/**
- * Returns a list of all possible pairs of elements from the lists.
- */
-fun <A, B> allPairs(listA: List<A>, listB: List<B>): List<Pair<A, B>> {
-    if (listA.isEmpty() || listB.isEmpty()) return emptyList()
-    val result = ArrayList<Pair<A, B>>(listA.size * listB.size)
-    listA.forEach { a ->
-        listB.forEach { b ->
+fun <A, B> mapAllPairs(list1: List<A>, list2: List<B>): List<Pair<A, B>> {
+    if (list1.isEmpty() || list2.isEmpty()) return emptyList()
+    val result = ArrayList<Pair<A, B>>(list1.size * list2.size)
+    list1.forEach { a ->
+        list2.forEach { b ->
             result += a to b
         }
     }
@@ -149,7 +148,11 @@ fun <A, B> allPairs(listA: List<A>, listB: List<B>): List<Pair<A, B>> {
 /**
  * Returns a list of the result of the [mapping] function called on all possible pairs of elements from the lists
  */
-inline fun <A, B, R> allPairs(listA: List<A>, listB: List<B>, mapping: (A, B) -> R): List<R> {
+@UseExperimental(ExperimentalContracts::class)
+inline fun <A, B, R> mapAllPairs(listA: List<A>, listB: List<B>, mapping: (A, B) -> R): List<R> {
+    contract {
+        callsInPlace(mapping)
+    }
     if (listA.isEmpty() || listB.isEmpty()) return emptyList()
     val result = ArrayList<R>(listA.size * listB.size)
     listA.forEach { a ->
@@ -163,11 +166,11 @@ inline fun <A, B, R> allPairs(listA: List<A>, listB: List<B>, mapping: (A, B) ->
 /**
  * Runs the [action] on all possible pairs of elements from the lists.
  */
-//@ExperimentalContracts
+@UseExperimental(ExperimentalContracts::class)
 inline fun <A, B> onAllPairs(listA: List<A>, listB: List<B>, action: (A, B) -> Unit) {
-//    contract {
-//        callsInPlace(block, InvocationKind.UNKNOWN)
-//    }
+    contract {
+        callsInPlace(action)
+    }
     listA.forEach { a ->
         listB.forEach { b ->
             action(a, b)

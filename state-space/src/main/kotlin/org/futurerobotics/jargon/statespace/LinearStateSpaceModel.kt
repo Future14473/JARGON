@@ -3,10 +3,7 @@
 package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.math.VectorStructure
 import org.futurerobotics.jargon.mechanics.FixedDriveModel
-import org.futurerobotics.jargon.util.repeatedList
-
 
 /**
  * Generic State space model.
@@ -16,48 +13,28 @@ import org.futurerobotics.jargon.util.repeatedList
  * @param C the measurement matrix
  * @param D the feed-through matrix, which is usually 0 so nobody cares about it very much
  */
-sealed class LinearStateSpaceModel constructor(
-    A: Mat,
-    B: Mat,
-    C: Mat,
-    D: Mat,
-    stateStructure: VectorStructure? = null,
-    inputStructure: VectorStructure? = null,
-    outputStructure: VectorStructure? = null
-) {
-    /** The state [VectorStructure]. */
-    val stateStructure: VectorStructure
-    /** The input [VectorStructure] */
-    val inputStructure: VectorStructure
-    /** the output [VectorStructure] */
-    val outputStructure: VectorStructure
+sealed class LinearStateSpaceModel(A: Mat, B: Mat, C: Mat, D: Mat) {
+
+    /** The size of the state vector. */
+    val stateSize: Int
+    /** The size of the input vector. */
+    val inputSize: Int
+    /** The size of the output vector. */
+    val outputSize: Int
 
     init {
         require(A.isSquare) { "A matrix must be square" }
-        this.stateStructure = stateStructure?.also {
-            require(A.rows == it.size)
-            { "A matrix must have same size as state vector (${it.size})" }
-        } ?: VectorStructure(A.rows)
+        stateSize = A.rows
+        inputSize = B.cols
+        outputSize = C.rows
         require(B.rows == stateSize)
-        { "B matrix must have same number of rows as state vector ($stateStructure.size)" }
-        this.inputStructure = inputStructure?.also {
-            require(B.cols == it.size)
-            { "B matrix must have same number of columns as output/signal vector (${it.size})" }
-        } ?: VectorStructure(B.cols)
+        { "B matrix must have same number of rows as state vector (${stateSize}.size)" }
         require(C.cols == stateSize)
-        { "C matrix must have same number of columns as state vector ($stateSize)" }
+        { "C matrix must have same number of columns as state vector (${stateSize})" }
         require(D.cols == inputSize)
         { "D matrix must have same number of columns as input vector ($inputSize)" }
-        this.outputStructure = outputStructure?.also {
-            require(C.rows == it.size)
-            { "C matrix must have same number of rows as output vector ($it.size)" }
-            require(D.rows == it.size)
-            { "D matrix must have same number of rows as output vector ($it.size)" }
-        } ?: run {
-            require(C.rows == D.rows)
-            { "C and D matrix rows must match to deduce output vector size" }
-            VectorStructure(C.rows)
-        }
+        require(D.rows == outputSize)
+        { "C and D matrix rows must match to deduce output vector size" }
     }
 
     /** A or system matrix. */
@@ -68,15 +45,6 @@ sealed class LinearStateSpaceModel constructor(
     val C: Mat = C.toImmutableMat()
     /** D or feed-through matrix. */
     val D: Mat = D.toImmutableMat()
-
-
-    /** The size of this model's state vector. */
-    val stateSize: Int get() = stateStructure.size
-    /** The size of this model's input/signal vector. */
-    val inputSize: Int get() = inputStructure.size
-    /** The size of this model's output/measurement vector. */
-    val outputSize: Int get() = outputStructure.size
-
 
     /** A matrix */
     operator fun component1(): Mat = A
@@ -100,7 +68,9 @@ sealed class LinearStateSpaceModel constructor(
      */
     fun processOutput(x: Vec, u: Vec): Vec = C * x + D * u
 
-    override fun toString(): String = """${this::class.java.simpleName}
+    override fun toString(): String =
+        """
+${this.javaClass.simpleName}
 A: 
 ${A.formatReadable()}
 B: 
@@ -110,23 +80,12 @@ ${C.formatReadable()}
 D: 
 ${D.formatReadable()}
 """
-
 }
-
 
 /**
  * A [LinearStateSpaceModel] that is continuous.
  */
-open class ContinuousLinSSModel @JvmOverloads constructor(
-    A: Mat,
-    B: Mat,
-    C: Mat,
-    D: Mat,
-    stateStructure: VectorStructure? = null,
-    inputStructure: VectorStructure? = null,
-    outputStructure: VectorStructure? = null
-) : LinearStateSpaceModel(A, B, C, D, stateStructure, inputStructure, outputStructure) {
-
+open class ContinuousLinSSModel constructor(A: Mat, B: Mat, C: Mat, D: Mat) : LinearStateSpaceModel(A, B, C, D) {
 
     /**
      * Discretizes this [ContinuousLinSSModel] using the given [period], also discretizing the given [QRCost].
@@ -149,7 +108,7 @@ open class ContinuousLinSSModel @JvmOverloads constructor(
         val (ad, bd) = expm(MatConcat.dynamic2x2Square(A, B, 0, 0) * period).let {
             it.getQuad(A.rows, 0, 0) to it.getQuad(A.rows, 0, 1)
         }
-        return DiscreteLinSSModel(ad, bd, C, D, period, stateStructure, inputStructure, outputStructure)
+        return DiscreteLinSSModel(ad, bd, C, D, period)
     }
 }
 
@@ -158,17 +117,7 @@ open class ContinuousLinSSModel @JvmOverloads constructor(
  *
  * @param period the period the discretization is based on.
  */
-open class DiscreteLinSSModel @JvmOverloads constructor(
-    A: Mat,
-    B: Mat,
-    C: Mat,
-    D: Mat,
-    val period: Double,
-    stateStructure: VectorStructure? = null,
-    inputStructure: VectorStructure? = null,
-    outputStructure: VectorStructure? = null
-) : LinearStateSpaceModel(A, B, C, D, stateStructure, inputStructure, outputStructure)
-
+open class DiscreteLinSSModel(A: Mat, B: Mat, C: Mat, D: Mat, val period: Double) : LinearStateSpaceModel(A, B, C, D)
 
 /**
  * Utilities for creating [LinearStateSpaceModel]s from [FixedDriveModel]s.
@@ -176,7 +125,7 @@ open class DiscreteLinSSModel @JvmOverloads constructor(
 object LinearDriveModels {
 
     /**
-     * This is not recommended for anything beyond testing; use [decoupledWheelVelocityController] instead.
+     * This is not recommended for anything beyond testing; use [decoupledMotorVelocityController] instead.
      *
      * Derives a [ContinuousLinSSModel] from the given [driveModel] that:
      *
@@ -187,7 +136,7 @@ object LinearDriveModels {
      *
      * The drive model must be a [FixedDriveModel.isHolonomic] or else the ss model may not be controllable.
      * Otherwise for a non-holonomic, consider first using another controller that maps to _wheel velocities_
-     * instead, and use [wheelVelocityController]
+     * instead, and use [motorVelocityController]
      */
     @Suppress("UnnecessaryVariable")
     fun poseVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
@@ -198,14 +147,8 @@ object LinearDriveModels {
         val b = driveModel.botAccelFromVolts
         val motorVelFromBotVel = driveModel.motorVelFromWheelVel * driveModel.wheelVelFromBotVel
         val c = motorVelFromBotVel
-        val d = zeros(size, size)
-        val names = List(size) { "wheel$it" }
-        return ContinuousLinSSModel(
-            a, b, c, d,
-            stateStructure = VectorStructure(listOf("x", "y", "heading"), repeatedList(3, "")),
-            inputStructure = VectorStructure(names, repeatedList(size, "volts")),
-            outputStructure = VectorStructure(names, repeatedList(size, "rad/s"))
-        )
+        val d = zeroMat(size, size)
+        return ContinuousLinSSModel(a, b, c, d)
     }
 
     /**
@@ -222,51 +165,45 @@ object LinearDriveModels {
      * In that case you have a holonomic drive, so use [poseVelocityController]
      */
     @Suppress("UnnecessaryVariable")
-    fun wheelVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
-        val wheelAccelFromVolts = driveModel.wheelAccelFromVolts
-        return getWheelVelocityController(driveModel, wheelAccelFromVolts)
+    fun motorVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModel {
+        val motorAccelFromVolts = driveModel.motorVelFromWheelVel * driveModel.wheelAccelFromVolts
+        return getMotorVelocityController(driveModel, motorAccelFromVolts)
     }
 
     /**
-     * Derives a [ContinuousLinSSModel] similar to in [wheelVelocityController]; while also "decoupling" wheel interactions
+     * Derives a [ContinuousLinSSModel] similar to in [motorVelocityController]; while also "decoupling" wheel interactions
      * by multiplying the coupling terms  a factor of [coupling]. 0 means complete decoupling, 1 means do nothing to the model.
      *
      * The reason this might be required is that the controller assumes that all wheels have perfect traction, so
-     * the resulting system is not controllable for many holonomic drives/drives with more 4 or more wheels (moving one
+     * the resulting system is uncontrollable for many holonomic drives/drives with more 4 or more wheels (moving one
      * wheel must move the other wheels, since the bot moves). This breaks the assumption that assumption; by
      * reducing the "coupling" terms.
      *
      * Due to empirical tests, this model performs better [poseVelocityController].
      */
-    fun decoupledWheelVelocityController(driveModel: FixedDriveModel, coupling: Double): ContinuousLinSSModel {
+    fun decoupledMotorVelocityController(driveModel: FixedDriveModel, coupling: Double): ContinuousLinSSModel {
         require(coupling in 0.0..1.0) { "coupling ($coupling) must be between 0 and 1, or else things don't make sense." }
-        val wheelAccelFromVolts = driveModel.wheelAccelFromVolts.copy().apply {
+        val motorAccelFromVolts = (driveModel.motorVelFromWheelVel * driveModel.wheelAccelFromVolts).apply {
             repeat(rows) { i ->
                 repeat(cols) { j ->
                     if (i != j) this[i, j] *= coupling
                 }
             }
         }
-        return getWheelVelocityController(driveModel, wheelAccelFromVolts)
+        return getMotorVelocityController(driveModel, motorAccelFromVolts)
     }
 
-    private fun getWheelVelocityController(
+    private fun getMotorVelocityController(
         driveModel: FixedDriveModel,
-        wheelAccelFromVolts: Mat
+        motorAccelFromVolts: Mat
     ): ContinuousLinSSModel {
         val size = driveModel.numWheels
-        val wheelDeccelFromWheelVel = -wheelAccelFromVolts * driveModel.voltsFromWheelVel
-        val a = wheelDeccelFromWheelVel
-        val b = wheelAccelFromVolts
-        val c = eye(size) //measure vel directly
-        val d = zeros(size, size)
-        val names = List(size) { "wheel$it" }
-        val velStructure = VectorStructure(names, repeatedList(size, "rad/s"))
-        return ContinuousLinSSModel(
-            a, b, c, d,
-            stateStructure = velStructure,
-            inputStructure = VectorStructure(names, repeatedList(size, "volts")),
-            outputStructure = velStructure
-        )
+        val motorDeccelFromMotorVel =
+            -motorAccelFromVolts * driveModel.voltsFromWheelVel * driveModel.wheelVelFromMotorVel
+        val a = motorDeccelFromMotorVel
+        val b = motorAccelFromVolts
+        val c = idenMat(size) //measure vel directly
+        val d = zeroMat(size, size)
+        return ContinuousLinSSModel(a, b, c, d)
     }
 }

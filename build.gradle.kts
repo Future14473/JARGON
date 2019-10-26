@@ -21,7 +21,6 @@ val junit5params by extra("org.junit.jupiter:junit-jupiter-params:$junit5Version
 val junit5engine by extra("org.junit.jupiter:junit-jupiter-engine:$junit5Version")
 val junit5vintage by extra("org.junit.vintage:junit-vintage-engine:$junit5Version")
 
-
 val strikt by extra("io.strikt:strikt-core:$striktVersion")
 
 buildscript {
@@ -51,7 +50,12 @@ subprojects {
             "implementation"(kotlin("stdlib-jdk8"))
         }
         tasks.withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = "1.8"
+            kotlinOptions {
+                jvmTarget = "1.8"
+                freeCompilerArgs += listOf(
+                    "-Xjvm-default=enable"
+                )
+            }
         }
     }
     tasks.withType<Test> {

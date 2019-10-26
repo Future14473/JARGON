@@ -5,30 +5,42 @@ import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
 
 /**
- * Represents the constrainer to use to generate a dynamic [MotionProfile].
+ * Represents the constraints used to generate a dynamic [MotionProfile], using [generateDynamicProfile].
+ *
+ *
+ * Distance values along a _profiled path_ can be length or angle, or something else.
+ *
+ * This operates by returns constraints on velocity and acceleration (w/ respect to time) at specific points along
+ *  the profiled path.
  * @see PointConstraint
  */
 interface MotionProfileConstrainer : Steppable<Double, PointConstraint> {
 
     /**
-     * Returns a [Stepper] that steps on distances along the profiled object and returns a [PointConstraint]
+     * Returns a [Stepper] that steps on distances along a profiled object and returns a [PointConstraint]
      * representing the constraints at that point.
+     * @see [MotionProfileConstrainer]
      */
     override fun stepper(): Stepper<Double, PointConstraint>
 }
 
 /**
- * Represents the constraints at a specific point to be motion profiled.
+ * Represents the motion profile constraints at a specific point along the
  *
- * This includes maximum Velocity, and a range of allowable accelerations.
+ * This includes maximum velocity, and an [Interval] of allowable accelerations going along
+ * a _profiled object_
+ * @see [MotionProfileConstrainer]
  */
 interface PointConstraint {
 
     /** The maximum velocity at this point on the profile */
     val maxVelocity: Double
 
-    /** The range of allowable accelerations at this point on the profile */
-    fun accelRange(curVelocity: Double): Interval
+    /**
+     * A [Interval] of allowable accelerations at this point on the profile, both positive and negative, given
+     * the [currentVelocity].
+     * */
+    fun accelRange(currentVelocity: Double): Interval
 }
 
 /**
@@ -37,10 +49,10 @@ interface PointConstraint {
 @Suppress("FunctionName")
 inline fun PointConstraint(
     crossinline maxVelocity: () -> Double,
-    crossinline accelRange: (curVelocity: Double) -> Interval
+    crossinline accelRange: (currentVelocity: Double) -> Interval
 ): PointConstraint = object : PointConstraint {
     override val maxVelocity: Double = maxVelocity()
-    override fun accelRange(curVelocity: Double): Interval = accelRange(curVelocity)
+    override fun accelRange(currentVelocity: Double): Interval = accelRange(currentVelocity)
 }
 
 /**
@@ -52,16 +64,14 @@ abstract class ComponentsMotionProfileConstrainer : MotionProfileConstrainer {
     /** Gets the maximum allowable velocity at the point [x] units from the start. */
     abstract fun getMaxVelocity(x: Double): Double
 
-    /**
-     * Gets a range of allowable acceleration at the point [x] units from the start, given [curVelocity].
-     */
+    /** Gets a range of allowable acceleration at the point [x] units from the start, given the [curVelocity]. */
     abstract fun getMaxAccel(x: Double, curVelocity: Double): Interval
 
     override fun stepper(): Stepper<Double, PointConstraint> =
         Stepper {
             object : PointConstraint {
                 override val maxVelocity: Double = getMaxVelocity(it)
-                override fun accelRange(curVelocity: Double): Interval = getMaxAccel(it, curVelocity)
+                override fun accelRange(currentVelocity: Double): Interval = getMaxAccel(it, currentVelocity)
             }
         }
 }

@@ -5,7 +5,7 @@ import org.futurerobotics.jargon.math.DoubleProgression
 import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.nextVector2d
 import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
-import org.futurerobotics.jargon.util.allPairs
+import org.futurerobotics.jargon.util.mapAllPairs
 import org.futurerobotics.jargon.util.stepToAll
 import org.junit.Assert
 import org.junit.Test
@@ -58,7 +58,7 @@ internal class CurveTest(private val curve: Curve, private val allS: List<Double
             }
             rawCurves.shuffle()
             val curves = rawCurves.chunked(4) { MultipleCurve(it, checkContinuity = false) }
-            return allPairs(curves, progressions) { c, p -> arrayOf(c, p) }
+            return mapAllPairs(curves, progressions) { c, p -> arrayOf(c, p) }
         }
     }
 }

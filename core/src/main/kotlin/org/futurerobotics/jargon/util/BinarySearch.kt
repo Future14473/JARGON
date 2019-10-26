@@ -18,7 +18,7 @@ import org.futurerobotics.jargon.math.avg
  *
  * This works by first looking at the interval starting at [rangeMin], and upwards a step of [tolerance].
  * If both endpoints returns false (`x` is not in this interval), this then looks at another interval from the end of the
- * old interval and a step double the size. This is repeated until an interval switches [partition] is found (`x` is in
+ * old interval, and a step double the size. This is repeated until an interval switches [partition] is found (`x` is in
  * the interval), then performs normal binary search on the new interval.
  *
  * _This has not been tested with extreme values (where excessive rounding may occur). It is the user's responsibility
@@ -133,7 +133,7 @@ inline fun doubleBinarySearch(
  *
  * This works by first looking at the interval starting at [rangeMin], and upwards a step of 1.
  * If both endpoints returns false (`x` is not in this interval), this then looks at another interval from the end of the
- * old interval and a step double the size. This is repeated until an interval switches [partition] is found (`x` is in
+ * old interval, and a step double the size. This is repeated until an interval switches [partition] is found (`x` is in
  * the interval), then performs normal binary search on the new interval.
  *
  * This takes `O(log(x-initialValue))`

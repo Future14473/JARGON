@@ -1,10 +1,8 @@
 package org.futurerobotics.jargon.hardware
 
-import org.futurerobotics.jargon.system.InitStoppable
+/** Represents a gyroscope, with only [currentAngle] readings. */
+interface Gyro {
 
-
-/** Represents a gyroscope */
-interface Gyro : InitStoppable {
-    /** Gets the current angle in radians. */
+    /** Gets the current angle in radians. It is recommended to normalize the angle. */
     val currentAngle: Double
 }

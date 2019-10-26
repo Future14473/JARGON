@@ -2,7 +2,8 @@ package org.futurerobotics.jargon.blocks
 
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
 import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST_ALWAYS
-import org.futurerobotics.jargon.system.SimpleLoopSystemDriver
+import org.futurerobotics.jargon.system.looping.LoopAsFastAsPossible
+import org.futurerobotics.jargon.system.looping.LoopSystemRunner
 import org.junit.jupiter.api.Test
 import strikt.api.expectCatching
 import strikt.api.expectThat
@@ -74,7 +75,7 @@ internal class BlocksSystemTest {
 
         expectThat(monitor) {
             repeat(4) { i ->
-                system.init()
+                system.start()
                 system.loop()
                 get { value }.describedAs("restart #$i")
                     .isEqualTo("H0[C0[B0[A, E0-, null]], G0[C0[B0[A, E0-, null]], F0[B1[A, E0-, null], D0-]]]")
@@ -115,7 +116,7 @@ internal class BlocksSystemTest {
         }
         repeat(10) { i ->
             externalConstant.value = i
-            SimpleLoopSystemDriver().run(system)
+            LoopSystemRunner(system, LoopAsFastAsPossible()).run()
             expectThat(monitor.value).isEqualTo(i)
         }
     }

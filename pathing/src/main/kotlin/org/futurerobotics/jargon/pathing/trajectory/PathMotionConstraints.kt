@@ -3,9 +3,9 @@ package org.futurerobotics.jargon.pathing.trajectory
 import org.futurerobotics.jargon.math.EPSILON
 import org.futurerobotics.jargon.math.Interval
 import org.futurerobotics.jargon.math.notNaNOrElse
-import org.futurerobotics.jargon.math.squared
 import org.futurerobotics.jargon.pathing.PathPoint
 import kotlin.math.abs
+import kotlin.math.pow
 import kotlin.math.sqrt
 
 /**
@@ -70,7 +70,7 @@ class MaxTotalAccelConstraint(max: Double) : MultipleConstraint {
         //== sqrt(max^2-center^2)
         //super: unambiguous
         override fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval = Interval.symmetric(
-            sqrt(super.max.squared() - (point.tanAngleDeriv * curVelocity.squared()).squared())
+            sqrt(super.max.pow(2) - (point.tanAngleDeriv * curVelocity.pow(2)).pow(2))
                 .notNaNOrElse { 0.0 }
         )
     }
@@ -96,7 +96,7 @@ class MaxPathAngularAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) 
         val deriv = point.tanAngleDeriv
         return if (deriv == 0.0) Interval.REAL else
             Interval.symmetricRegular(
-                max / deriv, -point.tanAngleSecondDeriv * curVelocity.squared() / deriv
+                max / deriv, -point.tanAngleSecondDeriv * curVelocity.pow(2) / deriv
             )
     }
 }
@@ -120,7 +120,7 @@ class MaxAngularAccelConstraint(max: Double) : MaxBasedAccelConstraint(max) {
         val deriv = point.headingDeriv
         return if (deriv == 0.0) Interval.REAL else
             Interval.symmetricRegular(
-                max / deriv, -point.headingSecondDeriv * curVelocity.squared() / deriv
+                max / deriv, -point.headingSecondDeriv * curVelocity.pow(2) / deriv
             )
     }
 

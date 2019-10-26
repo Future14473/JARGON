@@ -34,12 +34,12 @@ abstract class AbstractBlock constructor(
     /**
      * Gets a [BlocksConfig.Input] for this block, with the given [index].
      *
-     * It is the users responsibility to make sure that the generic is of the right type.
+     * It is the user's responsibility to make sure that the generic is of the right type.
      *
      * Subclasses should use this to provide inputs/outputs.
      * @see [configOutput]
      */
-    protected open fun <T> configInput(index: Int): BlocksConfig.Input<T> {
+    protected fun <T> configInput(index: Int): BlocksConfig.Input<T> {
         if (index !in 0..numInputs) throw IndexOutOfBoundsException(index)
         return BlocksConfig.Input.ofUnsafeCast(this, index)
     }
@@ -52,7 +52,7 @@ abstract class AbstractBlock constructor(
      * Subclasses should use this to provide inputs/outputs.
      * @see [configInput]
      */
-    protected open fun <T> configOutput(index: Int): BlocksConfig.Output<T> {
+    protected fun <T> configOutput(index: Int): BlocksConfig.Output<T> {
         if (index !in 0..numOutputs) throw IndexOutOfBoundsException(index)
         return BlocksConfig.Output.ofUnsafeCast(this, index)
     }
@@ -250,7 +250,7 @@ abstract class PipeBlock<T, R> @JvmOverloads constructor(processing: Block.Proce
     companion object {
         /** Creates a [PipeBlock] using the given [pipe] function. */
         @JvmStatic
-        inline fun <T, R> of(crossinline pipe: (T) -> R): PipeBlock<T, R> = object : PipeBlock<T, R>(IN_FIRST_LAZY) {
+        inline fun <T, R> with(crossinline pipe: (T) -> R): PipeBlock<T, R> = object : PipeBlock<T, R>(IN_FIRST_LAZY) {
             override fun pipe(input: T): R = pipe(input)
         }
     }

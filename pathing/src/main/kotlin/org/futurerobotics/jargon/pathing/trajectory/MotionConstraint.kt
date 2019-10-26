@@ -25,6 +25,7 @@ interface SingleConstraint : MotionConstraint {
      *
      * If not known, return false.
      */
+    @JvmDefault
     fun otherIsRedundant(other: SingleConstraint): Boolean = false
 }
 

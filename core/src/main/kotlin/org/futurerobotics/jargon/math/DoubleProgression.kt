@@ -12,9 +12,11 @@ import kotlin.math.ceil
  * @param step the step size of this progression.
  * @param segments The number of "segments" in this progression, equal to the number of values - 1.
  */
-class DoubleProgression
-private constructor( //see factory methods
-    val first: Double, val last: Double, val step: Double, val segments: Int
+class DoubleProgression private constructor(
+    val first: Double,
+    val last: Double,
+    val step: Double,
+    val segments: Int
 ) : Iterable<Double> {
 
     /**
@@ -52,7 +54,6 @@ private constructor( //see factory methods
         result = 31 * result + segments
         return result
     }
-
 
     companion object {
         /**

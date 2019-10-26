@@ -4,6 +4,7 @@ package org.futurerobotics.jargon.blocks.motion
 
 import org.futurerobotics.jargon.blocks.*
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
 import org.futurerobotics.jargon.blocks.control.FixedDriveMotorToBotDelta
 import org.futurerobotics.jargon.blocks.control.FixedDriveMotorToBotVel
 import org.futurerobotics.jargon.math.Pose2d
@@ -103,13 +104,13 @@ class GlobalPoseTrackerFromDeltaAndGyro(initialPose: Pose2d = Pose2d.ZERO) : Abs
  * @see GlobalToBotMotion
  */
 class GlobalToBotReference :
-    CombineBlock<MotionState<Pose2d>, Pose2d, MotionState<Pose2d>>(Block.Processing.IN_FIRST_LAZY) {
+    CombineBlock<MotionState<Pose2d>, Pose2d, MotionState<Pose2d>>(IN_FIRST_LAZY) {
 
     override fun combine(a: MotionState<Pose2d>, b: Pose2d): MotionState<Pose2d> = GlobalToBot.referenceMotion(a, b)
     /** The pose reference input */
-    val referenceIn: BlocksConfig.Input<MotionState<Pose2d>> get() = firstInput
+    val globalState: BlocksConfig.Input<MotionState<Pose2d>> get() = firstInput
     /** The actual global pose input */
-    val globalPoseIn: BlocksConfig.Input<Pose2d> get() = secondInput
+    val globalPose: BlocksConfig.Input<Pose2d> get() = secondInput
 }
 
 /**
@@ -119,11 +120,11 @@ class GlobalToBotReference :
  * This is how global motion is translated into bot motion.
  * @see GlobalToBotReference
  */
-class GlobalToBotMotion : CombineBlock<MotionOnly<Pose2d>, Pose2d, MotionOnly<Pose2d>>(Block.Processing.IN_FIRST_LAZY) {
+class GlobalToBotMotion : CombineBlock<MotionOnly<Pose2d>, Pose2d, MotionOnly<Pose2d>>(IN_FIRST_LAZY) {
 
     override fun combine(a: MotionOnly<Pose2d>, b: Pose2d): MotionOnly<Pose2d> = GlobalToBot.motion(a, b.heading)
     /** The pose reference input */
-    val reference: BlocksConfig.Input<MotionOnly<Pose2d>> get() = firstInput
+    val globalMotion: BlocksConfig.Input<MotionOnly<Pose2d>> get() = firstInput
     /** The global pose input */
     val globalPose: BlocksConfig.Input<Pose2d> get() = secondInput
 }

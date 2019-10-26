@@ -3,7 +3,7 @@ package org.futurerobotics.jargon.mechanics
 import org.futurerobotics.jargon.math.Vector2d
 
 /**
- * A model for a wheel on a bot that cannot change location or direction on the bot.
+ * A simple model for a wheel on a bot that cannot change location or direction on the bot.
  *
  * @param transmission the transmission model
  * @param position where the wheel is located on a bot relative to the center of the bot
@@ -38,7 +38,7 @@ class FixedWheelModel private constructor(
     /**
      * Gets the expected amount of volts per velocity to maintain the wheel moving at a constant speed.
      */
-    val voltsPerWheelVel: Double get() = transmission.voltsPerAngVel / radius
+    val motorVoltsPerWheelVel: Double get() = transmission.voltsPerAngVel / radius
     /**
      * @see [TransmissionModel.voltsForFriction]
      */

@@ -137,7 +137,7 @@ abstract class BlocksConfig {
      * Useful for quick transformations.
      */
     inline fun <T, R> Output<T>.pipe(crossinline transform: T.() -> R): Output<R> =
-        PipeBlock.of(transform).also { this into it }
+        PipeBlock.with(transform).also { this into it }
 
     /**
      * Adds the given [combineBlock], connects [this] and [other] to its first and second inputs, and returns the
@@ -172,7 +172,7 @@ abstract class BlocksConfig {
      * Useful for quick transformations.
      */
     inline fun <A, B, R> combine(
-        first: Output<A>, second: Output<B>, crossinline combine: A.(B) -> R
+        first: Output<A>, second: Output<B>, crossinline combine: (A, B) -> R
     ): Output<R> = CombineBlock.of(combine)() { first into firstInput; second into secondInput }
 
     /** Runs the [configuration] block on `this`, then returns it. kotlin DSL. */

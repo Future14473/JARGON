@@ -7,13 +7,9 @@ package org.futurerobotics.jargon.math
 
 import kotlin.math.*
 
-/**
- * TAU, which is 2*[PI]
- */
+/** TAU, which is 2*[PI] */
 const val TAU: Double = 2 * PI
-/**
- * The leniency given to Double comparison in [epsEq] and related functions.
- */
+/** The default leniency given to Double comparison in [epsEq] and related functions. */
 const val EPSILON: Double = 1e-8
 
 /**
@@ -43,36 +39,17 @@ fun max(a: Double, b: Double, c: Double, d: Double): Double = max(max(a, b), max
 /** Returns the maximum difference between [a], [b] and [c]. If any value is `NaN`, the result is 'NaN` */
 fun maxDiff(a: Double, b: Double, c: Double): Double = max(abs((a - b)), abs((b - c)), abs((c - a)))
 
-/** [this] value squared.*/
-fun Double.squared(): Double = this * this
-
-/** [this] value squared.*/
-fun Int.squared(): Int = this * this
-
-/** [this] value cubed.*/
-fun Double.cubed(): Double = this.pow(3)
-
 /** The distance from this value to another value. Equal to `abs(this-v)` */
 infix fun Double.distTo(v: Double): Double = abs(this - v)
 
-/** The distance from this value to another value. Equal to `abs(this-v)` */
-infix fun Int.distTo(v: Int): Int = abs(this - v)
-
 /** Normalizes an angle value to be between `-PI` and `PI` */
-fun angleNorm(angle: Double): Double = angle - TAU * floor((angle + PI) / TAU)
-
-/** Calculates the curvature at a point on a 2d curve given its first and second derivatives */
-fun calcCurvature(v: Vector2d, a: Vector2d): Double = (v cross a) / v.lengthPow(3.0)
-
-/** Calculates the curvature's derivative at a point on a 2d curve given its first, second, and third derivatives */
-fun calcCurvatureDeriv(v: Vector2d, a: Vector2d, j: Vector2d): Double =
-    (v cross j) / v.lengthPow(3.0) - 3 * (v cross a) * (v dot a) / v.lengthPow(5.0)
+fun angleNorm(angle: Double): Double = angle - TAU * round(angle / TAU)
 
 /**
  * Performs the common operation `sin(x)/x`.
  */
 fun sinc(x: Double): Double = when {
-    x epsEq 0.0 -> 1 - x.squared() / 6
+    x epsEq 0.0 -> 1 - x.pow(2) / 6
     else -> sin(x) / x
 }
 

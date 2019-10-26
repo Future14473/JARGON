@@ -9,7 +9,6 @@ import strikt.api.expect
 import strikt.api.expectThat
 import kotlin.random.Random
 
-
 internal class ModelsSanityTest {
 
     @Test
@@ -50,8 +49,8 @@ internal class ModelsSanityTest {
             5.0, 7.0
         )
         expectThat(differential) {
-            val forward = Pose2d(1.0, 0.0, 0.0).toVector()
-            val turn = Pose2d(0.0, 0.0, 1.0).toVector()
+            val forward = Pose2d(1.0, 0.0, 0.0).toVec()
+            val turn = Pose2d(0.0, 0.0, 1.0).toVec()
             //prime numbers!
             //mass 2.0
             //moi: 3.0
@@ -60,17 +59,16 @@ internal class ModelsSanityTest {
             //gear ratio: 2
             //transmission loss: 1/2
             //motor: unit
-            get { wheelVelFromBotVel * forward } isEpsEqTo vec[1, 1] //at output: [1,1],
-            get { wheelVelFromBotVel * turn } isEpsEqTo vec[-7, 7] //since radius = 7
+            get { wheelVelFromBotVel * forward } isEpsEqTo vec(1, 1) //at output: [1,1],
+            get { wheelVelFromBotVel * turn } isEpsEqTo vec(-7, 7) //since radius = 7
             //at output: 1, At transmission: 1/5. At motor: 2/5
-            get { voltsFromBotVel * forward } isEpsEqTo vec[.4, .4]
-            get { voltsFromBotVel * turn } isEpsEqTo vec[-7.0 / 5 * 2, 7.0 / 5 * 2]
+            get { voltsFromBotVel * forward } isEpsEqTo vec(.4, .4)
+            get { voltsFromBotVel * turn } isEpsEqTo vec(-7.0 / 5 * 2, 7.0 / 5 * 2)
             //2N / 2 motors *(wheel radius), 5, transmission loss/2, gear ratio * 2
-            get { voltsFromBotAccel * forward } isEpsEqTo vec[5.0, 5.0]
+            get { voltsFromBotAccel * forward } isEpsEqTo vec(5.0, 5.0)
             //3 Nm/7m/2 *5/4
-            get { voltsFromBotAccel * turn } isEpsEqTo vec[-3.0 / 7 / 2 * 5, 3.0 / 7 / 2 * 5]
+            get { voltsFromBotAccel * turn } isEpsEqTo vec(-3.0 / 7 / 2 * 5, 3.0 / 7 / 2 * 5)
         }
-
     }
 
     companion object {
@@ -83,7 +81,5 @@ internal class ModelsSanityTest {
         val halfLossTransmission = TransmissionModel.fromTorqueLosses(idealUnitMotor, 1.0, 0.0, 0.5)
 
         val negativeGearedTransmission = TransmissionModel.fromTorqueLosses(idealUnitMotor, -2.0)
-
-
     }
 }

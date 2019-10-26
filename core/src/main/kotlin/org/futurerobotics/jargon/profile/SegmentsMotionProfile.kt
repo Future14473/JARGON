@@ -1,11 +1,11 @@
 package org.futurerobotics.jargon.profile
 
 import org.futurerobotics.jargon.math.avg
-import org.futurerobotics.jargon.math.squared
 import org.futurerobotics.jargon.mechanics.LinearMotionState
 import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.isSortedBy
 import org.futurerobotics.jargon.util.replaceIf
+import kotlin.math.pow
 
 /**
  * A [MotionProfile] composed of interpolated segments with constant acceleration, for one-dimensional motion.
@@ -51,6 +51,7 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
 
     /** A pre-calculated representation of the endpoints of segments. */
     private class Segment(val state: LinearMotionState, val t: Double) {
+
         val x get() = state.s
         fun stateAtTime(t: Double) = state.afterTime(t - this.t)
         fun stateAtDist(x: Double) = state.atDist(x)
@@ -76,7 +77,7 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
             val segs = pairs.zipWithNext { (x1, v1), (x2, v2) ->
                 require(!(v1 == 0.0 && v2 == 0.0)) { "Velocity can only be instantaneously 0, got two 0 velocities." }
                 val dx = x2 - x1
-                val a = (v2.squared() - v1.squared()) / 2 / dx //acceleration given (positive) velocities
+                val a = (v2.pow(2) - v1.pow(2)) / 2 / dx //acceleration given (positive) velocities
                 val seg = Segment(LinearMotionState(x1, v1, a), t)
                 val dt = dx / avg(v1, v2)
                 t += dt

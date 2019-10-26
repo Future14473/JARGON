@@ -3,7 +3,7 @@ package org.futurerobotics.jargon.pathing
 import org.futurerobotics.jargon.math.Derivatives
 import org.futurerobotics.jargon.math.ValueDerivatives
 import org.futurerobotics.jargon.math.angleNorm
-import org.futurerobotics.jargon.math.function.MathFunction
+import org.futurerobotics.jargon.math.function.RealFunction
 
 /** A [HeadingProvider] that maintains a constant heading of [angle] */
 class ConstantHeading(angle: Double) : HeadingProvider {
@@ -48,7 +48,7 @@ class OffsetTangentHeading(angleOffset: Double) : HeadingProvider {
  * A [HeadingProvider] that uses an arbitrary function on the domain [0, 1] corresponding to progress along a curve
  * to provide heading.
  */
-class FunctionHeading(private val function: MathFunction) : HeadingProvider {
+class FunctionHeading(private val function: RealFunction) : HeadingProvider {
 
     override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = object : Derivatives<Double> {
         private val t = s / point.length

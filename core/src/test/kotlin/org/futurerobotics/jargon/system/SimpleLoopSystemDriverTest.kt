@@ -1,5 +1,9 @@
 package org.futurerobotics.jargon.system
 
+import org.futurerobotics.jargon.system.looping.LoopAsFastAsPossible
+import org.futurerobotics.jargon.system.looping.LoopSystem
+import org.futurerobotics.jargon.system.looping.LoopSystemRunner
+import org.futurerobotics.jargon.system.looping.LoopWithMaxSpeed
 import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
 import strikt.api.expect
@@ -12,7 +16,7 @@ private class RunTimes(var times: Int) : LoopSystem {
     var number = 0
 
     var finalNumber = 0
-    override fun init() {
+    override fun start() {
         number = 0
     }
 
@@ -26,21 +30,20 @@ private class RunTimes(var times: Int) : LoopSystem {
     }
 }
 
-
 internal class SimpleLoopSystemDriverTest {
     @Test
     fun `it stops`() {
         expect {
             repeat(10) {
                 val system = RunTimes(it + 1)
-                SimpleLoopSystemDriver().run(system)
+                LoopSystemRunner(system, LoopAsFastAsPossible()).run()
                 that(system.finalNumber).isEqualTo(it + 1)
             }
         }
     }
 
-    private fun warmup() {
-        SimpleLoopSystemDriver().run(RunTimes(5000))
+    private fun warmUp() {
+        LoopSystemRunner(RunTimes(5000), LoopAsFastAsPossible()).run()
     }
 
     @RepeatedTest(4)
@@ -48,12 +51,12 @@ internal class SimpleLoopSystemDriverTest {
         val hertz = 100.0
         val regulator = LoopWithMaxSpeed(hertz)
         val system = RunTimes(1)//only regulated on 2nd cycle onward.
-        val driver = SimpleLoopSystemDriver(regulator)
-        warmup()
+        warmUp()
         for (times in 10..12) {
             system.times = times + 1 //regulated 1 less time.
+            val runner = LoopSystemRunner(system, regulator)
             val time = measureNanoTime {
-                driver.run(system)
+                runner.run()
             } / 1e9
             expectThat(time).isIn((times / hertz).let { 0.95 * it..1.8 * it })//it might be slow
         }

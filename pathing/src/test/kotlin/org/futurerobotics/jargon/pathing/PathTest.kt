@@ -6,7 +6,7 @@ import org.futurerobotics.jargon.math.TAU
 import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.nextVector2d
 import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
-import org.futurerobotics.jargon.util.allPairs
+import org.futurerobotics.jargon.util.mapAllPairs
 import org.futurerobotics.jargon.util.stepToAll
 import org.junit.Assert
 import org.junit.Test
@@ -66,11 +66,11 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
                     0.0, random.nextDouble(30.0), random.nextInt(10_000, 80_000)
                 ).toList()
             }
-            val rawPaths = allPairs(curves, headings)
+            val rawPaths = mapAllPairs(curves, headings)
                 .mapTo(ArrayList()) { it.first.addHeading(it.second) }
             rawPaths.shuffle()
             val paths = rawPaths.chunked(4) { MultiplePath(it, checkContinuity = false) }
-            return allPairs(paths, progressions).map { arrayOf(it.first, it.second) }
+            return mapAllPairs(paths, progressions).map { arrayOf(it.first, it.second) }
         }
     }
 }

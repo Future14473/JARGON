@@ -3,7 +3,7 @@ package org.futurerobotics.jargon.pathing.reparam
 import org.futurerobotics.jargon.Debug
 import org.futurerobotics.jargon.math.DoubleProgression
 import org.futurerobotics.jargon.math.function.QuinticSpline
-import org.futurerobotics.jargon.util.allPairs
+import org.futurerobotics.jargon.util.mapAllPairs
 import org.futurerobotics.jargon.util.stepToAll
 import org.junit.Assert
 import org.junit.Test
@@ -48,7 +48,7 @@ internal class ReparamMappingTest(private val mapping: SamplesReparamMapping, pr
                     random.nextDouble(-20.0, 5.0), random.nextDouble(40.0), random.nextInt(10_000, 80_000)
                 ).toList()
             }
-            return allPairs(mappings, progressions).map { arrayOf(it.first, it.second) }
+            return mapAllPairs(mappings, progressions).map { arrayOf(it.first, it.second) }
         }
     }
 }

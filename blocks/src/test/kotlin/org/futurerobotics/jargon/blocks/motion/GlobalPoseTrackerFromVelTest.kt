@@ -17,7 +17,7 @@ internal class GlobalPoseTrackerFromVelTest {
         //    |
         // y<-+
         val (system, velocity, position) = getSystem(Pose2d(1.0, 0.0, 0.0))
-        system.init()
+        system.start()
         velocity.value = Pose2d(0.0, 1.0, 1.0)//1 radian per second CCW, 1 unit per second, forward
         expectThat(position) {
             val random = Random("unit circle walk".hashCode())
@@ -36,7 +36,7 @@ internal class GlobalPoseTrackerFromVelTest {
         val random = Random("random lines".hashCode())
         val (system, velocity, position) = getSystem(Pose2d.ZERO)
         var expectedPose = Pose2d.ZERO
-        system.init()
+        system.start()
         repeat(200) {
             val timeNanos = random.nextLong(0, 1_000_000_000)
             val time = timeNanos / 1e9

@@ -3,15 +3,15 @@ package org.futurerobotics.jargon.math
 import kotlin.math.abs
 
 /**
- * Represents an Interval on the number line, represented by two endpoints, and is better than ClosedFloatingPointRange
- * If the interval is empty, both the endpoints will be NaN.
+ * Represents an Interval on the number line, represented by two endpoints.
+ * May have endpoints of NaN if empty.
  *
  * See factory methods.
  *
  * @param a The lower bound of this interval.
  * @param b The upper bound of this interval. Can be [Double.POSITIVE_INFINITY]
  */
-data class Interval(val a: Double, val b: Double) {
+class Interval private constructor(val a: Double, val b: Double) {
 
     /** If this interval is empty (contains no values) */
     fun isEmpty(): Boolean = a.isNaN() || b.isNaN() || a > b
@@ -46,10 +46,10 @@ data class Interval(val a: Double, val b: Double) {
 
     /** @return the intersection of this interval with another. */
     fun intersect(other: Interval): Interval {
-        if (this.isEmpty() || other.isEmpty() || other.a > this.b || this.a > other.b) return EMPTY
+        if (this.isEmpty() || other.isEmpty() || other.a > b || a > other.b) return EMPTY
         val gta: Interval
         val lta: Interval
-        if (this.a < other.a) {
+        if (a < other.a) {
             gta = other
             lta = this
         } else {
@@ -60,27 +60,18 @@ data class Interval(val a: Double, val b: Double) {
         return Interval(gta.a, lta.b)  //lta[ gta(--] )
     }
 
+    override fun equals(other: Any?): Boolean = when {
+        this === other -> true
+        other !is Interval -> false
+        else -> a == other.a && b == other.b
+    }
+
+    override fun hashCode(): Int = 31 * a.hashCode() + b.hashCode()
+
     override fun toString(): String = when {
         isEmpty() -> "Interval [Empty]"
         else -> "Interval [$a, $b]"
     }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is Interval) return false
-
-        if (a != other.a) return false
-        if (b != other.b) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = a.hashCode()
-        result = 31 * result + b.hashCode()
-        return result
-    }
-
 
     companion object {
         /** An empty interval */
@@ -175,4 +166,4 @@ infix fun Double.coerceIn(i: Interval): Double =
 /**
  * Returns this Double range as an interval.
  */
-fun ClosedFloatingPointRange<Double>.asInterval(): Interval = Interval.of(this.start, this.endInclusive)
+fun ClosedFloatingPointRange<Double>.asInterval(): Interval = Interval.of(start, endInclusive)

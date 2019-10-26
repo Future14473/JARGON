@@ -2,7 +2,7 @@ package org.futurerobotics.jargon.blocks
 
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
 import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST_ALWAYS
-import org.futurerobotics.jargon.util.forEachZipped
+import org.futurerobotics.jargon.util.zipForEach
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -11,7 +11,7 @@ internal class TestCompositeBlock : CompositeBlock(2, 2, IN_FIRST_ALWAYS) {
     override fun configSubsystem(
         sources: List<BlocksConfig.Output<Any?>>, outputs: List<BlocksConfig.Input<Any?>>
     ): BlocksConfig = BaseBlocksConfig().apply {
-        forEachZipped(sources, outputs) { a, b ->
+        sources.zipForEach(outputs) { a, b ->
             a into b
         }
     }
@@ -48,7 +48,7 @@ internal class CompositeBlockTest {
 
         expectThat(monitor) {
             repeat(4) { i ->
-                system.init()
+                system.start()
                 system.loop()
                 get { value }.describedAs("restart #$i")
                     .isEqualTo("H0[C0[B0[A, E0-, null]], G0[C0[B0[A, E0-, null]], F0[B1[A, E0-, null], D0-]]]")

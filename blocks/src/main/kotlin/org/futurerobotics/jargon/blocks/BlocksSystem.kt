@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.system.LoopSystem
+import org.futurerobotics.jargon.system.looping.LoopSystem
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -17,7 +17,8 @@ import kotlin.contracts.contract
  * This is the bridge to _systems_ via [LoopSystem]. Hurray for decoupling.
  */
 @Suppress("RedundantVisibilityModifier")
-class BlocksSystem(config: BlocksConfig) : AbstractBlocksRunner(config), LoopSystem {
+class BlocksSystem(config: BlocksConfig) : AbstractBlocksRunner(config),
+                                           LoopSystem {
 
     private val specials: Map<Class<*>, SpecialBlock>
     private val _systemValues = object : SystemValues {
@@ -43,7 +44,7 @@ class BlocksSystem(config: BlocksConfig) : AbstractBlocksRunner(config), LoopSys
         this.specials = specials.associateByTo(HashMap()) { it.javaClass }
     }
 
-    public override fun init() {
+    public override fun start() {
         super.init()
     }
 

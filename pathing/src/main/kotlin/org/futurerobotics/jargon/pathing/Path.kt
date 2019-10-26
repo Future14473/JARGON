@@ -20,16 +20,12 @@ interface GenericPath<out Point : CurvePoint> : Steppable<Double, Point> {
      */
     val length: Double
 
-    /**
-     * Returns a Point containing info about the point [s] units along this path.
-     */
+    /** Returns a Point containing info about the point [s] units along this path. */
     fun pointAt(s: Double): Point
 
-    /**
-     * Gets a stepper that steps through points along the path, returning a Point containing info about that point.
-     */
-    override fun stepper(): Stepper<Double, Point> =
-        Stepper { pointAt(it) }
+    /** Gets a stepper that steps through points along the path, returning a Point containing info about that point. */
+    @JvmDefault
+    override fun stepper(): Stepper<Double, Point> = Stepper { pointAt(it) }
 }
 
 /**

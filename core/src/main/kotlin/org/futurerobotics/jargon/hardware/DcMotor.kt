@@ -1,11 +1,9 @@
 package org.futurerobotics.jargon.hardware
 
-import org.futurerobotics.jargon.system.InitStoppable
-
 /**
  * Represents a DcMotor. Links directly to hardware (or simulation).
  */
-interface DcMotor : InitStoppable {
+interface DcMotor {
 
     /**
      * The max voltage this motor can take.
@@ -36,12 +34,12 @@ interface DcMotor : InitStoppable {
     /**
      * Performs any necessary configurations on this motor before start.
      */
-    override fun init()
+    fun init()
 
     /**
-     * Stops this motor completely.
+     * Stops this motor now.
      */
-    override fun stop() {
+    fun stop() {
         voltage = 0.0
     }
 }

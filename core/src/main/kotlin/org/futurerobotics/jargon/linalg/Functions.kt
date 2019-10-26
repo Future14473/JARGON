@@ -1,7 +1,6 @@
 @file:JvmName("MatrixFuncs")
 @file:Suppress("KDocMissingDocumentation")
 
-
 package org.futurerobotics.jargon.linalg
 
 import org.hipparchus.linear.RealMatrixPreservingVisitor
@@ -19,7 +18,6 @@ fun Mat.normMax(): Double = walkInOptimizedOrder(object : RealMatrixPreservingVi
     override fun start(rows: Int, columns: Int, startRow: Int, endRow: Int, startColumn: Int, endColumn: Int) {
     }
 })
-
 
 private const val c0 = 1.0
 private const val c1 = 0.5
@@ -54,12 +52,12 @@ fun expm(mat: Mat): Mat {
     val As_4 = As_2 * As_2
     val As_6 = As_4 * As_2
     // U = c0*I + c2*A^2 + c4*A^4 + (c6*I + c8*A^2 + c10*A^4 + c12*A^6)*A^6
-    val U = (eye(n) * c0) addI (c2 * As_2) addI (c4 * As_4) addI
-            ((eye(n) * c6) addI (c8 * As_2) addI (c10 * As_4) addI (c12 * As_6)) * As_6
+    val U = (idenMat(n) * c0) addI (c2 * As_2) addI (c4 * As_4) addI
+            ((idenMat(n) * c6) addI (c8 * As_2) addI (c10 * As_4) addI (c12 * As_6)) * As_6
 
     // V = c1*I + c3*A^2 + c5*A^4 + (c7*I + c9*A^2 + c11*A^4 + c13*A^6)*A^6
-    val V = (eye(n) * c1) addI (As_2 * c3) addI (As_4 * c5) addI
-            ((eye(n) * c7) addI (c9 * As_2) addI (c11 * As_4) addI (c13 * As_6)) * As_6
+    val V = (idenMat(n) * c1) addI (As_2 * c3) addI (As_4 * c5) addI
+            ((idenMat(n) * c7) addI (c9 * As_2) addI (c11 * As_4) addI (c13 * As_6)) * As_6
 
     val AV = As * V
     val N = U + AV
@@ -77,9 +75,8 @@ fun expm(mat: Mat): Mat {
 }
 
 /**
- * Decompose a even-sided square matrix into 4 quadrants,
- * in `[m11, m12;
- *      m21, m22]` order.
+ * Gets a quadrant of the matrix in `[m11, m12; m21, m22]` order,
+ * splitting square at [splitIndex]
  */
 fun Mat.getQuad(splitIndex: Int, row: Int, col: Int): Mat {
     require(isSquare) { "Matrix must be square" }

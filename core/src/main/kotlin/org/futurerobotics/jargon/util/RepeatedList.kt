@@ -1,9 +1,10 @@
 package org.futurerobotics.jargon.util
 
 /**
- * A list which only has one value repeated.
+ * A list that only has one [value] repeated [size] times. Create using [repeatedList]
  */
 private class RepeatedList<T>(override val size: Int, private val value: T) : AbstractList<T>() {
+
     override fun contains(element: T): Boolean = element == value
 
     override fun containsAll(elements: Collection<T>): Boolean = elements.all { it == value }
@@ -24,8 +25,6 @@ private class RepeatedList<T>(override val size: Int, private val value: T) : Ab
         require(fromIndex <= toIndex) { "fromIndex: $fromIndex > toIndex: $toIndex" }
         return repeatedList(toIndex - fromIndex, value)
     }
-
-
 }
 
 /**
