@@ -24,7 +24,7 @@ internal class ConstraintTest {
         QuinticSpline.fromDerivatives(start, end).reparamByIntegration().addHeading(TangentHeading)
     }.let { MultiplePath(it) }
     private val motionConstraints = MotionConstraintSet(
-        MaxVelocityConstraint(10.0),
+        MaxVelConstraint(10.0),
         MaxTotalAccelConstraint(1.0),
         MaxAngularAccelConstraint(0.2)
     )

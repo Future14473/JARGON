@@ -10,7 +10,8 @@ import org.futurerobotics.jargon.util.Stepper
 interface HeadingProvider {
 
     /**
-     * Gets a heading's derivatives at the point [s] units along the curve, using info provided by the [CurvePoint] [point]
+     * Gets a heading's derivatives at the point [s] units along the curve, using info provided by
+     * the [CurvePoint] [point]
      */
     fun getHeading(point: CurvePoint, s: Double): Derivatives<Double>
 }
@@ -51,5 +52,4 @@ class ComponentPath(internal val curve: Curve, private val heading: HeadingProvi
 }
 
 /** Convenience extension function for creating a [ComponentPath] with this curve and a [HeadingProvider] */
-fun Curve.addHeading(heading: HeadingProvider): ComponentPath =
-    ComponentPath(this, heading)
+fun Curve.addHeading(heading: HeadingProvider): ComponentPath = ComponentPath(this, heading)

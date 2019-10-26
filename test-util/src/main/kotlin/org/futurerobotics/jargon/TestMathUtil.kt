@@ -15,7 +15,7 @@ const val ADJUST_THRESH: Double = 10.0
  * Gets a reasonable value for the error from this vector to that vector.
  */
 infix fun Vector2d.errorTo(that: Vector2d): Double {
-    val thisLen = this.length
+    val thisLen = length
     val otherLen = that.length
     val err = this distTo that
     val totalLen = thisLen + otherLen

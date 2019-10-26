@@ -1,3 +1,5 @@
+@file:JvmName("ReversePaths")
+
 package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.Vector2d
@@ -28,7 +30,7 @@ private open class ReversePoint<Point : CurvePoint>(protected val point: Point) 
 private typealias ReverseCurvePoint = ReversePoint<CurvePoint>
 
 private class ReversePathPoint(point: PathPoint) : ReversePoint<PathPoint>(point),
-    PathPoint {
+                                                   PathPoint {
 
     override val heading: Double
         get() = point.heading
@@ -39,12 +41,14 @@ private class ReversePathPoint(point: PathPoint) : ReversePoint<PathPoint>(point
 }
 
 private class ReverseCurve(curve: Curve) : ReverseGeneric<Curve, CurvePoint>(curve),
-    Curve {
+                                           Curve {
+
     override fun mapPoint(point: CurvePoint): CurvePoint = ReverseCurvePoint(point)
 }
 
 private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path),
-    Path {
+                                        Path {
+
     override fun mapPoint(point: PathPoint): PathPoint = ReversePathPoint(point)
 
     override val isPointTurn: Boolean

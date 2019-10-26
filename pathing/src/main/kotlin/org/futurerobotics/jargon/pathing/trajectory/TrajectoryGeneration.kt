@@ -10,7 +10,7 @@ import org.futurerobotics.jargon.util.Stepper
 
 
 /**
- * A collection of [VelocityConstraint]s, [AccelConstraint]s, and (flattened) [MultipleConstraint] used to construct
+ * A collection of [VelConstraint]s, [AccelConstraint]s, and (flattened) [MultipleConstraint] used to construct
  * a [TrajectoryConstrainer] when paired with a Path for dynamic motion profile generation.
  *
  * This class is here because it can be reused when creating trajectories; however since the path may change
@@ -21,12 +21,12 @@ import org.futurerobotics.jargon.util.Stepper
  * of a 100,000 so that the algorithm doesn't die. This is usually not ideal, so put at least one constraint.
  */
 class MotionConstraintSet(
-    velocityConstraints: Iterable<VelocityConstraint>, accelConstraints: Iterable<AccelConstraint>,
+    velConstraints: Iterable<VelConstraint>, accelConstraints: Iterable<AccelConstraint>,
     multipleConstraints: Iterable<MultipleConstraint> = emptyList()
 ) {
     /** This set's velocity constraints */
-    val velocityConstraints: List<VelocityConstraint> =
-        (velocityConstraints + multipleConstraints.flatMap { it.velocityConstraints })
+    val velConstraints: List<VelConstraint> =
+        (velConstraints + multipleConstraints.flatMap { it.velConstraints })
             .removeRedundant()
             .takeIf { it.isNotEmpty() } ?: FALLBACK_VELOCITY_CONSTRAINTS
 
@@ -37,7 +37,7 @@ class MotionConstraintSet(
             .takeIf { it.isNotEmpty() } ?: FALLBACK_ACCEL_CONSTRAINTS
 
     constructor(constraints: Iterable<MotionConstraint>) : this(
-        constraints.filterIsInstance<VelocityConstraint>(),
+        constraints.filterIsInstance<VelConstraint>(),
         constraints.filterIsInstance<AccelConstraint>(),
         constraints.filterIsInstance<MultipleConstraint>()
     )
@@ -73,14 +73,14 @@ class TrajectoryConstrainer(
     private val path: Path, motionConstraintSet: MotionConstraintSet
 ) : MotionProfileConstrainer {
 
-    private val velConstraints = motionConstraintSet.velocityConstraints
+    private val velConstraints = motionConstraintSet.velConstraints
     private val accelConstrains = motionConstraintSet.accelConstraints
 
     private fun getMaxVel(point: PathPoint): Double = velConstraints.map { it.maxVelocity(point) }.min()!!
 
     private fun getMaxAccel(point: PathPoint, curVelocity: Double): Interval {
         return accelConstrains.map {
-            it.maxAccelRange(point, curVelocity)
+            it.accelRange(point, curVelocity)
         }.reduce(Interval::intersect)
     }
 

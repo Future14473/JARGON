@@ -16,7 +16,6 @@ import kotlin.contracts.contract
  *
  * This is the bridge to _systems_ via [LoopSystem]. Hurray for decoupling.
  */
-@Suppress("RedundantVisibilityModifier")
 class BlocksSystem(config: BlocksConfig) : AbstractBlocksRunner(config),
                                            LoopSystem {
 
@@ -44,9 +43,7 @@ class BlocksSystem(config: BlocksConfig) : AbstractBlocksRunner(config),
         this.specials = specials.associateByTo(HashMap()) { it.javaClass }
     }
 
-    public override fun start() {
-        super.init()
-    }
+    override fun start(): Unit = super.init()
 
     override fun loop(loopTimeInNanos: Long): Boolean {
         _systemValues.loopTimeInNanos = loopTimeInNanos
@@ -58,9 +55,8 @@ class BlocksSystem(config: BlocksConfig) : AbstractBlocksRunner(config),
         } == true
     }
 
-    public override fun stop() {
-        super.stop()
-    }
+    @Suppress("RedundantOverride") //trust me, it's not redundant
+    override fun stop(): Unit = super.stop()
 }
 
 /**

@@ -5,13 +5,13 @@ import org.futurerobotics.jargon.pathing.reparam.IntegrationReparamer.reparam
 
 /**
  * Reparameterization by numerical integration using midpoint Riemann sums.
- * The function that actually does this is [reparam]
+ * The function that actually does this is [reparam].
  */
 object IntegrationReparamer {
 
     /** The default stepsPerSample used in [IntegrationReparamer]'s overloads/default parameters. */
     const val defaultStepsPerSample: Int = 5
-    /** Default maxDeltaK used for [ArcDivisionsReparamer] for overloads/default parameters. */
+    /** The default maxDeltaK used for [IntegrationReparamer] for overloads/default parameters. */
     const val defaultNumSamples: Int = 500
 
     /**
@@ -48,7 +48,7 @@ object IntegrationReparamer {
     }
 }
 
-/** Convenience Extension method for [IntegrationReparamer.reparam] */
+/** Convenience extension method for [IntegrationReparamer.reparam] */
 fun VectorFunction.reparamByIntegration(
     numSamples: Int = IntegrationReparamer.defaultNumSamples,
     stepsPerSample: Int = IntegrationReparamer.defaultStepsPerSample

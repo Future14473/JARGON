@@ -6,7 +6,7 @@ import org.futurerobotics.jargon.pathing.PathPoint
 /**
  * Common superclass of all Motion Constraints, used in a [MotionConstraintSet] for dynamic motion profile generation.
  * This includes:
- * - [VelocityConstraint], a constraint on velocities at points on a path,
+ * - [VelConstraint], a constraint on velocities at points on a path,
  * - [AccelConstraint], a constraint on acceleration at a point given current velocity,
  * - [MultipleConstraint], a combination of one or more of the above.
  *
@@ -15,7 +15,7 @@ import org.futurerobotics.jargon.pathing.PathPoint
 interface MotionConstraint
 
 /**
- * Common superclass of both VelocityConstraint and AccelConstraint, but not MultipleConstraint.
+ * Common superclass of both [VelConstraint] and [AccelConstraint], but not MultipleConstraint.
  */
 interface SingleConstraint : MotionConstraint {
 
@@ -23,7 +23,7 @@ interface SingleConstraint : MotionConstraint {
      * Compares this constraint to another constraint; and returns true if it is known that this constraint is always
      * more or equally restrictive compared to [other] constraint (other constraint is redundant).
      *
-     * If not known, return false.
+     * If not known or not same class, return false.
      */
     @JvmDefault
     fun otherIsRedundant(other: SingleConstraint): Boolean = false
@@ -32,7 +32,7 @@ interface SingleConstraint : MotionConstraint {
 /**
  * Represents a constraint on velocity (in arc length) for any point on a path, given the data provided in [PathPoint].
  */
-interface VelocityConstraint : SingleConstraint {
+interface VelConstraint : SingleConstraint {
 
     /**
      * Returns the maximum possible velocity given by this constraint, given the current path [point] info.
@@ -54,7 +54,7 @@ interface AccelConstraint : SingleConstraint {
      * It is assumed (in profile generation) that if the velocity is slower, this constraint is somewhat more lenient
      * and/or has values closer to 0
      */
-    fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval
+    fun accelRange(point: PathPoint, curVelocity: Double): Interval
 }
 //
 //interface JerkConstraint {
@@ -62,32 +62,32 @@ interface AccelConstraint : SingleConstraint {
 //   Instead, possible non-dynamic profiles or CONSTANT jerk constraint used instead; in the future?
 //}
 /**
- * Represents a constraint that needs to be represented by both one or more of [VelocityConstraint] and [AccelConstraint] together.
+ * Represents a constraint that needs to be represented by both one or more of [VelConstraint] and [AccelConstraint] together.
  */
 interface MultipleConstraint : MotionConstraint {
 
-    /** The [VelocityConstraint] components of this multiple constraint */
-    val velocityConstraints: Collection<VelocityConstraint>
+    /** The [VelConstraint] components of this multiple constraint */
+    val velConstraints: Collection<VelConstraint>
     /** The [AccelConstraint] components of this multiple constraint */
     val accelConstraints: Collection<AccelConstraint>
 }
 
 /**
- * A base implementation of a [VelocityConstraint] based upon some positive max value, where if the maximum value is lower, it
- * implies more restrictive constraint.
+ * A base implementation of a [VelConstraint] based upon some positive [max] value, where if the maximum value is lower,
+ * it implies more restrictive constraint.
  *
  * @property max the maximum value of something
  */
-abstract class MaxBasedVelocityConstraint(protected val max: Double) : VelocityConstraint {
+abstract class MaxBasedVelConstraint(protected val max: Double) : VelConstraint {
 
     init {
         require(max > 0) { "Max value $max gives impossible constraint" }
     }
 
     override fun otherIsRedundant(other: SingleConstraint): Boolean =
-        other is MaxBasedVelocityConstraint && this.javaClass == other.javaClass && this.max <= other.max
+        other is MaxBasedVelConstraint && this.javaClass == other.javaClass && this.max <= other.max
 
-    override fun toString(): String = "${(javaClass.simpleName ?: "anonymous AccelConstraint")}(max=$max)"
+    override fun toString(): String = "${(javaClass.simpleName ?: "anonymous VelConstraint")}(max=$max)"
 }
 
 /**

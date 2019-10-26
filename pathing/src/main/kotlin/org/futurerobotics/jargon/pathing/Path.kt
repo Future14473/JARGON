@@ -58,7 +58,7 @@ interface Curve : GenericPath<CurvePoint>
 interface Path : GenericPath<PathPoint> {
 
     /**
-     * @return true if this is a point turn; i.e. position does not change but heading does.
+     * Returns true if this is a point turn; i.e. position does not change but heading does.
      * If so, length will have to be 1.0, and all position-related info should return 0 or Vector.ZERO
      */
     val isPointTurn: Boolean get() = false

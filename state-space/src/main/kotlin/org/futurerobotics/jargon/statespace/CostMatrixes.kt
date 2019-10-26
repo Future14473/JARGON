@@ -28,7 +28,7 @@ class QRCost(Q: Mat, R: Mat) {
     /**
      * Returns if the dimensions of this QRCost is applicable to the given [model]
      */
-    infix fun applicableTo(model: LinearStateSpaceModel): Boolean {
+    infix fun applicableTo(model: StateSpaceModel): Boolean {
         return Q.isSquare && Q.rows == model.stateSize && R.isSquare &&
                 R.rows == model.inputSize
     }

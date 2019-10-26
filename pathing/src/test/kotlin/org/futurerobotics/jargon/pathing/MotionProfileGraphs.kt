@@ -71,7 +71,7 @@ class MotionProfileGraphs(
             legendPosition = Styler.LegendPosition.OutsideS
             legendLayout = Styler.LegendLayout.Horizontal
         }
-        constraints.velocityConstraints.forEach { velConst ->
+        constraints.velConstraints.forEach { velConst ->
             val constraintVelocities = points.map(velConst::maxVelocity)
             val name = velConst.toString()
             chart.addSeries(name, xs, constraintVelocities).apply {
@@ -119,8 +119,8 @@ class MotionProfileGraphs(
         private const val yMax = 5.5
         private val constantConstraints = mutableListOf(
             MotionConstraintSet(
-                MaxVelocityConstraint(5.0),
-                MaxPathAngularVelocityConstraint(1.5),
+                MaxVelConstraint(5.0),
+                MaxPathAngularVelConstraint(1.5),
                 MaxCentripetalAccelConstraint(0.9),
                 MaxTangentAccelConstraint(0.9),
                 MaxTotalAccelConstraint(1.0),
@@ -134,8 +134,8 @@ class MotionProfileGraphs(
 
         private fun randomConstraints(): MotionConstraintSet {
             return MotionConstraintSet(
-                MaxVelocityConstraint(random.nextDouble(3.0, 5.0)),
-                MaxPathAngularVelocityConstraint(
+                MaxVelConstraint(random.nextDouble(3.0, 5.0)),
+                MaxPathAngularVelConstraint(
                     random.nextDouble(0.3, 3.0)
                 ),
                 MaxCentripetalAccelConstraint(

@@ -11,7 +11,7 @@ import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.mechanics.FixedDriveModel
 import org.futurerobotics.jargon.mechanics.GlobalToBot
-import org.futurerobotics.jargon.statespace.LinearDriveModels
+import org.futurerobotics.jargon.statespace.DriveStateSpaceModels
 import java.util.*
 import kotlin.math.roundToInt
 
@@ -21,6 +21,7 @@ import kotlin.math.roundToInt
  * Right now only [FixedDriveModel]s are supported.
  */
 interface SimulatedDrive {
+
     /**
      * Gets the current positions of the wheels.
      */
@@ -53,8 +54,10 @@ class SimulatedFixedDrive(
     private val random: Random = Random(),
     private val voltageNoise: Mat,
     private val measurementNoise: Mat,
-    private val timeStep: Double = 0.01
+    private val timeStep: Double = 0.01,
+    private val maxVolts: Double = 12.0
 ) : SimulatedDrive {
+
     constructor(
         model: FixedDriveModel,
         perturb: Perturber<FixedDriveModel>,
@@ -68,34 +71,33 @@ class SimulatedFixedDrive(
         require(voltageNoise.isSquare) { "Voltage noise $voltageNoise must be square" }
         require(measurementNoise.isSquare) { "Measurement noise $measurementNoise must be square" }
         require(timeStep > 0) { "Time step $timeStep must be > 0" }
+        require(maxVolts > 0) { "Time step $maxVolts must be > 0" }
     }
 
     /** The number of motors/wheels in this drive. */
     val numMotors: Int get() = driveModel.numWheels
-    private var curWheelVelocities: Vec = zeroVec(driveModel.numWheels)
-    private val curWheelPositions: Vec = zeroVec(driveModel.numWheels)
 
-    override val curMotorVelocities: Vec get() = driveModel.motorVelFromWheelVel * curWheelVelocities
-    override val curMotorPositions: Vec get() = driveModel.motorVelFromWheelVel * curWheelPositions
+    override var curMotorVelocities: Vec = zeroVec(driveModel.numWheels)
+    override val curMotorPositions: Vec = zeroVec(driveModel.numWheels)
 
     override var curGlobalPose: Pose2d = Pose2d.ZERO
     //wheel velocity controller
-    private val wheelSSModel = LinearDriveModels.wheelVelocityController(driveModel).discretize(timeStep)
+    private val wheelSSModel = DriveStateSpaceModels.motorVelocityController(driveModel).discretize(timeStep)
 
     override fun update(volts: Vec, time: Double) {
-//        require(!volts.isNaN)
+//        require(!volts.isNaN) { "Received NaN volts" }
         repeat((time / timeStep).roundToInt()) {
             singleStep(volts)
         }
     }
 
     private fun singleStep(volts: Vec) {
-        val realVolts = volts.map { it.coerceIn(-12.0, 12.0) } + getVoltageNoise()
-        val pastWheelVelocities = curWheelVelocities
-        curWheelVelocities = wheelSSModel.processState(pastWheelVelocities, realVolts)
-        val wheelDelta = (pastWheelVelocities + curWheelVelocities) * (timeStep / 2)
-        curWheelPositions += wheelDelta
-        val botPoseDelta = driveModel.getBotVelFromWheelVel(wheelDelta)
+        val realVolts = volts.map { it.coerceIn(-maxVolts, maxVolts) } + getVoltageNoise()
+        val pastMotorVelocities = curMotorVelocities
+        curMotorVelocities = wheelSSModel.processState(pastMotorVelocities, realVolts)
+        val motorDelta = (pastMotorVelocities + curMotorVelocities) * (timeStep / 2)
+        curMotorPositions += motorDelta
+        val botPoseDelta = driveModel.getBotVelFromMotorVel(motorDelta)
         curGlobalPose = GlobalToBot.trackGlobalPose(botPoseDelta, curGlobalPose)
     }
 
@@ -119,6 +121,7 @@ class SimulatedFixedDrive(
 class SimulatedDriveBlock(private val drive: SimulatedFixedDrive) :
     AbstractBlock(1, 3, OUT_FIRST_ALWAYS),
     MotorsBlock {
+
     override val numMotors: Int
         get() = drive.numMotors
 
@@ -137,7 +140,6 @@ class SimulatedDriveBlock(private val drive: SimulatedFixedDrive) :
         else -> throw IndexOutOfBoundsException(index)
     }
 
-
     /** Motor positions [BlocksConfig.Output] */
     override val motorPositions: BlocksConfig.Output<List<Double>> get() = configOutput(0)
     /** Motor velocities [BlocksConfig.Output] */
@@ -153,19 +155,14 @@ class SimulatedDriveBlock(private val drive: SimulatedFixedDrive) :
 /**
  * Simulated gyroscope measurement.
  *
- * Currently does not simulate drift.
+ * This currently does not simulate drift.
  */
 class SimulatedGyro(
     private val drive: SimulatedFixedDrive,
     private val noiseStd: Double = 0.0,
     private val random: Random = Random()
 ) : Gyro {
+
     override val currentAngle: Double
         get() = drive.curGlobalPose.heading + random.nextGaussian() * noiseStd
-
-    override fun init() {
-    }
-
-    override fun stop() {
-    }
 }

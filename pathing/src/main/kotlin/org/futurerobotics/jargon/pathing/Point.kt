@@ -6,10 +6,10 @@ import org.futurerobotics.jargon.math.Vector2d
 /**
  * Holds all needed info about a specific point on a [Curve]. This does not include heading info.
  *
- * This includes the value, first derivative, and second derivatives, of position and tanAngle
+ * This includes the value, first derivative, and second derivative, of position and tangent angle.
  *
  * This interface is used to try to discourage unnecessary re-calculation and provide room for possible
- * calculation optimizations.
+ * calculation optimizations, and decoupling.
  *
  *  _Due to being parameterized by arc length, there are several nice properties/relationships among the values
  *  given explained in the docs given possibly useful for both implementation and usage._

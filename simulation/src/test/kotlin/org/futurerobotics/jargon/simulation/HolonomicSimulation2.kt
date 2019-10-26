@@ -3,10 +3,11 @@ package org.futurerobotics.jargon.simulation
 import org.futurerobotics.jargon.blocks.control.PIDCoefficients
 import org.futurerobotics.jargon.blocks.control.PosePIDController
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.math.*
-import org.futurerobotics.jargon.math.function.QuinticSpline
-import org.futurerobotics.jargon.pathing.*
-import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
+import org.futurerobotics.jargon.math.Interval
+import org.futurerobotics.jargon.math.Vector2d
+import org.futurerobotics.jargon.pathing.Line
+import org.futurerobotics.jargon.pathing.TangentHeading
+import org.futurerobotics.jargon.pathing.addHeading
 import org.futurerobotics.jargon.pathing.trajectory.*
 import org.futurerobotics.jargon.saveGraph
 import org.futurerobotics.jargon.statespace.QRCost
@@ -19,42 +20,31 @@ import java.util.*
 import kotlin.math.roundToLong
 import kotlin.random.asKotlinRandom
 
-internal fun randomTrajectory(
-    random: kotlin.random.Random,
-    constraints: MotionConstraintSet
-): Trajectory {
-    val segs =
-        (listOf(ValueDerivatives(Vector2d.ZERO, Vector2d(1, 0), Vector2d.ZERO)) +
-                List(4) {
-                    randomVectorDerivatives(random, 5.0)
-                }).zipWithNext { a, b ->
-            QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(OffsetTangentHeading(74 * deg))
-        }
-    val path = MultiplePath(segs)
-    return constraints.generateTrajectory(path)
-}
-
-internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
+//Verdict: clunky and unstable. Do not use.
+internal class HolonomicSimulation2 : DecoupWheelsSimulation(
     SomeModels.mecanum,
     SimulatedFixedDrive(
         SomeModels.mecanum,
-        FixedDriveModelPerturber(
-            0.005, 0.005, FixedWheelModelPerturb(
-                0.0005, 0.00001, 0.005, TransmissionModelPerturb(
-                    0.005, 0.1, 0.005, DcMotorModelPerturb(0.001)
-                )
-            )
-        ),
+        /* FixedDriveModelPerturber(
+             0.005, 0.005, FixedWheelModelPerturb(
+                 0.0005, 0.00001, 0.005, TransmissionModelPerturb(
+                     0.005, 0.1, 0.005, DcMotorModelPerturb(0.001)
+                 )
+             )
+         ),*/
         Random("Holonomic Simulation 1".hashCode().toLong()),
         idenMat(4) * 0.05,
         idenMat(4) * 0.05,
         0.005
     ),
-    1.0 / 20,
+    1.0 / 40,
     PosePIDController(coeff, coeff, headingCoeff),
-    QRCost(idenMat(3) * 3.0, idenMat(4)),
-    idenMat(3) * 0.05,
-    idenMat(4) * 0.05
+    QRCost(
+        idenMat(4),
+        idenMat(4) * 15.0
+    ),
+    idenMat(4) * 0.01,
+    idenMat(4) * 0.01
 ) {
 
     private val constraints1 = MotionConstraintSet(
@@ -66,18 +56,21 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
 
     private val constraints2 = MotionConstraintSet(
         MaxMotorVoltage(driveModel, 10.0),
-        MaxWheelForce(driveModel, 50.0),
-        MaxAngularVelConstraint(2.0)
+        MaxWheelForce(driveModel, 50.0)
     )
 
     @Test
     fun simulation1() {
-        val path = Line(Vector2d.ZERO, Vector2d(2, 0)).addHeading(TangentHeading)
+        val path = Line(
+            Vector2d.ZERO,
+            Vector2d(2, 0)
+        ).addHeading(TangentHeading)
         val trajectory = constraints1.generateTrajectory(path)
         trajectories.add(trajectory)
 
         val runner = LoopSystemRunner(
-            system, LoopMaxTimes(5000, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong())))
+            system,
+            LoopMaxTimes(5000, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong())))
         )
         runner.run()
 
@@ -97,15 +90,25 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
     }
 
     private fun randomPaths(
-        random: kotlin.random.Random, constraints: MotionConstraintSet
+        random: kotlin.random.Random,
+        constraints1: MotionConstraintSet
     ) {
-        val trajectory = randomTrajectory(random, constraints)
+        val trajectory = randomTrajectory(random, constraints1)
         trajectories.add(trajectory)
 
         val driver = LoopSystemRunner(
-            system, LoopMaxTimes(5000, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong())))
+            system,
+            LoopMaxTimes(
+                5000,
+                LoopAsFastAsPossible(
+                    FixedTestClock(
+                        (1e9 * period).roundToLong()
+                    )
+                )
+            )
         )
         driver.run()
+
         val method = Thread.currentThread().stackTrace[2].methodName
         recordings.getAllGraphs().forEach { (name, graph) ->
             graph.saveGraph("${this.javaClass.simpleName}/$method/$name", 300)
@@ -114,14 +117,13 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
 
     companion object {
         val coeff = PIDCoefficients(
-            3.0, 0.0, 0.0,
+            1.0, 0.0, 0.0,
             errorBounds = Interval.symmetric(0.5)
         )
 
         val headingCoeff = PIDCoefficients(
-            2.0, 0.0, 0.0,
+            1.0, 0.0, 0.0,
             errorBounds = Interval.symmetric(0.5)
         )
     }
 }
-

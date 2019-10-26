@@ -13,7 +13,9 @@ import org.futurerobotics.jargon.util.Stepper
 import kotlin.math.pow
 
 /**
- * Represents a trajectory; that is a Path paired with time/velocity info on traversal (a [MotionProfiled]).
+ * Represents a trajectory; that is a Path paired with time/velocity info (a [MotionProfile]).
+ *
+ * This links to the rest of the world through implementing the [MotionProfiled] interface.
  *
  * @see generateTrajectory
  */
@@ -22,13 +24,14 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
     /**
      * The duration of time to traverse this [Trajectory] (ideally)
      *
-     * _in a perfect world where friction and entropy and floating-
-     * point errors and capacitance and noise and delay and approximation errors and internal resistance and
-     * dampening and time and space don't exist._
+     * _in a perfect world where friction and entropy and floating-point errors and capacitance and noise and delay
+     * and approximation errors and internal resistance and model error and unmodeled dynamics
+     * and time and space and life don't exist._
      * */
     override val duration: Double get() = profile.duration
+
     /**
-     * The total length of this Trajectory
+     * The total length of this trajectory; i.e, the original path's length
      * @see [Path]
      */
     val distance: Double get() = path.length

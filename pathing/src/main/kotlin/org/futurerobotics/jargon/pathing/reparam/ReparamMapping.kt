@@ -10,28 +10,28 @@ import org.futurerobotics.jargon.util.replaceIf
  */
 interface ReparamMapping : Steppable<Double, Double> {
 
-    /** The total length of this mapping; i.e. the last sample's s value. */
+    /** The total length of this mapping; i.e., the last sample's `s` value. */
     val length: Double
 
-    /** @return the t on the original parametric function associated with [s] units along the curve. */
+    /** Returns the t on the original parametric function associated with [s] units along the curve. */
     fun tOfS(s: Double): Double
 
-    /**
-     * Returns a stepper for [tOfS]
-     */
+    /** Returns a stepper for [tOfS] */
     @JvmDefault
     override fun stepper(): Stepper<Double, Double> = Stepper(::tOfS)
 }
 
 /**
  * A [ReparamMapping] using linearly interpolated samples of s to t values.
+ *
+ * See factory methods.
  */
 class SamplesReparamMapping
 private constructor(
     private val sSamples: DoubleArray, private val tSamples: DoubleArray
 ) : ReparamMapping {
 
-    /** The total length of this mapping; i.e. the last sample's s value. */
+    /** The total length of this mapping; i.e., the last sample's `s` value. */
     override val length: Double get() = sSamples.last()
 
     /** The total number of samples. */
@@ -60,7 +60,6 @@ private constructor(
         }
     }
 
-    /** @return the t on the original parametric function associated with [s] units along the curve. */
     override fun tOfS(s: Double): Double {
         var i = sSamples.binarySearch(s)
         if (i >= 0) return tSamples[i]

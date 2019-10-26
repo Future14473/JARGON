@@ -38,7 +38,7 @@ class OffsetTangentHeading(angleOffset: Double) : HeadingProvider {
 
     private val angleOffset = angleNorm(angleOffset)
     override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = object : Derivatives<Double> {
-        override val value: Double get() = point.tanAngle + angleOffset
+        override val value: Double get() = angleNorm(point.tanAngle + angleOffset)
         override val deriv: Double get() = point.tanAngleDeriv
         override val secondDeriv: Double get() = point.tanAngleSecondDeriv
     }

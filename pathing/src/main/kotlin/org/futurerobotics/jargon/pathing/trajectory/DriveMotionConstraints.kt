@@ -42,7 +42,7 @@ abstract class DriveModelConstraint(protected val driveModel: FixedDriveModel, m
  *
  * @property driveModel the driveModel used.
  */
-abstract class DriveMaxVelocityConstraint : DriveModelConstraint, VelocityConstraint {
+abstract class DriveMaxVelConstraint : DriveModelConstraint, VelConstraint {
 
     constructor(driveModel: FixedDriveModel, maxes: List<Double>) : super(driveModel, maxes)
     constructor(driveModel: FixedDriveModel, max: Double) : super(driveModel, max)
@@ -68,7 +68,7 @@ abstract class DriveMaxAccelConstraint : DriveModelConstraint, AccelConstraint {
     constructor(driveModel: FixedDriveModel, maxes: List<Double>) : super(driveModel, maxes)
     constructor(driveModel: FixedDriveModel, max: Double) : super(driveModel, max)
 
-    override fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval {
+    override fun accelRange(point: PathPoint, curVelocity: Double): Interval {
         val constrainedFromBotAccel = constrainedFromBotAccel()
         val fromCentripetal = constrainedFromBotAccel * (point.poseSecondDeriv * curVelocity.pow(2)).toVec()
         val fromTangentialFactors = constrainedFromBotAccel * (point.poseDeriv.toVec())
@@ -100,7 +100,7 @@ private fun wheelToMotorForces(speed: Double, driveModel: FixedDriveModel): List
 
 
 /** A constraint that limit's each wheel's tangential speed. */
-open class MaxWheelSpeed : DriveMaxVelocityConstraint {
+open class MaxWheelSpeed : DriveMaxVelConstraint {
     constructor(driveModel: FixedDriveModel, maxes: List<Double>) : super(driveModel, maxes)
     constructor(driveModel: FixedDriveModel, max: Double) : super(driveModel, max)
 
@@ -153,16 +153,16 @@ class MaxMotorForce : MaxWheelForce {
 }
 
 /** A constraint that limits the max motor voltages on each wheel. */
-class MaxMotorVoltage : DriveMaxVelocityConstraint, MultipleConstraint {
+class MaxMotorVoltage : DriveMaxVelConstraint, MultipleConstraint {
     constructor(driveModel: FixedDriveModel, maxes: List<Double>) : super(driveModel, maxes)
     constructor(driveModel: FixedDriveModel, max: Double) : super(driveModel, max)
 
-    override val velocityConstraints: Collection<VelocityConstraint> get() = listOf(this)
+    override val velConstraints: Collection<VelConstraint> get() = listOf(this)
     override val accelConstraints: Collection<AccelConstraint> get() = listOf(VoltageAccelConstraint())
 
     private inner class VoltageAccelConstraint : AccelConstraint {
         val owner get() = this@MaxMotorVoltage
-        override fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval {
+        override fun accelRange(point: PathPoint, curVelocity: Double): Interval {
             val fromMotion = driveModel.voltsFromBotVel * (point.poseDeriv * curVelocity).toVec()
             //DRY?
             val fromCentripetal =

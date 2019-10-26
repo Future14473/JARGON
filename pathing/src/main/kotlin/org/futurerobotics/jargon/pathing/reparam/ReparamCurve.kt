@@ -10,8 +10,10 @@ import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.replaceIf
 
 /**
- * A [Curve] that works by reparameterizing an arbitrary C2 continuous [VectorFunction] ([func]) and a [SamplesReparamMapping] ([mapping]) that maps
- * arc length to the original function parameter.
+ * A [Curve] that works by reparameterizing an arbitrary C2 continuous [VectorFunction] ([func]), using a
+ * [ReparamMapping] ([mapping]) that maps arc length to the original function parameter.
+ *
+ * If you want to create your own re-parameterization, make a implementor of [ReparamMapping].
  */
 class ReparamCurve(private val func: VectorFunction, internal val mapping: ReparamMapping) : Curve {
 
