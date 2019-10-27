@@ -112,6 +112,8 @@ abstract class SingleOutputBlock<R>(numInputs: Int, processing: Block.Processing
 ), BlocksConfig.Output<R> {
 
     private var value: R? = null
+    final override val block: Block get() = this
+    final override val index: Int get() = 0
     final override fun init() {
         value = initialValue()
     }
@@ -140,9 +142,6 @@ abstract class SingleOutputBlock<R>(numInputs: Int, processing: Block.Processing
         if (index != 0) throw IndexOutOfBoundsException(index)
         return value
     }
-
-    final override val block: Block get() = this
-    final override val index: Int get() = 0
 }
 
 /**
@@ -155,14 +154,14 @@ abstract class SingleInputBlock<T>(numOutputs: Int, processing: Block.Processing
 ), BlocksConfig.Input<T> {
 
     private var input: T? = null
-
+    final override val block: Block get() = this
+    final override val index: Int get() = 0
     final override fun process(inputs: List<Any?>, systemValues: SystemValues) {
         input = inputs[0].unsafeCast<T>()
         processInput(input.unsafeCast(), systemValues)
     }
 
     final override fun getOutput(index: Int): Any? = getOutput(input.unsafeCast(), index)
-
     /** Gets the output of this block by index, also with the given [input], as in [getOutput][Block.getOutput]. */
     protected abstract fun getOutput(input: T, index: Int): Any?
 
@@ -172,9 +171,6 @@ abstract class SingleInputBlock<T>(numOutputs: Int, processing: Block.Processing
      * (as in [Block.process])
      */
     protected abstract fun processInput(input: T, systemValues: SystemValues)
-
-    final override val block: Block get() = this
-    final override val index: Int get() = 0
 }
 
 /**
@@ -184,6 +180,9 @@ abstract class SingleInputBlock<T>(numOutputs: Int, processing: Block.Processing
 abstract class SingleInputListStoreBlock<T>(numOutputs: Int, processing: Block.Processing) : ListStoreBlock(
     1, numOutputs, processing
 ), BlocksConfig.Input<T> {
+
+    final override val block: Block get() = this
+    final override val index: Int get() = 0
 
     final override fun process(
         inputs: List<Any?>, systemValues: SystemValues, outputs: MutableList<Any?>
@@ -197,9 +196,6 @@ abstract class SingleInputListStoreBlock<T>(numOutputs: Int, processing: Block.P
     protected abstract fun processInput(
         input: T, systemValues: SystemValues, outputs: MutableList<Any?>
     )
-
-    final override val block: Block get() = this
-    final override val index: Int get() = 0
 }
 
 /**
@@ -213,6 +209,7 @@ abstract class InputOnlyBlock<T> : SingleInputBlock<T>(0, IN_FIRST_ALWAYS) {
     abstract override fun processInput(input: T, systemValues: SystemValues)
 
     override fun init() {
+        //default: do nothing
     }
 
     override fun getOutput(input: T, index: Int): Any? {
@@ -246,6 +243,7 @@ abstract class PipeBlock<T, R> @JvmOverloads constructor(processing: Block.Proce
 
     override fun initialValue(): R? = null
     final override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): R = pipe(inputs[0].unsafeCast())
+
     /**
      * Transforms the input value to the output value.
      */
@@ -274,6 +272,11 @@ abstract class PipeBlock<T, R> @JvmOverloads constructor(processing: Block.Proce
 abstract class CombineBlock<A, B, R>(processing: Block.Processing = IN_FIRST_LAZY) :
     SingleOutputBlock<R>(2, processing) {
 
+    /** The first input to this combine block. */
+    val firstInput: BlocksConfig.Input<A> get() = configInput(0)
+    /** The second input to this second block. */
+    val secondInput: BlocksConfig.Input<B> get() = configInput(1)
+
     override fun initialValue(): R? = null
     final override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): R =
         combine(inputs[0].unsafeCast(), inputs[1].unsafeCast())
@@ -282,11 +285,6 @@ abstract class CombineBlock<A, B, R>(processing: Block.Processing = IN_FIRST_LAZ
      * Combines two input values to the output value.
      */
     protected abstract fun combine(a: A, b: B): R
-
-    /** The first input to this combine block. */
-    val firstInput: BlocksConfig.Input<A> get() = configInput(0)
-    /** The second input to this second block. */
-    val secondInput: BlocksConfig.Input<B> get() = configInput(1)
 
     companion object {
         /** Creates a [CombineBlock] using the given [combine] function. */
@@ -310,9 +308,35 @@ abstract class CompositeBlock(numInputs: Int, numOutputs: Int, processing: Block
     AbstractBlock(numInputs, numOutputs, processing) {
 
     private lateinit var subsystem: Subsystem
-    override fun init(): Unit = subsystem.init()
-    override fun process(inputs: List<Any?>, systemValues: SystemValues): Unit = subsystem.process(inputs, systemValues)
-    override fun getOutput(index: Int): Any? = subsystem.getOutput(index)
+
+    final override fun init(): Unit = subsystem.init()
+    final override fun process(inputs: List<Any?>, systemValues: SystemValues): Unit =
+        subsystem.process(inputs, systemValues)
+
+    final override fun getOutput(index: Int): Any? = subsystem.getOutput(index)
+
+    /**
+     * Builds and returns a [BlocksConfig] for the subsystem.
+     * [sources] are outputs that correspond to the value given from the outside world,
+     * and [outputs] are inputs that correspond to values given _to_ the outside world.
+     */
+    protected abstract fun configSubsystem(
+        sources: List<BlocksConfig.Output<Any?>>, outputs: List<BlocksConfig.Input<Any?>>
+    ): BlocksConfig
+
+    final override fun prepareAndVerify(config: BlocksConfig) {
+        val sources = Sources()
+        val outputs = Outputs()
+        val subConfig = configSubsystem(sources.allOutputs(), outputs.allInputs())
+        subsystem = Subsystem(subConfig, sources, outputs)
+        prepareAndVerifyMore(config)
+    }
+
+    /** Performs additional [prepareAndVerify] actions. Only way to enforce "super call". */
+    protected open fun prepareAndVerifyMore(config: BlocksConfig) {
+        super.prepareAndVerify(config)
+    }
+
     private inner class Subsystem(config: BlocksConfig, private val sources: Sources, private val outputs: Outputs) :
         AbstractBlocksRunner(config) {
 
@@ -357,27 +381,5 @@ abstract class CompositeBlock(numInputs: Int, numOutputs: Int, processing: Block
         override fun getOutput(index: Int): Any? {
             throw IndexOutOfBoundsException(index)
         }
-    }
-
-    /**
-     * Builds and returns a [BlocksConfig] for the subsystem.
-     * [sources] are outputs that correspond to the value given from the outside world,
-     * and [outputs] are inputs that correspond to values given _to_ the outside world.
-     */
-    protected abstract fun configSubsystem(
-        sources: List<BlocksConfig.Output<Any?>>, outputs: List<BlocksConfig.Input<Any?>>
-    ): BlocksConfig
-
-    final override fun prepareAndVerify(config: BlocksConfig) {
-        val sources = Sources()
-        val outputs = Outputs()
-        val subConfig = configSubsystem(sources.allOutputs(), outputs.allInputs())
-        subsystem = Subsystem(subConfig, sources, outputs)
-        morePrepareAndVerify(config)
-    }
-
-    /** Performs additional [prepareAndVerify] actions. Only way to enforce "super call". */
-    protected open fun morePrepareAndVerify(config: BlocksConfig) {
-        super.prepareAndVerify(config)
     }
 }
