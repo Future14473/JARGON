@@ -4,11 +4,12 @@ import org.futurerobotics.jargon.math.epsEq
 import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.replaceIf
+import java.io.Serializable
 
 /**
  * Represents a mapping of s values (arc length) to t value (parameter on a parametric func).
  */
-interface ReparamMapping : Steppable<Double, Double> {
+interface ReparamMapping : Steppable<Double, Double>, Serializable {
 
     /** The total length of this mapping; i.e., the last sample's `s` value. */
     val length: Double
@@ -98,6 +99,7 @@ private constructor(
     }
 
     companion object {
+        private const val serialVersionUID = 6139535055955172664
         /**
          * Creates a reparam mapping from a list of (s,t) samples.
          */

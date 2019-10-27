@@ -63,6 +63,10 @@ open class ValueMotionOnly<T : Any>(override val v: T, override val a: T) : Moti
     }
 
     override fun hashCode(): Int = 31 * v.hashCode() + a.hashCode()
+
+    companion object {
+        private const val serialVersionUID = 2320972993764450935
+    }
 }
 
 /** An simple implementation of [MotionState] that holds values in fields */
@@ -78,6 +82,8 @@ open class ValueMotionState<T : Any>(override val s: T, override val v: T, overr
     override fun toString(): String = "ValueMotionState(s=$s, v=$v, a=$a)"
 
     companion object {
+        private const val serialVersionUID = 8517629014322200560
+
         /** Creates a [ValueMotionState] with all s,v,a values equal to [value] */
         @JvmStatic
         fun <T : Any> ofAll(value: T): ValueMotionState<T> = ValueMotionState(value, value, value)

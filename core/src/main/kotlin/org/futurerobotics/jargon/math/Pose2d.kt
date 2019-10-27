@@ -20,7 +20,7 @@ import org.futurerobotics.jargon.linalg.*
  * @property heading the heading (orientation) of this Pose
  * @see Vector2d
  */
-data class Pose2d(@JvmField val vec: Vector2d, @JvmField val heading: Double) {
+data class Pose2d(@JvmField val vec: Vector2d, @JvmField val heading: Double) : java.io.Serializable {
 
     /** Constructs a pose from [x] and [y] position components, and [heading] */
     constructor(x: Double, y: Double, heading: Double) : this(Vector2d(x, y), heading)
@@ -75,6 +75,7 @@ data class Pose2d(@JvmField val vec: Vector2d, @JvmField val heading: Double) {
     override fun toString(): String = "Pose2d(x: %.4f, y: %.4f, h: %.4f)".format(x, y, heading)
 
     companion object {
+        private const val serialVersionUID: Long = -1480830446990142354
         /** Pose with all components equal to zero. */
         @JvmField
         val ZERO: Pose2d = Pose2d(Vector2d.ZERO, 0.0)

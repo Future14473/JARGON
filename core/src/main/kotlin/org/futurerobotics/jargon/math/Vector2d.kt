@@ -15,7 +15,7 @@ import kotlin.random.Random
  * Some calculations use cross products ([cross],[crossz]), in which it is calculated with interpreting vectors as 3d
  * vectors with a z component of 0, and only a portion of the result (that is not zero) is returned.
  */
-data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
+data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : java.io.Serializable {
 
     /**@see Vector2d */
     constructor(x: Int, y: Int) : this(x.toDouble(), y.toDouble())
@@ -105,6 +105,7 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
     override fun toString(): String = "Vector2d(%.6f, %.6f)".format(x, y)
 
     companion object {
+        private const val serialVersionUID: Long = -6820664735430027415
         /** The zero vector <0, 0> */
         @JvmField
         val ZERO: Vector2d = Vector2d(0, 0)

@@ -4,20 +4,20 @@ package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
 
-
 /**
  * Generic Q and R cost matrices for state deviation and control effort, respectively
  */
-class QRCost(Q: Mat, R: Mat) {
+class QRCost @JvmOverloads constructor(Q: Mat, R: Mat, copyMat: Boolean = true) {
+
     init {
         require(Q.isSquare) { "Q must be square" }
         require(R.isSquare) { "R must be square" }
     }
 
     /** State cost matrix Q */
-    val Q: Mat = Q.toImmutableMat()
+    val Q: Mat = if (copyMat) Q.copy() else Q
     /** Control cost matrix Q */
-    val R: Mat = R.toImmutableMat()
+    val R: Mat = if (copyMat) R.copy() else R
 
     /** Q matrix; state cost */
     operator fun component1(): Mat = Q

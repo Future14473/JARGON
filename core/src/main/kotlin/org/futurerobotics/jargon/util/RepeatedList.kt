@@ -1,9 +1,11 @@
 package org.futurerobotics.jargon.util
 
+import java.io.Serializable
+
 /**
  * A list that only has one [value] repeated [size] times. Create using [repeatedList]
  */
-private class RepeatedList<T>(override val size: Int, private val value: T) : AbstractList<T>() {
+private class RepeatedList<T>(override val size: Int, private val value: T) : AbstractList<T>(), Serializable {
 
     override fun contains(element: T): Boolean = element == value
 
@@ -24,6 +26,10 @@ private class RepeatedList<T>(override val size: Int, private val value: T) : Ab
         if (fromIndex < 0 || toIndex > size) throw IndexOutOfBoundsException("fromIndex: $fromIndex, toIndex: $toIndex, size: $size")
         require(fromIndex <= toIndex) { "fromIndex: $fromIndex > toIndex: $toIndex" }
         return repeatedList(toIndex - fromIndex, value)
+    }
+
+    companion object {
+        private const val serialVersionUID = 8108384652630940398
     }
 }
 

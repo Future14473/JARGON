@@ -11,7 +11,7 @@ import kotlin.math.abs
  * @param a The lower bound of this interval.
  * @param b The upper bound of this interval. Can be [Double.POSITIVE_INFINITY]
  */
-class Interval private constructor(val a: Double, val b: Double) {
+class Interval private constructor(val a: Double, val b: Double) : java.io.Serializable {
 
     /** If this interval is empty (contains no values) */
     fun isEmpty(): Boolean = a.isNaN() || b.isNaN() || a > b
@@ -74,6 +74,7 @@ class Interval private constructor(val a: Double, val b: Double) {
     }
 
     companion object {
+        private const val serialVersionUID: Long = 3664769398040599197
         /** An empty interval */
         @JvmField
         val EMPTY: Interval = Interval(Double.NaN, Double.NaN)

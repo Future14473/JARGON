@@ -11,6 +11,7 @@ class QuinticSpline(x: QuinticPolynomial, y: QuinticPolynomial) : ComponentVecto
     override fun toString(): String = "QuinticSpline(x: $x, y: $y)"
 
     companion object {
+        private const val serialVersionUID = -3565764147351293428
         /**
          * Creates a quintic spline using the control points of a Bezier spline.
          */

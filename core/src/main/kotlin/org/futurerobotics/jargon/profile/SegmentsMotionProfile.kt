@@ -5,12 +5,13 @@ import org.futurerobotics.jargon.mechanics.LinearMotionState
 import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.isSortedBy
 import org.futurerobotics.jargon.util.replaceIf
+import java.io.Serializable
 import kotlin.math.pow
 
 /**
  * A [MotionProfile] composed of interpolated segments with constant acceleration, for one-dimensional motion.
  */
-class SegmentsMotionProfile private constructor(private val segments: List<Segment>) : MotionProfile {
+class SegmentsMotionProfile private constructor(private val segments: List<Segment>) : MotionProfile, Serializable {
 
     override val duration: Double = segments.last().t
     override val distance: Double = segments.last().state.s
@@ -50,14 +51,19 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
     }
 
     /** A pre-calculated representation of the endpoints of segments. */
-    private class Segment(val state: LinearMotionState, val t: Double) {
+    private class Segment(val state: LinearMotionState, val t: Double) : Serializable {
 
         val x get() = state.s
         fun stateAtTime(t: Double) = state.afterTime(t - this.t)
         fun stateAtDist(x: Double) = state.atDist(x)
+
+        companion object {
+            private const val serialVersionUID: Long = 2348723486724367
+        }
     }
 
     companion object {
+        private const val serialVersionUID: Long = -982347652334563
 
         /**
          * Constructs a [SegmentsMotionProfile] from a pair of points with associated velocities.

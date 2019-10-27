@@ -11,15 +11,22 @@ class ConstantHeading(angle: Double) : HeadingProvider {
     private val angle = angleNorm(angle)
     private val derivatives = ValueDerivatives(angle, 0.0, 0.0)
     override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = derivatives
+
+    companion object {
+        private const val serialVersionUID = 6008569752536122191
+    }
 }
 
 /** A [HeadingProvider] that interpolates linearly among two angles, starting at [fromAngle] and turning [turnAngle] */
-class LinearInterpolatedHeading(private val fromAngle: Double, private val turnAngle: Double) :
-    HeadingProvider {
+class LinearInterpolatedHeading(private val fromAngle: Double, private val turnAngle: Double) : HeadingProvider {
 
     override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> {
         val dcl = turnAngle / point.length
         return ValueDerivatives(angleNorm(fromAngle + s * dcl), dcl, 0.0)
+    }
+
+    companion object {
+        private const val serialVersionUID = -7150310678618833605
     }
 }
 
@@ -31,6 +38,10 @@ object TangentHeading : HeadingProvider {
         override val deriv: Double get() = point.tanAngleDeriv
         override val secondDeriv: Double get() = point.tanAngleSecondDeriv
     }
+
+    private const val serialVersionUID = 2553159564085724309
+
+    private fun readResolve(): Any = this
 }
 
 /** A [HeadingProvider] that has the heading equal to the curve's tangent angle plus [angleOffset]. */
@@ -41,6 +52,10 @@ class OffsetTangentHeading(angleOffset: Double) : HeadingProvider {
         override val value: Double get() = angleNorm(point.tanAngle + angleOffset)
         override val deriv: Double get() = point.tanAngleDeriv
         override val secondDeriv: Double get() = point.tanAngleSecondDeriv
+    }
+
+    companion object {
+        private const val serialVersionUID = 5331301765766845360
     }
 }
 
@@ -58,5 +73,9 @@ class FunctionHeading(private val function: RealFunction) : HeadingProvider {
             get() = function.deriv(t)
         override val secondDeriv: Double
             get() = function.secondDeriv(t)
+    }
+
+    companion object {
+        private const val serialVersionUID = -9087053844463217786
     }
 }

@@ -10,6 +10,7 @@ import org.futurerobotics.jargon.pathing.PathPoint
 import org.futurerobotics.jargon.profile.MotionProfile
 import org.futurerobotics.jargon.profile.MotionProfiled
 import org.futurerobotics.jargon.util.Stepper
+import java.io.Serializable
 import kotlin.math.pow
 
 /**
@@ -19,7 +20,8 @@ import kotlin.math.pow
  *
  * @see generateTrajectory
  */
-class Trajectory(private val path: Path, private val profile: MotionProfile) : MotionProfiled<MotionState<Pose2d>> {
+class Trajectory(private val path: Path, private val profile: MotionProfile) : MotionProfiled<MotionState<Pose2d>>,
+                                                                               Serializable {
 
     /**
      * The duration of time to traverse this [Trajectory] (ideally)
@@ -70,5 +72,9 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
             poseDeriv * state.v,
             poseSecondDeriv * state.v.pow(2) + poseDeriv * state.a
         )
+    }
+
+    companion object {
+        private const val serialVersionUID = 5481952978810220011
     }
 }

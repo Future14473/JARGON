@@ -112,6 +112,10 @@ class MultipleCurve(paths: Iterable<Curve>, checkContinuity: Boolean = true) :
         )
         //tanAngle, tanAngleDeriv covered by above, tanAngleSecond deriv can be discontinuous.
     }
+
+    companion object {
+        private const val serialVersionUID = -6008569752536122191
+    }
 }
 
 /**
@@ -141,6 +145,10 @@ class MultiplePath(paths: Iterable<Path>, checkContinuity: Boolean = true) :
             prev.headingDeriv,
             cur.headingDeriv
         )
+    }
+
+    companion object {
+        private const val serialVersionUID = 1903180955913210312
     }
 }
 

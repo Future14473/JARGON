@@ -61,4 +61,8 @@ class ReparamCurve(private val func: VectorFunction, internal val mapping: Repar
                     .also { _tanAngleSecondDeriv = it }
             }
     }
+
+    companion object {
+        private const val serialVersionUID = 6498795086341258477
+    }
 }

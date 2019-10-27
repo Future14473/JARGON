@@ -2,12 +2,13 @@ package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.Derivatives
 import org.futurerobotics.jargon.util.Stepper
+import java.io.Serializable
 
 /**
  * Provides heading info to complete a [Curve] into a [Path]
  * @see ComponentPath
  */
-interface HeadingProvider {
+interface HeadingProvider : Serializable {
 
     /**
      * Gets a heading's derivatives at the point [s] units along the curve, using info provided by
@@ -48,6 +49,10 @@ class ComponentPath(internal val curve: Curve, private val heading: HeadingProvi
         override val heading: Double get() = headingVal.value
         override val headingDeriv: Double get() = headingVal.deriv
         override val headingSecondDeriv: Double get() = headingVal.secondDeriv
+    }
+
+    companion object {
+        private const val serialVersionUID = 1491948110600520820
     }
 }
 

@@ -5,6 +5,7 @@ package org.futurerobotics.jargon.pathing
 import org.futurerobotics.jargon.math.function.VectorFunction
 import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
+import java.io.Serializable
 
 /**
  * Represents a curve or path, with the given [Point]. This generic intermediary is to solve the generics problem
@@ -12,7 +13,7 @@ import org.futurerobotics.jargon.util.Stepper
  *
  * GenericCurve<? extends CurvePoint> or GenericCurve<out CurvePoint> is the superclass of both [Curve] and [Path]
  */
-interface GenericPath<out Point : CurvePoint> : Steppable<Double, Point> {
+interface GenericPath<out Point : CurvePoint> : Steppable<Double, Point>, Serializable {
 
     /**
      * The total (arc) length of this curve/path, and the maximum `s` value the functions
@@ -72,8 +73,3 @@ fun GenericPath<*>.asCurve(): Curve = when (this) {
     is ComponentPath -> this.curve
     else -> object : Curve, GenericPath<CurvePoint> by this {}
 }
-//fun test() {
-//    val path: Path? = null
-//    val curve: Curve? = path //path is-A Curve!!! YES
-//}
-

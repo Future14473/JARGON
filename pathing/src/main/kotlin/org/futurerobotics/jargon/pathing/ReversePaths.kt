@@ -44,6 +44,10 @@ private class ReverseCurve(curve: Curve) : ReverseGeneric<Curve, CurvePoint>(cur
                                            Curve {
 
     override fun mapPoint(point: CurvePoint): CurvePoint = ReverseCurvePoint(point)
+
+    companion object {
+        private const val serialVersionUID = -8380484370027657370
+    }
 }
 
 private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path),
@@ -53,6 +57,10 @@ private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path),
 
     override val isPointTurn: Boolean
         get() = path.isPointTurn
+
+    companion object {
+        private const val serialVersionUID = -9173494841041408460
+    }
 }
 
 /**

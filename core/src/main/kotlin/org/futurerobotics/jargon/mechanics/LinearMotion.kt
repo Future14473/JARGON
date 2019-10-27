@@ -1,5 +1,6 @@
 package org.futurerobotics.jargon.mechanics
 
+import java.io.Serializable
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -13,7 +14,7 @@ class LinearMotion
 @JvmOverloads constructor(
     override val v: Double,
     override val a: Double = 0.0
-) : MotionOnly<Double> {
+) : MotionOnly<Double>, Serializable {
 
     /**
      * Returns the new motion after time [t], assuming constant acceleration.
@@ -29,6 +30,10 @@ class LinearMotion
      */
     fun afterForwardDist(s: Double): LinearMotion =
         LinearMotion(sqrt(v.pow(2) + 2 * a * s), a)
+
+    companion object {
+        private const val serialVersionUID = 2975183939284281640
+    }
 }
 
 /**
@@ -43,7 +48,7 @@ class LinearMotionState
     override val s: Double,
     override val v: Double,
     override val a: Double = 0.0
-) : MotionState<Double> {
+) : MotionState<Double>, Serializable {
 
     /** Returns the new state after time [t], assuming constant acceleration. */
     fun afterTime(t: Double): LinearMotionState =
@@ -65,4 +70,8 @@ class LinearMotionState
      */
     fun atDist(s: Double): LinearMotionState =
         LinearMotionState(s, sqrt(v.pow(2) + 2 * a * (s - this.s)), a)
+
+    companion object {
+        private const val serialVersionUID = 6199743470386206427
+    }
 }

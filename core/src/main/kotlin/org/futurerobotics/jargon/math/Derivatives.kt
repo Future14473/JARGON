@@ -26,5 +26,11 @@ interface Derivatives<T> {
 }
 
 /** A simple [Derivatives] implementation that holds values in fields */
-class ValueDerivatives<T>(override val value: T, override val deriv: T, override val secondDeriv: T) : Derivatives<T>
+class ValueDerivatives<T>(override val value: T, override val deriv: T, override val secondDeriv: T) :
+    Derivatives<T>, java.io.Serializable {
+
+    companion object {
+        private const val serialVersionUID = -7402403796313681521
+    }
+}
 
