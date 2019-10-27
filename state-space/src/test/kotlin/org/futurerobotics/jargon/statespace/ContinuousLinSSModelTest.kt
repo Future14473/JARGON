@@ -20,7 +20,7 @@ internal class ContinuousLinSSModelTest {
             }
             val period = 0.5
 
-            val model = ContinuousLinSSModel(A, B, zeroMat(3, 3), zeroMat(3, 2))
+            val model = ContinuousLinSSModelImpl(A, B, zeroMat(3, 3), zeroMat(3, 2))
             val discrete = model.discretize(period)
             expectThat(discrete.A).isEpsEqTo(expm(A * period))
             val expectedB = A.inv()(discrete.A - idenMat(3)) * B

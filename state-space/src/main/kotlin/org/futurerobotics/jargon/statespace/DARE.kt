@@ -50,7 +50,8 @@ class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDe
         val D = this.d
         val V = this.v
 
-        val eigenValues = TreeSet(compareBy<Complex> { it.abs() }) //MODIFIED: use new comparator
+        val eigenValues = PriorityQueue(compareBy<Complex> { it.abs() })
+        //MODIFIED: use new comparator, and use priority queue to deal with multiple of the same eigenvalue
 
         for (ij in 0 until matrix.rowDimension) {
             eigenValues.add(D.getEntry(ij, ij))
@@ -58,7 +59,7 @@ class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDe
 
         // ordering
         for (ij in 0 until matrix.rowDimension - 1) {
-            val eigValue = eigenValues.pollFirst()
+            val eigValue = eigenValues.poll()!!
             var currentIndex = ij
             // searching the current index
             while (currentIndex < matrix.rowDimension) {
@@ -91,13 +92,14 @@ class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDe
     override fun getVT(): FieldMatrix<Complex> = v.transpose()
 }
 
-
-/**
+/**Note that this is experimental and not yet fully supported since the developer
+ * doesn't want to do too much math.
  *
  * This solver computes the solution to the _DARE_ using the following approach:
  *
- * 1. Compute the Hamiltonian matrix 2. Extract its complex eigen vectors (not
- * the best solution, a better solution would be ordered Schur transformation)
+ * 1. Compute the Symplectic matrix 2. Extract its complex eigen vectors (not
+ * the best solution, a better solution would be ordered Schur transformation).
+ * That is all we have; result is not guarenteed to be stable.
  *
  * A and B should be compatible. B and R must be
  * multiplicative compatible. A and Q must be multiplicative compatible. R and A
@@ -108,7 +110,7 @@ class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDe
  * @param Q state cost matrix
  * @param R control cost matrix
  *
- * Except where said is modified, this is copied from [LenientRiccatiEquationSolverImpl] and converted to kotlin.
+ * Except where said is modified, this is copied from [RiccatiEquationSolverImpl] and converted to kotlin using J2K.
  * Unused methods were removed.
  */
 class DiscreteRicattiEquationSolverImpl(
@@ -157,7 +159,7 @@ class DiscreteRicattiEquationSolverImpl(
 
     /**
      * Compute initial P using a Symplectic matrix and the ordered eigen value (by magnitude)
-     * decomposition.
+     * decomposition. That's it for now.
      *
      * @param A state transition matrix
      * @param B control multipliers matrix

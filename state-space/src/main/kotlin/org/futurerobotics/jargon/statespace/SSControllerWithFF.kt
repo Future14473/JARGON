@@ -17,14 +17,18 @@ import kotlin.math.pow
  * Outputs:
  * 1. Signal vector
  *
- * @param model the [DiscreteLinSSModel] to use
+ * @param model the [DiscreteLinearStateSpaceModel] to use
  * @param kGain the kGain matrix
- * @param feedForwardQRCost the [QRCost] to use in calculation feed-forward gain; null if only pseudo-inverse is to be used.
+ * @param ffQRCost the [QRCost] to use in calculation feed-forward gain; null if only pseudo-inverse is to be used.
+ * @param recalculateFeedForward if true, recalculates feed forward every time the loop is run. Use when you know the
+ *                               model might change. Note: if you want to recalculate kGain, do so elsewhere and
+ *                               modify since we have no way of knowing how you might do this.
  */
-class SSControllerWithFF(
-    private val model: DiscreteLinSSModel,
-    kGain: Mat,
-    feedForwardQRCost: QRCost? = null
+class SSControllerWithFF @JvmOverloads constructor(
+    private val model: DiscreteLinearStateSpaceModel,
+    private val kGain: Mat,
+    private val ffQRCost: QRCost? = null,
+    private val recalculateFeedForward: Boolean = false
 ) : CombineBlock<MotionState<Vec>, Vec, Vec>(IN_FIRST_LAZY) {
 
     init {
@@ -34,14 +38,14 @@ class SSControllerWithFF(
     }
 
     //flatten model
-    private val kGain = kGain.toImmutableMat()
-    private val kFF = plantInversionKFF(model, feedForwardQRCost)
+    private val kFF: Mat? = if (recalculateFeedForward) null else plantInversionKFF(model, ffQRCost)
 
     override fun combine(a: MotionState<Vec>, b: Vec): Vec {
         //we don't care about elapsed seconds.
         val r = a.s
         val r1 = a.s + a.v * model.period + a.a * (model.period.pow(2) / 2)
         val x = b
+        val kFF = kFF ?: plantInversionKFF(model, ffQRCost)
         return kGain * (r - x) + kFF(r1 - model.A * r)
     }
 

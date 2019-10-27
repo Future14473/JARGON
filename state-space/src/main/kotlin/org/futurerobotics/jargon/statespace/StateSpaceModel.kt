@@ -44,15 +44,15 @@ interface LinearStateSpaceModel : StateSpaceModel {
     val D: Mat
 }
 
-/** Interface to indicate that a model is continuous. */
-interface ContinuousStateSpaceModel : StateSpaceModel {
+/** Interface to indicate that a [LinearStateSpaceModel] is continuous. */
+interface ContinuousLinearStateSpaceModel : LinearStateSpaceModel {
 
-    /** Discretizes this [ContinuousStateSpaceModel] using the given [period]. */
-    fun discretize(period: Double): DiscreteStateSpaceModel
+    /** Discretizes this [ContinuousLinearStateSpaceModel] using the given [period]. */
+    fun discretize(period: Double): DiscreteLinearStateSpaceModel
 }
 
-/** Interface to indicate that a model is discretized with a certain [period] */
-interface DiscreteStateSpaceModel : StateSpaceModel {
+/** Interface to indicate that a [LinearStateSpaceModel] is discretized with a certain [period] */
+interface DiscreteLinearStateSpaceModel : LinearStateSpaceModel {
 
     /** The period to which this model has been discretized. Should be >0. */
     val period: Double
@@ -65,8 +65,15 @@ interface DiscreteStateSpaceModel : StateSpaceModel {
  * @param B the control matrix
  * @param C the measurement matrix
  * @param D the feed-through matrix
+ * @param copyMat if true, matrices will be copied, else no.
  */
-sealed class AbstractLinearStateSpaceModel(A: Mat, B: Mat, C: Mat, D: Mat) : LinearStateSpaceModel {
+abstract class AbstractLinearStateSpaceModel @JvmOverloads constructor(
+    A: Mat,
+    B: Mat,
+    C: Mat,
+    D: Mat,
+    copyMat: Boolean = true
+) : LinearStateSpaceModel {
 
     /** The size of the state vector. */
     final override val stateSize: Int
@@ -74,6 +81,10 @@ sealed class AbstractLinearStateSpaceModel(A: Mat, B: Mat, C: Mat, D: Mat) : Lin
     final override val inputSize: Int
     /** The size of the output vector. */
     final override val outputSize: Int
+    final override val A: Mat
+    final override val B: Mat
+    final override val C: Mat
+    final override val D: Mat
 
     init {
         require(A.isSquare) { "A matrix must be square" }
@@ -88,12 +99,12 @@ sealed class AbstractLinearStateSpaceModel(A: Mat, B: Mat, C: Mat, D: Mat) : Lin
         { "D matrix must have same number of columns as the input vector ($inputSize)" }
         require(D.rows == outputSize)
         { "C and D matrix rows must match to deduce the output vector size" }
+        fun Mat.maybeCopy() = if (copyMat) copy() else this
+        this.A = A.maybeCopy()
+        this.B = B.maybeCopy()
+        this.C = C.maybeCopy()
+        this.D = D.maybeCopy()
     }
-
-    override val A: Mat = A.toImmutableMat()
-    override val B: Mat = B.toImmutableMat()
-    override val C: Mat = C.toImmutableMat()
-    override val D: Mat = D.toImmutableMat()
 
     override fun processState(x: Vec, u: Vec): Vec = A * x + B * u
 
@@ -114,12 +125,12 @@ ${D.formatReadable()}
 }
 
 /**
- * A [LinearStateSpaceModel] that is continuous.
+ * Implementation of [ContinuousLinearStateSpaceModel].
  */
-open class ContinuousLinSSModel constructor(A: Mat, B: Mat, C: Mat, D: Mat) :
-    AbstractLinearStateSpaceModel(A, B, C, D), ContinuousStateSpaceModel {
+open class ContinuousLinSSModelImpl @JvmOverloads constructor(A: Mat, B: Mat, C: Mat, D: Mat, copyMat: Boolean = true) :
+    AbstractLinearStateSpaceModel(A, B, C, D, copyMat), ContinuousLinearStateSpaceModel {
 
-    fun discretize(period: Double, QRCost: QRCost): Pair<DiscreteLinSSModel, QRCost> {
+    fun discretize(period: Double, QRCost: QRCost): Pair<DiscreteLinearStateSpaceModel, QRCost> {
         require(QRCost applicableTo this) { "Cost matrices must be applicable to this model" }
         val model = discretize(period)
 
@@ -130,19 +141,19 @@ open class ContinuousLinSSModel constructor(A: Mat, B: Mat, C: Mat, D: Mat) :
         return model to QRCost(q, r)
     }
 
-    override fun discretize(period: Double): DiscreteLinSSModel {
+    override fun discretize(period: Double): DiscreteLinSSModelImpl {
         val (ad, bd) = expm(MatConcat.dynamic2x2Square(A, B, 0, 0) * period).let {
             it.getQuad(A.rows, 0, 0) to it.getQuad(A.rows, 0, 1)
         }
-        return DiscreteLinSSModel(ad, bd, C, D, period)
+        return DiscreteLinSSModelImpl(period, ad, bd, C, D)
     }
 }
 
 /**
- * A [LinearStateSpaceModel] that is discrete.
- *
- * @param period the period the discretization is based on.
+ * Implementation of [DiscreteLinearStateSpaceModel].
  */
-open class DiscreteLinSSModel(A: Mat, B: Mat, C: Mat, D: Mat, override val period: Double) :
-    AbstractLinearStateSpaceModel(A, B, C, D), DiscreteStateSpaceModel
+open class DiscreteLinSSModelImpl @JvmOverloads constructor(
+    override val period: Double, A: Mat, B: Mat, C: Mat, D: Mat,
+    copyMat: Boolean = true
+) : AbstractLinearStateSpaceModel(A, B, C, D, copyMat), DiscreteLinearStateSpaceModel
 
