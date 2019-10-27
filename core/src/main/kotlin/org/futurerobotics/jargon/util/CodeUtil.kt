@@ -66,4 +66,4 @@ inline fun <T1, T2, T3, T4, R> let(p1: T1, p2: T2, p3: T3, p4: T4, block: (T1, T
 
 /** Casts this to type [T] unchecked, but with type inference too. Use with caution. */
 @Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
-inline fun <T> Any?.unsafeCast(): T = this as T
+inline fun <T> Any?.uncheckedCast(): T = this as T

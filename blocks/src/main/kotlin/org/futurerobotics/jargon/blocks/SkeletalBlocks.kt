@@ -2,7 +2,7 @@ package org.futurerobotics.jargon.blocks
 
 import org.futurerobotics.jargon.blocks.Block.Processing.*
 import org.futurerobotics.jargon.util.fixedSizeMutableListOfNulls
-import org.futurerobotics.jargon.util.unsafeCast
+import org.futurerobotics.jargon.util.uncheckedCast
 
 /**
  * Base implementation of [Block]; where constants are set via constructor.
@@ -157,11 +157,11 @@ abstract class SingleInputBlock<T>(numOutputs: Int, processing: Block.Processing
     final override val block: Block get() = this
     final override val index: Int get() = 0
     final override fun process(inputs: List<Any?>, systemValues: SystemValues) {
-        input = inputs[0].unsafeCast<T>()
-        processInput(input.unsafeCast(), systemValues)
+        input = inputs[0].uncheckedCast<T>()
+        processInput(input.uncheckedCast(), systemValues)
     }
 
-    final override fun getOutput(index: Int): Any? = getOutput(input.unsafeCast(), index)
+    final override fun getOutput(index: Int): Any? = getOutput(input.uncheckedCast(), index)
     /** Gets the output of this block by index, also with the given [input], as in [getOutput][Block.getOutput]. */
     protected abstract fun getOutput(input: T, index: Int): Any?
 
@@ -186,7 +186,7 @@ abstract class SingleInputListStoreBlock<T>(numOutputs: Int, processing: Block.P
 
     final override fun process(
         inputs: List<Any?>, systemValues: SystemValues, outputs: MutableList<Any?>
-    ): Unit = processInput(inputs[0].unsafeCast(), systemValues, outputs)
+    ): Unit = processInput(inputs[0].uncheckedCast(), systemValues, outputs)
 
     /**
      * Processes this block, given the single [input] and the [outputs] as a value
@@ -242,7 +242,8 @@ abstract class PipeBlock<T, R> @JvmOverloads constructor(processing: Block.Proce
     SingleOutputBlock<R>(1, processing), BlocksConfig.Input<T> {
 
     override fun initialValue(): R? = null
-    final override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): R = pipe(inputs[0].unsafeCast())
+    final override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): R =
+        pipe(inputs[0].uncheckedCast())
 
     /**
      * Transforms the input value to the output value.
@@ -279,7 +280,7 @@ abstract class CombineBlock<A, B, R>(processing: Block.Processing = IN_FIRST_LAZ
 
     override fun initialValue(): R? = null
     final override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): R =
-        combine(inputs[0].unsafeCast(), inputs[1].unsafeCast())
+        combine(inputs[0].uncheckedCast(), inputs[1].uncheckedCast())
 
     /**
      * Combines two input values to the output value.
