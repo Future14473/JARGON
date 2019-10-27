@@ -56,6 +56,10 @@ abstract class AbstractBlock constructor(
         if (index !in 0..numOutputs) throw IndexOutOfBoundsException(index)
         return BlocksConfig.Output.ofUnsafeCast(this, index)
     }
+
+    override fun stop() {
+        //default: Do nothing.
+    }
 }
 
 /**
@@ -302,7 +306,6 @@ abstract class CombineBlock<A, B, R>(processing: Block.Processing = IN_FIRST_LAZ
  *
  * The subsystem does not support [SpecialBlock]s.
  */
-//experimental
 abstract class CompositeBlock(numInputs: Int, numOutputs: Int, processing: Block.Processing) :
     AbstractBlock(numInputs, numOutputs, processing) {
 

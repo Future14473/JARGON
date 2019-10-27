@@ -202,6 +202,7 @@ abstract class AbstractBlocksRunner(config: BlocksConfig) {
 
         open fun stop() {
             outputs.fill(null)
+            block.stop()
         }
 
         /** Gets the input to this block, by an index */

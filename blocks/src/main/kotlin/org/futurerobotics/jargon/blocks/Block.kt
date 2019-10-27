@@ -125,6 +125,13 @@ interface Block {
     }
 
     /**
+     * Does any possible necessary preparation for this block to actually run from the given [config]. Also, verifies
+     * that the current configuration on the given [BlocksConfig] is valid (for example, all required inputs are
+     * connected); if not, throws an [IllegalBlockConfigurationException].
+     */
+    fun prepareAndVerify(config: BlocksConfig)
+
+    /**
      * Resets and initializes this block; Called when the _entire_ system first starts.
      */
     fun init()
@@ -150,9 +157,7 @@ interface Block {
     fun getOutput(index: Int): Any?
 
     /**
-     * Does any possible necessary preparation for this block to actually run from the given [config]. Also, verifies
-     * that the current configuration on the given [BlocksConfig] is valid (for example, all required inputs are
-     * connected); if not, throws an [IllegalBlockConfigurationException].
+     * Stops this block and does nessecary cleanup; called when the _entire_ system shuts down.
      */
-    fun prepareAndVerify(config: BlocksConfig)
+    fun stop()
 }
