@@ -166,12 +166,6 @@ class PosePIDController(xCoeff: PIDCoefficients, yCoeff: PIDCoefficients, headin
             heading from headingController
         }
     }
-
-    override fun init() {
-        xController.init()
-        yController.init()
-        headingController.init()
-    }
 }
 
 /**
@@ -331,11 +325,5 @@ class PosePIDFController(xCoeff: PIDFCoefficients, yCoeff: PIDFCoefficients, hea
             y from yController
             heading from headingController
         }
-    }
-
-    override fun init() {
-        xController.init()
-        yController.init()
-        headingController.init()
     }
 }

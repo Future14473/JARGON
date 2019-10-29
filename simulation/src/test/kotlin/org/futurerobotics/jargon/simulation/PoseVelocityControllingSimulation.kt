@@ -93,7 +93,7 @@ internal abstract class PoseVelocityControllingSimulation(
                     }
             }
 
-            KalmanFilter(ssModel, kfilterQ, kfilterR)() {
+            LinearKalmanFilter(ssModel, kfilterQ, kfilterR)() {
                 measurement from motorsBlock.motorVelocities.pipe { toVec() }
                 signal from ssController.delay(zeroVec(numWheels))
                 ssController.state from this

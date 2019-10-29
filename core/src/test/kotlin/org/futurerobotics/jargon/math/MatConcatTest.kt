@@ -106,36 +106,12 @@ class MatConcatTest {
     fun `dynamic 2x2 square 1`() {
         val expect = mat(
             of the
-                    1,
-            0,
-            0,
-            3,
-            4 end
-                    0,
-            1,
-            0,
-            1,
-            5 end
-                    0,
-            0,
-            1,
-            2,
-            1 end
-                    2,
-            3,
-            2,
-            0,
-            0 end
-                    1,
-            3,
-            5,
-            0,
-            0 end
-                    7,
-            8,
-            4,
-            0,
-            0
+                    1, 0, 0, 3, 4 end
+                    0, 1, 0, 1, 5 end
+                    0, 0, 1, 2, 1 end
+                    2, 3, 2, 0, 0 end
+                    1, 3, 5, 0, 0 end
+                    7, 8, 4, 0, 0
         )
         val test = MatConcat.dynamic2x2Square(
             1,

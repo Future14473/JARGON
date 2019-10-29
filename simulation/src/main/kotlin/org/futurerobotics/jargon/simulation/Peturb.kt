@@ -30,9 +30,9 @@ fun Vec.perturbed(std: Double, random: Random = Random()): Vec = map {
 /** Perturbs this [Mat] with noise of with standard deviation [std] */
 fun Mat.perturbed(std: Double, random: Random = Random()): Mat {
     return copy().apply {
-        repeat(rows) { i ->
-            repeat(cols) { j ->
-                this[i, j] = this[i, j].perturbed(std, random)
+        repeat(rows) { r ->
+            repeat(cols) { c ->
+                this[r, c] = this[r, c].perturbed(std, random)
             }
         }
     }

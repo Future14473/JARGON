@@ -155,7 +155,7 @@ abstract class AbstractBlocksRunner(config: BlocksConfig) {
             if (it.block.processing.isOutFirst) OutFirstBlock(it)
             else InFirstBlock(it)
         }.toTypedArray()
-        @Suppress("UNCHECKED_CAST") alwaysRun = allRunners.filter { it.block.processing.isAlwaysProcess }.toTypedArray()
+        alwaysRun = allRunners.filter { it.block.processing.isAlwaysProcess }.toTypedArray()
         outFirst = allRunners.filterIsInstance<OutFirstBlock>().toTypedArray()
     }
 

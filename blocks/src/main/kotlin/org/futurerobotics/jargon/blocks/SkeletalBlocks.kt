@@ -310,7 +310,13 @@ abstract class CompositeBlock(numInputs: Int, numOutputs: Int, processing: Block
 
     private lateinit var subsystem: Subsystem
 
-    final override fun init(): Unit = subsystem.init()
+    final override fun init() {
+        subsystem.init()
+        initMore()
+    }
+
+    /** Does more initialization. Only way to enforce "call super". */
+    protected open fun initMore() {}
     final override fun process(inputs: List<Any?>, systemValues: SystemValues): Unit =
         subsystem.process(inputs, systemValues)
 

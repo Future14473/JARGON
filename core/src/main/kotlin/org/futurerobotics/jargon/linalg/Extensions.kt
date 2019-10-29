@@ -28,7 +28,6 @@ inline operator fun Mat.times(mat: Mat): Mat = multiply(mat)
 
 inline operator fun Mat.times(vec: Vec): Vec = this.operate(vec)
 inline operator fun Mat.times(vec: DoubleArray): DoubleArray = this.operate(vec)
-inline operator fun Vec.times(mat: Mat): Vec = mat.preMultiply(this)
 
 inline operator fun Mat.times(scalar: Double): Mat = scalarMultiply(scalar)
 inline operator fun Vec.times(scalar: Double): Vec = mapMultiply(scalar)
@@ -38,7 +37,6 @@ inline operator fun Double.times(vec: Vec): Vec = vec.mapMultiply(this)
 inline operator fun Mat.invoke(mat: Mat): Mat = this * mat
 inline operator fun Mat.invoke(vec: Vec): Vec = this * vec
 inline operator fun Mat.invoke(vec: DoubleArray): DoubleArray = this * vec
-inline operator fun Vec.invoke(mat: Mat): Vec = this * mat
 
 inline operator fun Mat.invoke(scalar: Double): Mat = this * scalar
 inline operator fun Vec.invoke(scalar: Double): Vec = this * scalar
@@ -68,18 +66,18 @@ infix fun Vec.setTo(vec: Vec) {
 
 infix fun Mat.setTo(mat: Mat) {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
-    repeat(rows) { i ->
-        repeat(cols) { j ->
-            this[i, j] = mat[i, j]
+    repeat(rows) { r ->
+        repeat(cols) { c ->
+            this[r, c] = mat[r, c]
         }
     }
 }
 
 fun Mat.epsEq(mat: Mat, epsilon: Double): Boolean {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
-    repeat(rows) { i ->
-        repeat(cols) { j ->
-            if (abs(this[i, j] - mat[i, j]) >= epsilon) return false
+    repeat(rows) { r ->
+        repeat(cols) { c ->
+            if (abs(this[r, c] - mat[r, c]) >= epsilon) return false
         }
     }
     return true
@@ -95,32 +93,68 @@ infix fun Vec.epsEq(vec: Vec): Boolean {
 
 // +=, -=
 
-infix fun Mat.addI(mat: Mat): Mat = apply { combineToSelf(mat) { this + it } }
+infix fun Mat.addI(mat: Mat): Mat = apply {
+    require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
+    repeat(rows) { r ->
+        repeat(cols) { c ->
+            this.addToEntry(r, c, mat[r, c])
+        }
+    }
+}
+
 inline operator fun Mat.plusAssign(mat: Mat) {
     this addI mat
 }
 
-infix fun Mat.subI(mat: Mat): Mat = apply { combineToSelf(mat) { this - it } }
+infix fun Mat.subI(mat: Mat): Mat = apply {
+    require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
+    repeat(rows) { r ->
+        repeat(cols) { c ->
+            this.addToEntry(r, c, -mat[r, c])
+        }
+    }
+}
+
 inline operator fun Mat.minusAssign(mat: Mat) {
     this subI mat
 }
 
-infix fun Mat.timesI(scalar: Double): Mat = apply { mapToSelf { it * scalar } }
+infix fun Mat.timesI(scalar: Double): Mat = apply {
+    repeat(rows) { r ->
+        repeat(cols) { c ->
+            this.multiplyEntry(r, c, scalar)
+        }
+    }
+}
+
 inline operator fun Mat.timesAssign(scalar: Double) {
     this timesI scalar
 }
 
-infix fun Mat.divI(scalar: Double): Mat = apply { mapToSelf { it / scalar } }
+infix fun Mat.divI(scalar: Double): Mat = timesI(1 / scalar)
+
 inline operator fun Mat.divAssign(scalar: Double) {
     this divI scalar
 }
 
-infix fun Vec.addI(vec: Vec): Vec = apply { combineToSelf(vec) { this + it } }
+infix fun Vec.addI(vec: Vec): Vec = apply {
+    require(size == vec.size) { "Dimension mismatch" }
+    repeat(size) {
+        this.addToEntry(it, vec[it])
+    }
+}
+
 inline operator fun Vec.plusAssign(mat: Vec) {
     this addI mat
 }
 
-infix fun Vec.subI(vec: Vec): Vec = apply { combineToSelf(vec) { this - it } }
+infix fun Vec.subI(vec: Vec): Vec = apply {
+    require(size == vec.size) { "Dimension mismatch" }
+    repeat(size) {
+        this.addToEntry(it, -vec[it])
+    }
+}
+
 inline operator fun Vec.minusAssign(mat: Vec) {
     this subI mat
 }
@@ -139,6 +173,10 @@ inline operator fun Vec.divAssign(scalar: Double) {
 infix fun Vec.emul(other: Vec): Vec = ebeMultiply(other)
 
 inline val Mat.T: Mat get() = transpose()
+val Vec.T: Mat get() = transpose()
+
+fun Vec.toMat(): Mat = createMat(Array(size) { doubleArrayOf(this[it]) }, false)
+fun Vec.transpose(): Mat = createMat(arrayOf(toArray()), false)
 
 inline val Mat.cols: Int get() = columnDimension
 inline val Mat.rows: Int get() = rowDimension

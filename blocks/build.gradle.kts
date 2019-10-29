@@ -3,7 +3,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val ext = project.rootProject.extra
-val hipparchus: ((String) -> String) by ext
 val junit5: String by ext
 val junit5engine: String by ext
 val junit5params: String by ext

@@ -9,12 +9,12 @@ import java.text.DecimalFormat
  */
 fun Mat.formatLiteral(): String = buildString {
     appendln("mat[")
-    repeat(rows) { i ->
-        repeat(cols - 1) { j ->
-            append(this@formatLiteral[i, j].format())
+    repeat(rows) { r ->
+        repeat(cols - 1) { c ->
+            append(this@formatLiteral[r, c].format())
             append(',')
         }
-        append(this@formatLiteral[i, cols - 1].format())
+        append(this@formatLiteral[r, cols - 1].format())
         appendln(" end")
     }
     appendln(']')
@@ -24,13 +24,13 @@ fun Mat.formatLiteral(): String = buildString {
  * Formats this matrix in a human readable format
  */
 fun Mat.formatReadable(): String = buildString {
-    repeat(rows) { i ->
+    repeat(rows) { r ->
         append("| ")
-        repeat(cols - 1) { j ->
-            append(this@formatReadable[i, j].format())
+        repeat(cols - 1) { c ->
+            append(this@formatReadable[r, c].format())
             append(' ')
         }
-        append(this@formatReadable[i, cols - 1].format())
+        append(this@formatReadable[r, cols - 1].format())
         appendln(" |")
     }
 }

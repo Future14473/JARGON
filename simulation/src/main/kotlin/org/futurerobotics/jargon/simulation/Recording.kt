@@ -1,8 +1,11 @@
 package org.futurerobotics.jargon.simulation
 
-import org.futurerobotics.jargon.blocks.*
+import org.futurerobotics.jargon.blocks.BaseBlocksConfig
+import org.futurerobotics.jargon.blocks.BlocksConfig
+import org.futurerobotics.jargon.blocks.BlocksSystem
+import org.futurerobotics.jargon.blocks.SystemValuesBlock
+import org.futurerobotics.jargon.blocks.functional.RecordingBlock
 import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.util.asUnmodifiableList
 import org.knowm.xchart.XYChart
 import org.knowm.xchart.XYChartBuilder
 import org.knowm.xchart.style.markers.None
@@ -27,8 +30,8 @@ class Recordings internal constructor(
     private val times: RecordingBlock<Double>
 ) {
     /**
-     * Gets a [XYChart] for the given [groupName] of y recordings. Time will be graphed on the x axis, and values on the
-     * y axis.
+     * Gets a [XYChart] for the given [groupName] of y recordings. Time will be graphed on the x-axis, and values on the
+     * y-axis.
      *
      * Uses the given [builder] to create the base graph.
      */
@@ -47,7 +50,7 @@ class Recordings internal constructor(
 
     /**
      * Gets a list of pairs of (group name, [XYChart]) of y recordings for all groups of y recordings.
-     * Time will be graphed on the x axis, and values on the y axis.
+     * Time will be graphed on the x-axis, and values on the y-axis.
      *
      * Uses the given [builder] to create the base graph.
      */
@@ -73,7 +76,7 @@ class Recordings internal constructor(
 
     /**
      * Gets a list of pairs of (group name, [XYChart]) of xy recordings for all groups of xy recordings.
-     * Time will be graphed on the x axis, and values on the y axis.
+     * The values of xy will be plotted and connected.
      *
      * Uses the given [builder] to create the base graph.
      */
@@ -84,23 +87,6 @@ class Recordings internal constructor(
      * Gets a list of pairs of (group name, [XYChart]) for _all_ groups, y graphs and xy graphs.
      */
     fun getAllGraphs(): List<Pair<String, XYChart>> = getAllXYGraphs() + getAllYGraphs()
-}
-
-/**
- * A block with a single input that records the values it received every loop.
- * Usually used for graphing.
- */
-class RecordingBlock<T> : InputOnlyBlock<T>() {
-    private val _values = ArrayList<T>()
-    /** The values recorded by this block */
-    val values: List<T> = _values.asUnmodifiableList()
-
-    override fun init() {
-    }
-
-    override fun processInput(input: T, systemValues: SystemValues) {
-        _values += input
-    }
 }
 
 /**

@@ -2,18 +2,25 @@
 
 package org.futurerobotics.jargon.linalg
 
+import org.hipparchus.linear.Array2DRowRealMatrix
 import org.hipparchus.linear.ArrayRealVector
+import org.hipparchus.linear.BlockRealMatrix
 import org.hipparchus.linear.MatrixUtils
 import java.util.*
 
-/** Creates a [Mat] using an 2d double array. */
-fun createMat(data: Array<DoubleArray>): Mat = MatrixUtils.createRealMatrix(data)
+/** Creates a [Mat] using a 2d double array. */
+@JvmOverloads
+fun createMat(data: Array<DoubleArray>, copy: Boolean = true): Mat =
+    if (data.size * data[0].size <= 4096)
+        Array2DRowRealMatrix(data, copy)
+    else
+        BlockRealMatrix(data)
 
 /** Creates a matrix with the given [rows] and [cols], and filling values with the given [func]. */
-inline fun createMat(rows: Int, cols: Int, func: (row: Int, col: Int) -> Double): Mat = zeroMat(rows, cols).apply {
-    repeat(rows) { i ->
-        repeat(cols) { j ->
-            this[i, j] = func(i, j)
+inline fun createMat(rows: Int, cols: Int, func: (r: Int, c: Int) -> Double): Mat = zeroMat(rows, cols).apply {
+    repeat(rows) { r ->
+        repeat(cols) { c ->
+            this[r, c] = func(r, c)
         }
     }
 }
@@ -49,12 +56,24 @@ fun createVec(vararg values: Double): Vec = ArrayRealVector(values, false)
 fun zeroVec(size: Int): Vec = ArrayRealVector(size)
 
 /**
- * Creates a vector full of Gaussian random values with the given [size], and using the given [random]
+ * Creates a vector full of Gaussian random samples with the given [size], and using the given [random]
  */
 @JvmOverloads
 fun normRandVec(size: Int, random: Random = Random()): Vec = zeroVec(size).apply {
     repeat(size) {
         this[it] = random.nextGaussian()
+    }
+}
+
+/**
+ * Creates a vector full of Gaussian random samples with the given [size], and using the given [random]
+ */
+@JvmOverloads
+fun normRandMat(rows: Int, cols: Int, random: Random = Random()): Mat = zeroMat(rows, cols).apply {
+    repeat(rows) { r ->
+        repeat(cols) { c ->
+            this[r, c] = random.nextGaussian()
+        }
     }
 }
 
@@ -110,6 +129,7 @@ fun mat(vararg values: Any): Mat {
             end -> {
                 require(curRow < rows) { "Even rows not given" }
                 curRow++
+                curCol = 0
             }
             else -> require(false) { "Invalid value given" }
         }

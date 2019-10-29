@@ -1,5 +1,7 @@
 package org.futurerobotics.jargon.blocks
 
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
 import org.futurerobotics.jargon.blocks.BlocksConfig.Input
 import org.futurerobotics.jargon.blocks.BlocksConfig.Input.Companion.of
 import org.futurerobotics.jargon.blocks.BlocksConfig.Input.Companion.ofUnsafeCast
@@ -35,14 +37,19 @@ class IllegalBlockConfigurationException
  */
 abstract class BlocksConfig {
 
+    /** Gets a map of blocks to [Connections] for those blocks. */
+    abstract val connections: Map<Block, Connections>
+
     /**
      * Returns if [this] block is present in the config, in other words there is at least one
-     * connection to or from it within the config.
+     * connection to or from it within the config; or [ensureAdded] has been called.
      */
     abstract fun Block.isPresent(): Boolean
 
-    /** Gets a map of blocks to [Connections] for those blocks. */
-    abstract val connections: Map<Block, Connections>
+    /**
+     * Ensures that this block is added to the config.
+     */
+    abstract fun Block.ensureAdded()
 
     /** Gets a [Connections] representing the connections to or from the given block; or `null` if none yet exists. */
     open fun Block.connections(): Connections? = connections[this]
@@ -90,6 +97,74 @@ abstract class BlocksConfig {
     abstract fun <T> Input<T>.source(): Output<T>?
 
     /**
+     * Creates a lazy block that outputs a value given by [generate] every time it is called.
+     */
+    inline fun <R> generate(crossinline generate: () -> R): Output<R> =
+        object : SingleOutputBlock<R>(0, IN_FIRST_LAZY) {
+            override fun initialValue(): R? = null
+
+            override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): R = generate()
+        }
+
+    /**
+     * Runs the given [operation] function on [this] output, every loop. Useful for quick operations; but use wisely.
+     *
+     * Note that if the source has a processing of [Block.Processing.IN_FIRST_LAZY], it will now always be processed.
+     */
+    inline fun <T> Output<T>.listen(crossinline operation: (T) -> Unit) {
+        this into InputOnlyBlock.of(operation)
+    }
+
+    /**
+     * Adds a block to the system that calls the [operation] when the system inits.
+     */
+    inline fun onInit(crossinline operation: () -> Unit) {
+        object : AbstractBlock(0, 0, IN_FIRST_ALWAYS) {
+            override fun init() {
+                operation()
+            }
+
+            override fun process(inputs: List<Any?>, systemValues: SystemValues) {
+            }
+
+            override fun getOutput(index: Int): Any? = throw IndexOutOfBoundsException(index)
+        }.ensureAdded()
+    }
+
+    /**
+     * Adds a block to the system that calls the [operation] on every loop.
+     */
+    inline fun onLoop(crossinline operation: () -> Unit) {
+        object : AbstractBlock(0, 0, IN_FIRST_ALWAYS) {
+            override fun init() {
+            }
+
+            override fun process(inputs: List<Any?>, systemValues: SystemValues) {
+                operation()
+            }
+
+            override fun getOutput(index: Int): Any? = throw IndexOutOfBoundsException(index)
+        }.ensureAdded()
+    }
+
+    /** Adds a block to the system that calls the [operation] when the system stops. */
+    inline fun onStop(crossinline operation: () -> Unit) {
+        object : AbstractBlock(0, 0, IN_FIRST_ALWAYS) {
+            override fun init() {
+            }
+
+            override fun process(inputs: List<Any?>, systemValues: SystemValues) {
+            }
+
+            override fun getOutput(index: Int): Any? = throw IndexOutOfBoundsException(index)
+
+            override fun stop() {
+                operation()
+            }
+        }.ensureAdded()
+    }
+
+    /**
      * Creates and connects a [Monitor] from [this] [Output], and returns it.
      *
      * Note that if the block has a processing of [Block.Processing.IN_FIRST_LAZY], it will now always be processed.
@@ -105,15 +180,6 @@ abstract class BlocksConfig {
      */
     open fun <T> Input<T>.monitor(): Monitor<T> =
         source()?.monitor() ?: throw IllegalStateException("Input has not yet been connected, cannot deduce source")
-
-    /**
-     * Runs the given the given [operation] function on [this] output, every loop. Useful for quick operations; but use wisely.
-     *
-     * Note that if the source has a processing of [Block.Processing.IN_FIRST_LAZY], it will now always be processed.
-     */
-    inline fun <T> Output<T>.listen(crossinline operation: (T) -> Unit) {
-        this into InputOnlyBlock.of(operation)
-    }
 
     /**
      * Create a [Delay] block with the given [initialValue], connects this output into it, and returns the delay's
@@ -284,16 +350,17 @@ open class BaseBlocksConfig : BlocksConfig() {
 
     private val connectionsMap: IdentityHashMap<Block, BlockConnections> = IdentityHashMap()
     override val connections: Map<Block, Connections> = connectionsMap.asUnmodifiableMap()
-    /**
-     * Lets every block [verifyConfig][Block.prepareAndVerify] itself.
-     */
+    override fun Block.isPresent(): Boolean = connectionsMap.containsKey(this)
+    override fun Block.ensureAdded() {
+        connection
+    }
+
     override fun verifyConfig() {
         connections.forEach { (block) ->
             block.prepareAndVerify(this)
         }
     }
 
-    override fun Block.isPresent(): Boolean = connectionsMap.containsKey(this)
     private val Block.connection: BlockConnections
         get() = connectionsMap.getOrPut(this) {
             BlockConnections(this)
