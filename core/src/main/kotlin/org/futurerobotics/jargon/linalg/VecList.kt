@@ -41,7 +41,7 @@ fun Vec.toList(): List<Double> = toMutableList()
 /**
  * Converts this vector to a mutable list.
  */
-fun Vec.toMutableList(): MutableList<Double> = MutableList(dimension) { get(it) }
+fun Vec.toMutableList(): MutableList<Double> = MutableList(size) { get(it) }
 
 /** Converts this list of doubles to a [Vec]. */
 fun List<Double>.toVec(): Vec = createVec(this)

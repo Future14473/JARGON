@@ -9,7 +9,8 @@ import org.futurerobotics.jargon.blocks.control.MotorsBlock
 import org.futurerobotics.jargon.hardware.Gyro
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.mechanics.FixedDriveModel
+import org.futurerobotics.jargon.mechanics.DriveModel
+import org.futurerobotics.jargon.mechanics.FixedWheelDriveModel
 import org.futurerobotics.jargon.mechanics.GlobalToBot
 import org.futurerobotics.jargon.statespace.DriveStateSpaceModels
 import java.util.*
@@ -18,7 +19,7 @@ import kotlin.math.roundToInt
 /**
  * Represents a simulated drive interface.
  *
- * Right now only [FixedDriveModel]s are supported.
+ * Right now only [DriveModel]s are supported.
  */
 interface SimulatedDrive {
 
@@ -50,7 +51,7 @@ interface SimulatedDrive {
  * @param timeStep the minimum amount of time passed between samples. Because I don't like euler approximations.
  */
 class SimulatedFixedDrive(
-    private val driveModel: FixedDriveModel,
+    private val driveModel: FixedWheelDriveModel,
     private val random: Random = Random(),
     private val voltageNoise: Mat,
     private val measurementNoise: Mat,
@@ -59,8 +60,8 @@ class SimulatedFixedDrive(
 ) : SimulatedDrive {
 
     constructor(
-        model: FixedDriveModel,
-        perturb: Perturber<FixedDriveModel>,
+        model: FixedWheelDriveModel,
+        perturb: Perturber<FixedWheelDriveModel>,
         random: Random,
         voltageNoise: Mat,
         measurementNoise: Mat,
@@ -97,7 +98,7 @@ class SimulatedFixedDrive(
         curMotorVelocities = wheelSSModel.processState(pastMotorVelocities, realVolts)
         val motorDelta = (pastMotorVelocities + curMotorVelocities) * (timeStep / 2)
         curMotorPositions += motorDelta
-        val botPoseDelta = driveModel.getBotVelFromMotorVel(motorDelta)
+        val botPoseDelta = Pose2d(driveModel.botVelFromMotorVel(motorDelta))
         curGlobalPose = GlobalToBot.trackGlobalPose(botPoseDelta, curGlobalPose)
     }
 
@@ -105,7 +106,7 @@ class SimulatedFixedDrive(
     fun getMeasurementNoise(): Vec = measurementNoise * normRandVec(measurementNoise.rows)
 
     /** Gets a voltage noise vector. */
-    fun getVoltageNoise(): Vec = voltageNoise * normRandVec(voltageNoise.rows)
+    private fun getVoltageNoise(): Vec = voltageNoise * normRandVec(voltageNoise.rows)
 }
 
 /**

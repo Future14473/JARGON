@@ -15,7 +15,7 @@ import org.futurerobotics.jargon.blocks.motion.TimeOnlyMotionProfileFollower
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.distTo
-import org.futurerobotics.jargon.mechanics.FixedDriveModel
+import org.futurerobotics.jargon.mechanics.DriveModel
 import org.futurerobotics.jargon.mechanics.MotionState
 import org.futurerobotics.jargon.mechanics.ValueMotionState
 import org.futurerobotics.jargon.pathing.trajectory.Trajectory
@@ -23,7 +23,7 @@ import org.futurerobotics.jargon.statespace.*
 import kotlin.math.max
 
 internal abstract class PoseVelocityControllingSimulation(
-    protected val driveModel: FixedDriveModel,
+    protected val driveModel: DriveModel,
     simulatedDrive: SimulatedFixedDrive,
     val period: Double,
     nonFFController: PosePIDController,

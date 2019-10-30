@@ -97,14 +97,16 @@ private fun accelerationPass(
         val dx = points[it] distTo points[it + 1] //works for backwards
         var aMax = getAMaxOrNaN(dx, v0, accelGetter, reversed)
         if (aMax.isNaN()) {
-            if (v0 == 0.0) throwBadAccelAtZeroVel()
+            if (v0 == 0.0) throwBadAccelAtZeroVel(points[it], points[it + 1], reversed)
             //OH NO, ITS BINARY SEARCH!
             // heuristic search, typically < 10 iterations, and only occurs when necessary,
             // and typically happens < 1% of the time
             val newV0 = extendingDownDoubleSearch(
                 0.0, v0, tolerance, searchingFor = false
             ) { v -> getAMaxOrNaN(dx, v, accelGetter, reversed).isNaN() }
-            aMax = getAMaxOrNaN(dx, newV0, accelGetter, reversed).notNaNOrElse(::throwBadAccelAtZeroVel)
+            aMax = getAMaxOrNaN(dx, newV0, accelGetter, reversed).notNaNOrElse {
+                throwBadAccelAtZeroVel(points[it], points[it + 1], reversed)
+            }
             v0 = newV0
             maxVels[it] = newV0
         }
@@ -121,8 +123,10 @@ private fun getAMaxOrNaN(dx: Double, v: Double, accelGetter: PointConstraint, re
     return if (aMaxMaybe > aMin) aMaxMaybe else Double.NaN
 }
 
-private fun throwBadAccelAtZeroVel(): Nothing =
+private fun throwBadAccelAtZeroVel(x1: Double, x2: Double, reversed: Boolean): Nothing {
+    val (x1, x2) = if (reversed) x2 to x1 else x1 to x2
     throw RuntimeException(
-        "Unsatisfiable constraints: The current constraint's did not return a non-empty interval for acceleration even" +
-                " with a current velocity of 0.0."
+        "On the interval from ($x1 to $x2, reversed = $reversed), constraints did not return a non-empty acceleration" +
+                " range even with a current velocity of 0.0."
     )
+}

@@ -34,13 +34,13 @@ internal class MultipleMatrixFitterTest {
             real.map { normRandMat(it.rows, it.cols, random) }
         )
         val fitter =
-            BatchMultipleMatrixFitter(10, MultipleDescentParams(listOf(0.05, 0.05), listOf(0.0001, 0.0001)))
+            BatchMultipleMatrixFitter(10, MultipleDescentParams(listOf(0.01, 0.01), listOf(0.0001, 0.0001)))
 
         val xTest = List(100) { randomInput(random) }
         val yTest = xTest.map { perfect.predict(it) }
 
         val numPoints = 100
-        val perUpdate = 10
+        val perUpdate = 30
         val costs = List(numPoints) {
             val xTrain = List(perUpdate) { randomInput(random) }
             val yTrain = perfect.predict(xTrain).map { it + normRandVec(it.size, random) * 10.0 }
@@ -78,10 +78,10 @@ internal class MultipleMatrixFitterTest {
         val yTest = xTest.map { perfect.predict(it) }
 
         val numPoints = 100
-        val perUpdate = 15
+        val perUpdate = 30
         val costs = List(numPoints) {
             val xTrain = List(perUpdate) { randomInput(random) }
-            val yTrain = perfect.predict(xTrain).map { it + normRandVec(it.size, random) * 5.0 }
+            val yTrain = perfect.predict(xTrain).map { it + normRandVec(it.size, random) * 10.0 }
             fitter.fitOnce(predictor, xTrain, yTrain)
 
             fitter.cost(predictor, xTest, yTest)

@@ -24,7 +24,7 @@ internal fun randomTrajectory(
     constraints: MotionConstraintSet
 ): Trajectory {
     val segs =
-        (listOf(ValueDerivatives(Vector2d.ZERO, Vector2d(1, 0), Vector2d.ZERO)) +
+        (listOf(ValueDerivatives(Vector2d.ZERO, Vector2d.polar(1.0, -74 * deg), Vector2d.ZERO)) +
                 List(4) {
                     randomVectorDerivatives(random, 5.0)
                 }).zipWithNext { a, b ->
@@ -38,7 +38,7 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
     SomeModels.mecanum,
     SimulatedFixedDrive(
         SomeModels.mecanum,
-        FixedDriveModelPerturber(
+        FixedWheelDriveModelPerturb(
             0.005, 0.005, FixedWheelModelPerturb(
                 0.0005, 0.00001, 0.005, TransmissionModelPerturb(
                     0.005, 0.1, 0.005, DcMotorModelPerturb(0.001)
@@ -52,7 +52,7 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
     ),
     1.0 / 20,
     PosePIDController(coeff, coeff, headingCoeff),
-    QRCost(idenMat(3) * 3.0, idenMat(4)),
+    QRCost(idenMat(3) * 4.0, idenMat(4)),
     idenMat(3) * 0.05,
     idenMat(4) * 0.05
 ) {
@@ -65,9 +65,12 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
     )
 
     private val constraints2 = MotionConstraintSet(
-        MaxMotorVoltage(driveModel, 10.0),
-        MaxWheelForce(driveModel, 50.0),
-        MaxAngularVelConstraint(2.0)
+        MaxMotorVoltage(driveModel, 8.0),
+        MaxMotorTorque(driveModel, 250 * ozf * `in`),
+        MaxVelConstraint(1.0),
+        MaxAngularVelConstraint(1.0),
+        MaxTotalAccelConstraint(1.0),
+        MaxAngularAccelConstraint(1.0)
     )
 
     @Test
@@ -114,12 +117,12 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
 
     companion object {
         val coeff = PIDCoefficients(
-            3.0, 0.0, 0.0,
+            3.0, 0.0, 0.001,
             errorBounds = Interval.symmetric(0.5)
         )
 
         val headingCoeff = PIDCoefficients(
-            2.0, 0.0, 0.0,
+            1.0, 0.0, 0.001,
             errorBounds = Interval.symmetric(0.5)
         )
     }

@@ -1,10 +1,10 @@
 package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.mechanics.FixedDriveModel
+import org.futurerobotics.jargon.mechanics.DriveModel
 
 /**
- * Utilities for creating common [LinearStateSpaceModel]s from [FixedDriveModel]s.
+ * Utilities for creating common [LinearStateSpaceModel]s from [DriveModel]s.
  */
 object DriveStateSpaceModels {
 
@@ -24,14 +24,14 @@ object DriveStateSpaceModels {
      */
     @Suppress("UnnecessaryVariable")
     @JvmStatic
-    fun poseVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModelImpl {
+    fun poseVelocityController(driveModel: DriveModel): ContinuousLinSSModelImpl {
 //        require(driveModel.isHolonomic) { "Drive model must be holonomic" }
         // perhaps we can get away with it; if we always set the y vel to 0. Needs testing.
         val size = driveModel.numWheels
         val botDeccelFromBotVel = -driveModel.botAccelFromVolts * driveModel.voltsFromBotVel
         val a = botDeccelFromBotVel
         val b = driveModel.botAccelFromVolts
-        val motorVelFromBotVel = driveModel.motorVelFromWheelVel * driveModel.wheelVelFromBotVel
+        val motorVelFromBotVel = driveModel.motorVelFromBotVel
         val c = motorVelFromBotVel
         val d = zeroMat(size, size)
         return ContinuousLinSSModelImpl(a, b, c, d)
@@ -53,8 +53,8 @@ object DriveStateSpaceModels {
      */
     @Suppress("UnnecessaryVariable")
     @JvmStatic
-    fun motorVelocityController(driveModel: FixedDriveModel): ContinuousLinSSModelImpl {
-        val motorAccelFromVolts = driveModel.motorVelFromWheelVel * driveModel.wheelAccelFromVolts
+    fun motorVelocityController(driveModel: DriveModel): ContinuousLinSSModelImpl {
+        val motorAccelFromVolts = driveModel.motorAccelFromVolts
         return getMotorVelocityController(driveModel, motorAccelFromVolts)
     }
 
@@ -73,9 +73,9 @@ object DriveStateSpaceModels {
      * reducing the "coupling" terms.
      */
     @JvmStatic
-    fun decoupledMotorVelocityController(driveModel: FixedDriveModel, coupling: Double): ContinuousLinSSModelImpl {
+    fun decoupledMotorVelocityController(driveModel: DriveModel, coupling: Double): ContinuousLinSSModelImpl {
         require(coupling in 0.0..1.0) { "coupling ($coupling) must be between 0 and 1, or else things don't make sense." }
-        val motorAccelFromVolts = (driveModel.motorVelFromWheelVel * driveModel.wheelAccelFromVolts).apply {
+        val motorAccelFromVolts = driveModel.motorAccelFromVolts.apply {
             repeat(rows) { r ->
                 repeat(cols) { c ->
                     if (r != c) this[r, c] *= coupling
@@ -86,12 +86,12 @@ object DriveStateSpaceModels {
     }
 
     private fun getMotorVelocityController(
-        driveModel: FixedDriveModel,
+        driveModel: DriveModel,
         motorAccelFromVolts: Mat
     ): ContinuousLinSSModelImpl {
         val size = driveModel.numWheels
         val motorDeccelFromMotorVel =
-            -motorAccelFromVolts * driveModel.voltsFromWheelVel * driveModel.wheelVelFromMotorVel
+            -motorAccelFromVolts * driveModel.voltsFromMotorVel
         val a = motorDeccelFromMotorVel
         val b = motorAccelFromVolts
         val c = idenMat(size)

@@ -26,15 +26,13 @@ data class Pose2d(@JvmField val vec: Vector2d, @JvmField val heading: Double) : 
     constructor(x: Double, y: Double, heading: Double) : this(Vector2d(x, y), heading)
 
     /**
-     * Constructs a pose from values within a [DoubleArray], which should have three values in [x], [y], [heading]
+     * Constructs a pose from values within a [Vec], which should have three values in [x], [y], [heading]
      * order.
+     *
+     * @see toVec
      */
-    constructor(values: DoubleArray) : this(values[0], values[1], values[2]) {
-        require(values.size == 3) { "Give values must have size 3; got size ${values.size} instead" }
-    }
-
     constructor(values: Vec) : this(values[0], values[1], values[2]) {
-        require(values.dimension == 3) { "Given vector must have size 3; got size ${values.dimension} instead" }
+        require(values.size == 3) { "Give vector size (${values.size} != 3" }
     }
 
     /** The x component of the position ([vec]) of this Pose */
@@ -60,7 +58,7 @@ data class Pose2d(@JvmField val vec: Vector2d, @JvmField val heading: Double) : 
     /** Returns a new [Pose2d] with the heading normalized. */
     fun normalizeAngle(): Pose2d = angleNorm(heading).let {
         if (it == heading) this
-        else copy(heading = it)
+        else Pose2d(vec, it)
     }
 
     /** If this pose is equal to another with epsilon leniency. */
@@ -69,7 +67,10 @@ data class Pose2d(@JvmField val vec: Vector2d, @JvmField val heading: Double) : 
     /** If all components are finite. */
     fun isFinite(): Boolean = vec.isFinite() && heading.isFinite()
 
-    /** Converts this to a linear algebra vector, in the order (x, y, heading). */
+    /**
+     * Converts this to a linear algebra vector, in the order of `[x, y, heading]`. This provides a bridge between
+     * poses and linear algebra.
+     */
     fun toVec(): Vec = createVec(x, y, heading)
 
     override fun toString(): String = "Pose2d(x: %.4f, y: %.4f, h: %.4f)".format(x, y, heading)

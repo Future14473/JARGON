@@ -27,17 +27,17 @@ internal class ModelsSanityTest {
         that(idealUnitTransmission) {
             get { motorVelPerOutputVel }.isEpsEqTo(1.0)
             get { motorTorquePerOutputTorque }.isEpsEqTo(1.0)
-            get { motorVoltsPerOutputTorque }.isEpsEqTo(1.0)
+            get { voltsPerOutputTorque }.isEpsEqTo(1.0)
         }
         that(halfLossTransmission) {
             get { motorVelPerOutputVel }.isEpsEqTo(1.0)
             get { motorTorquePerOutputTorque }.isEpsEqTo(2.0)
-            get { motorVoltsPerOutputTorque }.isEpsEqTo(2.0)
+            get { voltsPerOutputTorque }.isEpsEqTo(2.0)
         }
         that(negativeGearedTransmission) {
             get { motorVelPerOutputVel }.isEpsEqTo(-2.0)
             get { motorTorquePerOutputTorque }.isEpsEqTo(-0.5)
-            get { motorVoltsPerOutputTorque }.isEpsEqTo(-0.5)
+            get { voltsPerOutputTorque }.isEpsEqTo(-0.5)
         }
     }
 
@@ -59,8 +59,6 @@ internal class ModelsSanityTest {
             //gear ratio: 2
             //transmission loss: 1/2
             //motor: unit
-            get { wheelVelFromBotVel * forward } isEpsEqTo vec(1, 1) //at output: [1,1],
-            get { wheelVelFromBotVel * turn } isEpsEqTo vec(-7, 7) //since radius = 7
             //at output: 1, At transmission: 1/5. At motor: 2/5
             get { voltsFromBotVel * forward } isEpsEqTo vec(.4, .4)
             get { voltsFromBotVel * turn } isEpsEqTo vec(-7.0 / 5 * 2, 7.0 / 5 * 2)

@@ -2,6 +2,8 @@ package org.futurerobotics.jargon.pathing.trajectory
 
 import org.futurerobotics.jargon.math.Interval
 import org.futurerobotics.jargon.pathing.PathPoint
+import org.futurerobotics.jargon.util.toImmutableList
+import org.futurerobotics.jargon.util.zipForEach
 
 /**
  * Common superclass of all Motion Constraints, used in a [MotionConstraintSet] for dynamic motion profile generation.
@@ -59,7 +61,7 @@ interface AccelConstraint : SingleConstraint {
 //
 //interface JerkConstraint {
 //   Algorithm does not yet support this, and theoretically it would be slow.
-//   Instead, possible non-dynamic profiles or CONSTANT jerk constraint used instead; in the future?
+//   Instead, non-dynamic profiles or CONSTANT jerk constraint used instead; in the future?
 //}
 /**
  * Represents a constraint that needs to be represented by both one or more of [VelConstraint] and [AccelConstraint] together.
@@ -72,38 +74,69 @@ interface MultipleConstraint : MotionConstraint {
     val accelConstraints: Collection<AccelConstraint>
 }
 
+private fun commonSupertype(a: Class<*>, b: Class<*>): Class<*> {
+    var type = a
+    while (!type.isAssignableFrom(b))
+        type = type.superclass
+    return type
+}
+
 /**
- * A base implementation of a [VelConstraint] based upon some positive [max] value, where if the maximum value is lower,
- * it implies more restrictive constraint.
+ * A constraint that is based off of some [max] value, where a lower constraint implies
  *
  * @property max the maximum value of something
  */
-abstract class MaxBasedVelConstraint(protected val max: Double) : VelConstraint {
+abstract class MaxBasedConstraint(protected val max: Double) : SingleConstraint {
 
     init {
         require(max > 0) { "Max value $max gives impossible constraint" }
     }
 
-    override fun otherIsRedundant(other: SingleConstraint): Boolean =
-        other is MaxBasedVelConstraint && this.javaClass == other.javaClass && this.max <= other.max
+    override fun otherIsRedundant(other: SingleConstraint): Boolean {
+        if (other !is MaxBasedConstraint) return false
+        return commonSupertype(this.javaClass, other.javaClass) != MaxBasedConstraint::class.java
+                && this.max <= other.max
+    }
 
-    override fun toString(): String = "${(javaClass.simpleName ?: "anonymous VelConstraint")}(max=$max)"
+    override fun toString(): String {
+        val name = javaClass.simpleName ?: when (this) {
+            is VelConstraint -> "anonymous VelConstraint"
+            is AccelConstraint -> "anonymous AccelConstraint"
+            else -> "anonymous SingleConstraint"
+        }
+        return "$name(max=$max)"
+    }
 }
 
 /**
- * A base implementation of a [AccelConstraint] based upon some maximum value, where if the maximum value is lower, it
- * implies more restrictive constraint.
- *
- * @property max the maximum value of something
+ * Common components of all multiple-max based constraints.
  */
-abstract class MaxBasedAccelConstraint(protected val max: Double) : AccelConstraint {
+abstract class MultipleMaxBasedConstraint(maxes: List<Double>) : SingleConstraint {
+
+    /** A list of maxes of some value */
+    protected val maxes: List<Double> = maxes.toImmutableList()
 
     init {
-        require(max > 0) { "Max value $max gives impossible constraint" }
+        require(maxes.all { it > 0 }) { "All maxes should be > 0; got ${maxes.joinToString()}" }
     }
 
-    override fun otherIsRedundant(other: SingleConstraint): Boolean =
-        other is MaxBasedAccelConstraint && this.javaClass == other.javaClass && this.max <= other.max
-
-    override fun toString(): String = "${(javaClass.simpleName ?: "anonymous AccelConstraint")}(max=$max)"
+    override fun otherIsRedundant(other: SingleConstraint): Boolean {
+        if (other !is MultipleMaxBasedConstraint) return false
+        if (commonSupertype(this.javaClass, other.javaClass) == MaxBasedConstraint::class.java) return false
+        other.maxes.zipForEach(maxes) { them, me -> if (them < me) return false }
+        return true
+    }
 }
+
+//Fallback constraints
+private const val FALLBACK_MAX_VEL = 1000000.0
+private const val FALLBACK_MAX_ACCEL = 1000000.0
+internal val FALLBACK_VELOCITY_CONSTRAINTS = listOf<VelConstraint>(object : VelConstraint {
+    override fun maxVelocity(point: PathPoint): Double = FALLBACK_MAX_VEL
+    override fun toString(): String = "FallbackVelocityConstraint(max=$FALLBACK_MAX_VEL)"
+})
+private val FALLBACK_MAX_ACCEL_INTERVAL = Interval.symmetric(FALLBACK_MAX_ACCEL)
+internal val FALLBACK_ACCEL_CONSTRAINTS = listOf<AccelConstraint>(object : AccelConstraint {
+    override fun accelRange(point: PathPoint, curVelocity: Double) = FALLBACK_MAX_ACCEL_INTERVAL
+    override fun toString(): String = "FallbackAccelConstraint(max=$FALLBACK_MAX_ACCEL)"
+})

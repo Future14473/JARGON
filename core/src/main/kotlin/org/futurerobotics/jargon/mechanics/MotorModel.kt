@@ -8,18 +8,15 @@ import kotlin.math.sign
  *
  * V = torque/[kt]*[r] + angvel/[kv] + sign(angvel) * [i0] * r
  *
- * All units should be SI units.
+ * All units should be SI units; and values can also be derived off of a motor data sheet (see factory methods).
  *
- * (See static factory methods)
+ * This is based off of section 14.2 of
+ * [calcmogul's state space guide][https://file.tavsys.net/control/state-space-guide.pdf], with an added [i0]
+ * term for friction.
  *
- * Refer to section 14.2 of [calcmogul's state space guide][https://file.tavsys.net/control/state-space-guide.pdf]
- * for more details. This adds a [i0] term to the thing.
+ * This also assumes a positive torque/angular velocity corresponds to a positive voltage.
  *
- * This also assumes a positive torque/angular velocity corresponds to a positive voltage,
- * and vice versa.
- *
- * This class is meant to be reusable; Frictional forces are accounted for in [TransmissionModel]
- *
+ * Additional frictional forces are accounted for in [TransmissionModel].
  */
 class DcMotorModel private constructor(
     val kt: Double,
@@ -35,6 +32,7 @@ class DcMotorModel private constructor(
         require(i0 >= 0) { "kv ($kv) must be >= 0" }
     }
 
+    val currentPerTorque: Double get() = 1 / kt
     /**
      * Gets the expected amount of volts per output torque, assuming that the motor isn't moving.
      */
@@ -50,7 +48,7 @@ class DcMotorModel private constructor(
     val voltsForFriction: Double get() = i0 * r
 
     /**
-     * Gets the expected voltage to turn this motor at the given [torque] and current [angVel].
+     * Gets the expected voltage to turn this motor to apply a given [torque], at the current [angVel].
      *
      * May be negative.
      */
@@ -71,7 +69,7 @@ class DcMotorModel private constructor(
             DcMotorModel(kt, r, kv, i0)
 
         /**
-         * Constructs a model based on data give on a motor data sheet.
+         * Constructs a model based on data given on a motor data sheet.
          */
         @JvmStatic
         fun fromMotorData(
@@ -97,12 +95,12 @@ class DcMotorModel private constructor(
  *
  * This is a simple yet good enough model for most use cases.
  *
- * @param motor the model of the motor used
+ * @param motor the motor model used
  * @param gearRatio the gear ratio of this transmission (higher ratio means more torque, less speed)
  * @param constantTorqueLoss the constant component of the torque required to overcome frictional forces.
- * @param ratioTorqueLoss the ratio from the output motor torque and the applied motor torque, due to frictional
- *                      or the "percentage of torque" that makes it to the output. In an ideal world, 1.0,
- *                      a deadlocked motor is 0.0.
+ * @param ratioTorqueLoss the ratio from the output motor torque and the applied motor torque, some lost due to
+ *                      acceleration related friction. This can also be interpreted as the the "percentage of torque"
+ *                      that makes it to the output. In an ideal world, 1.0, for a deadlocked motor, 0.0.
  */
 class TransmissionModel private constructor(
     val motor: DcMotorModel,
@@ -111,8 +109,6 @@ class TransmissionModel private constructor(
     val ratioTorqueLoss: Double = 1.0
 ) {
 
-    //outSpeed = inSpeed * gearRatio
-    //outTorque = inTorque * ratioFrictionalTorque / gearRatio
     init {
         require(gearRatio.isFinite()) { "gearRatio ($gearRatio) must be finite" }
         require(constantTorqueLoss >= 0) { "constantTorqueLoss ($constantTorqueLoss) must be >= 0" }
@@ -121,7 +117,7 @@ class TransmissionModel private constructor(
     }
 
     /**
-     * Gets the ratio of the motor's torque to the outputTorque.
+     * Gets the ratio of the motor's torque to the output torque.
      */
     val motorTorquePerOutputTorque: Double get() = 1 / gearRatio / ratioTorqueLoss
     /**
@@ -129,16 +125,15 @@ class TransmissionModel private constructor(
      */
     val motorVelPerOutputVel: Double get() = gearRatio
     /**
-     * Gets the expected amount of volts per torque, assuming that the motor isn't moving.
+     * Gets the expected amount of volts per output torque, given zero velocity.
      */
-    val motorVoltsPerOutputTorque: Double get() = motor.voltsPerTorque * motorTorquePerOutputTorque
+    val voltsPerOutputTorque: Double get() = motor.voltsPerTorque * motorTorquePerOutputTorque
     /**
      * Gets the expected amount of volts per angVel needed to maintain a constant velocity, assuming no output torque.
      */
-    val voltsPerAngVel: Double get() = motor.voltsPerAngVel * motorVelPerOutputVel
-
+    val voltsPerOutputVel: Double get() = motor.voltsPerAngVel * motorVelPerOutputVel
     /**
-     * The extra volts needed to add to overcome frictional forces.
+     * The extra volts needed to overcome frictional forces, in the direction of the output angular velocity.
      *
      * This is slightly more useful than free current.
      */
@@ -146,27 +141,17 @@ class TransmissionModel private constructor(
 
     companion object {
         /**
-         * Constructs a [TransmissionModel] with the given parameters, based on torque losses.
+         * Constructs a [TransmissionModel] with the given parameters, with friction based on torque losses.
          *
          * Frictional forces are divided into two parts: [ratioTorqueLoss] and [constantTorqueLoss].
          *
-         * A higher gear ratio means more torque, less speed, and negative gear ratio means going in the opposite direction.
-         *
-         *
-         * [ratioTorqueLoss] is the proportion between 0 and 1, that is the "amount of torque" that makes it to the output,
-         * some of which is "lost" due to frictional forces (acceleration related friction), and
-         * [constantTorqueLoss] is the constant amount of torque needed to keep the output at a constant speed
-         * (velocity related friction).
-         *
-         * These can be guessed or measured; The goal of a feedback control system is that errors can be accounted for.
-         *
-         *
-         * @param motor the model of the motor used
-         * @param gearRatio the gear ratio of this transmission (Input/Output, higher ratio means faster/less torque)
+         * @param motor the motor model used
+         * @param gearRatio the gear ratio of this transmission (higher ratio means more torque, less speed, negative
+         *                  means reverse direction)
          * @param constantTorqueLoss the constant component of the torque required to overcome frictional forces.
-         * @param ratioTorqueLoss the ratio from the output motor torque and the applied motor torque, due to frictional
-         *                      or the "percentage of torque" that makes it to the output. In an ideal world, 1.0,
-         *                      a deadlocked motor is 0.0.
+         * @param ratioTorqueLoss the ratio from the output motor torque and the applied motor torque, some lost due to
+         *                      acceleration related friction. This can also be interpreted as the the "percentage of torque"
+         *                      that makes it to the output. In an ideal world, 1.0, for a deadlocked motor, 0.0.
          */
         @JvmStatic
         @JvmOverloads

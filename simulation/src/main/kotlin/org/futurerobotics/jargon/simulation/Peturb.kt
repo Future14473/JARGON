@@ -4,7 +4,7 @@ import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.mechanics.DcMotorModel
-import org.futurerobotics.jargon.mechanics.FixedDriveModel
+import org.futurerobotics.jargon.mechanics.FixedWheelDriveModel
 import org.futurerobotics.jargon.mechanics.FixedWheelModel
 import org.futurerobotics.jargon.mechanics.TransmissionModel
 import java.util.*
@@ -42,12 +42,12 @@ fun Mat.perturbed(std: Double, random: Random = Random()): Mat {
  * Represents something that can perturb a model.
  */
 interface Perturber<T> {
+
     /**
      * Perturbs the given [model] using the given [random] with white noise.
      */
     fun perturb(model: T, random: Random = Random()): T
 }
-
 
 /**
  * Perturbs a [DcMotorModel].
@@ -62,6 +62,7 @@ class DcMotorModelPerturb(
     private val kvPerturb: Double,
     private val i0Perturb: Double
 ) : Perturber<DcMotorModel> {
+
     constructor(std: Double) : this(std, std, std, std)
 
     override fun perturb(model: DcMotorModel, random: Random): DcMotorModel = model.let {
@@ -87,6 +88,7 @@ class TransmissionModelPerturb(
     private val ratioTorqueLossStd: Double,
     private val motorPerturb: DcMotorModelPerturb
 ) : Perturber<TransmissionModel> {
+
     constructor(std: Double, motor: DcMotorModelPerturb) : this(std, std, std, motor)
 
     override fun perturb(model: TransmissionModel, random: Random): TransmissionModel = model.let {
@@ -114,6 +116,7 @@ class FixedWheelModelPerturb(
     private val angleStd: Double,
     private val transmissionPerturb: TransmissionModelPerturb
 ) : Perturber<FixedWheelModel> {
+
     constructor(std: Double, transmission: TransmissionModelPerturb) : this(std, std, std, transmission)
 
     override fun perturb(model: FixedWheelModel, random: Random): FixedWheelModel = model.let {
@@ -132,15 +135,16 @@ class FixedWheelModelPerturb(
  * @param moiStd the std to perturb the moi
  * @param wheelPerturb how to perturb the wheels
  */
-class FixedDriveModelPerturber(
+class FixedWheelDriveModelPerturb(
     private val massStd: Double,
     private val moiStd: Double,
     private val wheelPerturb: FixedWheelModelPerturb
-) : Perturber<FixedDriveModel> {
+) : Perturber<FixedWheelDriveModel> {
+
     constructor(std: Double, wheels: FixedWheelModelPerturb) : this(std, std, wheels)
 
-    override fun perturb(model: FixedDriveModel, random: Random): FixedDriveModel = model.let {
-        FixedDriveModel(
+    override fun perturb(model: FixedWheelDriveModel, random: Random): FixedWheelDriveModel = model.let {
+        FixedWheelDriveModel(
             it.mass.perturbed(massStd, random),
             it.moi.perturbed(moiStd, random),
             it.wheels.map { w -> wheelPerturb.perturb(w, random) },

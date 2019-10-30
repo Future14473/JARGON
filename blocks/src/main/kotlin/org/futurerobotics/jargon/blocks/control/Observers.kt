@@ -8,7 +8,7 @@ import org.futurerobotics.jargon.blocks.CombineBlock
 import org.futurerobotics.jargon.blocks.PipeBlock
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.mechanics.FixedDriveModel
+import org.futurerobotics.jargon.mechanics.DriveModel
 
 /**
  * A [PipeBlock] that takes in motor _positions_, calculates the difference, and then estimate _bot_ pose delta using
@@ -16,7 +16,8 @@ import org.futurerobotics.jargon.mechanics.FixedDriveModel
  *
  * Maybe pass through a filter first.
  */
-class FixedDriveMotorToBotDelta(private val model: FixedDriveModel) : PipeBlock<List<Double>, Pose2d>(IN_FIRST_LAZY) {
+class FixedDriveMotorToBotDelta(private val model: DriveModel) :
+    PipeBlock<List<Double>, Pose2d>(IN_FIRST_LAZY) {
 
     private var pastPositions: Vec? = null
     override fun pipe(input: List<Double>): Pose2d {
@@ -24,7 +25,7 @@ class FixedDriveMotorToBotDelta(private val model: FixedDriveModel) : PipeBlock<
         val curPositions = input.toVec()
         this.pastPositions = curPositions
         return if (pastPositions == null) Pose2d.ZERO else {
-            model.getBotVelFromMotorVel(curPositions - pastPositions)
+            Pose2d(model.botVelFromMotorVel(curPositions - pastPositions))
         }
     }
 }
@@ -35,7 +36,7 @@ class FixedDriveMotorToBotDelta(private val model: FixedDriveModel) : PipeBlock<
  *
  * Maybe pass through a filter first.
  */
-class FixedDriveMotorAndGyroToBotDelta(private val model: FixedDriveModel) :
+class FixedDriveMotorAndGyroToBotDelta(private val model: DriveModel) :
     CombineBlock<List<Double>, Double, Pose2d>(IN_FIRST_LAZY) {
 
     /** Motor positions input */
@@ -51,7 +52,7 @@ class FixedDriveMotorAndGyroToBotDelta(private val model: FixedDriveModel) :
         this.pastPositions = curPositions
         this.pastAngle = b
         return if (pastPositions == null) Pose2d.ZERO else {
-            model.getBotVelFromMotorVel(curPositions - pastPositions).copy(heading = pastAngle - b)
+            Pose2d(model.botVelFromMotorVel * (curPositions - pastPositions)).copy(heading = pastAngle - b)
         }
     }
 }
@@ -61,7 +62,8 @@ class FixedDriveMotorAndGyroToBotDelta(private val model: FixedDriveModel) :
  *
  * Maybe pass through a filter first.
  */
-class FixedDriveMotorToBotVel(private val model: FixedDriveModel) : PipeBlock<List<Double>, Pose2d>(IN_FIRST_LAZY) {
+class FixedDriveMotorToBotVel(private val model: DriveModel) :
+    PipeBlock<List<Double>, Pose2d>(IN_FIRST_LAZY) {
 
-    override fun pipe(input: List<Double>): Pose2d = model.getBotVelFromMotorVel(createVec(input))
+    override fun pipe(input: List<Double>): Pose2d = Pose2d((model.botVelFromMotorVel * input.toVec()))
 }

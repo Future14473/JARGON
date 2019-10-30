@@ -5,6 +5,8 @@ import org.futurerobotics.jargon.blocks.control.PosePIDController
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Interval
 import org.futurerobotics.jargon.math.Vector2d
+import org.futurerobotics.jargon.math.`in`
+import org.futurerobotics.jargon.math.ozf
 import org.futurerobotics.jargon.pathing.Line
 import org.futurerobotics.jargon.pathing.TangentHeading
 import org.futurerobotics.jargon.pathing.addHeading
@@ -55,8 +57,12 @@ internal class HolonomicSimulation2 : DecoupWheelsSimulation(
     )
 
     private val constraints2 = MotionConstraintSet(
-        MaxMotorVoltage(driveModel, 10.0),
-        MaxWheelForce(driveModel, 50.0)
+        MaxMotorVoltage(driveModel, 8.0),
+        MaxMotorTorque(driveModel, 250 * ozf * `in`),
+        MaxVelConstraint(1.0),
+        MaxAngularVelConstraint(1.0),
+        MaxTotalAccelConstraint(1.0),
+        MaxAngularAccelConstraint(1.0)
     )
 
     @Test

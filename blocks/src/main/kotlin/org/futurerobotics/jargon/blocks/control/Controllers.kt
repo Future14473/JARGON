@@ -7,8 +7,6 @@ import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
 import org.futurerobotics.jargon.blocks.control.FeedForwardWrapper.Companion.withAdder
 import org.futurerobotics.jargon.blocks.functional.SplitMotionState
-import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.mechanics.FixedDriveModel
 import org.futurerobotics.jargon.mechanics.MotionOnly
 import org.futurerobotics.jargon.mechanics.MotionState
 import org.futurerobotics.jargon.mechanics.ValueMotionOnly
@@ -55,26 +53,6 @@ class BangBangController<State, Signal>(
             comp > 0 -> greaterThanOutput
             else -> equalOutput
         }
-    }
-}
-
-/**
- * An open-loop controller for a [FixedDriveModel], that takes in the bot's pose [Motion][MotionOnly]
- * and produces modeled motor voltages as a list of doubles, using the given [model].
- */
-class FixedDriveOpenController(private val model: FixedDriveModel) :
-    CombineBlock<MotionOnly<Pose2d>, Any, List<Double>>(IN_FIRST_LAZY),
-    Controller<MotionOnly<Pose2d>, Any, List<Double>> {
-
-    override val reference: BlocksConfig.Input<MotionOnly<Pose2d>> get() = firstInput
-    /** Do not use; connects to nothing */
-    @Deprecated("This doesn't connect to anything", ReplaceWith(""), DeprecationLevel.WARNING)
-    override val state: BlocksConfig.Input<Any>
-        get() = secondInput
-
-    override fun combine(a: MotionOnly<Pose2d>, b: Any): List<Double> = model.getModeledVoltages(a)
-    override fun prepareAndVerify(config: BlocksConfig): Unit = config.run {
-        if (!inputIsConnected(0)) throw IllegalBlockConfigurationException("All inputs to ${this@FixedDriveOpenController} must be connected.")
     }
 }
 
