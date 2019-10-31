@@ -12,10 +12,10 @@ internal class ContinuousLinSSModelTest {
     fun discretize() {
         val random = Random("discretization test".hashCode())
         repeat(5) {
-            val A = createMat(3, 3) { _, _ ->
+            val A = genMat(3, 3) { _, _ ->
                 random.nextDouble(-5.0, 5.0)
             }
-            val B = createMat(3, 2) { _, _ ->
+            val B = genMat(3, 2) { _, _ ->
                 random.nextDouble(-5.0, 5.0)
             }
             val period = 0.5

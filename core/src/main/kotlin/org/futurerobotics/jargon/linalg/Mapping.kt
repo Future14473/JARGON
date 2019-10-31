@@ -65,5 +65,3 @@ inline fun Vec.combineToSelf(other: Vec, func: Double.(Double) -> Double) {
         this[it] = this[it].func(other[it])
     }
 }
-
-

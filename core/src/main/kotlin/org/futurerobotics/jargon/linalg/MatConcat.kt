@@ -1,23 +1,13 @@
 package org.futurerobotics.jargon.linalg
 
-import org.hipparchus.linear.RealMatrix
-import org.hipparchus.linear.RealVector
-
-/** Shorthand for a [RealMatrix] */
-typealias Mat = RealMatrix
-
-/** Shorthand for a [RealVector]. */
-typealias Vec = RealVector
-
-private val dummyMat = zeroMat(1, 1)
-
 /**
  * Functions for concatenating matrices
  */
 object MatConcat {
 
+    private val dummyMat = zeroMat(1, 1)
     /**
-     * DSL using [] to concatenate matrices (or numbers that represent single elements), similar to [mat].
+     * DSL using [] to concatenate matrices (or numbers that represent single elements), similar to [Mat].
      *
      * Use `[to]` to indicate end of a row
      *
@@ -182,4 +172,3 @@ object MatConcat {
 
     private fun throwNotEven(): Nothing = throw IllegalArgumentException("Even rows/cols not given")
 }
-

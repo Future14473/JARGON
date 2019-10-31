@@ -11,11 +11,11 @@ import java.util.*
 
 internal class MultipleMatrixFitterTest {
     private val real = listOf(
-        mat(
+        Mat(
             1.2, 2.1, end,
             -3.2, 4.8, end,
             5.3, 2.9
-        ), mat(
+        ), Mat(
             -1.0, 0, -4, end,
             7.2, -1, 2, end,
             3.3, 5, -0.5

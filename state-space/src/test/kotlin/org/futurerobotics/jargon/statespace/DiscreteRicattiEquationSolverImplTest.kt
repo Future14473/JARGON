@@ -9,13 +9,13 @@ internal class DiscreteRicattiEquationSolverImplTest {
     @Test
     fun test1() {
         val (a, b, q, r) = listOf(
-            mat(1, -1, 1 end 0, 1, 1 end 0, 0, 1),
-            mat(1, 0 end 1, 0 end 0, 1),
-            mat(10, 0, 0 end 0, 1, 0 end 0, 0, 0.1),
-            mat(10, 0 end 0, 0.1)
+            Mat(1, -1, 1 end 0, 1, 1 end 0, 0, 1),
+            Mat(1, 0 end 1, 0 end 0, 1),
+            Mat(10, 0, 0 end 0, 1, 0 end 0, 0, 0.1),
+            Mat(10, 0 end 0, 0.1)
         )
         val test = DiscreteRicattiEquationSolverImpl(a, b, q, r).p
-        val expect = mat(
+        val expect = Mat(
             42.2835, -68.5247, -3.94783 end
                     -68.5247, 154.043, 16.0017 end
                     -3.94783, 16.0017, 8.33197

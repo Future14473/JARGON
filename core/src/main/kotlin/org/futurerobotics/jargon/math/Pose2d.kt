@@ -35,10 +35,10 @@ data class Pose2d(@JvmField val vec: Vector2d, @JvmField val heading: Double) : 
         require(values.size == 3) { "Give vector size (${values.size} != 3" }
     }
 
-    /** The x component of the position ([vec]) of this Pose */
+    /** The x component of the position ([Vec]) of this Pose */
     val x: Double get() = vec.x
 
-    /** The y component of the position ([vec]) of this Pose */
+    /** The y component of the position ([Vec]) of this Pose */
     val y: Double get() = vec.y
 
     operator fun plus(other: Pose2d): Pose2d = Pose2d(vec + other.vec, heading + other.heading)

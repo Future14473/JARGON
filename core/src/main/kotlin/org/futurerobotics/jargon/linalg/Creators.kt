@@ -8,6 +8,15 @@ import org.hipparchus.linear.BlockRealMatrix
 import org.hipparchus.linear.MatrixUtils
 import java.util.*
 
+/** Creates a matrix with the given [rows] and [cols], and filling values with the given [init]. */
+inline fun genMat(rows: Int, cols: Int, init: (r: Int, c: Int) -> Double): Mat = zeroMat(rows, cols).apply {
+    repeat(rows) { r ->
+        repeat(cols) { c ->
+            this[r, c] = init(r, c)
+        }
+    }
+}
+
 /** Creates a [Mat] using a 2d double array. */
 @JvmOverloads
 fun createMat(data: Array<DoubleArray>, copy: Boolean = true): Mat =
@@ -15,15 +24,6 @@ fun createMat(data: Array<DoubleArray>, copy: Boolean = true): Mat =
         Array2DRowRealMatrix(data, copy)
     else
         BlockRealMatrix(data)
-
-/** Creates a matrix with the given [rows] and [cols], and filling values with the given [func]. */
-inline fun createMat(rows: Int, cols: Int, func: (r: Int, c: Int) -> Double): Mat = zeroMat(rows, cols).apply {
-    repeat(rows) { r ->
-        repeat(cols) { c ->
-            this[r, c] = func(r, c)
-        }
-    }
-}
 
 /** Creates a matrix filled with zeros with the given [rows] and [cols]. */
 fun zeroMat(rows: Int, cols: Int): Mat = MatrixUtils.createRealMatrix(rows, cols)
@@ -40,6 +40,13 @@ fun diagMat(values: List<Double>): Mat = MatrixUtils.createRealDiagonalMatrix(va
 /** Creates a matrix with the given [values] along the diagonal. */
 @JvmName("diagVararg")
 fun diagMat(vararg values: Double): Mat = MatrixUtils.createRealDiagonalMatrix(values)
+
+/** Creates a matrix with the given [size], and filling values with the given [init]. */
+inline fun genVec(size: Int, init: (Int) -> Double): Vec = zeroVec(size).apply {
+    repeat(size) {
+        this[it] = init(it)
+    }
+}
 
 /** Creates a vector with the given [values], and copying the array if [copy] is true. */
 @JvmOverloads
@@ -77,14 +84,17 @@ fun normRandMat(rows: Int, cols: Int, random: Random = Random()): Mat = zeroMat(
     }
 }
 
-/** Creates a vec, using the given [values]. Used for vector literals.*/
-fun vec(vararg values: Number): Vec {
+/** Creates a vector using the given [values]. Used for vector literals. */
+@Suppress("FunctionName")
+fun Vec(vararg values: Number): Vec {
     val doubles = DoubleArray(values.size) { values[it].toDouble() }
     return ArrayRealVector(doubles, false)
 }
 
 /**
- * Creates a matrix using the given values; used as a DSL. Values are separated by commas, and
+ * Creates a matrix using the given values. Used for matrix literals.
+ *
+ * Values are separated by commas, and
  * use [end] to separate rows. [end] can be either with the value [end] or the infix function [end];
  * depending on if you are in kotlin land or java land.
  *
@@ -96,9 +106,9 @@ fun vec(vararg values: Number): Vec {
  *     5,  6,  7,   end,
  *     4, -1,  0)
  * ```
-
  */
-fun mat(vararg values: Any): Mat {
+@Suppress("FunctionName")
+fun Mat(vararg values: Any): Mat {
     val ends = values.count { it === end }
     val pairs = values.count { it is Pair<*, *> }
     val items = values.size - ends + pairs
@@ -138,11 +148,11 @@ fun mat(vararg values: Any): Mat {
 }
 
 /**
- * Value used to indicate the end of a row in [mat]
+ * Value used to indicate the end of a row in [Mat]
  */
 val end: Any = Any()
 
 /**
- * Infix function used to indicate the end of a row in [mat].
+ * Infix function used to indicate the end of a row in [Mat].
  */
 infix fun Number.end(other: Number): Pair<Number, Number> = this to other

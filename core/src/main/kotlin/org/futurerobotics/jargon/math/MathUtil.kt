@@ -20,6 +20,14 @@ const val EPSILON: Double = 1e-8
 infix fun Double.epsEq(other: Double): Boolean = abs(this - other) < EPSILON
 
 /**
+ * Short for "epsilon equals"
+ *
+ * If [this] is equal to [other], with a difference tolerance of a configurable [epsilon] to account for floating-point
+ * errors.
+ */
+fun Double.epsEq(other: Double, epsilon: Double): Boolean = abs(this - other) < epsilon
+
+/**
  * Returns [this] if not [isNaN], else the value given by [alternate]
  */
 inline fun Double.notNaNOrElse(alternate: () -> Double): Double = if (isNaN()) alternate() else this

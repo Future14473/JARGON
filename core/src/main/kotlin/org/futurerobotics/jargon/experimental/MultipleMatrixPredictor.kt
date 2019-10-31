@@ -101,7 +101,7 @@ abstract class AbstractMultipleMatrixFitter(protected val params: MultipleDescen
         mat: Mat,
         lambda: Double
     ): Mat {
-        return createMat(error.size, xi.size) { r, c ->
+        return genMat(error.size, xi.size) { r, c ->
             (-error[r] * xi[c] + mat[r, c] * lambda)
         }
     }
