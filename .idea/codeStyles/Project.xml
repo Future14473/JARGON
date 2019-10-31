@@ -5,6 +5,7 @@
       <option name="PACKAGES_TO_USE_STAR_IMPORTS">
         <value>
           <package name="java.util" withSubpackages="false" static="false" />
+          <package name="org.futurerobotics.jargon.math.convert" withSubpackages="true" static="false" />
           <package name="org.futurerobotics.jargon.linalg" withSubpackages="true" static="false" />
           <package name="kotlinx.android.synthetic" withSubpackages="true" static="false" />
         </value>

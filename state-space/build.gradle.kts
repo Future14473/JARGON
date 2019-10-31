@@ -22,7 +22,6 @@ dependencies {
     testImplementation(project(":test-util"))
     testImplementation(strikt)
 
-
 }
 tasks.test {
     useJUnitPlatform()

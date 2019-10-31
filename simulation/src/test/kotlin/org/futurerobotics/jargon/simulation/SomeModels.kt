@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.simulation
 
-import org.futurerobotics.jargon.math.*
+import org.futurerobotics.jargon.math.convert.*
 import org.futurerobotics.jargon.mechanics.DcMotorModel
 import org.futurerobotics.jargon.mechanics.DriveModels
 import org.futurerobotics.jargon.mechanics.TransmissionModel

@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.math.*
+import org.futurerobotics.jargon.math.convert.*
 import org.futurerobotics.jargon.mechanics.DcMotorModel
 import org.futurerobotics.jargon.mechanics.DriveModels
 import org.futurerobotics.jargon.mechanics.TransmissionModel

@@ -5,8 +5,7 @@ import org.futurerobotics.jargon.blocks.control.PosePIDController
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Interval
 import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.`in`
-import org.futurerobotics.jargon.math.ozf
+import org.futurerobotics.jargon.math.convert.*
 import org.futurerobotics.jargon.pathing.Line
 import org.futurerobotics.jargon.pathing.TangentHeading
 import org.futurerobotics.jargon.pathing.addHeading

@@ -3,7 +3,7 @@ package org.futurerobotics.jargon.mechanics
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.degrees
+import org.futurerobotics.jargon.math.convert.*
 import org.futurerobotics.jargon.util.asUnmodifiableList
 import org.futurerobotics.jargon.util.toImmutableList
 import org.futurerobotics.jargon.util.zipForEachIndexed

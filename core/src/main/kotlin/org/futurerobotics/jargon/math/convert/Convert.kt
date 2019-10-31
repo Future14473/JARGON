@@ -12,7 +12,9 @@
 @file:JvmName("MathUnits")
 @file:Suppress("KDocMissingDocumentation", "MemberVisibilityCanBePrivate", "unused")
 
-package org.futurerobotics.jargon.math
+package org.futurerobotics.jargon.math.convert
+
+import org.futurerobotics.jargon.math.TAU
 
 //Time
 const val seconds: Double = 1.0
