@@ -181,7 +181,6 @@ class DiscreteRicattiEquationSolverImpl(
             -AiT * Q, AiT
         )
 
-
         val eigenDecomposition = OrderedByMagComplexEigenDecomposition(z)
         val u = eigenDecomposition.v
 
@@ -200,7 +199,6 @@ class DiscreteRicattiEquationSolverImpl(
         val p = u21.multiply(solver.inverse)
 
         return convertToRealMatrix(p, Double.MAX_VALUE)
-
     }
 
     override fun getP(): RealMatrix = P
@@ -231,5 +229,4 @@ class DiscreteRicattiEquationSolverImpl(
         }
         return toRet
     }
-
 }

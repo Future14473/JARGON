@@ -317,6 +317,7 @@ abstract class CompositeBlock(numInputs: Int, numOutputs: Int, processing: Block
 
     /** Does more initialization. Only way to enforce "call super". */
     protected open fun initMore() {}
+
     final override fun process(inputs: List<Any?>, systemValues: SystemValues): Unit =
         subsystem.process(inputs, systemValues)
 

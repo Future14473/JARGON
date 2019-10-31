@@ -8,7 +8,6 @@ import org.futurerobotics.jargon.profile.PointConstraint
 import org.futurerobotics.jargon.profile.generateDynamicProfile
 import org.futurerobotics.jargon.util.Stepper
 
-
 /**
  * A collection of [VelConstraint]s, [AccelConstraint]s, and (flattened) [MultipleConstraint] used to construct
  * a [TrajectoryConstrainer] when paired with a Path for dynamic motion profile generation.
@@ -24,6 +23,7 @@ class MotionConstraintSet(
     velConstraints: Iterable<VelConstraint>, accelConstraints: Iterable<AccelConstraint>,
     multipleConstraints: Iterable<MultipleConstraint> = emptyList()
 ) {
+
     /** This set's velocity constraints */
     val velConstraints: List<VelConstraint> =
         (velConstraints + multipleConstraints.flatMap { it.velConstraints })
@@ -95,7 +95,6 @@ class TrajectoryConstrainer(
         }
     }
 }
-
 
 /**
  * Generates a approximate-time optimal trajectory given the [path] and [constraints].

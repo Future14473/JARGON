@@ -9,7 +9,6 @@ package org.futurerobotics.jargon.statespace
 import org.futurerobotics.jargon.linalg.*
 import org.hipparchus.linear.RiccatiEquationSolverImpl
 
-
 /**
  * Computes the K_ff matrix for plant-inversion feed forward.
  *

@@ -43,11 +43,11 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
     @Test
     fun `positionSecondDeriv inspect`() {
         testVector({
-            val deriv = func.vecDeriv(it)
-            val secondDeriv = func.vecSecondDeriv(it)
+                       val deriv = func.vecDeriv(it)
+                       val secondDeriv = func.vecSecondDeriv(it)
                        val z = (secondDeriv cross deriv) / deriv.lengthSquared.pow(2)
-            Vector2d(deriv.y * z, -deriv.x * z)
-        }, { curve.pointAt(it).positionSecondDeriv }, 0.005, 0.001)
+                       Vector2d(deriv.y * z, -deriv.x * z)
+                   }, { curve.pointAt(it).positionSecondDeriv }, 0.005, 0.001)
     }
 
     @Test

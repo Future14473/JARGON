@@ -8,6 +8,7 @@ interface LoopSystem {
 
     /** Performs any initialization before loop start. */
     fun start()
+
     /**
      * Runs one cycle of the loop. Information about the last [loopTimeInNanos] should be given; 0 if not known (first loop).
      *

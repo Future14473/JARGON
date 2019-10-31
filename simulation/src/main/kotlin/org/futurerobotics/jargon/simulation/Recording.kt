@@ -29,6 +29,7 @@ class Recordings internal constructor(
     private val xyRecordingsMap: RecordingsMap<Vector2d>,
     private val times: RecordingBlock<Double>
 ) {
+
     /**
      * Gets a [XYChart] for the given [groupName] of y recordings. Time will be graphed on the x-axis, and values on the
      * y-axis.
@@ -93,6 +94,7 @@ class Recordings internal constructor(
  * A [BlocksConfig] that provides additional DSL functions for recording values of blocks.
  */
 class RecordingBlocksConfig : BaseBlocksConfig() {
+
     private val yRecordingsMap: RecordingsMap<Double> = HashMap()
     private val xyRecordingsMap: RecordingsMap<Vector2d> = HashMap()
 

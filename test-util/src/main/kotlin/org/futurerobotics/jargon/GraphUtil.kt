@@ -27,6 +27,7 @@ fun XYChart.saveGraph(name: String, dpi: Int = 72) {
  * Utilities for creating graphs.
  */
 object GraphUtil {
+
     private val labels = "p0,p1,p2,p3,p4,p5".split(',').toTypedArray()
     /**
      * Creates a graph displaying a spline, with control points.
