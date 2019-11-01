@@ -8,7 +8,7 @@ import org.futurerobotics.jargon.hardware.DcMotor
 import org.futurerobotics.jargon.hardware.Gyro
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.EPSILON
-import org.futurerobotics.jargon.mechanics.DriveModel
+import org.futurerobotics.jargon.mechanics.MotorVelocityModel
 import kotlin.math.sign
 
 /**
@@ -75,7 +75,8 @@ class GyroReading(private val gyro: Gyro) : SingleOutputBlock<Double>(0, OUT_FIR
  *
  * @param driveModel the model used
  */
-class MotorFrictionFF(private val driveModel: DriveModel) : CombineBlock<List<Double>, List<Double>, List<Double>>() {
+class MotorFrictionFF(private val driveModel: MotorVelocityModel) :
+    CombineBlock<List<Double>, List<Double>, List<Double>>() {
 
     /** The motor voltages input */
     val motorVoltages: BlocksConfig.Input<List<Double>> get() = firstInput
@@ -90,6 +91,6 @@ class MotorFrictionFF(private val driveModel: DriveModel) : CombineBlock<List<Do
         val signs = voltages.zip(vels) { voltage, vel ->
             if (vel <= EPSILON) sign(voltage) else sign(vel)
         }.toVec()
-        return (driveModel.motorAccelForFriction * signs).toList()
+        return (driveModel.motorAccelForMotorFriction * signs).toList()
     }
 }

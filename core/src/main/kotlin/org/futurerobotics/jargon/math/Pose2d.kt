@@ -68,8 +68,11 @@ data class Pose2d(@JvmField val vec: Vector2d, @JvmField val heading: Double) : 
     fun isFinite(): Boolean = vec.isFinite() && heading.isFinite()
 
     /**
-     * Converts this to a linear algebra vector, in the order of `[x, y, heading]`. This provides a bridge between
-     * poses and linear algebra.
+     * Converts this to a linear algebra vector, in the standard order of `[x, y, heading]`.
+     *
+     * This provides a bridge between poses and linear algebra.
+     *
+     * All vectors that directly represent poses should be in this order.
      */
     fun toVec(): Vec = createVec(x, y, heading)
 

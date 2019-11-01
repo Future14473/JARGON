@@ -15,15 +15,15 @@ import org.futurerobotics.jargon.blocks.motion.TimeOnlyMotionProfileFollower
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.distTo
-import org.futurerobotics.jargon.mechanics.DriveModel
 import org.futurerobotics.jargon.mechanics.MotionState
+import org.futurerobotics.jargon.mechanics.NominalFixedWheelDriveModel
 import org.futurerobotics.jargon.mechanics.ValueMotionState
 import org.futurerobotics.jargon.pathing.trajectory.Trajectory
 import org.futurerobotics.jargon.statespace.*
 import kotlin.math.max
 
 internal abstract class PoseVelocityControllingSimulation(
-    protected val driveModel: DriveModel,
+    protected val driveModel: NominalFixedWheelDriveModel,
     simulatedDrive: SimulatedFixedDrive,
     val period: Double,
     nonFFController: PosePIDController,
@@ -43,7 +43,7 @@ internal abstract class PoseVelocityControllingSimulation(
             SimulatedGyro(simulatedDrive)
         )
 
-        val continuous = DriveStateSpaceModels.poseVelocityController(driveModel)
+        val continuous = DriveStateSpaceModels.poseVelocityController(driveModel, driveModel)
         val kGain = continuousLQR(continuous, lqrCost)
 
         val ssModel = continuous.discretize(period)

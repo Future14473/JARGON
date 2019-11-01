@@ -1,18 +1,20 @@
 package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.mechanics.DriveModel
+import org.futurerobotics.jargon.mechanics.BotVelocityModel
+import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
+import org.futurerobotics.jargon.mechanics.MotorVelocityModel
 
 /**
- * Utilities for creating common [LinearStateSpaceModel]s from [DriveModel]s.
+ * Utilities for creating common [LinearStateSpaceModel]s from [BotVelocityModel]s.
  */
 object DriveStateSpaceModels {
 
     /**
-     * Derives a [ContinuousLinSSModelImpl] from the given [driveModel] that:
+     * Derives a [ContinuousLinSSModelImpl] from the given [botVelocityModel] that:
      *
      * - _state_: is bot's pose velocity in [x, y, heading],
-     * - _signal/input_: is a vector of motors' voltages in the same order as given in the [driveModel]
+     * - _signal/input_: is a vector of motors' voltages in the same order as given in the [botVelocityModel]
      * - _measurement/output_: is a vector of the motors' angular
      *    velocity in the same order as given in the [driveModel].
      *
@@ -24,14 +26,16 @@ object DriveStateSpaceModels {
      */
     @Suppress("UnnecessaryVariable")
     @JvmStatic
-    fun poseVelocityController(driveModel: DriveModel): ContinuousLinSSModelImpl {
+    fun poseVelocityController(
+        botVelocityModel: BotVelocityModel,
+        interaction: MotorBotVelInteraction
+    ): ContinuousLinSSModelImpl {
 //        require(driveModel.isHolonomic) { "Drive model must be holonomic" }
         // perhaps we can get away with it; if we always set the y vel to 0. Needs testing.
-        val size = driveModel.numWheels
-        val botDeccelFromBotVel = -driveModel.botAccelFromVolts * driveModel.voltsFromBotVel
-        val a = botDeccelFromBotVel
-        val b = driveModel.botAccelFromVolts
-        val motorVelFromBotVel = driveModel.motorVelFromBotVel
+        val size = botVelocityModel.numWheels
+        val a = botVelocityModel.botAccelFromBotVel
+        val b = botVelocityModel.botAccelFromVolts
+        val motorVelFromBotVel = interaction.motorVelFromBotVel
         val c = motorVelFromBotVel
         val d = zeroMat(size, size)
         return ContinuousLinSSModelImpl(a, b, c, d)
@@ -53,7 +57,8 @@ object DriveStateSpaceModels {
      */
     @Suppress("UnnecessaryVariable")
     @JvmStatic
-    fun motorVelocityController(driveModel: DriveModel): ContinuousLinSSModelImpl {
+    fun motorVelocityController(driveModel: MotorVelocityModel):
+            ContinuousLinSSModelImpl {
         val motorAccelFromVolts = driveModel.motorAccelFromVolts
         return getMotorVelocityController(driveModel, motorAccelFromVolts)
     }
@@ -73,7 +78,7 @@ object DriveStateSpaceModels {
      * reducing the "coupling" terms.
      */
     @JvmStatic
-    fun decoupledMotorVelocityController(driveModel: DriveModel, coupling: Double): ContinuousLinSSModelImpl {
+    fun decoupledMotorVelocityController(driveModel: MotorVelocityModel, coupling: Double): ContinuousLinSSModelImpl {
         require(coupling in 0.0..1.0) { "coupling ($coupling) must be between 0 and 1, or else things don't make sense." }
         val motorAccelFromVolts = driveModel.motorAccelFromVolts.apply {
             repeat(rows) { r ->
@@ -86,13 +91,11 @@ object DriveStateSpaceModels {
     }
 
     private fun getMotorVelocityController(
-        driveModel: DriveModel,
+        motorVelocityModel: MotorVelocityModel,
         motorAccelFromVolts: Mat
     ): ContinuousLinSSModelImpl {
-        val size = driveModel.numWheels
-        val motorDeccelFromMotorVel =
-            -motorAccelFromVolts * driveModel.voltsFromMotorVel
-        val a = motorDeccelFromMotorVel
+        val size = motorVelocityModel.numMotors
+        val a = -motorAccelFromVolts * motorVelocityModel.voltsFromMotorVel
         val b = motorAccelFromVolts
         val c = idenMat(size)
         val d = zeroMat(size, size)

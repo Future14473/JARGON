@@ -21,7 +21,7 @@ import java.util.*
 import kotlin.math.roundToLong
 import kotlin.random.asKotlinRandom
 
-//Verdict: clunky and unstable. Do not use.
+//Verdict: clunky and unstable. Do not use directly.
 internal class HolonomicSimulation2 : DecoupWheelsSimulation(
     SomeModels.mecanum,
     SimulatedFixedDrive(
@@ -42,7 +42,7 @@ internal class HolonomicSimulation2 : DecoupWheelsSimulation(
     PosePIDController(coeff, coeff, headingCoeff),
     QRCost(
         idenMat(4),
-        idenMat(4) * 15.0
+        idenMat(4) * 20.0
     ),
     idenMat(4) * 0.01,
     idenMat(4) * 0.01
@@ -56,8 +56,8 @@ internal class HolonomicSimulation2 : DecoupWheelsSimulation(
     )
 
     private val constraints2 = MotionConstraintSet(
-        MaxMotorVoltage(driveModel, 8.0),
-        MaxMotorTorque(driveModel, 250 * ozf * `in`),
+        MaxMotorVoltage(driveModel, driveModel, 8.0),
+        MaxMotorTorque(driveModel.wheels.map { it.transmission.motor }, driveModel, driveModel, 250 * ozf * `in`),
         MaxVelConstraint(1.0),
         MaxAngularVelConstraint(1.0),
         MaxTotalAccelConstraint(1.0),
@@ -102,15 +102,7 @@ internal class HolonomicSimulation2 : DecoupWheelsSimulation(
         trajectories.add(trajectory)
 
         val driver = LoopSystemRunner(
-            system,
-            LoopMaxTimes(
-                5000,
-                LoopAsFastAsPossible(
-                    FixedTestClock(
-                        (1e9 * period).roundToLong()
-                    )
-                )
-            )
+            system, LoopMaxTimes(5000, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong())))
         )
         driver.run()
 
@@ -122,7 +114,7 @@ internal class HolonomicSimulation2 : DecoupWheelsSimulation(
 
     companion object {
         val coeff = PIDCoefficients(
-            1.0, 0.0, 0.0,
+            2.0, 0.0, 0.0,
             errorBounds = Interval.symmetric(0.5)
         )
 

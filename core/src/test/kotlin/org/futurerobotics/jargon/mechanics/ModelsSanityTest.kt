@@ -43,7 +43,7 @@ internal class ModelsSanityTest {
 
     @Test
     fun `differential works`() {
-        val differential = DriveModels.differential(
+        val differential = NominalDriveModels.differential(
             2.0, 3.0,
             TransmissionModel.fromTorqueLosses(idealUnitMotor, 2.0, 0.0, 0.5),
             5.0, 7.0
@@ -60,19 +60,15 @@ internal class ModelsSanityTest {
             //transmission loss: 1/2
             //motor: unit
             //at output: 1, At transmission: 1/5. At motor: 2/5
-            get { voltsFromBotVel * forward } isEpsEqTo vec(.4, .4)
-            get { voltsFromBotVel * turn } isEpsEqTo vec(-7.0 / 5 * 2, 7.0 / 5 * 2)
-            //2N / 2 motors *(wheel radius), 5, transmission loss/2, gear ratio * 2
-            get { voltsFromBotAccel * forward } isEpsEqTo vec(5.0, 5.0)
-            //3 Nm/7m/2 *5/4
-            get { voltsFromBotAccel * turn } isEpsEqTo vec(-3.0 / 7 / 2 * 5, 3.0 / 7 / 2 * 5)
+            get { voltsFromBotVel * forward }.isEpsEqTo(Vec(.4, .4))
+            get { voltsFromBotVel * turn }.isEpsEqTo(Vec(-7.0 / 5 * 2, 7.0 / 5 * 2))
         }
     }
 
     companion object {
-        val idealUnitMotor = DcMotorModel.fromCoefficients(1.0, 1.0, 1.0, 0.0)
+        val idealUnitMotor = MotorModel.fromCoefficients(1.0, 1.0, 1.0, 0.0)
 
-        val halfMotor = DcMotorModel.fromCoefficients(2.0, 1.0, 2.0, 0.0)
+        val halfMotor = MotorModel.fromCoefficients(2.0, 1.0, 2.0, 0.0)
 
         val idealUnitTransmission = TransmissionModel.fromTorqueLosses(idealUnitMotor, 1.0)
 

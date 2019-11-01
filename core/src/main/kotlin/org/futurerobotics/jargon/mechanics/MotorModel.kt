@@ -18,7 +18,7 @@ import kotlin.math.sign
  *
  * Additional frictional forces are accounted for in [TransmissionModel].
  */
-class DcMotorModel private constructor(
+class MotorModel private constructor(
     val kt: Double,
     val r: Double,
     val kv: Double,
@@ -57,7 +57,7 @@ class DcMotorModel private constructor(
 
     companion object {
         /**
-         * Constructs a [DcMotorModel] with the given coefficients.
+         * Constructs a [MotorModel] with the given coefficients.
          *
          * @param kt the kt term
          * @param r the r term
@@ -65,8 +65,8 @@ class DcMotorModel private constructor(
          * @param i0 the i0 term
          */
         @JvmStatic
-        fun fromCoefficients(kt: Double, r: Double, kv: Double, i0: Double = 0.0): DcMotorModel =
-            DcMotorModel(kt, r, kv, i0)
+        fun fromCoefficients(kt: Double, r: Double, kv: Double, i0: Double = 0.0): MotorModel =
+            MotorModel(kt, r, kv, i0)
 
         /**
          * Constructs a model based on data given on a motor data sheet.
@@ -78,9 +78,9 @@ class DcMotorModel private constructor(
             stallCurrent: Double,
             freeAngularVelocity: Double,
             freeCurrent: Double
-        ): DcMotorModel {
+        ): MotorModel {
             val r = voltage / stallCurrent
-            return DcMotorModel(
+            return MotorModel(
                 stallTorque / stallCurrent,
                 voltage / stallCurrent,
                 freeAngularVelocity / (voltage - freeCurrent * r),
@@ -91,7 +91,7 @@ class DcMotorModel private constructor(
 }
 
 /**
- * Extends a [DcMotorModel] with transmission [gearRatio] and accounts for additional frictional forces.
+ * Extends a [MotorModel] with transmission [gearRatio] and accounts for additional frictional forces.
  *
  * This is a simple yet good enough model for most use cases.
  *
@@ -103,7 +103,7 @@ class DcMotorModel private constructor(
  *                      that makes it to the output. In an ideal world, 1.0, for a deadlocked motor, 0.0.
  */
 class TransmissionModel private constructor(
-    val motor: DcMotorModel,
+    val motor: MotorModel,
     val gearRatio: Double,
     val constantTorqueLoss: Double = 0.0,
     val ratioTorqueLoss: Double = 1.0
@@ -156,7 +156,7 @@ class TransmissionModel private constructor(
         @JvmStatic
         @JvmOverloads
         fun fromTorqueLosses(
-            motor: DcMotorModel,
+            motor: MotorModel,
             gearRatio: Double,
             constantTorqueLoss: Double = 0.0,
             ratioTorqueLoss: Double = 1.0

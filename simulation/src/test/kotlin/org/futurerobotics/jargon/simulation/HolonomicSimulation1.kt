@@ -42,7 +42,7 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
     SomeModels.mecanum,
     SimulatedFixedDrive(
         SomeModels.mecanum,
-        FixedWheelDriveModelPerturb(
+        NominalFixedWheelDriveModelPerturb(
             0.005, 0.005, FixedWheelModelPerturb(
                 0.0005, 0.00001, 0.005, TransmissionModelPerturb(
                     0.005, 0.1, 0.005, DcMotorModelPerturb(0.001)
@@ -56,7 +56,7 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
     ),
     1.0 / 20,
     PosePIDController(coeff, coeff, headingCoeff),
-    QRCost(idenMat(3) * 4.0, idenMat(4)),
+    QRCost(idenMat(3) * 2.0, idenMat(4)),
     idenMat(3) * 0.05,
     idenMat(4) * 0.05
 ) {
@@ -69,8 +69,8 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
     )
 
     private val constraints2 = MotionConstraintSet(
-        MaxMotorVoltage(driveModel, 8.0),
-        MaxMotorTorque(driveModel, 250 * ozf * `in`),
+        MaxMotorVoltage(driveModel, driveModel, 8.0),
+        MaxMotorTorque(driveModel.wheels.map { it.transmission.motor }, driveModel, driveModel, 250 * ozf * `in`),
         MaxVelConstraint(1.0),
         MaxAngularVelConstraint(1.0),
         MaxTotalAccelConstraint(1.0),
@@ -100,7 +100,7 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
 
     @Test
     fun simulation3() {
-        randomPaths(Random("It's not working!!!".hashCode().toLong()).asKotlinRandom(), constraints2)
+        randomPaths(Random("It's not working!!".hashCode().toLong()).asKotlinRandom(), constraints2)
     }
 
     private fun randomPaths(

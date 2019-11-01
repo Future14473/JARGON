@@ -3,21 +3,11 @@ package org.futurerobotics.jargon.pathing.trajectory
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Interval
 import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.mechanics.DriveModel
+import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
+import org.futurerobotics.jargon.mechanics.MotorModel
+import org.futurerobotics.jargon.mechanics.MotorVelocityModel
 import org.futurerobotics.jargon.pathing.PathPoint
-import org.futurerobotics.jargon.util.repeatedList
 import kotlin.math.*
-
-/**
- * Common components of drive model based constraints, where maxes relate to individual wheels.
- *
- * @property driveModel the drive model used.*/
-abstract class WheelDriveMotionConstraint(protected val driveModel: DriveModel, maxes: List<Double>) :
-    MultipleMaxBasedConstraint(maxes), MotionConstraint {
-
-    constructor(driveModel: DriveModel, max: Double) :
-            this(driveModel, repeatedList(driveModel.numWheels, max))
-}
 
 private fun rotationMatrix(angle: Double): Mat {
     val c = cos(angle)
@@ -58,11 +48,12 @@ private fun rotationMatrixDeriv(angle: Double, angleDeriv: Double): Mat {
 fun maxSpeedFromBotVelTransform(
     point: PathPoint,
     mat: Mat,
-    maxes: List<Double>
+    maxes: Vec
 ): Double {
     val factors = mat * point.poseDeriv.vecRotated(-point.heading).toVec()
     var res = Double.POSITIVE_INFINITY
-    maxes.forEachIndexed { i, max ->
+    repeat(maxes.size) { i ->
+        val max = maxes[i]
         val factor = factors[i]
         val curMax = abs(max / factor)
         res = min(res, curMax)
@@ -89,7 +80,7 @@ fun accelRangeFromBotAccelTransform(
     point: PathPoint,
     curVelocity: Double,
     mat: Mat,
-    maxes: List<Double>,
+    maxes: Vec,
     addend: Vec = zeroVec(maxes.size)
 ): Interval {
     val rot = rotationMatrix(-point.heading)
@@ -101,80 +92,108 @@ fun accelRangeFromBotAccelTransform(
             (rot * (point.poseSecondDeriv * curVelocity.pow(2)).toVec() +
                     rotDeriv * (point.poseDeriv * curVelocity).toVec())
     var res = Interval.REAL
-    maxes.forEachIndexed { i, max ->
+    repeat(maxes.size) { i ->
+        val max = maxes[i]
         val mult = mults[i]
         val add = fullAddend[i]
         val interval = Interval.symmetricRegular(max / mult, add / mult)
         res = res.intersect(interval)
-        if (res.isEmpty()) return@forEachIndexed
+        if (res.isEmpty()) return@repeat
     }
     return res
 }
 
-private fun List<Double>.wheelToMotorVel(driveModel: DriveModel): List<Double> =
-    (driveModel.motorVelFromWheelVel * this.toVec()).asList()
+private fun Vec.wheelToMotorVel(interaction: MotorBotVelInteraction): Vec =
+    interaction.motorVelFromWheelVel * this
 
-private fun Double.wheelToMotorVel(driveModel: DriveModel): List<Double> =
-    (driveModel.motorVelFromWheelVel * repeatedList(driveModel.numWheels, this).toVec()).asList()
+private fun Double.wheelToMotorVel(interaction: MotorBotVelInteraction): Vec =
+    interaction.motorVelFromWheelVel * genVec(interaction.numMotors) { this }
 
 /** A [VelConstraint] that limit's each motor's angular velocity. */
-open class MaxMotorSpeed : WheelDriveMotionConstraint, VelConstraint {
+open class MaxMotorSpeed protected constructor(
+    private val interaction: MotorBotVelInteraction,
+    private val maxes: Vec
+) : VelConstraint {
 
-    constructor(driveModel: DriveModel, maxes: List<Double>) : super(driveModel, maxes)
-    constructor(driveModel: DriveModel, max: Double) : super(driveModel, max)
+    constructor(motorVelModel: MotorBotVelInteraction, maxes: List<Double>) :
+            this(motorVelModel, maxes.toVec())
+
+    constructor(motorVelModel: MotorBotVelInteraction, max: Double) :
+            this(motorVelModel, genVec(motorVelModel.numMotors) { max })
 
     override fun maxVelocity(point: PathPoint): Double =
-        maxSpeedFromBotVelTransform(point, driveModel.motorVelFromBotVel, maxes)
+        maxSpeedFromBotVelTransform(point, interaction.motorVelFromBotVel, maxes)
 }
 
 /** A constraint that limit's each wheel's tangential speed. */
-open class MaxWheelTangentialSpeed : MaxMotorSpeed {
+open class MaxWheelTangentialSpeed protected constructor(
+    interaction: MotorBotVelInteraction,
+    maxes: Vec
+) : MaxMotorSpeed(interaction, maxes.wheelToMotorVel(interaction)) {
 
-    constructor(driveModel: DriveModel, maxes: List<Double>) :
-            super(driveModel, maxes.wheelToMotorVel(driveModel))
+    constructor(interaction: MotorBotVelInteraction, maxes: List<Double>) :
+            this(interaction, maxes.toVec())
 
-    constructor(driveModel: DriveModel, max: Double) :
-            super(driveModel, max.wheelToMotorVel(driveModel))
+    constructor(interaction: MotorBotVelInteraction, max: Double) :
+            this(interaction, genVec(interaction.numMotors) { max })
 }
 
 /** A constraint that limit's each motor's speed. */
-open class MaxMotorAccel : WheelDriveMotionConstraint, AccelConstraint {
+open class MaxMotorAccel protected constructor(
+    private val interaction: MotorBotVelInteraction,
+    private val maxes: Vec
+) : AccelConstraint {
 
-    constructor(driveModel: DriveModel, maxes: List<Double>) :
-            super(driveModel, maxes.wheelToMotorVel(driveModel))
+    constructor(interaction: MotorBotVelInteraction, maxes: List<Double>) : this(interaction, maxes.toVec())
 
-    constructor(driveModel: DriveModel, max: Double) :
-            super(driveModel, max.wheelToMotorVel(driveModel))
+    constructor(interaction: MotorBotVelInteraction, max: Double) : this(interaction, max.wheelToMotorVel(interaction))
 
     override fun accelRange(point: PathPoint, curVelocity: Double): Interval =
-        accelRangeFromBotAccelTransform(point, curVelocity, driveModel.motorAccelFromBotAccel, maxes)
+        accelRangeFromBotAccelTransform(point, curVelocity, interaction.motorAccelFromBotAccel, maxes)
 }
 
 /** A constraint that limit's each wheel's tangential acceleration (output acceleration). */
-open class MaxWheelTangentialAccel : MaxMotorAccel, AccelConstraint {
+open class MaxWheelTangentialAccel protected constructor(
+    interaction: MotorBotVelInteraction,
+    maxes: Vec
+) : MaxMotorAccel(interaction, maxes.wheelToMotorVel(interaction)) {
 
-    constructor(driveModel: DriveModel, maxes: List<Double>) :
-            super(driveModel, maxes.wheelToMotorVel(driveModel))
+    constructor(interaction: MotorBotVelInteraction, maxes: List<Double>) :
+            this(interaction, maxes.toVec())
 
-    constructor(driveModel: DriveModel, max: Double) :
-            super(driveModel, max.wheelToMotorVel(driveModel))
+    constructor(interaction: MotorBotVelInteraction, max: Double) :
+            this(interaction, genVec(interaction.numMotors) { max })
 }
 
 /** A constraint that limits the max motor voltages on each wheel. */
-class MaxMotorVoltage : WheelDriveMotionConstraint, AccelConstraint {
+class MaxMotorVoltage private constructor(
+    private val interaction: MotorBotVelInteraction,
+    private val motorVelModel: MotorVelocityModel,
+    private val maxes: Vec
+) : AccelConstraint {
 
-    constructor(driveModel: DriveModel, maxes: List<Double>) : super(driveModel, maxes)
-    constructor(driveModel: DriveModel, max: Double) : super(driveModel, max)
+    constructor(interaction: MotorBotVelInteraction, motorVelModel: MotorVelocityModel, maxes: List<Double>) :
+            this(interaction, motorVelModel, maxes.toVec())
+
+    constructor(interaction: MotorBotVelInteraction, motorVelModel: MotorVelocityModel, max: Double) :
+            this(interaction, motorVelModel, genVec(interaction.numMotors) { max })
+
+    init {
+        require(interaction.numMotors == motorVelModel.numMotors) {
+            "Number of motors in interaction ($interaction) != number of motors in " +
+                    "motorVelModel(${motorVelModel.numMotors})"
+        }
+    }
 
     override fun accelRange(point: PathPoint, curVelocity: Double): Interval {
         //lettuce assume that motorAccel = A*motorVel + B*volts + F*sign(motorVel)
-        val maFmv = driveModel.motorAccelFromMotorVel
-        val vFma = driveModel.voltsFromMotorAccel
-        val maFba = driveModel.motorAccelFromBotAccel
+        val maFmv = motorVelModel.motorAccelFromMotorVel
+        val vFma = motorVelModel.voltsFromMotorAccel
+        val maFba = interaction.motorAccelFromBotAccel
         val vFba = vFma * maFba
         val bv = (point.poseDeriv.vecRotated(-point.heading) * curVelocity).toVec()
-        val mv = driveModel.motorVelFromBotVel * bv
-        val maFf = driveModel.motorAccelForFriction
+        val mv = interaction.motorVelFromBotVel * bv
+        val maFf = motorVelModel.motorAccelForMotorFriction
         val addend = vFma(maFmv * mv + maFf * sign(mv))
 
         return accelRangeFromBotAccelTransform(
@@ -189,19 +208,41 @@ class MaxMotorVoltage : WheelDriveMotionConstraint, AccelConstraint {
  * This assumes that the friction due to the _motor_ internally
  * is negligible due to the friction due to the transmission/wheels/bot.
  * */
-class MaxMotorTorque : WheelDriveMotionConstraint, AccelConstraint {
+class MaxMotorTorque private constructor(
+    motorModels: List<MotorModel>,
+    private val interaction: MotorBotVelInteraction,
+    private val motorVelModel: MotorVelocityModel,
+    private val maxes: Vec
+) : AccelConstraint {
 
-    constructor(driveModel: DriveModel, maxes: List<Double>) : super(driveModel, maxes)
+    constructor(
+        motorModels: List<MotorModel>,
+        interaction: MotorBotVelInteraction,
+        motorVelModel: MotorVelocityModel,
+        maxes: List<Double>
+    ) : this(motorModels, interaction, motorVelModel, maxes.toVec())
 
-    constructor(driveModel: DriveModel, max: Double) : super(driveModel, max)
+    constructor(
+        motorModels: List<MotorModel>,
+        interaction: MotorBotVelInteraction,
+        motorVelModel: MotorVelocityModel,
+        max: Double
+    ) : this(motorModels, interaction, motorVelModel, genVec(interaction.numMotors) { max })
 
-    private val torqueFromVolts = diagMat(driveModel.transmissions.map { 1 / it.motor.voltsPerTorque })
+    init {
+        require(interaction.numMotors == motorVelModel.numMotors) {
+            "Number of motors in interaction ($interaction) != number of motors in " +
+                    "motorVelModel(${motorVelModel.numMotors})"
+        }
+    }
+
+    private val torqueFromVolts = diagMat(motorModels.map { 1 / it.voltsPerTorque })
     override fun accelRange(point: PathPoint, curVelocity: Double): Interval {
-        val tFma = torqueFromVolts * driveModel.voltsFromMotorAccel
-        val tFba = tFma * driveModel.motorAccelFromBotAccel
+        val tFma = torqueFromVolts * motorVelModel.voltsFromMotorAccel
+        val tFba = tFma * interaction.motorAccelFromBotAccel
         val bv = (point.poseDeriv.vecRotated(-point.heading)).toVec()
-        val mv = driveModel.motorVelFromBotVel * bv
-        val maFf = driveModel.motorAccelForFriction
+        val mv = interaction.motorVelFromBotVel * bv
+        val maFf = motorVelModel.motorAccelForMotorFriction
         val addend = tFma(maFf * sign(mv))
         return accelRangeFromBotAccelTransform(
             point, curVelocity, tFba, maxes, addend

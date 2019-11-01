@@ -32,8 +32,8 @@ fun Assertion.Builder<Mat>.isEpsEqTo(expected: Mat, epsilon: Double = EPSILON): 
     }
 
 /** Asserts that this [Vec] epsEq another. */
-infix fun Assertion.Builder<Vec>.isEpsEqTo(expected: Vec): Assertion.Builder<Vec> =
+fun Assertion.Builder<Vec>.isEpsEqTo(expected: Vec, epsilon: Double = EPSILON): Assertion.Builder<Vec> =
     assert("is epsEq to %s", expected) {
-        if (it epsEq expected) pass()
+        if (it.epsEq(expected, epsilon)) pass()
         else fail(actual = it)
     }
