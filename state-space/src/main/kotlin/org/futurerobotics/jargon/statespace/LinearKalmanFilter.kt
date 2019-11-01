@@ -86,7 +86,7 @@ class LinearKalmanFilter(
         val periodNanos = (model.period * 1e9).roundToLong()
         if (loopTime != 0.0) {
             var curNanos = lastNanos
-            while (curNanos + periodNanos < elapsedNanos) {
+            while (curNanos + periodNanos <= nowNanos) {
                 curNanos += periodNanos
                 measurementObj.value = measurement
                 measurementObj.timeNanos = curNanos

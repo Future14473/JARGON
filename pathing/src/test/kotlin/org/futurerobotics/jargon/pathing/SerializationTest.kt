@@ -43,7 +43,7 @@ internal class SerializationTest {
 
         ObjectOutputStream(file.outputStream()).use { it.writeObject(traj) }
 
-        val input = ObjectInputStream(file.inputStream()).use { it.readObject() as Trajectory }
-        //just make sure it works...
+        ObjectInputStream(file.inputStream()).use { it.readObject() as Trajectory }
+        //just make sure it works
     }
 }

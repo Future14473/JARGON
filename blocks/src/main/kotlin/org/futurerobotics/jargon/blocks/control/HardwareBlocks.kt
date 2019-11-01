@@ -87,7 +87,6 @@ class MotorFrictionFF(private val driveModel: MotorVelocityModel) :
     override fun combine(a: List<Double>, b: List<Double>): List<Double> {
         val voltages = a
         val vels = b
-        var i = 0
         val signs = voltages.zip(vels) { voltage, vel ->
             if (vel <= EPSILON) sign(voltage) else sign(vel)
         }.toVec()
