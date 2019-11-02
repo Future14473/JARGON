@@ -37,7 +37,7 @@ internal abstract class PoseVelocityControllingSimulation(
     protected val recordings: Recordings
 
     init {
-        val numWheels = driveModel.numWheels
+        val numWheels = driveModel.numMotors
         val motorsBlock = SimulatedDriveBlock(simulatedDrive)
         val gyro = GyroReading(
             SimulatedGyro(simulatedDrive)

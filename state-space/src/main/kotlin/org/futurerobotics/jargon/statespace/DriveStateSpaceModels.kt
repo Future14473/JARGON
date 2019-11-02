@@ -32,7 +32,7 @@ object DriveStateSpaceModels {
     ): ContinuousLinSSModelImpl {
 //        require(driveModel.isHolonomic) { "Drive model must be holonomic" }
         // perhaps we can get away with it; if we always set the y vel to 0. Needs testing.
-        val size = botVelocityModel.numWheels
+        val size = botVelocityModel.numMotors
         val a = botVelocityModel.botAccelFromBotVel
         val b = botVelocityModel.botAccelFromVolts
         val motorVelFromBotVel = interaction.motorVelFromBotVel

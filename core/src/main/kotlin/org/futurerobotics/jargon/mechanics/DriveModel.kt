@@ -10,6 +10,8 @@ import org.futurerobotics.jargon.util.zipForEachIndexed
 /**
  * Represents a drive model that is framed analyzing how motor voltages affects the motor's velocity, with possibly
  * some interactions between separate motors (applying a voltage to one motor may also move another).
+ *
+ * Models should be _continuous_.
  */
 interface MotorVelocityModel {
     // motor <-> motor
@@ -36,7 +38,7 @@ interface MotorVelocityModel {
      *
      * Non-diagonal entries may or may not be 0 (there are interactions between motors).
      *
-     * Adding this with voltagess obtained from [voltsFromMotorVel] and [voltsForMotorFriction] gets the modeled
+     * Adding this with voltages obtained from [voltsFromMotorVel] and [voltsForMotorFriction] gets the modeled
      * voltage signal.
      * @see motorAccelFromVolts
      */
@@ -53,9 +55,9 @@ interface MotorVelocityModel {
      */
     val motorAccelFromVolts: Mat
     /**
-     * Gets the expected motor (de)acceleration due to existing motor velocities; caused by the motor
-     * acting as a generator hence producing a voltage that slows it down, and/or other frictional/friction-like
-     * forces that are dependent on the bot's velocity.
+     * Gets the expected motor (de)acceleration due to existing motor velocities. This
+     * can be caused by the motor acting as a generator hence producing a voltage that slows it down, and/or other
+     * frictional forces that are dependent on the bot's velocity.
      *
      * This should not be used for _constant_ friction that depends only on motor's direction, for that, see
      * [motorAccelForMotorFriction].
@@ -100,8 +102,10 @@ interface MotorVelocityModel {
  * for the motor's velocities.
  *
  * This is a tightly coupled model and there is no easy way to account for some types of friction unless at the motor
- * level, and so almost all cases we suggest using `MotorVelocityModel` and bridging with `MotorBotInteractions`
+ * level, and so almost all cases we suggest using [MotorVelocityModel] and bridging with [MotorBotVelInteraction]
  * instead.
+ *
+ * Models should be _continuous_.
  *
  * @see MotorVelocityModel
  */
@@ -113,8 +117,8 @@ interface BotVelocityModel {
      */
     val isHolonomic: Boolean
 
-    /** The number of wheels. */
-    val numWheels: Int
+    /** The number of wheels on this bot. */
+    val numMotors: Int
     //volts <-> bot
     /**
      * Transforms a bot velocity vector (see [Pose2d.toVec]) into the expected motor volts to sustain that speed
@@ -153,7 +157,7 @@ interface BotVelocityModel {
      * @see voltsFromBotAccel
      */
     val botAccelFromBotVel: Mat
-
+//No easy way to calculate this while still being linear, besides empirically
 //    /**
 //     * Gets the expected constant component of the bot acceleration, from transforming a vector of the _signs_ of the
 //     * bot velocity (since constant friction is usually related to the direction of motion).
@@ -176,6 +180,7 @@ interface BotVelocityModel {
 /**
  * Represents how to transforming of motor velocities/accelerations into bot velocities/accelerations, and vice versa.
  */
+//neither continuous nor discrete
 interface MotorBotVelInteraction {
 
     /** The number of motors/wheels. */
@@ -273,7 +278,6 @@ open class NominalFixedWheelDriveModel(
     }
     override val voltsForMotorFriction: Mat by lazy { -voltsFromMotorAccel * motorAccelForMotorFriction }
     //bot velocity
-    override val numWheels: Int get() = wheels.size
     override val voltsFromBotVel: Mat by lazy { voltsFromMotorVel * motorVelFromBotVel }
     override val voltsFromBotAccel: Mat by lazy { botAccelFromVolts.pinv() }
     override val botAccelFromVolts: Mat by lazy {

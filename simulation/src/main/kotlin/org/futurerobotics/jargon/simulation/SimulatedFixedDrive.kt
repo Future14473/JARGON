@@ -76,10 +76,10 @@ class SimulatedFixedDrive(
     }
 
     /** The number of motors/wheels in this drive. */
-    val numMotors: Int get() = driveModel.numWheels
+    val numMotors: Int get() = driveModel.numMotors
 
-    override var curMotorVelocities: Vec = zeroVec(driveModel.numWheels)
-    override val curMotorPositions: Vec = zeroVec(driveModel.numWheels)
+    override var curMotorVelocities: Vec = zeroVec(driveModel.numMotors)
+    override val curMotorPositions: Vec = zeroVec(driveModel.numMotors)
 
     override var curGlobalPose: Pose2d = Pose2d.ZERO
     //wheel velocity controller

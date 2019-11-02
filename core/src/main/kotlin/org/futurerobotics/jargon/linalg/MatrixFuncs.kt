@@ -155,7 +155,7 @@ fun Mat.normMax(): Double = walkInOptimizedOrder(object : RealMatrixPreservingVi
 /**
  * Computes the matrix exponential (`e^X`) of the given matrix [mat].
  *
- * This implementation is translated from `MatrixFunctions.expm(DoubleMatrix) in `[jBlas][http://jblas.org/], which is
+ * This implementation is translated from `MatrixFunctions.expm(DoubleMatrix)` in [jBlas][http://jblas.org/], which is
  * licensed under a [BSD - style license][https://raw.githubusercontent.com/jblas-project/jblas/jblas-1.2.4/COPYING]
  */
 @Suppress("LocalVariableName")
