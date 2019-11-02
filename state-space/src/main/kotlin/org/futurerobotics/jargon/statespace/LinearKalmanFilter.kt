@@ -26,7 +26,7 @@ private val DECOMP = LUDecomposer(1e-11)
  *
  */
 class LinearKalmanFilter(
-    private val model: DiscreteLinSSModelImpl,
+    private val model: DiscreteLinearStateSpaceModel,
     private val Q: Mat,
     private val R: Mat
 ) : SingleOutputBlock<Vec>(2, IN_FIRST_ALWAYS) {

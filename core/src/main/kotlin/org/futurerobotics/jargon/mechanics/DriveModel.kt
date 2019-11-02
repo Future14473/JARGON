@@ -274,9 +274,9 @@ open class NominalFixedWheelDriveModel(
     override val motorAccelFromVolts: Mat by lazy { motorAccelFromBotAccel * botAccelFromVolts }
     override val motorAccelFromMotorVel: Mat by lazy { -motorAccelFromVolts * voltsFromMotorVel }
     override val motorAccelForMotorFriction: Mat by lazy {
-        -motorAccelFromVolts * diagMat(wheels.map { it.transmission.voltsForFriction })
+        -motorAccelFromVolts * voltsForMotorFriction
     }
-    override val voltsForMotorFriction: Mat by lazy { -voltsFromMotorAccel * motorAccelForMotorFriction }
+    override val voltsForMotorFriction: Mat by lazy { diagMat(wheels.map { it.transmission.voltsForFriction }) }
     //bot velocity
     override val voltsFromBotVel: Mat by lazy { voltsFromMotorVel * motorVelFromBotVel }
     override val voltsFromBotAccel: Mat by lazy { botAccelFromVolts.pinv() }

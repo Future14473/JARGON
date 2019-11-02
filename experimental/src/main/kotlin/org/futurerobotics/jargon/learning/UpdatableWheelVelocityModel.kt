@@ -9,15 +9,6 @@ import java.io.Serializable
 /**
  * A discrete and online-updatable variant of something like a [MotorVelocityModel].
  *
- * This is a model in the form of `x_(t+1) = A*x + B*u + F*sign(x)`,
- *
- * - Measurement directly corresponds with state.
- * - x is a motor velocity vector
- * - u is motor voltage signal
- * - A is system matrix
- * - B is control matrix
- * - F is the contribution of friction (can be addressed later via feed-forward).
- *
  *
  * This is also a [MultipleMatrixPredictor] with matrices (A,B,F), so it can be updated with a [StochasticUpdatingBlock]
  * online. We don't say the ML-word.
@@ -28,23 +19,25 @@ import java.io.Serializable
  * This is also [Serializable] so that the model can be stored as a file.
  *
  */
-class UpdatableMotorVelocityModel private constructor(
+class UpdatableMotorVelocityModel(
     override val A: Mat,
     override val B: Mat,
-    val F: Mat,
+    override val F: Mat,
     override val period: Double
-) : DiscreteLinearStateSpaceModel, MultipleMatrixPredictor, Serializable {
+) : MotorVelDiscreteLinSSModel, MultipleMatrixPredictor, Serializable {
 
     override val mats: List<Mat> = listOf(A, B, F).asUnmodifiableList()
 
     override val ySize: Int = mats.fold(-1) { acc, cur ->
+        require(cur.isSquare) { "All matrices must be square, got (${cur.rows} x ${cur.cols})" }
         if (acc == -1)
             cur.rows
         else {
-            require(cur.rows == acc) { "All matrices must have same # of rows" }
+            require(cur.rows == acc) { "All matrices must have the same size" }
             acc
         }
     }
+
     override val numInputs: Int get() = mats.size
     override val xSizes: List<Int> = mats.map { it.cols }.asUnmodifiableList()
 
@@ -57,11 +50,11 @@ class UpdatableMotorVelocityModel private constructor(
     override val outputSize: Int
         get() = ySize
 
-    override fun processState(x: Vec, u: Vec): Vec = A * x + B * u
+    override fun processState(x: Vec, u: Vec): Vec = A * x + B * u + F * sign(x)
 
-    override fun processOutput(x: Vec, u: Vec): Vec = x.copy()
+    override fun processOutput(x: Vec, u: Vec): Vec = x * 1.0
 
-    fun getFeedForward(x: Vec): Vec = B.inv() * F * sign(x)
+    override fun getFeedForward(x: Vec): Vec = -B.inv() * F * sign(x)
 
     override val C: Mat = idenMat(ySize)
     override val D: Mat = zeroMat(ySize, ySize)
