@@ -1,6 +1,5 @@
 plugins {
     kotlin("jvm")
-    `maven-publish`
 }
 
 dependencies {
@@ -10,17 +9,4 @@ dependencies {
     api(project(":state-space"))
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("publish") {
-            versionMapping {
-                usage("java-api") {
-                    fromResolutionOf("runtimeClasspath")
-                }
-                usage("java-runtime") {
-                    fromResolutionResult()
-                }
-            }
-        }
-    }
-}
+val publish by extra(true)

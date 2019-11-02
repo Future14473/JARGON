@@ -33,10 +33,16 @@ buildscript {
     }
 }
 
-plugins {
-    id("org.jetbrains.dokka") version "0.9.18" apply false
+repositories {
+    mavenCentral()
+    jcenter()
 }
 
+plugins {
+    kotlin("jvm") version "1.3.50"
+    id("org.jetbrains.dokka") version "0.9.18"
+    `maven-publish`
+}
 subprojects {
     group = "org.futurerobotics.jargon"
     version = "0.1.0-SNAPSHOT"
@@ -45,22 +51,83 @@ subprojects {
         jcenter()
     }
     plugins.withId("org.jetbrains.kotlin.jvm") {
-        dependencies {
-            // <3 contextual String.invoke
-            "implementation"(kotlin("stdlib-jdk8"))
+        configureKotlin()
+    }
+    afterEvaluate {
+        plugins.withId("org.jetbrains.kotlin.jvm") {
+            configureTests()
         }
-        tasks.withType<KotlinCompile> {
-            kotlinOptions {
-                jvmTarget = "1.8"
-                freeCompilerArgs += listOf(
-                    "-Xjvm-default=enable"
-                )
-            }
+        if (extra.has("publish") && extra["publish"] == true) {
+            configurePublish()
         }
+    }
+}
+
+fun Project.configureKotlin() {
+    dependencies {
+        // <3 contextual String.invoke
+        implementation(kotlin("stdlib-jdk8"))
+    }
+    tasks.withType<KotlinCompile> {
+        kotlinOptions {
+            jvmTarget = "1.8"
+            freeCompilerArgs += listOf(
+                "-Xjvm-default=enable"
+            )
+        }
+    }
+}
+
+fun Project.configureTests() {
+    dependencies {
+        testImplementation(junit5)
+        testImplementation(junit5params)
+        testRuntimeOnly(junit5engine)
+        testImplementation(strikt)
+        val testUtil = "test-util"
+        if (name != testUtil)
+            testImplementation(project(":$testUtil"))
     }
     tasks.withType<Test> {
         useJUnitPlatform {
-            excludeTags("Not a test")
+        }
+    }
+}
+
+fun Project.configurePublish() {
+    apply(plugin = "org.gradle.maven-publish")
+    apply(plugin = "org.jetbrains.dokka")
+
+    tasks.dokka {
+        outputFormat = "html"
+        outputDirectory = "$buildDir/javadoc"
+    }
+    val sourcesJar by tasks.creating(Jar::class) {
+        from(sourceSets.main.get().allSource)
+        archiveClassifier.set("sources")
+    }
+    val dokkaJar by tasks.creating(Jar::class) {
+        description = "Assembles Kotlin docs with dokka"
+        group = JavaBasePlugin.DOCUMENTATION_GROUP
+        archiveClassifier.set("javadoc")
+        from(tasks.dokka)
+    }
+
+    publishing {
+        publications {
+            create<MavenPublication>("publish") {
+                from(components["java"])
+                artifact(dokkaJar)
+                artifact(sourcesJar)
+                versionMapping {
+                    usage("java-api") {
+                        fromResolutionOf("runtimeClasspath")
+                    }
+                    usage("java-runtime") {
+                        fromResolutionResult()
+                    }
+                }
+            }
         }
     }
 }
