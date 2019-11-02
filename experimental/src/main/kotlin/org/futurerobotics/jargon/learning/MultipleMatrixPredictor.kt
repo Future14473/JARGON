@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.experimental
+package org.futurerobotics.jargon.learning
 
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.util.asUnmodifiableList
@@ -143,7 +143,8 @@ class BatchMultipleMatrixFitter(
  */
 class StochasticMultipleMatrixFitter(
     params: MultipleDescentParams, private val random: Random = Random()
-) : AbstractMultipleMatrixFitter(params), StochasticFitter<List<Vec>, Vec, MultipleMatrixPredictor> {
+) : AbstractMultipleMatrixFitter(params),
+    StochasticFitter<List<Vec>, Vec, MultipleMatrixPredictor> {
 
     override fun stochasticUpdate(predictor: MultipleMatrixPredictor, input: List<Vec>, output: Vec) {
         val x = input

@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.experimental
+package org.futurerobotics.jargon.learning
 
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.saveGraph

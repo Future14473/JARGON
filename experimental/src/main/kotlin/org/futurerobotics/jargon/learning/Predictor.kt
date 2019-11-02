@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.experimental
+package org.futurerobotics.jargon.learning
 
 /**
  * Represents a generic predictor, which estimates some output based on inputs. This is allowed
@@ -24,7 +24,8 @@ interface AnyFitter<Input, Output, Pred : Predictor<Input, Output>> {
 /**
  * Fits a [Pred]ictor with actual data.
  */
-interface Fitter<Input, Output, Pred : Predictor<Input, Output>> : AnyFitter<Input, Output, Pred> {
+interface Fitter<Input, Output, Pred : Predictor<Input, Output>> :
+    AnyFitter<Input, Output, Pred> {
 
     /** Fit this predictor by considering all the given [inputs] and [outputs] data, but need not until convergence. */
     fun fitOnce(predictor: Pred, inputs: List<Input>, outputs: List<Output>)
@@ -33,7 +34,8 @@ interface Fitter<Input, Output, Pred : Predictor<Input, Output>> : AnyFitter<Inp
 /**
  * Fits a [Pred]ictor but also can also operate stocahstically.
  */
-interface StochasticFitter<Input, Output, Pred : Predictor<Input, Output>> : AnyFitter<Input, Output, Pred> {
+interface StochasticFitter<Input, Output, Pred : Predictor<Input, Output>> :
+    AnyFitter<Input, Output, Pred> {
 
     /** Runs a single stochastic update using the given [input] and [output] data */
     fun stochasticUpdate(predictor: Pred, input: Input, output: Output)

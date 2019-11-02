@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.experimental
+package org.futurerobotics.jargon.learning
 
 import org.futurerobotics.jargon.blocks.AbstractBlock
 import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
