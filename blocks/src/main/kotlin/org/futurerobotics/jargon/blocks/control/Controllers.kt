@@ -1,10 +1,12 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package org.futurerobotics.jargon.blocks.control
 
-import org.futurerobotics.jargon.blocks.*
-import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
-import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
+import org.futurerobotics.jargon.blocks.Block
+import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
+import org.futurerobotics.jargon.blocks.CompositeBlock
+import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.blocks.config.BCBuilder
+import org.futurerobotics.jargon.blocks.config.BlockConfig
 import org.futurerobotics.jargon.blocks.control.FeedForwardWrapper.Companion.withAdder
 import org.futurerobotics.jargon.blocks.functional.SplitMotionState
 import org.futurerobotics.jargon.mechanics.MotionOnly
@@ -23,12 +25,14 @@ import org.futurerobotics.jargon.mechanics.ValueMotionOnly
  *
  * This interface exists so that it can be recognized by other things.
  */
-interface Controller<Reference, State, Signal> : Block, BlocksConfig.Output<Signal> {
+interface Controller<Reference, State, Signal> {
 
     /** The reference input. */
-    val reference: BlocksConfig.Input<Reference>
+    val reference: Block.Input<Reference>
     /** The state input. */
-    val state: BlocksConfig.Input<State>
+    val state: Block.Input<State>
+    /** The signal output. */
+    val signal: Block.Output<Signal>
 }
 
 /**
@@ -41,13 +45,19 @@ interface Controller<Reference, State, Signal> : Block, BlocksConfig.Output<Sign
  */
 class BangBangController<State, Signal>(
     private val lessThanOutput: Signal, private val greaterThanOutput: Signal, private val equalOutput: Signal
-) : CombineBlock<State, State, Signal>(IN_FIRST_LAZY),
+) : SingleOutputBlock<Signal>(LAZY),
     Controller<State, State, Signal> where State : Comparable<State> {
 
-    override val reference: BlocksConfig.Input<State> get() = firstInput
-    override val state: BlocksConfig.Input<State> get() = secondInput
-    override fun combine(a: State, b: State): Signal {
-        val comp = b.compareTo(a)
+    override val reference: Input<State> = newInput()
+    override val state: Input<State> = newInput()
+    override val signal: Output<Signal> get() = super.output
+
+    override fun init() {}
+
+    override fun stop() {}
+
+    override fun Context.getOutput(): Signal {
+        val comp = state.get.compareTo(reference.get)
         return when {
             comp < 0 -> lessThanOutput
             comp > 0 -> greaterThanOutput
@@ -71,26 +81,30 @@ class BangBangController<State, Signal>(
  * A [plus] function still needs to be defined. Can also be created directly using [withAdder].
  */
 abstract class FeedForwardWrapper<T : Any>(private val nonFFController: Controller<T, T, T>) :
-    CompositeBlock(2, 1, IN_FIRST_ALWAYS), Controller<MotionState<T>, T, MotionOnly<T>> {
+    CompositeBlock(ALWAYS), Controller<MotionState<T>, T, MotionOnly<T>> {
 
-    override val reference: BlocksConfig.Input<MotionState<T>> get() = configInput(0)
-    override val state: BlocksConfig.Input<T> get() = configInput(1)
-    override val block: Block get() = this
-    override val index: Int get() = 0
+    override val reference: Input<MotionState<T>> = newInput()
+    override val state: Input<T> = newInput()
+    override val signal: Output<MotionOnly<T>> = newOutput()
+
     /** Adds t1 and t2 together. Unfortunately `Double` doesn't implement an addable interface or the like.*/
     protected abstract operator fun T.plus(other: T): T
 
-    override fun configSubsystem(
-        sources: List<BlocksConfig.Output<Any?>>, outputs: List<BlocksConfig.Input<Any?>>
-    ): BlocksConfig = BaseBlocksConfig().apply {
-        val reference = sources[0] as BlocksConfig.Output<MotionState<T>>
-        val state = sources[1] as BlocksConfig.Output<T>
+    override fun SubsystemMapper.configSubsystem(): BlockConfig = BCBuilder().build {
+        val refInput = reference.subOutput()
+        val stateInput = state.subOutput()
 
-        val (refS, refV, refA) = SplitMotionState<T>()() { this from reference }
+        val (refS, refV, refA) = SplitMotionState<T>()() { input from refInput }
 
-        nonFFController.let { it.reference from refS; it.state from state }
-        val finalV = refV.combine(nonFFController) { this@combine + it }
-        outputs[0] from finalV.combine(refA) { ValueMotionOnly(this@combine, it) }
+        val nonFFSignal = nonFFController.signal
+        nonFFController.run { reference from refS; state from stateInput }
+
+        signal.subInput() from generate {
+            ValueMotionOnly(
+                refV.get + nonFFSignal.get,
+                refA.get
+            )
+        }
     }
 
     companion object {

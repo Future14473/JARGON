@@ -29,13 +29,8 @@ class LoopSystemRunner(
             }
         } catch (ignored: InterruptedException) {
         } finally {
-            try {
-                system.stop()
-                regulator.stop()
-            } catch (e: Exception) {
-                System.err.println("Exception on Loop system stop:")
-                e.printStackTrace()
-            }
+            system.stop()
+            regulator.stop()
         }
     }
 }

@@ -11,6 +11,14 @@ plugins {
 dependencies {
     api(hipparchus("core"))
 }
+
+tasks.named("cleanTest") {
+    doLast {
+        delete("graphs")
+        delete("tmp")
+    }
+}
+
 tasks.withType<KotlinCompile> {
     kotlinOptions {
         @Suppress("SuspiciousCollectionReassignment")

@@ -1,3 +1,5 @@
+@file:Suppress("PublicApiImplicitType", "KDocMissingDocumentation")
+
 plugins {
     kotlin("jvm")
 }

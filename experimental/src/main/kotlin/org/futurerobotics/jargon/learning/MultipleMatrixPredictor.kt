@@ -76,6 +76,8 @@ class MultipleDescentParams(
 
 /**
  * Base implementation of a [MultipleMatrixPredictor] fitter.
+ *
+ * @param params the [MultipleDescentParams]
  */
 abstract class AbstractMultipleMatrixFitter(protected val params: MultipleDescentParams) :
     Fitter<List<Vec>, Vec, MultipleMatrixPredictor> {
@@ -147,12 +149,10 @@ class StochasticMultipleMatrixFitter(
     StochasticFitter<List<Vec>, Vec, MultipleMatrixPredictor> {
 
     override fun stochasticUpdate(predictor: MultipleMatrixPredictor, input: List<Vec>, output: Vec) {
-        val x = input
-        val y = output
         val mats = predictor.mats
-        val yPred = predictor.predict(x)
-        val error = y - yPred
-        x.forEachIndexed { matI, xi ->
+        val yPred = predictor.predict(input)
+        val error = output - yPred
+        input.forEachIndexed { matI, xi ->
             val mat = mats[matI]
 
             val grad = getGradient(error, xi, mat, params.regulariztion[matI])

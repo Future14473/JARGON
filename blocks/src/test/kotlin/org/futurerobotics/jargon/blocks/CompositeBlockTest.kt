@@ -1,49 +1,59 @@
 package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
-import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST_ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST
+import org.futurerobotics.jargon.blocks.config.BCBuilder
+import org.futurerobotics.jargon.blocks.config.BlockConfig
+import org.futurerobotics.jargon.blocks.functional.Constant
+import org.futurerobotics.jargon.blocks.functional.Monitor
+import org.futurerobotics.jargon.util.uncheckedCast
 import org.futurerobotics.jargon.util.zipForEach
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
-internal class TestCompositeBlock : CompositeBlock(2, 2, IN_FIRST_ALWAYS) {
-    override fun configSubsystem(
-        sources: List<BlocksConfig.Output<Any?>>, outputs: List<BlocksConfig.Input<Any?>>
-    ): BlocksConfig = BaseBlocksConfig().apply {
-        sources.zipForEach(outputs) { a, b ->
-            a into b
+internal class TestCompositeBlock : CompositeBlock(ALWAYS) {
+    init {
+        repeat(2) {
+            newInput<String?>()
+            newOutput<String?>()
         }
     }
 
-    fun input(index: Int) = configInput<Any?>(index)
-    fun output(index: Int) = configOutput<Any?>(index)
+    override fun SubsystemMapper.configSubsystem(): BlockConfig = BCBuilder().build {
+        inputs.zipForEach(outputs) { i, o ->
+            i.subOutput() into o.subInput().uncheckedCast<Input<Any?>>()
+        }
+    }
+
+    fun input(index: Int): Input<String?> = inputs[index].uncheckedCast()
+    fun output(index: Int): Output<String?> = outputs[index].uncheckedCast()
 }
 
 internal class CompositeBlockTest {
     @Test
     fun `it works in the middle`() {
-        val monitor: Monitor<String>
-        val system = buildTestBlocksSystem {
+        val monitor: Monitor<out String?>
+        val system = buildBlockSystem {
             val b = testBlock("B", 3, 2, requireAllInputs = false)
             val c = testBlock("C", 1, 2)
-            val d = testBlock("D", 1, 1, OUT_FIRST_ALWAYS)
-            val e = testBlock("E", 1, 1, OUT_FIRST_ALWAYS)
+            val d = testBlock("D", 1, 1, OUT_FIRST)
+            val e = testBlock("E", 1, 1, OUT_FIRST)
             val f = testBlock("F", 2, 2)
-            val g = testBlock("G", 2, 1, IN_FIRST_ALWAYS)
+            val g = testBlock("G", 2, 1, ALWAYS)
             val h = testBlock("H", 2, 1)
             val pipe = TestCompositeBlock()
             e.output(0) into pipe.input(0)
             d.output(0) into pipe.input(1)
 
-            b.fromAll(Constant("A"), pipe.output(0))
-            c.fromAll(b.output(0))
-            d.fromAll(h.output(0))
-            e.fromAll(f.output(1))
-            f.fromAll(b.output(1), pipe.output(1))
-            g.fromAll(c.output(0), f.output(0))
-            h.fromAll(c.output(0), g.output(0))
-            monitor = d.input().monitor()
+            b.fromAll(this, Constant("A").output, pipe.output(0))
+            c.fromAll(this, b.output(0))
+            d.fromAll(this, h.output(0))
+            e.fromAll(this, f.output(1))
+            f.fromAll(this, b.output(1), pipe.output(1))
+            g.fromAll(this, c.output(0), f.output(0))
+            h.fromAll(this, c.output(0), g.output(0))
+            monitor = d.input(0).source()!!.monitor()
         }
 
         expectThat(monitor) {

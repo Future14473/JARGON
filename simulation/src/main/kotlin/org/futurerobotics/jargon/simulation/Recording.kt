@@ -1,34 +1,34 @@
 package org.futurerobotics.jargon.simulation
 
-import org.futurerobotics.jargon.blocks.BaseBlocksConfig
-import org.futurerobotics.jargon.blocks.BlocksConfig
-import org.futurerobotics.jargon.blocks.BlocksSystem
-import org.futurerobotics.jargon.blocks.SystemValuesBlock
-import org.futurerobotics.jargon.blocks.functional.RecordingBlock
+import org.futurerobotics.jargon.blocks.Block
+import org.futurerobotics.jargon.blocks.config.BCBuilder
+import org.futurerobotics.jargon.blocks.functional.Recording
 import org.futurerobotics.jargon.math.Vector2d
 import org.knowm.xchart.XYChart
 import org.knowm.xchart.XYChartBuilder
 import org.knowm.xchart.style.markers.None
-import kotlin.collections.set
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 
-private typealias RecordingsGroup<T> = MutableMap<String, RecordingBlock<T>>
+private typealias RecordingsGroup<T> = MutableMap<String, Recording<T>>
 private typealias RecordingsMap<T> = MutableMap<String, RecordingsGroup<T>>
 
 /**
  * Stores recordings of y or xy values from a system, and eventually can display them on a graph.
  * Recordings can be put in _groups_, and every group corresponds to a graph. Every group/graph can have multiple
  * recordings with different names.
- *
- * Obtained with [RecordingBlocksConfig].
  */
 class Recordings internal constructor(
-    private val yRecordingsMap: RecordingsMap<Double>,
-    private val xyRecordingsMap: RecordingsMap<Vector2d>,
-    private val times: RecordingBlock<Double>
+    builder: BCBuilder
 ) {
+
+    private val xyRecordingsMap: RecordingsMap<Vector2d> = HashMap()
+    private val yRecordingsMap: RecordingsMap<Double> = HashMap()
+    private val times: Recording<Double>
+
+    init {
+        with(builder) {
+            times = Recording<Double>()() { this.input from generate { totalTime } }
+        }
+    }
 
     /**
      * Gets a [XYChart] for the given [groupName] of y recordings. Time will be graphed on the x-axis, and values on the
@@ -88,65 +88,27 @@ class Recordings internal constructor(
      * Gets a list of pairs of (group name, [XYChart]) for _all_ groups, y graphs and xy graphs.
      */
     fun getAllGraphs(): List<Pair<String, XYChart>> = getAllXYGraphs() + getAllYGraphs()
-}
-
-/**
- * A [BlocksConfig] that provides additional DSL functions for recording values of blocks.
- */
-class RecordingBlocksConfig : BaseBlocksConfig() {
-
-    private val yRecordingsMap: RecordingsMap<Double> = HashMap()
-    private val xyRecordingsMap: RecordingsMap<Vector2d> = HashMap()
 
     /**
-     * The [Recordings] that are maintained by this [RecordingBlocksConfig]. Any newly added recordings will
-     * be reflected in this Records.
-     */
-    val recordings: Recordings
-
-    init {
-        val times = RecordingBlock<Double>()() { this from SystemValuesBlock().totalTime }
-        recordings = Recordings(yRecordingsMap, xyRecordingsMap, times)
-    }
-
-    /**
-     * Adds a new recording for the given double [BlocksConfig.Output]; in the given [group] and the given [name].
+     * Adds a new recording for the given double [Block.Output]; in the given [group] and the given [name].
      * This is for a [Recordings]
      *
      * The group and name can later be used to generate a graph with time on the x axis and value on the y.
      */
-    fun Output<Double>.recordY(group: String, name: String) {
+    fun BCBuilder.recordY(output: Block.Output<Double>, group: String, name: String) {
         val recordingsGroup = yRecordingsMap.getOrPut(group) { HashMap() }
         check(!recordingsGroup.contains(name)) { """group "$group" name "$name" already used!""" }
-        recordingsGroup[name] = RecordingBlock<Double>().also { this into it }
+        recordingsGroup[name] = output.recording()
     }
 
     /**
-     * Adds a new recording for the given [Vector2d] [BlocksConfig.Output]; in the given [group] and the given [name].
+     * Adds a new recording for the given [Vector2d] [Block.Output]; in the given [group] and the given [name].
      *
      * The group and name can later be used to generate a graph of the vector values in 2d space.
      */
-    fun Output<Vector2d>.recordXY(group: String, name: String) {
+    fun BCBuilder.recordXY(output: Block.Output<Vector2d>, group: String, name: String) {
         val recordingsGroup = xyRecordingsMap.getOrPut(group) { HashMap() }
         check(!recordingsGroup.contains(name)) { """group "$group" name "$name" already used!""" }
-        recordingsGroup[name] = RecordingBlock<Vector2d>().also { this into it }
-    }
-}
-
-/**
- * DSL to build a block system.
- * Runs the [configuration] block on a [RecordingBlocksConfig] then returns the built [BlocksSystem] and [Recordings].
- */
-@UseExperimental(ExperimentalContracts::class)
-inline fun buildRecordingBlocksSystem(
-    configuration: RecordingBlocksConfig.() -> Unit
-): Pair<BlocksSystem, Recordings> {
-    contract {
-        callsInPlace(configuration, InvocationKind.EXACTLY_ONCE)
-    }
-    return RecordingBlocksConfig().run {
-        configuration()
-        verifyConfig()
-        BlocksSystem(this) to recordings
+        recordingsGroup[name] = output.recording()
     }
 }

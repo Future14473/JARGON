@@ -85,7 +85,7 @@ class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDe
             V.setColumn(currentIndex, previousColumnV)
         }
 
-        checkDefinition(matrix)
+//        checkDefinition(matrix)
     }
 
     /** {@inheritDoc}  */
@@ -99,7 +99,7 @@ class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDe
  *
  * 1. Compute the Symplectic matrix 2. Extract its complex eigen vectors (not
  * the best solution, a better solution would be ordered Schur transformation).
- * That is all we have; result is not guarenteed to be stable.
+ * That is all we have; result is not guaranteed to be stable.
  *
  * A and B should be compatible. B and R must be
  * multiplicative compatible. A and Q must be multiplicative compatible. R and A

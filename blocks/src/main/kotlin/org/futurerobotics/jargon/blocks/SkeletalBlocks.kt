@@ -1,300 +1,150 @@
 package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.blocks.Block.Processing.*
-import org.futurerobotics.jargon.util.fixedSizeMutableListOfNulls
+import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
+import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
+import org.futurerobotics.jargon.blocks.config.BlockConfig
+import org.futurerobotics.jargon.blocks.config.IllegalBlockConfigurationException
+import org.futurerobotics.jargon.blocks.config.ReadOnlyBlockConfig
 import org.futurerobotics.jargon.util.uncheckedCast
 
 /**
- * Base implementation of [Block]; where constants are set via constructor.
+ * Base implementation of [Block].
  *
- * On [prepareAndVerify], [requireAllConnected] is called. If this is not desired, override.
+ * Subclasses can call [newInput]/[newOutput] and store them as public (final) fields/properties during
+ * construction/initialization. These can then be used by client code during configuration, and internally
+ * during [process]. This provides a generics-safe method of customizing any number of inputs/outputs.
+ *
+ *
  */
-abstract class AbstractBlock constructor(
-    final override val numInputs: Int,
-    final override val numOutputs: Int,
-    final override val processing: Block.Processing
-) : Block {
+abstract class BaseBlock(override val processing: Processing) : Block() {
 
     /**
-     * Default implementation of [Block.prepareAndVerify] that runs [requireAllConnected].
-     * Override if you do not want this behavior.
+     * Creates a new input to this block with the specified type [T], and given name [name].
+     *
+     * If passed [name] is null, will attempt to find name via reflection.
      */
-    override fun prepareAndVerify(config: BlocksConfig): Unit = requireAllConnected(config)
+    @JvmOverloads
+    protected fun <T> newInput(name: String? = null): Input<T> = Input(name, false)
 
     /**
-     * Requires that all inputs are connected on the given [config], or else throws an
-     * [IllegalBlockConfigurationException].
+     * Creates a new input to this block with the specified type [T], that can also be [isOptional].
+     *
+     * If an input is optional and not connected, the given values will be `null`.
+     *
+     * If passed [name] is null, will attempt to find name via reflection.
      */
-    protected fun requireAllConnected(config: BlocksConfig): Unit = config.run {
-        repeat(numInputs) {
-            if (!inputIsConnected(it)) throw IllegalBlockConfigurationException("All inputs to ${this@AbstractBlock} must be connected.")
-        }
-    }
+    @JvmOverloads
+    protected fun <T> newInput(isOptional: Boolean, name: String? = null): Input<T?> = Input(name, isOptional)
 
     /**
-     * Gets a [BlocksConfig.Input] for this block, with the given [index].
+     * Creates a new output to this block with the specified type [T].
      *
-     * It is the user's responsibility to make sure that the generic is of the right type.
-     *
-     * Subclasses should use this to provide inputs/outputs.
-     * @see [configOutput]
+     * If passed [name] is null, will attempt to find name via reflection
      */
-    protected fun <T> configInput(index: Int): BlocksConfig.Input<T> {
-        if (index !in 0..numInputs) throw IndexOutOfBoundsException(index)
-        return BlocksConfig.Input.ofUnsafeCast(this, index)
-    }
-
-    /**
-     * Gets a [BlocksConfig.Output] for this block, with the given [index].
-     *
-     * It is the user's responsibility to make sure that the generic is of the right type.
-     *
-     * Subclasses should use this to provide inputs/outputs.
-     * @see [configInput]
-     */
-    protected fun <T> configOutput(index: Int): BlocksConfig.Output<T> {
-        if (index !in 0..numOutputs) throw IndexOutOfBoundsException(index)
-        return BlocksConfig.Output.ofUnsafeCast(this, index)
-    }
-
-    override fun stop() {
-        //default: Do nothing.
-    }
+    @JvmOverloads
+    protected fun <T> newOutput(name: String? = null): Output<T> = Output(name)
 }
 
 /**
- * An implementation of a [Block] that stores _all_ its outputs in a list when processed.
- *
- * The list is provided in the [init]/[process] functions.
+ * A block that only takes one [input] of type [T] and one [output] of type [R], that is ran through a [pipe] function.
  */
-abstract class ListStoreBlock(numInputs: Int, numOutputs: Int, processing: Block.Processing) : AbstractBlock(
-    numInputs, numOutputs, processing
-) {
+abstract class PipeBlock<T, R>
+@JvmOverloads constructor(
+    override val processing: Processing = LAZY
+) : Block() {
 
-    private val outputs = fixedSizeMutableListOfNulls<Any>(numOutputs)
-    final override fun init() {
-        outputs.fill(null)
-        init(outputs)
+    /** Input to this [PipeBlock] */
+    val input: Input<T> = Input(null, false)
+    /** Output to this [PipeBlock] */
+    val output: Output<R> = Output(null)
+
+    /** Pipes the input to the output. */
+    protected abstract fun Context.pipe(input: T): R
+
+    final override fun Context.process() {
+        output.set = pipe(input.get)
     }
 
-    final override fun process(inputs: List<Any?>, systemValues: SystemValues) {
-        outputs.fill(null)
-        return process(inputs, systemValues, outputs)
-    }
-
-    final override fun getOutput(index: Int): Any? = outputs[index]
-    /**
-     * Initializes this block; possibly filling the [outputs] if this block is [OUT_FIRST_ALWAYS].
-     *
-     * Otherwise, changes to the [outputs] list will be ignored.
-     *
-     * (as in [Block.init])
-     */
-    protected abstract fun init(outputs: MutableList<Any?>)
-
-    /**
-     * Processes this block, given the [inputs] as a list and the [outputs] as a mutable list.
-     *
-     * (as in [Block.process])
-     */
-    protected abstract fun process(
-        inputs: List<Any?>, systemValues: SystemValues, outputs: MutableList<Any?>
-    )
-}
-
-/**
- * A block that has a single output of type [R], which simplifies processing in [processOutput].
- *
- * This is also itself a [BlocksConfig.Output] representing its only output.
- */
-abstract class SingleOutputBlock<R>(numInputs: Int, processing: Block.Processing) : AbstractBlock(
-    numInputs, 1, processing
-), BlocksConfig.Output<R> {
-
-    private var value: R? = null
-    final override val block: Block get() = this
-    final override val index: Int get() = 0
-    final override fun init() {
-        value = initialValue()
-    }
-
-    /**
-     * Initializes this block, and if this block is [OUT_FIRST_ALWAYS], returns the initial output
-     *
-     * Otherwise return value will be ignored so just return `null`
-     *
-     * (as in [Block.init])
-     */
-    protected abstract fun initialValue(): R?
-
-    final override fun process(inputs: List<Any?>, systemValues: SystemValues) {
-        value = processOutput(inputs, systemValues)
-    }
-
-    /**
-     * Processes this block using the given [inputs] and returns the (only) output of this block
-     *
-     * (as in [Block.process] where output is stored)
-     */
-    protected abstract fun processOutput(inputs: List<Any?>, systemValues: SystemValues): R
-
-    final override fun getOutput(index: Int): Any? {
-        if (index != 0) throw IndexOutOfBoundsException(index)
-        return value
-    }
-}
-
-/**
- * A block that has a single input of type [T], which simplifies processing in [processInput]
- *
- * This is also itself a [BlocksConfig.Input] representing its only input.
- */
-abstract class SingleInputBlock<T>(numOutputs: Int, processing: Block.Processing) : AbstractBlock(
-    1, numOutputs, processing
-), BlocksConfig.Input<T> {
-
-    private var input: T? = null
-    final override val block: Block get() = this
-    final override val index: Int get() = 0
-    final override fun process(inputs: List<Any?>, systemValues: SystemValues) {
-        input = inputs[0].uncheckedCast<T>()
-        processInput(input.uncheckedCast(), systemValues)
-    }
-
-    final override fun getOutput(index: Int): Any? = getOutput(input.uncheckedCast(), index)
-    /** Gets the output of this block by index, also with the given [input], as in [getOutput][Block.getOutput]. */
-    protected abstract fun getOutput(input: T, index: Int): Any?
-
-    /**
-     * Processes this block with the single [input] value
-     *
-     * (as in [Block.process])
-     */
-    protected abstract fun processInput(input: T, systemValues: SystemValues)
-}
-
-/**
- * A block that has a single input of type [T], and stores _all_ its outputs in a list:
- * a combination of [ListStoreBlock] and [SingleInputBlock]
- */
-abstract class SingleInputListStoreBlock<T>(numOutputs: Int, processing: Block.Processing) : ListStoreBlock(
-    1, numOutputs, processing
-), BlocksConfig.Input<T> {
-
-    final override val block: Block get() = this
-    final override val index: Int get() = 0
-
-    final override fun process(
-        inputs: List<Any?>, systemValues: SystemValues, outputs: MutableList<Any?>
-    ): Unit = processInput(inputs[0].uncheckedCast(), systemValues, outputs)
-
-    /**
-     * Processes this block, given the single [input] and the [outputs] as a value
-     *
-     * (as in [Block.process] or [ListStoreBlock.process])
-     */
-    protected abstract fun processInput(
-        input: T, systemValues: SystemValues, outputs: MutableList<Any?>
-    )
-}
-
-/**
- * A block that ONLY takes in a single input of type [T], and runs [processInput] with it.
- *
- * Will always be [IN_FIRST_ALWAYS].
- */
-abstract class InputOnlyBlock<T> : SingleInputBlock<T>(0, IN_FIRST_ALWAYS) {
-
-    /** Processes the input to this block. */
-    abstract override fun processInput(input: T, systemValues: SystemValues)
-
-    override fun init() {
-        //default: do nothing
-    }
-
-    override fun getOutput(input: T, index: Int): Any? {
-        throw IndexOutOfBoundsException(index)
+    final override fun finalizeConfig(config: ReadOnlyBlockConfig) {
+        super.finalizeConfig(config)
     }
 
     companion object {
+
         /**
-         * Creates an [InputOnlyBlock] that only runs the given [operation] on the inputs it receives.
+         * Creates a new [PipeBlock] with the given [piping] function.
          */
-        inline fun <T> of(crossinline operation: (T) -> Unit): InputOnlyBlock<T> = object : InputOnlyBlock<T>() {
-            override fun processInput(input: T, systemValues: SystemValues) {
-                operation(input)
-            }
+        inline fun <T, R> with(crossinline piping: Context.(T) -> R): PipeBlock<T, R> = object : PipeBlock<T, R>() {
+            override fun Context.pipe(input: T): R = piping(input)
         }
     }
 }
 
 /**
- * A block that has 1 input of type [T] and 1 output of type [R], where the output is strictly the input run through
- * the [pipe] function.
- *
- * This also defaults [initialValue] to return `null`; override if this is not desired.
- *
- * This itself if both a [BlocksConfig.Input] and [BlocksConfig.Output] representing its input and output.
- *
- * A lambda version of this is available in [BlocksConfig.combine] for easier use.
- * */
-abstract class PipeBlock<T, R> @JvmOverloads constructor(processing: Block.Processing = IN_FIRST_LAZY) :
-    SingleOutputBlock<R>(1, processing), BlocksConfig.Input<T> {
-
-    override fun initialValue(): R? = null
-    final override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): R =
-        pipe(inputs[0].uncheckedCast())
-
-    /**
-     * Transforms the input value to the output value.
-     */
-    protected abstract fun pipe(input: T): R
-
-    companion object {
-        /** Creates a [PipeBlock] using the given [pipe] function. */
-        @JvmStatic
-        inline fun <T, R> with(crossinline pipe: (T) -> R): PipeBlock<T, R> = object : PipeBlock<T, R>(IN_FIRST_LAZY) {
-            override fun pipe(input: T): R = pipe(input)
-        }
-    }
-}
-
-/**
- * A block that has 2 inputs of types [A] and [B] and 1 output of type [R], where the output is a the input run
- * through the [combine] function.
- *
- * This also defaults [initialValue] to return `null`; override if this is not desired.
- *
- * This is itself a [BlocksConfig.Output] representing its only output,
- * and it also provides [firstInput] and [secondInput] properties representing its inputs.
- *
- * A lambda version of this is available in [BlocksConfig.combine] for easier use.
+ * A block which has only one [input] of type [T], that is _not_ optional.
  */
-abstract class CombineBlock<A, B, R>(processing: Block.Processing = IN_FIRST_LAZY) :
-    SingleOutputBlock<R>(2, processing) {
+abstract class SingleInputBlock<T> constructor(override val processing: Processing) : Block() {
 
-    /** The first input to this combine block. */
-    val firstInput: BlocksConfig.Input<A> get() = configInput(0)
-    /** The second input to this second block. */
-    val secondInput: BlocksConfig.Input<B> get() = configInput(1)
-
-    override fun initialValue(): R? = null
-    final override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): R =
-        combine(inputs[0].uncheckedCast(), inputs[1].uncheckedCast())
+    /** The input to this block. */
+    @Suppress("LeakingThis")
+    val input: Input<T> = Input(null, false)
 
     /**
-     * Combines two input values to the output value.
+     * Creates a new output to this block with the specified type [T].
+     *
+     * If passed [name] is null, will attempt to find name via reflection
      */
-    protected abstract fun combine(a: A, b: B): R
+    @JvmOverloads
+    protected fun <T> newOutput(name: String? = null): Output<T> = Output(name)
 
-    companion object {
-        /** Creates a [CombineBlock] using the given [combine] function. */
-        @JvmStatic
-        inline fun <A, B, R> of(
-            crossinline combine: (A, B) -> R
-        ): CombineBlock<A, B, R> = object : CombineBlock<A, B, R>(IN_FIRST_LAZY) {
-            override fun combine(a: A, b: B): R = combine(a, b)
-        }
+    /** Processes with the given [input] */
+    protected abstract fun Context.process(input: T)
+
+    final override fun Context.process() {
+        this.process(input.get)
+    }
+
+    final override fun finalizeConfig(config: ReadOnlyBlockConfig) {
+        super.finalizeConfig(config)
+    }
+}
+
+/**
+ * A block which has only one [output] of type [T].
+ */
+abstract class SingleOutputBlock<T>(override val processing: Processing) : Block() {
+
+    /** The input to this block. */
+    @Suppress("LeakingThis")
+    val output: Output<T> = Output(null)
+
+    /**
+     * Creates a new input to this block with the specified type [T], and given name [name].
+     *
+     * If passed [name] is null, will attempt to find name via reflection.
+     */
+    @JvmOverloads
+    protected fun <T> newInput(name: String? = null): Input<T> = Input(name, false)
+
+    /**
+     * Creates a new input to this block with the specified type [T], that can also be [isOptional].
+     *
+     * If an input is optional and not connected, the given values will be `null`.
+     *
+     * If passed [name] is null, will attempt to find name via reflection.
+     */
+    @JvmOverloads
+    protected fun <T> newInput(isOptional: Boolean, name: String? = null): Input<T?> = Input(name, isOptional)
+
+    /** Gets the output of this block. */
+    protected abstract fun Context.getOutput(): T
+
+    final override fun Context.process() {
+        output.set = getOutput()
+    }
+
+    final override fun finalizeConfig(config: ReadOnlyBlockConfig) {
+        super.finalizeConfig(config)
     }
 }
 
@@ -305,89 +155,105 @@ abstract class CombineBlock<A, B, R>(processing: Block.Processing = IN_FIRST_LAZ
  *
  * The subsystem does not support [SpecialBlock]s.
  */
-abstract class CompositeBlock(numInputs: Int, numOutputs: Int, processing: Block.Processing) :
-    AbstractBlock(numInputs, numOutputs, processing) {
+abstract class CompositeBlock(processing: Processing) : BaseBlock(processing) {
 
     private lateinit var subsystem: Subsystem
-
+    private var outsideContext: Context? = null
     final override fun init() {
         subsystem.init()
-        initMore()
     }
 
-    /** Does more initialization. Only way to enforce "call super". */
-    protected open fun initMore() {}
+    final override fun Context.process() {
+        subsystem.process(this)
+    }
 
-    final override fun process(inputs: List<Any?>, systemValues: SystemValues): Unit =
-        subsystem.process(inputs, systemValues)
-
-    final override fun getOutput(index: Int): Any? = subsystem.getOutput(index)
+    final override fun stop() {
+        subsystem.stop()
+    }
 
     /**
-     * Builds and returns a [BlocksConfig] for the subsystem.
-     * [sources] are outputs that correspond to the value given from the outside world,
-     * and [outputs] are inputs that correspond to values given _to_ the outside world.
+     * Builds and returns a [BlockConfig] for the subsystem, using the given a [SubsystemMapper] to map _this_ blocks
+     * inputs/outputs into the _subsystem's_ outputs.inputs.
+     *
+     * Try not to confuse inputs/outputs as that may result in errors.
      */
-    protected abstract fun configSubsystem(
-        sources: List<BlocksConfig.Output<Any?>>, outputs: List<BlocksConfig.Input<Any?>>
-    ): BlocksConfig
+    protected abstract fun SubsystemMapper.configSubsystem(): BlockConfig
 
-    final override fun prepareAndVerify(config: BlocksConfig) {
-        val sources = Sources()
-        val outputs = Outputs()
-        val subConfig = configSubsystem(sources.allOutputs(), outputs.allInputs())
-        subsystem = Subsystem(subConfig, sources, outputs)
-        prepareAndVerifyMore(config)
+    final override fun finalizeConfig(config: ReadOnlyBlockConfig) {
+        super.finalizeConfig(config)
+        val mapper = object : SubsystemMapper {
+            val outputsArray = arrayOfNulls<Output<*>>(numOutputs)
+            private val outputs = Outputs(outputsArray.uncheckedCast())
+            override fun <T> Input<T>.subOutput(): Output<T> {
+                require(block === this@CompositeBlock) {
+                    throw IllegalBlockConfigurationException(
+                        "In composite block ${this@CompositeBlock}: " +
+                                "Attempted to map from another block: ${this}"
+                    )
+                }
+                return Source(this).subOutput
+            }
+
+            override fun <T> Output<T>.subInput(): Input<T> {
+                require(block === this@CompositeBlock) {
+                    throw IllegalBlockConfigurationException(
+                        "In composite block ${this@CompositeBlock}: " +
+                                "Attempted to map from another block: ${this}"
+                    )
+                }
+                val index = index
+                outputsArray[index] = this
+                return outputs.subInputs[index].uncheckedCast()
+            }
+        }
+        val subConfig = mapper.configSubsystem() //confirms that all outputs need to be connected.
+        subsystem = Subsystem(subConfig)
     }
 
-    /** Performs additional [prepareAndVerify] actions. Only way to enforce "super call". */
-    protected open fun prepareAndVerifyMore(config: BlocksConfig) {
-        super.prepareAndVerify(config)
+    /**
+     * Maps a [CompositeBlock]'s inputs/outputs into the subsystem's outputs.inputs.
+     */
+    protected interface SubsystemMapper {
+
+        /**
+         * Gets the _subsystem_ output corresponding _this block's_ input.
+         */
+        fun <T> Input<T>.subOutput(): Output<T>
+
+        /**
+         * Gets the _subsystem_ input corresponding to _this block's_ output.
+         */
+        fun <T> Output<T>.subInput(): Input<T>
     }
 
-    private inner class Subsystem(config: BlocksConfig, private val sources: Sources, private val outputs: Outputs) :
-        AbstractBlocksRunner(config) {
+    private inner class Subsystem(config: BlockConfig) :
+        BlockRunner(config) {
 
-        override lateinit var systemValues: SystemValues
+        override val systemValues: SystemValues get() = outsideContext!!
         public override fun init() = super.init()
         public override fun stop() = super.stop()
-
-        fun process(outsideSources: List<Any?>?, systemValues: SystemValues) {
-            this.systemValues = systemValues
-            sources.outsideSources = outsideSources
+        fun process(context: Context) {
+            outsideContext = context
             processOnce()
         }
-
-        fun getOutput(index: Int): Any? = outputs.extractFromSystem!![index]
     }
 
-    private inner class Sources : AbstractBlock(0, numInputs, IN_FIRST_LAZY) {
-        var outsideSources: List<Any?>? = null
+    private inner class Source<T>(private val outsideInput: Input<T>) : BaseBlock(LAZY) {
+        val subOutput = newOutput<T>()
 
-        fun allOutputs() = List(this.numOutputs) { configOutput<Any?>(it) }
-        override fun init() {
-            outsideSources = null
+        override fun Context.process() {
+            subOutput.set = outsideContext!![outsideInput]
         }
-
-        override fun process(inputs: List<Any?>, systemValues: SystemValues) {}
-        override fun getOutput(index: Int): Any? = outsideSources!![index]
     }
 
-    private inner class Outputs : AbstractBlock(numOutputs, 0, IN_FIRST_ALWAYS) {
-        var extractFromSystem: List<Any?>? = null
-            private set
+    private inner class Outputs(private val outsideOutputs: Array<Output<Any?>>) : BaseBlock(ALWAYS) {
 
-        fun allInputs() = List(this.numInputs) { configInput<Any?>(it) }
-        override fun init() {
-            extractFromSystem = null
-        }
+        val subInputs = Array(this@CompositeBlock.numOutputs) { newInput<Any?>() }
 
-        override fun process(inputs: List<Any?>, systemValues: SystemValues) {
-            extractFromSystem = inputs
-        }
-
-        override fun getOutput(index: Int): Any? {
-            throw IndexOutOfBoundsException(index)
+        override fun Context.process() {
+            repeat(subInputs.size) {
+                outsideContext!![outsideOutputs[it]] = subInputs[it].get
+            }
         }
     }
 }

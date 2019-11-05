@@ -1,9 +1,10 @@
 package org.futurerobotics.jargon.blocks.motion
 
-import org.futurerobotics.jargon.blocks.BlocksSystem
-import org.futurerobotics.jargon.blocks.ExternalValue
-import org.futurerobotics.jargon.blocks.Monitor
-import org.futurerobotics.jargon.blocks.buildBlocksSystem
+import org.futurerobotics.jargon.blocks.BlockSystem
+import org.futurerobotics.jargon.blocks.buildBlockSystem
+import org.futurerobotics.jargon.blocks.control.GlobalPoseTrackerFromVel
+import org.futurerobotics.jargon.blocks.functional.ExternalValue
+import org.futurerobotics.jargon.blocks.functional.Monitor
 import org.futurerobotics.jargon.math.*
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
@@ -56,13 +57,13 @@ internal class GlobalPoseTrackerFromVelTest {
         }
     }
 
-    private fun getSystem(initialPose: Pose2d): Triple<BlocksSystem, ExternalValue<Pose2d>, Monitor<Pose2d>> {
+    private fun getSystem(initialPose: Pose2d): Triple<BlockSystem, ExternalValue<Pose2d>, Monitor<Pose2d>> {
         val input = ExternalValue(Pose2d.ZERO)
         var monitor: Monitor<Pose2d>
-        return Triple(buildBlocksSystem {
+        return Triple(buildBlockSystem {
             val tracker = GlobalPoseTrackerFromVel(initialPose)
-            tracker.velocityIn from input
-            monitor = tracker.monitor()
+            tracker.velocityIn from input.output
+            monitor = tracker.output.monitor()
         }, input, monitor)
     }
 }

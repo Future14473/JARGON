@@ -1,10 +1,8 @@
 package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.blocks.Block
-import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_ALWAYS
-import org.futurerobotics.jargon.blocks.BlocksConfig
+import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.blocks.SingleOutputBlock
-import org.futurerobotics.jargon.blocks.SystemValues
 import org.futurerobotics.jargon.linalg.*
 import org.hipparchus.filtering.kalman.Measurement
 import org.hipparchus.filtering.kalman.ProcessEstimate
@@ -29,12 +27,12 @@ class LinearKalmanFilter(
     private val model: DiscreteLinearStateSpaceModel,
     private val Q: Mat,
     private val R: Mat
-) : SingleOutputBlock<Vec>(2, IN_FIRST_ALWAYS) {
+) : SingleOutputBlock<Vec>(ALWAYS) {
 
     /** Measurement vector input */
-    val measurement: BlocksConfig.Input<Vec> get() = configInput(0)
+    val measurement: Input<Vec> = newInput()
     /** Signal vector input */
-    val signal: BlocksConfig.Input<Vec> get() = configInput(1)
+    val signal: Input<Vec> = newInput()
 
     private var filter: InnerKalmanFilter<Measurement>? = null
     private val measurementObj = object : Measurement {
@@ -60,7 +58,7 @@ class LinearKalmanFilter(
     private var stateCovariance = steadyStateKalmanErrorCov(model, Q, R)
     private var lastUpdate: ProcessEstimate? = null
     private var pastOutput: Vec? = null
-    override fun initialValue(): Vec? {
+    override fun init() {
         lastUpdate?.covariance?.let {
             stateCovariance = it
         }
@@ -68,18 +66,18 @@ class LinearKalmanFilter(
         measurementObj.timeNanos = 0L
         lastUpdate = null
         filter = null //reset filter with new state, perhaps.
-        return null
     }
 
-    override fun processOutput(inputs: List<Any?>, systemValues: SystemValues): Vec {
-        val measurement = inputs[0] as Vec
+    override fun Context.getOutput(): Vec {
+        val measurement = measurement.get
         val filter = filter ?: InnerKalmanFilter(
             DECOMP, linearProcess, ProcessEstimate(
-                systemValues.totalTime, pastOutput ?: model.C.solve(measurement),
+                totalTime, pastOutput
+                    ?: model.C.solve(measurement),
                 stateCovariance
             )
         ).also { filter = it }
-        val loopTime = systemValues.loopTime
+        val loopTime = loopTime
         val lastNanos = measurementObj.timeNanos
         val elapsedNanos = (loopTime * 1e9).roundToLong()
         val nowNanos = lastNanos + elapsedNanos
@@ -91,7 +89,7 @@ class LinearKalmanFilter(
                 measurementObj.value = measurement
                 measurementObj.timeNanos = curNanos
 
-                val signal = inputs[1] as Vec
+                val signal = signal.get
                 linearProcess.signal setTo signal
 
                 filter.estimationStep(measurementObj)

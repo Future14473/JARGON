@@ -8,6 +8,7 @@ plugins {
 
 dependencies {
     api(project(":core"))
+    compile(kotlin("reflect"))
 }
 
 tasks.withType<KotlinCompile> {

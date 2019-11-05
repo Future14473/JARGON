@@ -1,40 +1,55 @@
 package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.util.fillWith
+import org.futurerobotics.jargon.blocks.config.BCBuilder
+import org.futurerobotics.jargon.util.uncheckedCast
 
 internal class TestBlock(
     private val name: String,
     numInputs: Int,
     numOutputs: Int,
-    processing: Block.Processing = Block.Processing.IN_FIRST_LAZY,
+    override val processing: Processing = Processing.LAZY,
     private val requireAllInputs: Boolean = true
-) : ListStoreBlock(numInputs, numOutputs, processing) {
+) : Block() {
+
+    init {
+        repeat(numInputs) { Input<String>(null, !requireAllInputs) }
+        repeat(numOutputs) { Output<String>(null) }
+    }
 
     private var updateNum = 0
-    override fun process(
-        inputs: List<Any?>, systemValues: SystemValues, outputs: MutableList<Any?>
-    ) {
-        val list = if (processing == Block.Processing.OUT_FIRST_ALWAYS) {
+
+    override fun Context.process() {
+        if (isFirstTime && processing == Processing.OUT_FIRST) {
+            repeat(numOutputs) {
+                outputs[it].set = "$name$it-"
+            }
+            return
+        }
+        val list = if (processing == Processing.OUT_FIRST) {
             List(numInputs) {
-                inputs[it].let { str ->
+                inputs[it].get.let { str ->
                     if (str is String) str.substring(0, str.indexOf('[')) else null
                 }
             }
         } else {
-            List(numInputs) { inputs[it] }
+            List(numInputs) { inputs[it].get }
         }.joinToString()
-        outputs.fillWith { "$name$it[$list]" }
+        repeat(numOutputs) {
+            outputs[it].set = "$name$it[$list]"
+        }
     }
 
-    override fun init(outputs: MutableList<Any?>) {
-        outputs.fillWith { "$name$it-" }
+    fun output(index: Int): Output<String> = outputs[index].uncheckedCast()
+    fun input(index: Int): Input<String?> = inputs[index].uncheckedCast()
+
+    @Suppress("UNCHECKED_CAST")
+    internal fun fromAll(builder: BCBuilder, vararg outputs: Output<out String?>) {
+        require(outputs.size <= numInputs) { "the given number of outputs ${outputs.size} must not exceed the block's number of inputs $this.numInputs" }
+        outputs.forEachIndexed { index, output ->
+            builder.connect(input(index), outputs[index])
+        }
     }
 
     override fun toString(): String = name
-    fun output(index: Int = 0): BlocksConfig.Output<String> = configOutput(index)
-    fun input(index: Int = 0): BlocksConfig.Input<Any?> = configInput(index)
-    override fun prepareAndVerify(config: BlocksConfig) {
-        if (requireAllInputs) super.prepareAndVerify(config)
-    }
 }
 

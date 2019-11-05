@@ -1,11 +1,8 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package org.futurerobotics.jargon.blocks.control
 
-import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
-import org.futurerobotics.jargon.blocks.BlocksConfig
-import org.futurerobotics.jargon.blocks.CombineBlock
+import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
 import org.futurerobotics.jargon.blocks.PipeBlock
+import org.futurerobotics.jargon.blocks.SingleOutputBlock
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
@@ -17,13 +14,15 @@ import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
  * Maybe pass through a filter first.
  */
 class FixedDriveMotorToBotDelta(private val interaction: MotorBotVelInteraction) :
-    PipeBlock<List<Double>, Pose2d>(IN_FIRST_LAZY) {
+    PipeBlock<List<Double>, Pose2d>(LAZY) {
 
     private var pastPositions: Vec? = null
-    override fun pipe(input: List<Double>): Pose2d {
+    override fun Context.pipe(
+        input: List<Double>
+    ): Pose2d {
         val pastPositions = pastPositions
         val curPositions = input.toVec()
-        this.pastPositions = curPositions
+        this@FixedDriveMotorToBotDelta.pastPositions = curPositions
         return if (pastPositions == null) Pose2d.ZERO else {
             Pose2d(interaction.botVelFromMotorVel(curPositions - pastPositions))
         }
@@ -31,26 +30,30 @@ class FixedDriveMotorToBotDelta(private val interaction: MotorBotVelInteraction)
 }
 
 /**
- * A [CombineBlock] block that takes in motor _positions_ and gyro readings to estimate _bot_ pose delta,
+ * A [SingleOutputBlock] block that takes in motor _positions_ and gyro readings to estimate _bot_ pose delta,
  * using a drive [interaction].
  *
  * Maybe pass through a filter first.
  */
 class FixedDriveMotorAndGyroToBotDelta(private val interaction: MotorBotVelInteraction) :
-    CombineBlock<List<Double>, Double, Pose2d>(IN_FIRST_LAZY) {
+    SingleOutputBlock<Pose2d>(LAZY) {
 
     /** Motor positions input */
-    val motorPositions: BlocksConfig.Input<List<Double>> get() = firstInput
-    /** Gyroscope output */
-    val gyro: BlocksConfig.Input<Double> get() = secondInput
+    val motorPositions: Input<List<Double>> = newInput()
+    /** Gyroscope input */
+    val gyroAngle: Input<Double> = newInput()
+
     private var pastPositions: Vec? = null
     private var pastAngle: Double = Double.NaN
-    override fun combine(a: List<Double>, b: Double): Pose2d {
+
+    override fun Context.getOutput(): Pose2d {
+        val a = motorPositions.get
+        val b = gyroAngle.get
         val pastPositions = pastPositions
         val pastAngle = pastAngle
         val curPositions = a.toVec()
-        this.pastPositions = curPositions
-        this.pastAngle = b
+        this@FixedDriveMotorAndGyroToBotDelta.pastPositions = curPositions
+        this@FixedDriveMotorAndGyroToBotDelta.pastAngle = b
         return if (pastPositions == null) Pose2d.ZERO else {
             Pose2d(interaction.botVelFromMotorVel * (curPositions - pastPositions)).copy(heading = pastAngle - b)
         }
@@ -63,7 +66,10 @@ class FixedDriveMotorAndGyroToBotDelta(private val interaction: MotorBotVelInter
  * Maybe pass through a filter first.
  */
 class FixedDriveMotorToBotVel(private val interaction: MotorBotVelInteraction) :
-    PipeBlock<List<Double>, Pose2d>(IN_FIRST_LAZY) {
+    PipeBlock<List<Double>, Pose2d>(LAZY) {
 
-    override fun pipe(input: List<Double>): Pose2d = Pose2d((interaction.botVelFromMotorVel * input.toVec()))
+    override fun Context.pipe(
+        input: List<Double>
+    ): Pose2d =
+        Pose2d((interaction.botVelFromMotorVel * input.toVec()))
 }

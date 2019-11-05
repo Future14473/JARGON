@@ -90,6 +90,7 @@ object DriveStateSpaceModels {
         return getMotorVelocityController(driveModel, motorAccelFromVolts)
     }
 
+    @Suppress("UnnecessaryVariable")
     private fun getMotorVelocityController(
         motorVelocityModel: MotorVelocityModel,
         motorAccelFromVolts: Mat

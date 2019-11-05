@@ -12,7 +12,9 @@ import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
  */
 class BotToMotorVel(private val interaction: MotorBotVelInteraction) : PipeBlock<Pose2d, Vec>() {
 
-    override fun pipe(input: Pose2d): Vec = interaction.motorVelFromBotVel * input.toVec()
+    override fun Context.pipe(
+        input: Pose2d
+    ): Vec = interaction.motorVelFromBotVel * input.toVec()
 }
 
 /**

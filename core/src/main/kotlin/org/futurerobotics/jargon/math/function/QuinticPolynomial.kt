@@ -8,6 +8,7 @@ import java.io.Serializable
  * A Quintic Polynomial function, specified by coefficients,
  * in the form [a]t^5+[b]t^4+[c]t^3+[d]t^2+[e]t+[f]
  */
+@Suppress("KDocMissingDocumentation")
 class QuinticPolynomial(
     @JvmField val a: Double,
     @JvmField val b: Double,

@@ -1,10 +1,7 @@
 package org.futurerobotics.jargon.simulation
 
-import org.futurerobotics.jargon.blocks.AbstractBlock
-import org.futurerobotics.jargon.blocks.Block
-import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST_ALWAYS
-import org.futurerobotics.jargon.blocks.BlocksConfig
-import org.futurerobotics.jargon.blocks.SystemValues
+import org.futurerobotics.jargon.blocks.BaseBlock
+import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST
 import org.futurerobotics.jargon.blocks.control.MotorsBlock
 import org.futurerobotics.jargon.hardware.Gyro
 import org.futurerobotics.jargon.linalg.*
@@ -119,38 +116,27 @@ class SimulatedFixedDrive(
  * 1. A List<Double> of motor positions in radians
  * 2. A List<Double> of motor velocities in radians
  */
-class SimulatedDriveBlock(private val drive: SimulatedFixedDrive) :
-    AbstractBlock(1, 3, OUT_FIRST_ALWAYS),
-    MotorsBlock {
+class SimulatedDriveBlock(private val drive: SimulatedFixedDrive) : BaseBlock(OUT_FIRST),
+                                                                    MotorsBlock {
+
 
     override val numMotors: Int
         get() = drive.numMotors
-
-    override fun init() {
-    }
-
-    override fun process(inputs: List<Any?>, systemValues: SystemValues) {
-        @Suppress("UNCHECKED_CAST")
-        drive.update(createVec(inputs[0] as List<Double>), systemValues.loopTime)
-    }
-
-    override fun getOutput(index: Int): Any? = when (index) {
-        0 -> (drive.curMotorPositions + drive.getMeasurementNoise()).toList()
-        1 -> (drive.curMotorVelocities + drive.getMeasurementNoise()).toList()
-        2 -> drive.curGlobalPose
-        else -> throw IndexOutOfBoundsException(index)
-    }
-
-    /** Motor positions [BlocksConfig.Output] */
-    override val motorPositions: BlocksConfig.Output<List<Double>> get() = configOutput(0)
-    /** Motor velocities [BlocksConfig.Output] */
-    override val motorVelocities: BlocksConfig.Output<List<Double>> get() = configOutput(1)
-
+    override val motorPositions: Output<List<Double>> = newOutput()
+    override val motorVelocities: Output<List<Double>> = newOutput()
     /** The actual pose as monitored by the simulated drive. Usually will not have direct info about this; used for testing. */
-    val actualPose: BlocksConfig.Output<Pose2d> get() = configOutput(2)
+    val actualPose: Output<Pose2d> = newOutput()
+    override val motorVolts: Input<List<Double>?> = newInput(true)
 
-    override val block: Block get() = this
-    override val index: Int get() = 0
+    override fun Context.process() {
+        val volts = motorVolts.get
+        if (volts != null)
+            drive.update(createVec(volts), loopTime)
+
+        motorPositions.set = (drive.curMotorPositions + drive.getMeasurementNoise()).toList()
+        motorVelocities.set = (drive.curMotorVelocities + drive.getMeasurementNoise()).toList()
+        actualPose.set = drive.curGlobalPose
+    }
 }
 
 /**

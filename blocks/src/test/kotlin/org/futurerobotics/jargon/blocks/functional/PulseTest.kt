@@ -1,7 +1,6 @@
 package org.futurerobotics.jargon.blocks.functional
 
-import org.futurerobotics.jargon.blocks.Monitor
-import org.futurerobotics.jargon.blocks.buildTestBlocksSystem
+import org.futurerobotics.jargon.blocks.buildBlockSystem
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isA
@@ -13,8 +12,8 @@ internal class PulseTest {
     fun `pulse pulses`() {
         val monitor: Monitor<Boolean>
         val pulse = Pulse()
-        val system = buildTestBlocksSystem {
-            monitor = pulse.monitor()
+        val system = buildBlockSystem {
+            monitor = pulse.output.monitor()
         }
 
         expectThat(monitor) {

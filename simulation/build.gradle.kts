@@ -14,6 +14,12 @@ dependencies {
     implementation(xchart)
 }
 
+tasks.named("cleanTest") {
+    doLast {
+        delete("graphs")
+    }
+}
+
 tasks.withType<KotlinCompile> {
     kotlinOptions {
         @Suppress("SuspiciousCollectionReassignment")

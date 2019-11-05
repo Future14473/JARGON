@@ -20,8 +20,8 @@ internal class ReparamMappingTest(private val mapping: SamplesReparamMapping, pr
         val bulkGet = mapping.stepToAll(allS)
         Assert.assertTrue("Size differs", bulkGet.size == singleGet.size)
 
-        bulkGet.zip(singleGet).forEachIndexed { index, it ->
-            val b = it.first == it.second
+        bulkGet.zip(singleGet).forEachIndexed { index, (first, second) ->
+            val b = first == second
             Debug.breakIf(!b)
             if (!b) Assert.fail("Content differs at $index")
         }

@@ -23,8 +23,8 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
         val bulkGet = path.stepToAll(allS)
         Assert.assertTrue("Size differs", bulkGet.size == singleGet.size)
 
-        bulkGet.zip(singleGet).forEachIndexed { index, it ->
-            val b = it.first contentEquals it.second
+        bulkGet.zip(singleGet).forEachIndexed { index, (first, second) ->
+            val b = first contentEquals second
             Debug.breakIf(!b)
             if (!b) Assert.fail("Content differs at $index")
         }

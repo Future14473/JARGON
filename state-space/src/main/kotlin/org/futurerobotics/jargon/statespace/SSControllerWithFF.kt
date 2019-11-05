@@ -1,8 +1,8 @@
 package org.futurerobotics.jargon.statespace
 
-import org.futurerobotics.jargon.blocks.Block.Processing.IN_FIRST_LAZY
-import org.futurerobotics.jargon.blocks.BlocksConfig
-import org.futurerobotics.jargon.blocks.CombineBlock
+import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
+import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.blocks.control.Controller
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.mechanics.MotionState
 import kotlin.math.pow
@@ -29,7 +29,11 @@ class SSControllerWithFF @JvmOverloads constructor(
     private val kGain: Mat,
     private val ffQRCost: QRCost? = null,
     private val recalculateFeedForward: Boolean = false
-) : CombineBlock<MotionState<Vec>, Vec, Vec>(IN_FIRST_LAZY) {
+) : SingleOutputBlock<Vec>(LAZY), Controller<MotionState<Vec>, Vec, Vec> {
+
+    override val reference: Input<MotionState<Vec>> = newInput()
+    override val state: Input<Vec> = newInput()
+    override val signal: Output<Vec> get() = super.output
 
     init {
         require(kGain.rows == model.inputSize && kGain.cols == model.stateSize) {
@@ -40,17 +44,15 @@ class SSControllerWithFF @JvmOverloads constructor(
     //flatten model
     private val kFF: Mat? = if (recalculateFeedForward) null else plantInversionKFF(model, ffQRCost)
 
-    override fun combine(a: MotionState<Vec>, b: Vec): Vec {
-        //we don't care about elapsed seconds.
-        val r = a.s
-        val r1 = a.s + a.v * model.period + a.a * (model.period.pow(2) / 2)
-        val x = b
-        val kFF = kFF ?: plantInversionKFF(model, ffQRCost)
+    override fun Context.getOutput(): Vec {
+        val ref = reference.get
+        val x = state.get
+        val r = ref.s
+        val r1 = ref.s + ref.v * model.period + ref.a * (model.period.pow(2) / 2)
+        val kFF = kFF ?: plantInversionKFF(
+            model,
+            ffQRCost
+        )
         return kGain * (r - x) + kFF(r1 - model.A * r)
     }
-
-    /** Reference [BlocksConfig.Input] */
-    val reference: BlocksConfig.Input<MotionState<Vec>> get() = firstInput
-    /** State [BlocksConfig.Input] */
-    val state: BlocksConfig.Input<Vec> get() = secondInput
 }

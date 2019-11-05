@@ -18,6 +18,7 @@ import kotlin.math.sign
  *
  * Additional frictional forces are accounted for in [TransmissionModel].
  */
+@Suppress("KDocMissingDocumentation")
 class MotorModel private constructor(
     val kt: Double,
     val r: Double,

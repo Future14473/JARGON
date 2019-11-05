@@ -71,6 +71,7 @@ fun Project.configureKotlin() {
     tasks.withType<KotlinCompile> {
         kotlinOptions {
             jvmTarget = "1.8"
+            @Suppress("SuspiciousCollectionReassignment")
             freeCompilerArgs += listOf(
                 "-Xjvm-default=enable"
             )

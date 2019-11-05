@@ -130,14 +130,17 @@ ${D.formatReadable()}
 open class ContinuousLinSSModelImpl @JvmOverloads constructor(A: Mat, B: Mat, C: Mat, D: Mat, copyMat: Boolean = true) :
     AbstractLinearStateSpaceModel(A, B, C, D, copyMat), ContinuousLinearStateSpaceModel {
 
-    fun discretize(period: Double, QRCost: QRCost): Pair<DiscreteLinearStateSpaceModel, QRCost> {
-        require(QRCost applicableTo this) { "Cost matrices must be applicable to this model" }
+    /**
+     * Discretizes the current model, using the given [period], as well as discretizing the given [qrCost]
+     */
+    fun discretize(period: Double, qrCost: QRCost): Pair<DiscreteLinearStateSpaceModel, QRCost> {
+        require(qrCost applicableTo this) { "Cost matrices must be applicable to this model" }
         val model = discretize(period)
 
-        val q = expm(MatConcat.dynamic2x2Square(-A.T, QRCost.Q, 0, A) * period).let {
+        val q = expm(MatConcat.dynamic2x2Square(-A.T, qrCost.Q, 0, A) * period).let {
             it.getQuad(A.rows, 1, 1) * it.getQuad(A.rows, 0, 1)
         }
-        val r = QRCost.R / period
+        val r = qrCost.R / period
         return model to QRCost(q, r)
     }
 

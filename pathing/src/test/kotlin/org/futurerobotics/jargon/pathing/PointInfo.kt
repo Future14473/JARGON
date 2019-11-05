@@ -16,10 +16,6 @@ private fun PathPoint.getContentArray() = arrayOf(
     headingSecondDeriv
 )
 
-infix fun PathPoint.contentEquals(b: PathPoint): Boolean {
-    return getContentArray() contentEquals b.getContentArray()
-}
+infix fun PathPoint.contentEquals(b: PathPoint): Boolean = getContentArray() contentEquals b.getContentArray()
 
-infix fun CurvePoint.contentEquals(b: CurvePoint): Boolean {
-    return getContentArray() contentEquals b.getContentArray()
-}
+infix fun CurvePoint.contentEquals(b: CurvePoint): Boolean = getContentArray() contentEquals b.getContentArray()
