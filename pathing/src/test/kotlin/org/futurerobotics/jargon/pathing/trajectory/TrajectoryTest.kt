@@ -10,6 +10,7 @@ import org.futurerobotics.jargon.pathing.MultiplePath
 import org.futurerobotics.jargon.pathing.TangentHeading
 import org.futurerobotics.jargon.pathing.addHeading
 import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
+import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import org.futurerobotics.jargon.reportError
 import org.junit.Assert
 import org.junit.Test
@@ -82,10 +83,7 @@ class TrajectoryTest(private val trajectory: Trajectory) {
                 }.let {
                     MultiplePath(it)
                 }.let {
-                    generateTrajectory(
-                        it,
-                        constraints
-                    )
+                    constraints.generateTrajectory(it, MotionProfileGenParams())
                 }.let {
                     arrayOf(it)
                 }

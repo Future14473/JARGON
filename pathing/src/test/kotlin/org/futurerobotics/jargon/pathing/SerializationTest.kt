@@ -6,6 +6,7 @@ import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.randomVectorDerivatives
 import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
 import org.futurerobotics.jargon.pathing.trajectory.*
+import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.ObjectInputStream
@@ -35,7 +36,7 @@ internal class SerializationTest {
             MaxAngularAccelConstraint(0.3)
         )
 
-        val traj = constraints.generateTrajectory(path)
+        val traj = generateTrajectory(path, constraints, MotionProfileGenParams())
 
         val file = File(Paths.get("./tmp/test/serialize/trajectory.tmp").toString())
         file.parentFile.mkdirs()

@@ -1,4 +1,5 @@
 @file:JvmName("GenerateMotionProfile")
+@file:Suppress("ExplicitThis")
 
 package org.futurerobotics.jargon.profile
 
@@ -11,19 +12,37 @@ import org.futurerobotics.jargon.util.mapToSelf
 import org.futurerobotics.jargon.util.stepToAll
 import kotlin.math.*
 
+/**
+ * Parameters for [generateDynamicProfile].
+ *
+ * @param targetStartVel the target start velocity of the profile. May actually be lower if constraints are not
+ * satisfied.
+ * @param targetEndVel the target end vel. May actually be lower if constraints demand it.
+ * @param maxSegmentSize the maximum segment size allowed when the object is divided.
+ * @param maxVelSearchTolerance the tolerance used when binary searching the maximum velocity due to _acceleration_
+ *      constraints. Note that we made an effort to avoid binary search as much possible and the algorithm is
+ *      heuristically optimized.
+ */
+data class MotionProfileGenParams(
+    val targetStartVel: Double = 0.0,
+    val targetEndVel: Double = 0.0,
+    val maxSegmentSize: Double = 0.01,
+    val maxVelSearchTolerance: Double = 0.005
+) {
+
+    init {
+        require(targetStartVel >= 0) { "targetStartVel ($targetStartVel) must be >= 0" }
+        require(targetEndVel >= 0) { "targetEndVel ($targetEndVel) must be >= 0" }
+        require(maxSegmentSize > 0) { "segmentSize ($maxSegmentSize) must be > 0" }
+        require(maxVelSearchTolerance > 0) { "maxVelSearchTolerance ($maxVelSearchTolerance) must be > 0" }
+    }
+}
+
 private const val MAX_VEL = 10000.0
 private const val BINARY_SEARCH_INITIAL_STEP_RATIO = 2
+
 /**
- * Calculates an approximately optimal [MotionProfile], given a [MotionProfileConstrainer] and other options.
- *
- * [targetStartVel] and [targetEndVel] specify the target start and end velocities, respectively, However, if this
- * results in a profile not within constraints, the actual start and end velocities may be lower.
- *
- * [segmentSize] specifies the size of the segments used in the profile generation.
- *
- * [maxVelSearchTolerance] specifies the tolerance in which the maximum velocities due to
- * satisfying acceleration constraints will be searched for, if needed (heavy heuristic
- * binary search). This will not happen unless need be.
+ * Calculates an approximately optimal [MotionProfile], given a [MotionProfileConstrainer] and [MotionProfileGenParams]
  *
  * This uses a modified version of the algorithm described in section 3.2 of:
  *  [http://www2.informatik.uni-freiburg.de/~lau/students/Sprunk2008.pdf].
@@ -39,24 +58,20 @@ private const val BINARY_SEARCH_INITIAL_STEP_RATIO = 2
  *
  *  I will write a short paper about this someday.
  */
-@JvmOverloads
 fun generateDynamicProfile(
     constrainer: MotionProfileConstrainer,
-    distance: Double,
-    targetStartVel: Double = 0.0,
-    targetEndVel: Double = 0.0,
-    segmentSize: Double = 0.01,
-    maxVelSearchTolerance: Double = 0.01
+    totalDistance: Double,
+    params: MotionProfileGenParams
     //may introduce a parameters class if start to have too many parameters
-): MotionProfile {
-    require(distance > 0) { "distance ($distance) must be > 0" }
-    require(targetStartVel >= 0) { "targetStartVel ($targetStartVel) must be >= 0" }
-    require(targetEndVel >= 0) { "targetEndVel ($targetEndVel) must be >= 0" }
-    require(segmentSize > 0) { "segmentSize ($segmentSize) must be > 0" }
-    require(segmentSize <= distance) { "segmentSize ($$segmentSize) must be <= dist ($distance)" }
-    require(maxVelSearchTolerance > 0) { "maxVelSearchTolerance ($maxVelSearchTolerance) must be > 0" }
-    val segments = ceil(distance / segmentSize).toInt()
-    val points = DoubleProgression.fromNumSegments(0.0, distance, segments).toList()
+): MotionProfile = params.run {
+    require(totalDistance > 0) { "distance ($totalDistance) must be > 0" }
+
+    require(maxSegmentSize <= totalDistance) {
+        "segmentSize ($maxSegmentSize) must be <= dist ($totalDistance)"
+    }
+    //todo: dynamic segment size
+    val segments = ceil(totalDistance / this.maxSegmentSize).toInt()
+    val points = DoubleProgression.fromNumSegments(0.0, totalDistance, segments).toList()
     val pointConstraints: List<PointConstraint> = constrainer.stepToAll(points)
     val maxVels = pointConstraints.mapIndexedTo(ArrayList(points.size)) { i, it ->
         it.maxVelocity.also {
@@ -65,7 +80,7 @@ fun generateDynamicProfile(
     }
 
 
-    maxVels[0] = min(maxVels[0], targetStartVel)
+    maxVels[0] = min(maxVels[0], this.targetStartVel)
     maxVels.lastIndex.let {
         maxVels[it] = min(maxVels[it], targetEndVel)
     }

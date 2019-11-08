@@ -12,6 +12,7 @@ import org.futurerobotics.jargon.math.randomVectorDerivatives
 import org.futurerobotics.jargon.pathing.*
 import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
 import org.futurerobotics.jargon.pathing.trajectory.*
+import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import org.futurerobotics.jargon.saveGraph
 import org.futurerobotics.jargon.statespace.QRCost
 import org.futurerobotics.jargon.system.looping.FixedTestClock
@@ -35,7 +36,7 @@ internal fun randomTrajectory(
             QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(OffsetTangentHeading(74 * deg))
         }
     val path = MultiplePath(segs)
-    return constraints.generateTrajectory(path)
+    return generateTrajectory(path, constraints, MotionProfileGenParams())
 }
 
 internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
@@ -80,7 +81,7 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
     @Test
     fun simulation1() {
         val path = Line(Vector2d.ZERO, Vector2d(2, 0)).addHeading(TangentHeading)
-        val trajectory = constraints1.generateTrajectory(path)
+        val trajectory = generateTrajectory(path, constraints1, MotionProfileGenParams())
         trajectories.add(trajectory)
 
         val runner = LoopSystemRunner(

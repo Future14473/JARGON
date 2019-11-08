@@ -10,6 +10,7 @@ import org.futurerobotics.jargon.pathing.Line
 import org.futurerobotics.jargon.pathing.TangentHeading
 import org.futurerobotics.jargon.pathing.addHeading
 import org.futurerobotics.jargon.pathing.trajectory.*
+import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import org.futurerobotics.jargon.saveGraph
 import org.futurerobotics.jargon.statespace.QRCost
 import org.futurerobotics.jargon.system.looping.FixedTestClock
@@ -70,7 +71,7 @@ internal class HolonomicSimulation2 : DecoupWheelsSimulation(
             Vector2d.ZERO,
             Vector2d(2, 0)
         ).addHeading(TangentHeading)
-        val trajectory = constraints1.generateTrajectory(path)
+        val trajectory = generateTrajectory(path, constraints1, MotionProfileGenParams())
         trajectories.add(trajectory)
 
         val runner = LoopSystemRunner(

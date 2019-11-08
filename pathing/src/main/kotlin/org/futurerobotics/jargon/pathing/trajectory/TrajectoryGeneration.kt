@@ -4,6 +4,7 @@ import org.futurerobotics.jargon.math.Interval
 import org.futurerobotics.jargon.pathing.Path
 import org.futurerobotics.jargon.pathing.PathPoint
 import org.futurerobotics.jargon.profile.MotionProfileConstrainer
+import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import org.futurerobotics.jargon.profile.PointConstraint
 import org.futurerobotics.jargon.profile.generateDynamicProfile
 import org.futurerobotics.jargon.util.Stepper
@@ -45,13 +46,11 @@ class MotionConstraintSet(
     constructor(vararg constraints: MotionConstraint) : this(constraints.asIterable())
 
     /**
-     * Generates a trajectory using the given [path] and this set of constraints.
+     * Generates a trajectory using the current constraints, the given [path], and motion profile generation [params].
      */
     fun generateTrajectory(
-        path: Path, targetStartVel: Double = 0.0,
-        targetEndVel: Double = 0.0,
-        segmentSize: Double = 0.01
-    ): Trajectory = generateTrajectory(path, this, targetStartVel, targetEndVel, segmentSize)
+        path: Path, params: MotionProfileGenParams
+    ): Trajectory = generateTrajectory(path, this, params)
 
     private fun <T : SingleConstraint> Iterable<T>.removeRedundant(): List<T> {
         val newConstraints = toMutableList()
@@ -97,21 +96,19 @@ class TrajectoryConstrainer(
 }
 
 /**
- * Generates a approximate-time optimal trajectory given the [path] and [constraints].
- * [targetStartVel] and [targetEndVel] indicate the endpoints
+ * Generates a approximate-time optimal trajectory given the [path] and [constraints], and motion profile generation
+ * [params].
  *
  * @see generateDynamicProfile
  */
 fun generateTrajectory(
     path: Path,
     constraints: MotionConstraintSet,
-    targetStartVel: Double = 0.0,
-    targetEndVel: Double = 0.0,
-    segmentSize: Double = 0.01
+    params: MotionProfileGenParams
 ): Trajectory {
     val profileConstraint = TrajectoryConstrainer(path, constraints)
     val profile = generateDynamicProfile( //checks done here...
-        profileConstraint, path.length, targetStartVel, targetEndVel, segmentSize
+        profileConstraint, path.length, params
     )
     return Trajectory(path, profile)
 }
