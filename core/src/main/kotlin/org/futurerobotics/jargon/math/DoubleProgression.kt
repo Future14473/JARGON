@@ -32,7 +32,7 @@ class DoubleProgression private constructor(
     override operator fun iterator(): DoubleIterator = object : DoubleIterator() {
         private val intIt = (0..segments).iterator()
         override fun hasNext() = intIt.hasNext()
-        override fun nextDouble() = first + intIt.nextInt() * step.notNaNOrElse { 0.0 }
+        override fun nextDouble() = first + intIt.nextInt() * step.ifNan { 0.0 }
     }
 
     override fun equals(other: Any?): Boolean {

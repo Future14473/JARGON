@@ -5,7 +5,7 @@ import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
 import org.futurerobotics.jargon.blocks.SingleOutputBlock
 import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.math.notNaNOrElse
+import org.futurerobotics.jargon.math.ifNan
 import org.futurerobotics.jargon.mechanics.GlobalToBot
 import org.futurerobotics.jargon.mechanics.MotionOnly
 import org.futurerobotics.jargon.mechanics.MotionState
@@ -52,7 +52,7 @@ class GlobalPoseTrackerFromVel(initialPose: Pose2d = Pose2d.ZERO) : AbstractGlob
     val velocityIn: Input<Pose2d> = newInput()
 
     override fun Context.getPoseDelta(): Pose2d =
-        velocityIn.get * loopTime.notNaNOrElse { 0.0 }
+        velocityIn.get * loopTime.ifNan { 0.0 }
 }
 
 /**

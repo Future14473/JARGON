@@ -2,7 +2,7 @@ package org.futurerobotics.jargon.pathing.trajectory
 
 import org.futurerobotics.jargon.math.EPSILON
 import org.futurerobotics.jargon.math.Interval
-import org.futurerobotics.jargon.math.notNaNOrElse
+import org.futurerobotics.jargon.math.ifNan
 import org.futurerobotics.jargon.pathing.PathPoint
 import kotlin.math.abs
 import kotlin.math.pow
@@ -71,7 +71,7 @@ class MaxTotalAccelConstraint(max: Double) : MultipleConstraint {
         //super: unambiguous
         override fun accelRange(point: PathPoint, curVelocity: Double): Interval = Interval.symmetric(
             sqrt(super.max.pow(2) - (point.tanAngleDeriv * curVelocity.pow(2)).pow(2))
-                .notNaNOrElse { 0.0 }
+                .ifNan { 0.0 }
         )
     }
 }

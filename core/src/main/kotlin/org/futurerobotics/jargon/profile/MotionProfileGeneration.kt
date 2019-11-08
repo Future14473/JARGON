@@ -5,7 +5,7 @@ package org.futurerobotics.jargon.profile
 import org.futurerobotics.jargon.math.DoubleProgression
 import org.futurerobotics.jargon.math.EPSILON
 import org.futurerobotics.jargon.math.distTo
-import org.futurerobotics.jargon.math.notNaNOrElse
+import org.futurerobotics.jargon.math.ifNan
 import org.futurerobotics.jargon.util.extendingDownDoubleSearch
 import org.futurerobotics.jargon.util.mapToSelf
 import org.futurerobotics.jargon.util.stepToAll
@@ -104,13 +104,13 @@ private fun accelerationPass(
             val newV0 = extendingDownDoubleSearch(
                 0.0, v0, tolerance, searchingFor = false
             ) { v -> getAMaxOrNaN(dx, v, accelGetter, reversed).isNaN() }
-            aMax = getAMaxOrNaN(dx, newV0, accelGetter, reversed).notNaNOrElse {
+            aMax = getAMaxOrNaN(dx, newV0, accelGetter, reversed).ifNan {
                 throwBadAccelAtZeroVel(points[it], points[it + 1], reversed)
             }
             v0 = newV0
             maxVels[it] = newV0
         }
-        val v1 = sqrt(v0.pow(2) + 2 * aMax * dx).notNaNOrElse { 0.0 }
+        val v1 = sqrt(v0.pow(2) + 2 * aMax * dx).ifNan { 0.0 }
         val actualV1 = min(v1, maxVels[it + 1])
         maxVels[it + 1] = actualV1
     }
