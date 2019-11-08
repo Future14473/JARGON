@@ -3,8 +3,8 @@ package org.futurerobotics.jargon.blocks.control
 import org.futurerobotics.jargon.blocks.PipeBlock
 import org.futurerobotics.jargon.blocks.functional.MapMotionOnly
 import org.futurerobotics.jargon.linalg.*
+import org.futurerobotics.jargon.math.MotionOnly
 import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.mechanics.MotionOnly
 import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
 
 /**

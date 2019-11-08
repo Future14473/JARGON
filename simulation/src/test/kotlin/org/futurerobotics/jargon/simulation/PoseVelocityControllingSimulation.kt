@@ -8,12 +8,8 @@ import org.futurerobotics.jargon.blocks.functional.ExternalQueue
 import org.futurerobotics.jargon.blocks.functional.MapMotionOnly
 import org.futurerobotics.jargon.blocks.functional.ShiftMotionOnlyToState
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.math.angleNorm
-import org.futurerobotics.jargon.math.max
-import org.futurerobotics.jargon.mechanics.MotionState
+import org.futurerobotics.jargon.math.*
 import org.futurerobotics.jargon.mechanics.NominalFixedWheelDriveModel
-import org.futurerobotics.jargon.mechanics.ValueMotionState
 import org.futurerobotics.jargon.pathing.trajectory.Trajectory
 import org.futurerobotics.jargon.statespace.*
 import kotlin.math.abs
@@ -63,19 +59,19 @@ internal abstract class PoseVelocityControllingSimulation(
                     reference from refState
                 }
 
-                recordY(refState.pipe { it.s.x }, "x reference", "reference value")
-                recordY(refState.pipe { it.s.y }, "y reference", "reference value")
-                recordY(refState.pipe { it.s.heading }, "heading reference", "reference value")
+                recordY(refState.pipe { it.value.x }, "x reference", "reference value")
+                recordY(refState.pipe { it.value.y }, "y reference", "reference value")
+                recordY(refState.pipe { it.value.heading }, "heading reference", "reference value")
 
-                recordY(refState.pipe { it.v.x }, "x reference", "reference velocity")
-                recordY(refState.pipe { it.v.y }, "y reference", "reference velocity")
-                recordY(refState.pipe { it.v.heading }, "heading reference", "reference velocity")
+                recordY(refState.pipe { it.vel.x }, "x reference", "reference velocity")
+                recordY(refState.pipe { it.vel.y }, "y reference", "reference velocity")
+                recordY(refState.pipe { it.vel.heading }, "heading reference", "reference velocity")
 
                 val botMotion =
                     GlobalToBotMotion().apply { globalMotion from positionController.signal }
-                recordY(botMotion.output.pipe { it.v.x }, "x reference", "velocity signal")
-                recordY(botMotion.output.pipe { it.v.y }, "y reference", "velocity signal")
-                recordY(botMotion.output.pipe { it.v.heading }, "heading reference", "velocity signal")
+                recordY(botMotion.output.pipe { it.vel.x }, "x reference", "velocity signal")
+                recordY(botMotion.output.pipe { it.vel.y }, "y reference", "velocity signal")
+                recordY(botMotion.output.pipe { it.vel.heading }, "heading reference", "velocity signal")
 
                 val poseVelRef = botMotion.output
                     .pipe(MapMotionOnly.with<Pose2d, Vec> { it.toVec() })
@@ -112,7 +108,7 @@ internal abstract class PoseVelocityControllingSimulation(
 
                 }
 
-                val refS = refState.pipe { it.s }
+                val refS = refState.pipe { it.value }
                 Shutdown().signal from generate {
                     !follower.isFollowing.get && (tracker.output.get - refS.get).let { (vec, heading) ->
                         max(abs(vec.x), abs(vec.y), abs(angleNorm(heading))) < 0.1
@@ -120,7 +116,7 @@ internal abstract class PoseVelocityControllingSimulation(
                 }
 
 
-                recordXY(refState.pipe { it.s.vec }, "Path", "Reference")
+                recordXY(refState.pipe { it.value.vec }, "Path", "Reference")
                 recordXY(tracker.output.pipe { it.vec }, "Path", "Estimated pose")
                 val actualPose = motorsBlock.actualPose
                 recordXY(actualPose.pipe { it.vec }, "Path", "Actual pose")

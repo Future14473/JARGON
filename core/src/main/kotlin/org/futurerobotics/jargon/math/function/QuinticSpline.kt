@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.math.function
 
-import org.futurerobotics.jargon.math.Derivatives
+import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.nextVector2d
 import kotlin.random.Random
@@ -50,9 +50,9 @@ class QuinticSpline(x: QuinticPolynomial, y: QuinticPolynomial) : ComponentVecto
          * end points.
          */
         fun fromDerivatives(
-            start: Derivatives<Vector2d>, end: Derivatives<Vector2d>
+            start: MotionState<Vector2d>, end: MotionState<Vector2d>
         ): QuinticSpline = fromDerivatives(
-            start.value, start.deriv, start.secondDeriv, end.value, end.deriv, end.secondDeriv
+            start.value, start.vel, start.accel, end.value, end.vel, end.accel
         )
 
         /**

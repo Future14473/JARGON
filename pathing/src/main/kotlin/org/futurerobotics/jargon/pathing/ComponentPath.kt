@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.pathing
 
-import org.futurerobotics.jargon.math.Derivatives
+import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.util.Stepper
 import java.io.Serializable
 
@@ -14,7 +14,7 @@ interface HeadingProvider : Serializable {
      * Gets a heading's derivatives at the point [s] units along the curve, using info provided by
      * the [CurvePoint] [point]
      */
-    fun getHeading(point: CurvePoint, s: Double): Derivatives<Double>
+    fun getHeading(point: CurvePoint, s: Double): MotionState<Double>
 }
 
 /**
@@ -43,12 +43,12 @@ class ComponentPath(internal val curve: Curve, private val heading: HeadingProvi
     }
 
     private class ComponentPathPoint(
-        private val curvePoint: CurvePoint, private val headingVal: Derivatives<Double>
+        private val curvePoint: CurvePoint, private val headingVal: MotionState<Double>
     ) : PathPoint, CurvePoint by curvePoint {
 
         override val heading: Double get() = headingVal.value
-        override val headingDeriv: Double get() = headingVal.deriv
-        override val headingSecondDeriv: Double get() = headingVal.secondDeriv
+        override val headingDeriv: Double get() = headingVal.vel
+        override val headingSecondDeriv: Double get() = headingVal.accel
     }
 
     companion object {

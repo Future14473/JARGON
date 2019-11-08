@@ -6,8 +6,7 @@ import org.futurerobotics.jargon.blocks.BaseBlock
 import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
 import org.futurerobotics.jargon.blocks.SingleInputBlock
 import org.futurerobotics.jargon.blocks.SingleOutputBlock
-import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.mechanics.*
+import org.futurerobotics.jargon.math.*
 
 /**
  * A block that takes a [MotionState] and splits it into its components in order.
@@ -82,8 +81,8 @@ class SplitMotionOnly<T : Any> : BaseBlock(LAZY) {
 
     override fun Context.process() {
         val input = input.get
-        vel.set = input.v
-        accel.set = input.a
+        vel.set = input.vel
+        accel.set = input.accel
     }
 
     /** [vel] */

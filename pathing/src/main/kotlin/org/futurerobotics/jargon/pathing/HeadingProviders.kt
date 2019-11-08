@@ -1,7 +1,6 @@
 package org.futurerobotics.jargon.pathing
 
-import org.futurerobotics.jargon.math.Derivatives
-import org.futurerobotics.jargon.math.ValueDerivatives
+import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.angleNorm
 import org.futurerobotics.jargon.math.function.RealFunction
 
@@ -10,7 +9,7 @@ class ConstantHeading(angle: Double) : HeadingProvider {
 
     private val angle = angleNorm(angle)
     private val derivatives = ValueDerivatives(angle, 0.0, 0.0)
-    override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = derivatives
+    override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> = derivatives
 
     companion object {
         private const val serialVersionUID = 6008569752536122191
@@ -20,7 +19,7 @@ class ConstantHeading(angle: Double) : HeadingProvider {
 /** A [HeadingProvider] that interpolates linearly among two angles, starting at [fromAngle] and turning [turnAngle] */
 class LinearInterpolatedHeading(private val fromAngle: Double, private val turnAngle: Double) : HeadingProvider {
 
-    override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> {
+    override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> {
         val dcl = turnAngle / point.length
         return ValueDerivatives(angleNorm(fromAngle + s * dcl), dcl, 0.0)
     }
@@ -33,10 +32,11 @@ class LinearInterpolatedHeading(private val fromAngle: Double, private val turnA
 /** The singleton [HeadingProvider] that has the heading equal to the curve's tangent angle. Use for non-holonomic drives. */
 object TangentHeading : HeadingProvider {
 
-    override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = object : Derivatives<Double> {
+    override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> = object :
+        MotionState<Double> {
         override val value: Double get() = point.tanAngle
-        override val deriv: Double get() = point.tanAngleDeriv
-        override val secondDeriv: Double get() = point.tanAngleSecondDeriv
+        override val vel: Double get() = point.tanAngleDeriv
+        override val accel: Double get() = point.tanAngleSecondDeriv
     }
 
     private const val serialVersionUID = 2553159564085724309
@@ -48,10 +48,11 @@ object TangentHeading : HeadingProvider {
 class OffsetTangentHeading(angleOffset: Double) : HeadingProvider {
 
     private val angleOffset = angleNorm(angleOffset)
-    override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = object : Derivatives<Double> {
+    override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> = object :
+        MotionState<Double> {
         override val value: Double get() = angleNorm(point.tanAngle + angleOffset)
-        override val deriv: Double get() = point.tanAngleDeriv
-        override val secondDeriv: Double get() = point.tanAngleSecondDeriv
+        override val vel: Double get() = point.tanAngleDeriv
+        override val accel: Double get() = point.tanAngleSecondDeriv
     }
 
     companion object {
@@ -65,13 +66,14 @@ class OffsetTangentHeading(angleOffset: Double) : HeadingProvider {
  */
 class FunctionHeading(private val function: RealFunction) : HeadingProvider {
 
-    override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = object : Derivatives<Double> {
+    override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> = object :
+        MotionState<Double> {
         private val t = s / point.length
         override val value: Double
             get() = angleNorm(function(s / point.length))
-        override val deriv: Double
+        override val vel: Double
             get() = function.deriv(t)
-        override val secondDeriv: Double
+        override val accel: Double
             get() = function.secondDeriv(t)
     }
 

@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.profile
 
-import org.futurerobotics.jargon.mechanics.LinearMotionState
+import org.futurerobotics.jargon.math.LinearMotionState
 import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
 

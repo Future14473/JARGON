@@ -4,10 +4,10 @@ import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
 import org.futurerobotics.jargon.blocks.PipeBlock
 import org.futurerobotics.jargon.blocks.functional.MapMotionOnly.Companion.with
 import org.futurerobotics.jargon.blocks.functional.MapMotionState.Companion.with
-import org.futurerobotics.jargon.mechanics.MotionOnly
-import org.futurerobotics.jargon.mechanics.MotionState
-import org.futurerobotics.jargon.mechanics.ValueMotionOnly
-import org.futurerobotics.jargon.mechanics.ValueMotionState
+import org.futurerobotics.jargon.math.MotionOnly
+import org.futurerobotics.jargon.math.MotionState
+import org.futurerobotics.jargon.math.ValueMotionOnly
+import org.futurerobotics.jargon.math.ValueMotionState
 
 /**
  * A block that is inputted [MotionOnly]; and pipes it by "shifting" the velocity and acceleration
@@ -20,11 +20,11 @@ class ShiftMotionOnlyToState<T : Any>(private val zero: T) : PipeBlock<MotionOnl
     override fun Context.pipe(
         input: MotionOnly<T>
     ): MotionState<T> = object : MotionState<T> {
-        override val s: T
-            get() = input.v
-        override val v: T
-            get() = input.a
-        override val a: T = zero
+        override val value: T
+            get() = input.vel
+        override val vel: T
+            get() = input.accel
+        override val accel: T = zero
     }
 }
 
@@ -39,9 +39,9 @@ abstract class MapMotionState<T : Any, R : Any> : PipeBlock<MotionState<T>, Moti
         input: MotionState<T>
     ): MotionState<R> =
         ValueMotionState(
-            map(input.s),
-            map(input.v),
-            map(input.a)
+            map(input.value),
+            map(input.vel),
+            map(input.accel)
         )
 
     /** Maps the [value] into a new value; run on all components of a [MotionState]. */
@@ -66,7 +66,7 @@ abstract class MapMotionOnly<T : Any, R : Any> : PipeBlock<MotionOnly<T>, Motion
     override fun Context.pipe(
         input: MotionOnly<T>
     ): MotionOnly<R> =
-        ValueMotionOnly(map(input.v), map(input.a))
+        ValueMotionOnly(map(input.vel), map(input.accel))
     /** Maps the [value] into a new value; run on all components of a [MotionOnly]. */
     protected abstract fun map(value: T): R
 

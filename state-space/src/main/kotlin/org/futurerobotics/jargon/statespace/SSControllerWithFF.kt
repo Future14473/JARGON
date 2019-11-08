@@ -4,7 +4,7 @@ import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
 import org.futurerobotics.jargon.blocks.SingleOutputBlock
 import org.futurerobotics.jargon.blocks.control.Controller
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.mechanics.MotionState
+import org.futurerobotics.jargon.math.MotionState
 import kotlin.math.pow
 
 /**
@@ -47,8 +47,8 @@ class SSControllerWithFF @JvmOverloads constructor(
     override fun Context.getOutput(): Vec {
         val ref = reference.get
         val x = state.get
-        val r = ref.s
-        val r1 = ref.s + ref.v * model.period + ref.a * (model.period.pow(2) / 2)
+        val r = ref.value
+        val r1 = ref.value + ref.vel * model.period + ref.accel * (model.period.pow(2) / 2)
         val kFF = kFF ?: plantInversionKFF(
             model,
             ffQRCost
