@@ -1,5 +1,3 @@
-@file:Suppress("GraziInspection")
-
 package org.futurerobotics.jargon.simulation
 
 import org.futurerobotics.jargon.blocks.Block
@@ -104,7 +102,7 @@ internal abstract class DecoupWheelsSimulation(
                 LinearKalmanFilter(ssModel, kfilterQ, kfilterR)() {
                     measurement from motorsBlock.motorVelocities.pipe { it.toVec() }
                     signal from ssController.signal.delay(zeroVec(numWheels))
-                    this.output into ssController.state
+                    output into ssController.state
 
                     val measured = this
                     repeat(numWheels) { i ->
@@ -122,12 +120,12 @@ internal abstract class DecoupWheelsSimulation(
 
                 val tracker = GlobalPoseTrackerFromDeltaAndGyro()() {
                     deltaIn from delta.output; gyroIn from gyro.output
-                    this.output into positionController.state
-                    this.output into botMotion.globalPose
+                    output into positionController.state
+                    output into botMotion.globalPose
 
-                    recordY(this.output.pipe { it.x }, "x reference", "measured value")
-                    recordY(this.output.pipe { it.y }, "y reference", "measured value")
-                    recordY(this.output.pipe { it.heading }, "heading reference", "measured value")
+                    recordY(output.pipe { it.x }, "x reference", "measured value")
+                    recordY(output.pipe { it.y }, "y reference", "measured value")
+                    recordY(output.pipe { it.heading }, "heading reference", "measured value")
 
                 }
 

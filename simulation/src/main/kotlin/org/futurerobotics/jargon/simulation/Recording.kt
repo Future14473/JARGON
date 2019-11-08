@@ -26,7 +26,7 @@ class Recordings internal constructor(
 
     init {
         with(builder) {
-            times = Recording<Double>()() { this.input from generate { totalTime } }
+            times = Recording<Double>()() { input from generate { totalTime } }
         }
     }
 
