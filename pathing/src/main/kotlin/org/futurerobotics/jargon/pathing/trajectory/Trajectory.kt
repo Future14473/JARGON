@@ -1,10 +1,6 @@
 package org.futurerobotics.jargon.pathing.trajectory
 
-import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.math.epsEq
-import org.futurerobotics.jargon.mechanics.LinearMotionState
-import org.futurerobotics.jargon.mechanics.MotionState
-import org.futurerobotics.jargon.mechanics.ValueMotionState
+import org.futurerobotics.jargon.math.*
 import org.futurerobotics.jargon.pathing.Path
 import org.futurerobotics.jargon.pathing.PathPoint
 import org.futurerobotics.jargon.profile.MotionProfile
@@ -49,7 +45,7 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
      */
     override fun atTime(time: Double): MotionState<Pose2d> {
         val state = profile.atTime(time)
-        val point = path.pointAt(state.s)
+        val point = path.pointAt(state.value)
         return getState(state, point)
     }
 
@@ -58,7 +54,7 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
         val profileStepper = profile.stepper()
         return Stepper {
             val state = profileStepper.stepTo(it)
-            val point = pathStepper.stepTo(state.s)
+            val point = pathStepper.stepTo(state.value)
             getState(state, point)
         }
     }
@@ -69,8 +65,8 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
         val poseSecondDeriv = point.poseSecondDeriv
         return ValueMotionState(
             pose,
-            poseDeriv * state.v,
-            poseSecondDeriv * state.v.pow(2) + poseDeriv * state.a
+            poseDeriv * state.vel,
+            poseSecondDeriv * state.vel.pow(2) + poseDeriv * state.accel
         )
     }
 

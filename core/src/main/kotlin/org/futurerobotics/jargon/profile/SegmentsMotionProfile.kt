@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.profile
 
+import org.futurerobotics.jargon.math.LinearMotionState
 import org.futurerobotics.jargon.math.avg
-import org.futurerobotics.jargon.mechanics.LinearMotionState
 import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.isSortedBy
 import org.futurerobotics.jargon.util.replaceIf
@@ -14,7 +14,7 @@ import kotlin.math.pow
 class SegmentsMotionProfile private constructor(private val segments: List<Segment>) : MotionProfile, Serializable {
 
     override val duration: Double = segments.last().t
-    override val distance: Double = segments.last().state.s
+    override val distance: Double = segments.last().state.value
     override fun atTime(time: Double): LinearMotionState {
         var i = segments.binarySearchBy(time) { it.t }
         if (i >= 0) return segments[i].state
@@ -53,7 +53,7 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
     /** A pre-calculated representation of the endpoints of segments. */
     private class Segment(val state: LinearMotionState, val t: Double) : Serializable {
 
-        val x get() = state.s
+        val x get() = state.value
         fun stateAtTime(t: Double) = state.afterTime(t - this.t)
         fun stateAtDist(x: Double) = state.atDist(x)
 

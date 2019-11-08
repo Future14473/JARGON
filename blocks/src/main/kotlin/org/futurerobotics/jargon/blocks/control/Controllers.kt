@@ -9,9 +9,9 @@ import org.futurerobotics.jargon.blocks.config.BCBuilder
 import org.futurerobotics.jargon.blocks.config.BlockConfig
 import org.futurerobotics.jargon.blocks.control.FeedForwardWrapper.Companion.withAdder
 import org.futurerobotics.jargon.blocks.functional.SplitMotionState
-import org.futurerobotics.jargon.mechanics.MotionOnly
-import org.futurerobotics.jargon.mechanics.MotionState
-import org.futurerobotics.jargon.mechanics.ValueMotionOnly
+import org.futurerobotics.jargon.math.MotionOnly
+import org.futurerobotics.jargon.math.MotionState
+import org.futurerobotics.jargon.math.ValueMotionOnly
 
 /**
  * A block that represents a controller, taking in a [Reference], comparing it with [State], and producing a [Signal].

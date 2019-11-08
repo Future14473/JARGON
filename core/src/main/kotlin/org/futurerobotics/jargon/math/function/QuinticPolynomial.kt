@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.math.function
 
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.math.Derivatives
+import org.futurerobotics.jargon.math.MotionState
 import java.io.Serializable
 
 /**
@@ -78,9 +78,9 @@ class QuinticPolynomial(
          */
         @JvmStatic
         fun fromDerivatives(
-            start: Derivatives<Double>, end: Derivatives<Double>
+            start: MotionState<Double>, end: MotionState<Double>
         ): QuinticPolynomial = fromDerivatives(
-            start.value, start.deriv, start.secondDeriv, end.value, end.deriv, end.secondDeriv
+            start.value, start.vel, start.accel, end.value, end.vel, end.accel
         )
     }
 }

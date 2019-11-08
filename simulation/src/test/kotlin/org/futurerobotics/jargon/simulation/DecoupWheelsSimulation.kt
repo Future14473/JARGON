@@ -10,13 +10,8 @@ import org.futurerobotics.jargon.blocks.control.*
 import org.futurerobotics.jargon.blocks.functional.ExternalQueue
 import org.futurerobotics.jargon.blocks.functional.ShiftMotionOnlyToState
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.angleNorm
-import org.futurerobotics.jargon.math.max
-import org.futurerobotics.jargon.mechanics.MotionState
+import org.futurerobotics.jargon.math.*
 import org.futurerobotics.jargon.mechanics.NominalFixedWheelDriveModel
-import org.futurerobotics.jargon.mechanics.ValueMotionState
 import org.futurerobotics.jargon.pathing.trajectory.Trajectory
 import org.futurerobotics.jargon.statespace.*
 import kotlin.math.abs
@@ -72,22 +67,22 @@ internal abstract class DecoupWheelsSimulation(
                 fun Block.Output<Vector2d>.recordXY(s: String, s1: String) {
                     recordXY(this, s, s1)
                 }
-                refState.pipe { it.s.x }.recordY("x reference", "reference value")
-                refState.pipe { it.s.y }.recordY("y reference", "reference value")
-                refState.pipe { it.s.heading }.recordY("heading reference", "reference value")
+                refState.pipe { it.value.x }.recordY("x reference", "reference value")
+                refState.pipe { it.value.y }.recordY("y reference", "reference value")
+                refState.pipe { it.value.heading }.recordY("heading reference", "reference value")
 
-                refState.pipe { it.v.x }.recordY("x reference", "reference velocity")
-                refState.pipe { it.v.y }.recordY("y reference", "reference velocity")
-                refState.pipe { it.v.heading }.recordY("heading reference", "reference velocity")
+                refState.pipe { it.vel.x }.recordY("x reference", "reference velocity")
+                refState.pipe { it.vel.y }.recordY("y reference", "reference velocity")
+                refState.pipe { it.vel.heading }.recordY("heading reference", "reference velocity")
 
                 val botMotion = GlobalToBotMotion()() { globalMotion from positionController.signal }
-                recordY(botMotion.output.pipe { it.v.x }, "x reference", "velocity signal")
-                recordY(botMotion.output.pipe { it.v.y }, "y reference", "velocity signal")
-                recordY(botMotion.output.pipe { it.v.heading }, "heading reference", "velocity signal")
+                recordY(botMotion.output.pipe { it.vel.x }, "x reference", "velocity signal")
+                recordY(botMotion.output.pipe { it.vel.y }, "y reference", "velocity signal")
+                recordY(botMotion.output.pipe { it.vel.heading }, "heading reference", "velocity signal")
 
                 val wheelVelRef = botMotion.output
                     .pipe(BotToMotorMotion(driveModel)).also {
-                        val refs = it.pipe { it.v }
+                        val refs = it.pipe { it.vel }
                         repeat(numWheels) { i ->
                             recordY(refs.pipe { it[i] }, "Wheel velocities $i", "Reference $i")
                         }
@@ -136,14 +131,14 @@ internal abstract class DecoupWheelsSimulation(
 
                 }
 
-                val refS = refState.pipe { it.s }
+                val refS = refState.pipe { it.value }
                 Shutdown().signal from generate {
                     !follower.isFollowing.get && (tracker.output.get - refS.get).let { (vec, heading) ->
                         max(abs(vec.x), abs(vec.y), angleNorm(heading)) < 0.1
                     }
                 }
 
-                refState.pipe { it.s.vec }.recordXY("Path", "Reference")
+                refState.pipe { it.value.vec }.recordXY("Path", "Reference")
                 recordXY(tracker.output.pipe { it.vec }, "Path", "Estimated pose")
                 val actualPose = motorsBlock.actualPose
                 actualPose.pipe { it.vec }.recordXY("Path", "Actual pose")

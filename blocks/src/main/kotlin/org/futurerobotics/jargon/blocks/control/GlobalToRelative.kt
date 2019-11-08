@@ -4,11 +4,11 @@ import org.futurerobotics.jargon.blocks.BaseBlock
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
 import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.math.MotionOnly
+import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.ifNan
 import org.futurerobotics.jargon.mechanics.GlobalToBot
-import org.futurerobotics.jargon.mechanics.MotionOnly
-import org.futurerobotics.jargon.mechanics.MotionState
 
 /**
  * Common parts of [GlobalPoseTrackerFromDelta] and [GlobalPoseTrackerFromVel]

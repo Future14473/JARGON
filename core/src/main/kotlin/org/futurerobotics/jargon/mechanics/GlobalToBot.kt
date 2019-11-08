@@ -1,9 +1,6 @@
 package org.futurerobotics.jargon.mechanics
 
-import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.cosc
-import org.futurerobotics.jargon.math.sinc
+import org.futurerobotics.jargon.math.*
 import kotlin.math.PI
 
 /**
