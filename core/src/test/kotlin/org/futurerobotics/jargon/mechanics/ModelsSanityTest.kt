@@ -2,11 +2,14 @@ package org.futurerobotics.jargon.mechanics
 
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
+import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.avg
+import org.futurerobotics.jargon.math.convert.*
 import org.futurerobotics.jargon.math.isEpsEqTo
 import org.junit.jupiter.api.Test
 import strikt.api.expect
 import strikt.api.expectThat
+import kotlin.math.pow
 import kotlin.random.Random
 
 internal class ModelsSanityTest {
@@ -63,6 +66,30 @@ internal class ModelsSanityTest {
             get { voltsFromBotVel * forward }.isEpsEqTo(Vec(.4, .4))
             get { voltsFromBotVel * turn }.isEpsEqTo(Vec(-7.0 / 5 * 2, 7.0 / 5 * 2))
         }
+    }
+
+    @Test
+    fun inspect() {
+        val motorModel = MotorModel.fromMotorData(
+            12 * volts,
+            260 * ozf * `in`,
+            9.2 * A,
+            435 * rev / min,
+            0.25 * A
+        )
+        val transmissionModel =
+            TransmissionModel.fromTorqueLosses(motorModel, 2.0, 0.0, 0.9)
+        val mass = 10.8 * lbs
+        val mecanum = NominalDriveModels.mecanumLike(
+            mass,
+            mass / 6 * (18 * `in`).pow(2),
+            transmissionModel,
+            2 * `in`,
+            16 * `in`,
+            14 * `in`,
+            Vector2d(-5 * `in`, 0.0)
+        )
+        println(mecanum.motorVelFromBotVel.formatReadable())
     }
 
     companion object {

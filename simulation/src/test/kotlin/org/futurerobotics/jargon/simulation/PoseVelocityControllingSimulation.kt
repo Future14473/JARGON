@@ -9,13 +9,13 @@ import org.futurerobotics.jargon.blocks.functional.MapMotionOnly
 import org.futurerobotics.jargon.blocks.functional.ShiftMotionOnlyToState
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.*
-import org.futurerobotics.jargon.mechanics.NominalFixedWheelDriveModel
+import org.futurerobotics.jargon.mechanics.NominalDriveModel
 import org.futurerobotics.jargon.pathing.trajectory.Trajectory
 import org.futurerobotics.jargon.statespace.*
 import kotlin.math.abs
 
 internal abstract class PoseVelocityControllingSimulation(
-    protected val driveModel: NominalFixedWheelDriveModel,
+    protected val driveModel: NominalDriveModel,
     simulatedDrive: SimulatedFixedDrive,
     val period: Double,
     nonFFController: PosePIDController,

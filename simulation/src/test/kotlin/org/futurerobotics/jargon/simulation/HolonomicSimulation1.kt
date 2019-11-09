@@ -4,6 +4,7 @@ import org.futurerobotics.jargon.blocks.control.PIDCoefficients
 import org.futurerobotics.jargon.blocks.control.PosePIDController
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Interval
+import org.futurerobotics.jargon.math.ValueMotionState
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.convert.*
 import org.futurerobotics.jargon.math.function.QuinticSpline
@@ -28,7 +29,7 @@ internal fun randomTrajectory(
     constraints: MotionConstraintSet
 ): Trajectory {
     val segs =
-        (listOf(ValueDerivatives(Vector2d.ZERO, Vector2d.polar(1.0, -74 * deg), Vector2d.ZERO)) +
+        (listOf(ValueMotionState(Vector2d.ZERO, Vector2d.polar(1.0, -74 * deg), Vector2d.ZERO)) +
                 List(4) {
                     randomVectorDerivatives(random, 5.0)
                 }).zipWithNext { a, b ->
@@ -42,13 +43,6 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
     SomeModels.mecanum,
     SimulatedFixedDrive(
         SomeModels.mecanum,
-        NominalFixedWheelDriveModelPerturb(
-            0.005, 0.005, FixedWheelModelPerturb(
-                0.0005, 0.00001, 0.005, TransmissionModelPerturb(
-                    0.005, 0.1, 0.005, DcMotorModelPerturb(0.001)
-                )
-            )
-        ),
         Random("Holonomic Simulation 1".hashCode().toLong()),
         idenMat(4) * 0.05,
         idenMat(4) * 0.05,
@@ -70,7 +64,7 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
 
     private val constraints2 = MotionConstraintSet(
         MaxMotorVoltage(driveModel, driveModel, 8.0),
-        MaxMotorTorque(driveModel.wheels.map { it.transmission.motor }, driveModel, driveModel, 250 * ozf * `in`),
+        MaxMotorTorque(driveModel.transmissions.map { it.motor }, driveModel, driveModel, 250 * ozf * `in`),
         MaxVelConstraint(1.0),
         MaxAngularVelConstraint(1.0),
         MaxTotalAccelConstraint(1.0),

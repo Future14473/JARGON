@@ -8,7 +8,7 @@ import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.mechanics.BotVelocityModel
 import org.futurerobotics.jargon.mechanics.GlobalToBot
-import org.futurerobotics.jargon.mechanics.NominalFixedWheelDriveModel
+import org.futurerobotics.jargon.mechanics.NominalDriveModel
 import org.futurerobotics.jargon.statespace.DriveStateSpaceModels
 import java.util.*
 import kotlin.math.roundToInt
@@ -48,22 +48,13 @@ interface SimulatedDrive {
  * @param timeStep the minimum amount of time passed between samples. Because I don't like euler approximations.
  */
 class SimulatedFixedDrive(
-    private val driveModel: NominalFixedWheelDriveModel,
+    private val driveModel: NominalDriveModel,
     private val random: Random = Random(),
     private val voltageNoise: Mat,
     private val measurementNoise: Mat,
     private val timeStep: Double = 0.01,
     private val maxVolts: Double = 12.0
 ) : SimulatedDrive {
-
-    constructor(
-        model: NominalFixedWheelDriveModel,
-        perturb: Perturber<NominalFixedWheelDriveModel>,
-        random: Random,
-        voltageNoise: Mat,
-        measurementNoise: Mat,
-        timeStep: Double = 0.01
-    ) : this(perturb.perturb(model, random), random, voltageNoise, measurementNoise, timeStep)
 
     init {
         require(voltageNoise.isSquare) { "Voltage noise $voltageNoise must be square" }

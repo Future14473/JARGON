@@ -58,7 +58,7 @@ internal class HolonomicSimulation2 : DecoupWheelsSimulation(
 
     private val constraints2 = MotionConstraintSet(
         MaxMotorVoltage(driveModel, driveModel, 8.0),
-        MaxMotorTorque(driveModel.wheels.map { it.transmission.motor }, driveModel, driveModel, 250 * ozf * `in`),
+        MaxMotorTorque(driveModel.transmissions.map { it.motor }, driveModel, driveModel, 250 * ozf * `in`),
         MaxVelConstraint(1.0),
         MaxAngularVelConstraint(1.0),
         MaxTotalAccelConstraint(1.0),

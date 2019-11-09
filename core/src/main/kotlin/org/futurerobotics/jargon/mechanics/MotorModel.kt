@@ -98,29 +98,29 @@ class MotorModel private constructor(
  *
  * @param motor the motor model used
  * @param gearRatio the gear ratio of this transmission (higher ratio means more torque, less speed)
- * @param constantTorqueLoss the constant component of the torque required to overcome frictional forces.
- * @param ratioTorqueLoss the ratio from the output motor torque and the applied motor torque, some lost due to
+ * @param additionalConstantTorque the constant component of the torque required to overcome frictional forces.
+ * @param outputTorqueMultiplier the ratio from the output motor torque and the applied motor torque, some lost due to
  *                      acceleration related friction. This can also be interpreted as the the "percentage of torque"
  *                      that makes it to the output. In an ideal world, 1.0, for a deadlocked motor, 0.0.
  */
 class TransmissionModel private constructor(
     val motor: MotorModel,
     val gearRatio: Double,
-    val constantTorqueLoss: Double = 0.0,
-    val ratioTorqueLoss: Double = 1.0
+    val additionalConstantTorque: Double = 0.0,
+    val outputTorqueMultiplier: Double = 1.0
 ) {
 
     init {
         require(gearRatio.isFinite()) { "gearRatio ($gearRatio) must be finite" }
-        require(constantTorqueLoss >= 0) { "constantTorqueLoss ($constantTorqueLoss) must be >= 0" }
-        require(ratioTorqueLoss in 0.0..1.0)
-        { "ratioTorqueLoss ($ratioTorqueLoss) must be in the range 0.0..1.0" }
+        require(additionalConstantTorque >= 0) { "constantTorqueLoss ($additionalConstantTorque) must be >= 0" }
+        require(outputTorqueMultiplier in 0.0..1.0)
+        { "ratioTorqueLoss ($outputTorqueMultiplier) must be in the range 0.0..1.0" }
     }
 
     /**
      * Gets the ratio of the motor's torque to the output torque.
      */
-    val motorTorquePerOutputTorque: Double get() = 1 / gearRatio / ratioTorqueLoss
+    val motorTorquePerOutputTorque: Double get() = 1 / gearRatio / outputTorqueMultiplier
     /**
      * Gets the ratio of the motor's angular velocity to the output angular velocity.
      */
@@ -138,7 +138,7 @@ class TransmissionModel private constructor(
      *
      * This is slightly more useful than free current.
      */
-    val voltsForFriction: Double get() = motor.voltsPerTorque * constantTorqueLoss + motor.voltsForFriction
+    val voltsForFriction: Double get() = motor.voltsPerTorque * additionalConstantTorque + motor.voltsForFriction
 
     companion object {
         /**

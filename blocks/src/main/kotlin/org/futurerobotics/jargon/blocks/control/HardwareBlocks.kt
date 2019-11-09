@@ -71,9 +71,9 @@ class GyroReading(private val gyro: Gyro) : SingleOutputBlock<Double>(LAZY) {
  * A block that takes in motor voltages and the wheel's current velocities, and adds the voltage required to
  * overcome frictional forces.
  *
- * @param driveModel the model used
+ * @param motorVelocityModel the model used
  */
-class MotorFrictionFF(private val driveModel: MotorVelocityModel) : SingleOutputBlock<List<Double>>(LAZY) {
+class MotorFrictionFF(private val motorVelocityModel: MotorVelocityModel) : SingleOutputBlock<List<Double>>(LAZY) {
 
     /** The motor voltages input */
     val motorVoltages: Input<List<Double>> = newInput()
@@ -86,6 +86,6 @@ class MotorFrictionFF(private val driveModel: MotorVelocityModel) : SingleOutput
         val signs = voltages.zip(vels) { voltage, vel ->
             if (vel <= EPSILON) sign(voltage) else sign(vel)
         }.toVec()
-        return (driveModel.motorAccelForMotorFriction * signs).toList()
+        return (motorVelocityModel.motorAccelForMotorFriction * signs).toList()
     }
 }

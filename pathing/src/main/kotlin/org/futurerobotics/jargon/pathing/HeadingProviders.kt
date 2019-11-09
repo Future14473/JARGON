@@ -1,6 +1,7 @@
 package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.MotionState
+import org.futurerobotics.jargon.math.ValueMotionState
 import org.futurerobotics.jargon.math.angleNorm
 import org.futurerobotics.jargon.math.function.RealFunction
 
@@ -8,7 +9,7 @@ import org.futurerobotics.jargon.math.function.RealFunction
 class ConstantHeading(angle: Double) : HeadingProvider {
 
     private val angle = angleNorm(angle)
-    private val derivatives = ValueDerivatives(angle, 0.0, 0.0)
+    private val derivatives = ValueMotionState(angle, 0.0, 0.0)
     override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> = derivatives
 
     companion object {
@@ -21,7 +22,7 @@ class LinearInterpolatedHeading(private val fromAngle: Double, private val turnA
 
     override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> {
         val dcl = turnAngle / point.length
-        return ValueDerivatives(angleNorm(fromAngle + s * dcl), dcl, 0.0)
+        return ValueMotionState(angleNorm(fromAngle + s * dcl), dcl, 0.0)
     }
 
     companion object {

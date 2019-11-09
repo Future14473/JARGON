@@ -42,10 +42,10 @@ object DriveStateSpaceModels {
     }
 
     /**
-     * Derives a [ContinuousLinSSModelImpl] from the given [driveModel] that:
+     * Derives a [ContinuousLinSSModelImpl] from the given [motorVelocityModel] that:
      *
-     * - _state_: is a vector of the motors' angular velocity in the same order as given in the [driveModel].
-     * - _signal/input_: is a vector of motors' voltages in the same order as given in the [driveModel]
+     * - _state_: is a vector of the motors' angular velocity in the same order as given in the [motorVelocityModel].
+     * - _signal/input_: is a vector of motors' voltages in the same order as given in the [motorVelocityModel]
      * - _measurement/output_: directly corresponds to the state (motor angular velocity).
      *
      * This model is best used for differential-like drives only, as the drive model will not be controllable if there
@@ -57,10 +57,10 @@ object DriveStateSpaceModels {
      */
     @Suppress("UnnecessaryVariable")
     @JvmStatic
-    fun motorVelocityController(driveModel: MotorVelocityModel):
+    fun motorVelocityController(motorVelocityModel: MotorVelocityModel):
             ContinuousLinSSModelImpl {
-        val motorAccelFromVolts = driveModel.motorAccelFromVolts
-        return getMotorVelocityController(driveModel, motorAccelFromVolts)
+        val motorAccelFromVolts = motorVelocityModel.motorAccelFromVolts
+        return getMotorVelocityController(motorVelocityModel, motorAccelFromVolts)
     }
 
     /**
