@@ -17,8 +17,8 @@ fun randomVectorDerivatives(random: Random, range: Double): ValueMotionState<Vec
 fun MotionState<Pose2d>.errorTo(that: MotionState<Pose2d>): Double {
     return max(
         value errorTo that.value,
-        vel errorTo that.vel,
-        accel errorTo that.accel
+        deriv errorTo that.deriv,
+        secondDeriv errorTo that.secondDeriv
     )
 }
 

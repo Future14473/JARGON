@@ -48,11 +48,8 @@ class SSControllerWithFF @JvmOverloads constructor(
         val ref = reference.get
         val x = state.get
         val r = ref.value
-        val r1 = ref.value + ref.vel * model.period + ref.accel * (model.period.pow(2) / 2)
-        val kFF = kFF ?: plantInversionKFF(
-            model,
-            ffQRCost
-        )
+        val r1 = ref.value + ref.deriv * model.period + ref.secondDeriv * (model.period.pow(2) / 2)
+        val kFF = kFF ?: plantInversionKFF(model, ffQRCost)
         return kGain * (r - x) + kFF(r1 - model.A * r)
     }
 }

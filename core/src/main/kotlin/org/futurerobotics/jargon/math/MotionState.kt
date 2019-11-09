@@ -25,7 +25,7 @@ interface MotionOnly<T : Any> : Serializable {
 }
 
 /**
- * Represents the motion state of some quantity of type [T], meaning [value], [vel]ocity, and [accel]eration.
+ * Represents the motion state of some quantity of type [T], meaning [value], [deriv], and [secondDeriv].
  * @see ValueMotionState
  * @see MotionOnly
  * @see LinearMotionState
@@ -35,9 +35,9 @@ interface MotionState<T : Any> : Serializable {
     /** The value of this [MotionState] */
     val value: T
     /** The velocity of this [MotionOnly] */
-    val vel: T
+    val deriv: T
     /** The acceleration of this [MotionState] */
-    val accel: T
+    val secondDeriv: T
 
     /** @return s */
     @JvmDefault
@@ -45,18 +45,18 @@ interface MotionState<T : Any> : Serializable {
 
     /** @return v */
     @JvmDefault
-    operator fun component2(): T = vel
+    operator fun component2(): T = deriv
 
     /** @return a */
     @JvmDefault
-    operator fun component3(): T = accel
+    operator fun component3(): T = secondDeriv
 
     /**
      * Creates a [MotionOnly] with same v and a as this [MotionState]
      */
     @JvmDefault
     fun toMotionOnly(): ValueMotionOnly<T> =
-        ValueMotionOnly(vel, accel)
+        ValueMotionOnly(deriv, secondDeriv)
 }
 
 /** An simple implementation of [MotionOnly] that holds values in fields */
@@ -66,7 +66,7 @@ open class ValueMotionOnly<T : Any>(override val vel: T, override val accel: T) 
     override fun equals(other: Any?): Boolean = when {
         this === other -> true
         other !is ValueMotionState<*> -> false
-        else -> vel == other.vel && accel == other.accel
+        else -> vel == other.deriv && accel == other.secondDeriv
     }
 
     override fun hashCode(): Int = 31 * vel.hashCode() + accel.hashCode()
@@ -77,17 +77,17 @@ open class ValueMotionOnly<T : Any>(override val vel: T, override val accel: T) 
 }
 
 /** An simple implementation of [MotionState] that holds values in fields */
-open class ValueMotionState<T : Any>(override val value: T, override val vel: T, override val accel: T) :
+open class ValueMotionState<T : Any>(override val value: T, override val deriv: T, override val secondDeriv: T) :
     MotionState<T> {
 
     override fun equals(other: Any?): Boolean = when {
         this === other -> true
         other !is ValueMotionState<*> -> false
-        else -> value == other.value && vel == other.vel && accel == other.accel
+        else -> value == other.value && deriv == other.deriv && secondDeriv == other.secondDeriv
     }
 
     override fun hashCode(): Int = 31 * super.hashCode() + value.hashCode()
-    override fun toString(): String = "ValueMotionState(s=$value, v=$vel, a=$accel)"
+    override fun toString(): String = "ValueMotionState(s=$value, v=$deriv, a=$secondDeriv)"
 
     companion object {
         private const val serialVersionUID = 8517629014322200560
@@ -101,16 +101,16 @@ open class ValueMotionState<T : Any>(override val value: T, override val vel: T,
 
 /** Extracts a vector [MotionState] from this pose [MotionState]. */
 fun MotionState<Pose2d>.vec(): MotionState<Vector2d> =
-    ValueMotionState(value.vec, vel.vec, accel.vec)
+    ValueMotionState(value.vec, deriv.vec, secondDeriv.vec)
 
 /** Extracts a heading [MotionState] from this pose [MotionState]. */
 fun MotionState<Pose2d>.heading(): LinearMotionState =
-    LinearMotionState(value.heading, vel.heading, accel.heading)
+    LinearMotionState(value.heading, deriv.heading, secondDeriv.heading)
 
 /** Extracts a x [MotionState] from this pose [MotionState]. */
 fun MotionState<Pose2d>.x(): LinearMotionState =
-    LinearMotionState(value.x, vel.x, accel.x)
+    LinearMotionState(value.x, deriv.x, secondDeriv.x)
 
 /** Extracts the y [MotionState] from this pose [MotionState]. */
 fun MotionState<Pose2d>.y(): LinearMotionState =
-    LinearMotionState(value.y, vel.y, accel.y)
+    LinearMotionState(value.y, deriv.y, secondDeriv.y)

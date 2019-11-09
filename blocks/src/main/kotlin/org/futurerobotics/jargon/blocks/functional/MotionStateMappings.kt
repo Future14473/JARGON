@@ -22,9 +22,9 @@ class ShiftMotionOnlyToState<T : Any>(private val zero: T) : PipeBlock<MotionOnl
     ): MotionState<T> = object : MotionState<T> {
         override val value: T
             get() = input.vel
-        override val vel: T
+        override val deriv: T
             get() = input.accel
-        override val accel: T = zero
+        override val secondDeriv: T = zero
     }
 }
 
@@ -40,8 +40,8 @@ abstract class MapMotionState<T : Any, R : Any> : PipeBlock<MotionState<T>, Moti
     ): MotionState<R> =
         ValueMotionState(
             map(input.value),
-            map(input.vel),
-            map(input.accel)
+            map(input.deriv),
+            map(input.secondDeriv)
         )
 
     /** Maps the [value] into a new value; run on all components of a [MotionState]. */

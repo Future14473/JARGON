@@ -30,8 +30,8 @@ class TrajectoryTest(private val trajectory: Trajectory) {
                 val direct: MotionState<Pose2d> = trajectory.atTime(time)
                 val approx =
                     (trajectory.atTime(time + epsilon).value - trajectory.atTime(time - epsilon).value) / (2 * epsilon)
-                addError(approx errorTo direct.vel) {
-                    "at $i, approx deriv was $approx, returned was ${direct.vel}"
+                addError(approx errorTo direct.deriv) {
+                    "at $i, approx deriv was $approx, returned was ${direct.deriv}"
                 }
                 //                addError((deriv.poseDeriv errorTo getDirect.poseSecondDeriv)) {
                 //                    "at $i, approx second deriv was ${deriv.poseDeriv}, returned was ${getDirect.poseSecondDeriv}"

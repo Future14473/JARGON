@@ -47,8 +47,8 @@ class ComponentPath(internal val curve: Curve, private val heading: HeadingProvi
     ) : PathPoint, CurvePoint by curvePoint {
 
         override val heading: Double get() = headingVal.value
-        override val headingDeriv: Double get() = headingVal.vel
-        override val headingSecondDeriv: Double get() = headingVal.accel
+        override val headingDeriv: Double get() = headingVal.deriv
+        override val headingSecondDeriv: Double get() = headingVal.secondDeriv
     }
 
     companion object {

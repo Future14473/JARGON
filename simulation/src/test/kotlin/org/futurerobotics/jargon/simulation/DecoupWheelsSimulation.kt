@@ -71,9 +71,9 @@ internal abstract class DecoupWheelsSimulation(
                 refState.pipe { it.value.y }.recordY("y reference", "reference value")
                 refState.pipe { it.value.heading }.recordY("heading reference", "reference value")
 
-                refState.pipe { it.vel.x }.recordY("x reference", "reference velocity")
-                refState.pipe { it.vel.y }.recordY("y reference", "reference velocity")
-                refState.pipe { it.vel.heading }.recordY("heading reference", "reference velocity")
+                refState.pipe { it.deriv.x }.recordY("x reference", "reference velocity")
+                refState.pipe { it.deriv.y }.recordY("y reference", "reference velocity")
+                refState.pipe { it.deriv.heading }.recordY("heading reference", "reference velocity")
 
                 val botMotion = GlobalToBotMotion()() { globalMotion from positionController.signal }
                 recordY(botMotion.output.pipe { it.vel.x }, "x reference", "velocity signal")

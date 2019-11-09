@@ -70,6 +70,6 @@ interface Path : GenericPath<PathPoint> {
  */
 fun GenericPath<*>.asCurve(): Curve = when (this) {
     is Curve -> this
-    is ComponentPath -> this.curve
+    is ComponentPath -> curve
     else -> object : Curve, GenericPath<CurvePoint> by this {}
 }

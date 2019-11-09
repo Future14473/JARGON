@@ -6,22 +6,23 @@ import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.epsEq
 import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.replaceIf
+import org.futurerobotics.jargon.util.uncheckedCast
 
 /**
  * Generified version of multiple Curve/Path a path made up of other segments.
  * Use [MultipleCurve] or [MultiplePath] instead.
  */
 sealed class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>(
-    paths: Iterable<Path>,
+    paths: List<Path>,
     checkContinuity: Boolean = true
 ) : GenericPath<Point> {
 
     private val paths: List<Path>
 
     init {
-        val list = ArrayList<Path>(if (paths is Collection) paths.size else 10)
+        val list = ArrayList<Path>(paths.size)
         paths.forEach {
-            if (it is MultipleGeneric<*, *>) list += it.paths.filterIsPath()
+            if (it is MultipleGeneric<*, *>) list += it.paths.uncheckedCast<List<Path>>()
             else list += it
         }
         this.paths = list
@@ -88,7 +89,6 @@ sealed class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>(
         }
     }
 
-    protected abstract fun List<GenericPath<*>>.filterIsPath(): Iterable<Path>
     protected abstract fun checkPointContinuity(prev: Point, cur: Point)
 }
 
@@ -96,12 +96,11 @@ sealed class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>(
  * A [Curve] that consists of multiple other C2 continuously connected [Curve]s.
  * tanAngleSecondDeriv, however, is allowed to be discontinuous.
  */
-class MultipleCurve(paths: Iterable<Curve>, checkContinuity: Boolean = true) :
+class MultipleCurve internal constructor(paths: List<Curve>, checkContinuity: Boolean = true) :
     MultipleGeneric<Curve, CurvePoint>(paths, checkContinuity), Curve {
 
     constructor(checkContinuity: Boolean = true, vararg curves: Curve) : this(curves.asList(), checkContinuity)
 
-    override fun List<GenericPath<*>>.filterIsPath(): Iterable<Curve> = filterIsInstance<Curve>()
     override fun checkPointContinuity(prev: CurvePoint, cur: CurvePoint) {
         checkCont("Position", prev.position, cur.position)
         checkCont("PositionDeriv", prev.positionDeriv, cur.positionDeriv)
@@ -114,6 +113,22 @@ class MultipleCurve(paths: Iterable<Curve>, checkContinuity: Boolean = true) :
     }
 
     companion object {
+        /**
+         * Creates a curve consisting of the given [curves] chained together.
+         */
+        @JvmStatic
+        fun of(curves: List<Curve>): Curve {
+            require(curves.isNotEmpty()) { "At least one curve must be supplied" }
+            return if (curves.size == 1) curves[0]
+            else MultipleCurve(curves, true)
+        }
+
+        /**
+         * Creates a curve consisting of the list of [curves] given together.
+         */
+        @JvmStatic
+        fun of(vararg curves: Curve): Curve = of(curves.asList())
+
         private const val serialVersionUID = -6008569752536122191
     }
 }
@@ -122,14 +137,12 @@ class MultipleCurve(paths: Iterable<Curve>, checkContinuity: Boolean = true) :
  * A [Path] that consists of multiple other C2 continuously connected [Path]s. headingSecondDeriv, and
  * tanAngleSecondDeriv, however, is allowed to be discontinuous.
  */
-class MultiplePath(paths: Iterable<Path>, checkContinuity: Boolean = true) :
+class MultiplePath(paths: List<Path>, checkContinuity: Boolean = true) :
     MultipleGeneric<Path, PathPoint>(paths, checkContinuity), Path {
 
     constructor(checkContinuity: Boolean = true, vararg paths: Path) : this(paths.asList(), checkContinuity)
 
     override val isPointTurn: Boolean = paths.all { it.isPointTurn }
-
-    override fun List<GenericPath<*>>.filterIsPath(): Iterable<Path> = filterIsInstance<Path>()
 
     override fun checkPointContinuity(prev: PathPoint, cur: PathPoint) {
         checkCont("Position", prev.position, cur.position)
@@ -148,6 +161,16 @@ class MultiplePath(paths: Iterable<Path>, checkContinuity: Boolean = true) :
     }
 
     companion object {
+        /**
+         * Creates a curve consisting of the given [curves] chained together.
+         */
+        @JvmStatic
+        fun of(curves: List<Curve>): Curve {
+            require(curves.isNotEmpty()) { "At least one curve must be supplied" }
+            return if (curves.size == 1) curves[0]
+            else MultipleCurve(curves, true)
+        }
+
         private const val serialVersionUID = 1903180955913210312
     }
 }

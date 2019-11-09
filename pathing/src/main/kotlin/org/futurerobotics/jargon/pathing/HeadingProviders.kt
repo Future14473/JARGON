@@ -36,8 +36,8 @@ object TangentHeading : HeadingProvider {
     override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> = object :
         MotionState<Double> {
         override val value: Double get() = point.tanAngle
-        override val vel: Double get() = point.tanAngleDeriv
-        override val accel: Double get() = point.tanAngleSecondDeriv
+        override val deriv: Double get() = point.tanAngleDeriv
+        override val secondDeriv: Double get() = point.tanAngleSecondDeriv
     }
 
     private const val serialVersionUID = 2553159564085724309
@@ -52,8 +52,8 @@ class OffsetTangentHeading(angleOffset: Double) : HeadingProvider {
     override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> = object :
         MotionState<Double> {
         override val value: Double get() = angleNorm(point.tanAngle + angleOffset)
-        override val vel: Double get() = point.tanAngleDeriv
-        override val accel: Double get() = point.tanAngleSecondDeriv
+        override val deriv: Double get() = point.tanAngleDeriv
+        override val secondDeriv: Double get() = point.tanAngleSecondDeriv
     }
 
     companion object {
@@ -72,9 +72,9 @@ class FunctionHeading(private val function: RealFunction) : HeadingProvider {
         private val t = s / point.length
         override val value: Double
             get() = angleNorm(function(s / point.length))
-        override val vel: Double
+        override val deriv: Double
             get() = function.deriv(t)
-        override val accel: Double
+        override val secondDeriv: Double
             get() = function.secondDeriv(t)
     }
 

@@ -80,7 +80,7 @@ class QuinticPolynomial(
         fun fromDerivatives(
             start: MotionState<Double>, end: MotionState<Double>
         ): QuinticPolynomial = fromDerivatives(
-            start.value, start.vel, start.accel, end.value, end.vel, end.accel
+            start.value, start.deriv, start.secondDeriv, end.value, end.deriv, end.secondDeriv
         )
     }
 }

@@ -52,7 +52,7 @@ class QuinticSpline(x: QuinticPolynomial, y: QuinticPolynomial) : ComponentVecto
         fun fromDerivatives(
             start: MotionState<Vector2d>, end: MotionState<Vector2d>
         ): QuinticSpline = fromDerivatives(
-            start.value, start.vel, start.accel, end.value, end.vel, end.accel
+            start.value, start.deriv, start.secondDeriv, end.value, end.deriv, end.secondDeriv
         )
 
         /**

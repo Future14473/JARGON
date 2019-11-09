@@ -65,8 +65,8 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
         val poseSecondDeriv = point.poseSecondDeriv
         return ValueMotionState(
             pose,
-            poseDeriv * state.vel,
-            poseSecondDeriv * state.vel.pow(2) + poseDeriv * state.accel
+            poseDeriv * state.deriv,
+            poseSecondDeriv * state.deriv.pow(2) + poseDeriv * state.secondDeriv
         )
     }
 

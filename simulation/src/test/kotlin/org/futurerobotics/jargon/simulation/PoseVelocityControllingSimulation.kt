@@ -63,9 +63,9 @@ internal abstract class PoseVelocityControllingSimulation(
                 recordY(refState.pipe { it.value.y }, "y reference", "reference value")
                 recordY(refState.pipe { it.value.heading }, "heading reference", "reference value")
 
-                recordY(refState.pipe { it.vel.x }, "x reference", "reference velocity")
-                recordY(refState.pipe { it.vel.y }, "y reference", "reference velocity")
-                recordY(refState.pipe { it.vel.heading }, "heading reference", "reference velocity")
+                recordY(refState.pipe { it.deriv.x }, "x reference", "reference velocity")
+                recordY(refState.pipe { it.deriv.y }, "y reference", "reference velocity")
+                recordY(refState.pipe { it.deriv.heading }, "heading reference", "reference velocity")
 
                 val botMotion =
                     GlobalToBotMotion().apply { globalMotion from positionController.signal }
