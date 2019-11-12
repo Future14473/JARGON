@@ -3,6 +3,7 @@
 package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.DoubleProgression
+import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.randomVectorDerivatives
 import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
@@ -133,38 +134,37 @@ class MotionProfileGraphs(
             }
         }
 
-        private fun randomConstraints(): MotionConstraintSet {
-            return MotionConstraintSet(
-                MaxVelConstraint(random.nextDouble(3.0, 5.0)),
-                MaxPathAngularVelConstraint(
-                    random.nextDouble(0.3, 3.0)
-                ),
-                MaxCentripetalAccelConstraint(
-                    random.nextDouble(1.0, 3.0)
-                ),
-                MaxTangentAccelConstraint(
-                    random.nextDouble(1.0, 3.0)
-                ),
-                MaxTotalAccelConstraint(
-                    random.nextDouble(1.0, 3.0)
-                ),
-                MaxAngularAccelConstraint(
-                    random.nextDouble(0.5, 2.0)
-                )
+        private fun randomConstraints(): MotionConstraintSet = MotionConstraintSet(
+            MaxVelConstraint(random.nextDouble(3.0, 5.0)),
+            MaxPathAngularVelConstraint(
+                random.nextDouble(0.3, 3.0)
+            ),
+            MaxCentripetalAccelConstraint(
+                random.nextDouble(1.0, 3.0)
+            ),
+            MaxTangentAccelConstraint(
+                random.nextDouble(1.0, 3.0)
+            ),
+            MaxTotalAccelConstraint(
+                random.nextDouble(1.0, 3.0)
+            ),
+            MaxAngularAccelConstraint(
+                random.nextDouble(0.5, 2.0)
             )
-        }
+        )
 
         private val paths: List<Path> = List(5) {
-            var path: Path? = null
-            measureNanoTime {
-                val segs = List(5) {
-                    randomVectorDerivatives(random, range)
-                }.zipWithNext { a, b ->
-                    QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(TangentHeading)
-                }
-                path = MultiplePath(segs)
-            }.also { println("Path generation took ${it / 1e6} millis") }
-            path!!
+            val segs = List(5) {
+                randomVectorDerivatives(random, range)
+            }.zipWithNext { a, b ->
+                QuinticSpline.fromDerivatives(a, b).reparamByIntegration()
+            }
+            multipleCurve(segs).addHeading(TangentHeading)
+        }.let {
+            it + multipleCurve(
+                Line(Vector2d.ZERO, Vector2d(3, 4)),
+                Line(Vector2d(3, 4), Vector2d(2, -1))
+            ).addHeading(ConstantHeading(0.0))
         }
 
         @JvmStatic

@@ -35,7 +35,7 @@ internal fun randomTrajectory(
                 }).zipWithNext { a, b ->
             QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(OffsetTangentHeading(74 * deg))
         }
-    val path = MultiplePath(segs)
+    val path = multiplePath(segs)
     return generateTrajectory(path, constraints, MotionProfileGenParams())
 }
 

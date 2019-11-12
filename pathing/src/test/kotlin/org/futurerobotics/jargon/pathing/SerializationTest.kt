@@ -1,7 +1,6 @@
 package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.TAU
-import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.randomVectorDerivatives
 import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
@@ -22,10 +21,7 @@ internal class SerializationTest {
             randomVectorDerivatives(Random(2384234), 10.0)
         }.zipWithNext { a, b ->
             QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(LinearInterpolatedHeading(0.0, TAU))
-        }.let {
-            it + Line(Vector2d(3.0, 2.0), Vector2d(2.1, 3.4)).addHeading(TangentHeading) +
-                    PointTurn(Vector2d(4, 3), 30.0, 20.0)
-        }.let { MultiplePath(it, false) }
+        }.let { multiplePath(it) }
 
         val constraints = MotionConstraintSet(
             MaxVelConstraint(5.0),

@@ -11,7 +11,7 @@ internal object SomeModels {
         12 * volts,
         260 * ozf * `in`,
         9.2 * A,
-        435 * rev / min,
+        435 * rev / mins,
         0.25 * A
     )
     private val transmissionModel =

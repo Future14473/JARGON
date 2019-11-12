@@ -35,7 +35,7 @@ internal class CurveTest(private val curve: Curve, private val allS: List<Double
         @JvmStatic
         @Parameterized.Parameters
         fun getParams(): List<Array<Any>> {
-            val rawCurves = MutableList(5) {
+            val curves = MutableList(5) {
                 QuinticSpline.random(random, range)
             }.flatMapTo(ArrayList<Curve>()) {
                 listOf(
@@ -43,7 +43,7 @@ internal class CurveTest(private val curve: Curve, private val allS: List<Double
                     it.reparamByIntegration(100, 20)
                 )
             }.also {
-                repeat(5) { _ ->
+                repeat(2) { _ ->
                     it += Line(
                         random.nextVector2d(range), random.nextVector2d(
                             range
@@ -56,8 +56,6 @@ internal class CurveTest(private val curve: Curve, private val allS: List<Double
                     0.0, random.nextDouble(30.0), random.nextInt(10_000, 80_000)
                 ).toList()
             }
-            rawCurves.shuffle()
-            val curves = rawCurves.chunked(4) { MultipleCurve(it, checkContinuity = false) }
             return mapAllPairs(curves, progressions) { c, p -> arrayOf(c, p) }
         }
     }

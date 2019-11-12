@@ -66,10 +66,8 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
                     0.0, random.nextDouble(30.0), random.nextInt(10_000, 80_000)
                 ).toList()
             }
-            val rawPaths = mapAllPairs(curves, headings)
+            val paths = mapAllPairs(curves, headings)
                 .mapTo(ArrayList()) { it.first.addHeading(it.second) }
-            rawPaths.shuffle()
-            val paths = rawPaths.chunked(4) { MultiplePath(it, checkContinuity = false) }
             return mapAllPairs(paths, progressions).map { arrayOf(it.first, it.second) }
         }
     }

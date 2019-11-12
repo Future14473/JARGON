@@ -6,9 +6,9 @@ import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.randomVectorDerivatives
-import org.futurerobotics.jargon.pathing.MultiplePath
 import org.futurerobotics.jargon.pathing.TangentHeading
 import org.futurerobotics.jargon.pathing.addHeading
+import org.futurerobotics.jargon.pathing.multiplePath
 import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
 import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import org.futurerobotics.jargon.reportError
@@ -81,7 +81,7 @@ class TrajectoryTest(private val trajectory: Trajectory) {
                         .reparamByIntegration()
                         .addHeading(TangentHeading)
                 }.let {
-                    MultiplePath(it)
+                    multiplePath(it)
                 }.let {
                     constraints.generateTrajectory(it, MotionProfileGenParams())
                 }.let {

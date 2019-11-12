@@ -69,9 +69,11 @@ fun generateDynamicProfile(
     require(maxSegmentSize <= totalDistance) {
         "segmentSize ($maxSegmentSize) must be <= dist ($totalDistance)"
     }
-    //todo: dynamic segment size
     val segments = ceil(totalDistance / this.maxSegmentSize).toInt()
-    val points = DoubleProgression.fromNumSegments(0.0, totalDistance, segments).toList()
+    val points: List<Double> = DoubleProgression.fromNumSegments(0.0, totalDistance, segments)
+        .toSortedSet()
+        .also { it.addAll(constrainer.requiredPoints) }
+        .toList()
     val pointConstraints: List<PointConstraint> = constrainer.stepToAll(points)
     val maxVels = pointConstraints.mapIndexedTo(ArrayList(points.size)) { i, it ->
         it.maxVelocity.also {
@@ -119,9 +121,8 @@ private fun accelerationPass(
             val newV0 = extendingDownDoubleSearch(
                 0.0, v0, tolerance, searchingFor = false
             ) { v -> getAMaxOrNaN(dx, v, accelGetter, reversed).isNaN() }
-            aMax = getAMaxOrNaN(dx, newV0, accelGetter, reversed).ifNan {
-                throwBadAccelAtZeroVel(points[it], points[it + 1], reversed)
-            }
+            aMax = getAMaxOrNaN(dx, newV0, accelGetter, reversed)
+                .ifNan { throwBadAccelAtZeroVel(points[it], points[it + 1], reversed) }
             v0 = newV0
             maxVels[it] = newV0
         }
@@ -139,9 +140,9 @@ private fun getAMaxOrNaN(dx: Double, v: Double, accelGetter: PointConstraint, re
 }
 
 private fun throwBadAccelAtZeroVel(x1: Double, x2: Double, reversed: Boolean): Nothing {
-    val (x1, x2) = if (reversed) x2 to x1 else x1 to x2
+    val (p1, p2) = if (reversed) x2 to x1 else x1 to x2
     throw RuntimeException(
-        "On the interval from ($x1 to $x2, reversed = $reversed), constraints did not return a non-empty acceleration" +
+        "On the interval from ($p1 to $p2, reversed = $reversed), constraints did not return a non-empty acceleration" +
                 " range even with a current velocity of 0.0."
     )
 }

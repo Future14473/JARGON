@@ -13,7 +13,7 @@ package org.futurerobotics.jargon.util
 interface Stepper<in T, out R> {
 
     /**
-     * Steps to the given [step], and returns the value. See [Stepper].
+     * Steps to the given [step], and returns the value.
      * A invalid value of [step] produces undefined behavior.
      */
     fun stepTo(step: T): R

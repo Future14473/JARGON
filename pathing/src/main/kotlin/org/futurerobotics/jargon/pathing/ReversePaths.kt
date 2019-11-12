@@ -4,11 +4,14 @@ package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.util.Stepper
+import org.futurerobotics.jargon.util.asUnmodifiableList
 
-private sealed class ReverseGeneric<Path : GenericPath<Point>, Point : CurvePoint>(internal val path: Path) :
-    GenericPath<Point> {
+private sealed class ReverseGeneric<Path : GenericPath<Point>, Point : CurvePoint>
+constructor(internal val path: Path) : GenericPath<Point> {
 
     final override val length: Double get() = path.length
+    override val stopPoints: List<Double> get() = path.stopPoints.map { length - it }.asUnmodifiableList()
+
     final override fun pointAt(s: Double): Point = mapPoint(path.pointAt(length - s))
 
     final override fun stepper(): Stepper<Double, Point> {
@@ -21,27 +24,23 @@ private sealed class ReverseGeneric<Path : GenericPath<Point>, Point : CurvePoin
     abstract fun mapPoint(point: Point): Point
 }
 
-private open class ReversePoint<Point : CurvePoint>(protected val point: Point) : CurvePoint by point {
+private class ReverseCurvePoint(private val point: CurvePoint) : CurvePoint by point {
     override val positionDeriv: Vector2d
         get() = -point.positionDeriv
     override val tanAngleDeriv: Double
         get() = -point.tanAngleDeriv
 }
-private typealias ReverseCurvePoint = ReversePoint<CurvePoint>
 
-private class ReversePathPoint(point: PathPoint) : ReversePoint<PathPoint>(point),
-                                                   PathPoint {
-
-    override val heading: Double
-        get() = point.heading
+private class ReversePathPoint(private val point: PathPoint) : PathPoint by point {
+    override val positionDeriv: Vector2d
+        get() = -point.positionDeriv
+    override val tanAngleDeriv: Double
+        get() = -point.tanAngleDeriv
     override val headingDeriv: Double
         get() = -point.headingDeriv
-    override val headingSecondDeriv: Double
-        get() = point.headingSecondDeriv
 }
 
-private class ReverseCurve(curve: Curve) : ReverseGeneric<Curve, CurvePoint>(curve),
-                                           Curve {
+private class ReverseCurve(curve: Curve) : ReverseGeneric<Curve, CurvePoint>(curve), Curve {
 
     override fun mapPoint(point: CurvePoint): CurvePoint = ReverseCurvePoint(point)
 
@@ -50,13 +49,9 @@ private class ReverseCurve(curve: Curve) : ReverseGeneric<Curve, CurvePoint>(cur
     }
 }
 
-private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path),
-                                        Path {
+private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path), Path {
 
     override fun mapPoint(point: PathPoint): PathPoint = ReversePathPoint(point)
-
-    override val isPointTurn: Boolean
-        get() = path.isPointTurn
 
     companion object {
         private const val serialVersionUID = -9173494841041408460
@@ -68,11 +63,11 @@ private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path),
  * First derivatives will be negated.
  */
 fun Curve.reversed(): Curve =
-    if (this is ReverseGeneric<*, *>) this.path.asCurve()
+    if (this is ReverseCurve) this.path
     else ReverseCurve(this)
 
 /**
- * Returns this Path, but traversed in the reverse direction.
+ * Returns this path, but traversed in the reverse direction.
  * First derivatives will be negated.
  */
 fun Path.reversed(): Path =

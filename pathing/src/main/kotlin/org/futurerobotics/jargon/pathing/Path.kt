@@ -27,6 +27,11 @@ interface GenericPath<out Point : CurvePoint> : Steppable<Double, Point>, Serial
     /** Gets a stepper that steps through points along the path, returning a Point containing info about that point. */
     @JvmDefault
     override fun stepper(): Stepper<Double, Point> = Stepper { pointAt(it) }
+
+    /** A sorted list of points that it is required for the bot to stop on this path.*/
+    @JvmDefault
+    val stopPoints: List<Double>
+        get() = emptyList()
 }
 
 /**
@@ -56,14 +61,7 @@ interface Curve : GenericPath<CurvePoint>
  * @see PathPoint
  * @see Curve
  */
-interface Path : GenericPath<PathPoint> {
-
-    /**
-     * Returns true if this is a point turn; i.e. position does not change but heading does.
-     * If so, length will have to be 1.0, and all position-related info should return 0 or Vector.ZERO
-     */
-    val isPointTurn: Boolean get() = false
-}
+interface Path : GenericPath<PathPoint>
 
 /**
  * Returns this path as a [Curve] instead.

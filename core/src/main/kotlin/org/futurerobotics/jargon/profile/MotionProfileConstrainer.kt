@@ -22,6 +22,13 @@ interface MotionProfileConstrainer : Steppable<Double, PointConstraint> {
      * @see [MotionProfileConstrainer]
      */
     override fun stepper(): Stepper<Double, PointConstraint>
+
+    /**
+     * Gets a list of required points that must be considered in the motion profile.
+     */
+    @JvmDefault
+    val requiredPoints: List<Double>
+        get() = emptyList()
 }
 
 /**

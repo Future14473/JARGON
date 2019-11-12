@@ -75,6 +75,9 @@ class TrajectoryConstrainer(
     private val velConstraints = motionConstraintSet.velConstraints
     private val accelConstrains = motionConstraintSet.accelConstraints
 
+    override val requiredPoints: List<Double>
+        get() = path.stopPoints
+
     private fun getMaxVel(point: PathPoint): Double = velConstraints.map { it.maxVelocity(point) }.min()!!
 
     private fun getMaxAccel(point: PathPoint, curVelocity: Double): Interval {
@@ -87,8 +90,9 @@ class TrajectoryConstrainer(
         val pathStepper = path.stepper()
         return Stepper { x ->
             val point = pathStepper.stepTo(x)
+            val maxVelocity = if (x in path.stopPoints) 0.0 else getMaxVel(point)
             object : PointConstraint {
-                override val maxVelocity: Double = getMaxVel(point)
+                override val maxVelocity: Double = maxVelocity
                 override fun accelRange(currentVelocity: Double): Interval = getMaxAccel(point, currentVelocity)
             }
         }

@@ -59,6 +59,8 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : java.io.
     /** `|| this - v ||` */
     infix fun distTo(v: Vector2d): Double = hypot(x - v.x, y - v.y)
 
+    infix fun angleTo(v: Vector2d): Double = atan2(v.y - this.y, v.x - this.x)
+
     /** If both components are finite */
     fun isFinite(): Boolean = x.isFinite() && y.isFinite()
 

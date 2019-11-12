@@ -23,6 +23,8 @@ interface HeadingProvider : Serializable {
 class ComponentPath(internal val curve: Curve, private val heading: HeadingProvider) : Path {
 
     override val length: Double get() = curve.length
+    override val stopPoints: List<Double> get() = curve.stopPoints
+
     override fun pointAt(s: Double): PathPoint {
         val point = curve.pointAt(s)
         return ComponentPathPoint(
