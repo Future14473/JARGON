@@ -7,7 +7,6 @@ import org.futurerobotics.jargon.math.avg
 import org.futurerobotics.jargon.math.convert.*
 import org.futurerobotics.jargon.math.isEpsEqTo
 import org.junit.jupiter.api.Test
-import strikt.api.expect
 import strikt.api.expectThat
 import kotlin.math.pow
 import kotlin.random.Random
@@ -26,27 +25,8 @@ internal class ModelsSanityTest {
     }
 
     @Test
-    fun `transmission sanity check`() = expect {
-        that(idealUnitTransmission) {
-            get { motorVelPerOutputVel }.isEpsEqTo(1.0)
-            get { motorTorquePerOutputTorque }.isEpsEqTo(1.0)
-            get { voltsPerOutputTorque }.isEpsEqTo(1.0)
-        }
-        that(halfLossTransmission) {
-            get { motorVelPerOutputVel }.isEpsEqTo(1.0)
-            get { motorTorquePerOutputTorque }.isEpsEqTo(2.0)
-            get { voltsPerOutputTorque }.isEpsEqTo(2.0)
-        }
-        that(negativeGearedTransmission) {
-            get { motorVelPerOutputVel }.isEpsEqTo(-2.0)
-            get { motorTorquePerOutputTorque }.isEpsEqTo(-0.5)
-            get { voltsPerOutputTorque }.isEpsEqTo(-0.5)
-        }
-    }
-
-    @Test
     fun `differential works`() {
-        val differential = NominalDriveModels.differential(
+        val differential = NominalDriveModel.differential(
             2.0, 3.0,
             TransmissionModel.fromTorqueLosses(idealUnitMotor, 2.0, 0.0, 0.5),
             5.0, 7.0
@@ -80,7 +60,7 @@ internal class ModelsSanityTest {
         val transmissionModel =
             TransmissionModel.fromTorqueLosses(motorModel, 2.0, 0.0, 0.9)
         val mass = 10.8 * lbs
-        val mecanum = NominalDriveModels.mecanumLike(
+        val mecanum = NominalDriveModel.mecanumLike(
             mass,
             mass / 6 * (18 * `in`).pow(2),
             transmissionModel,
@@ -96,11 +76,5 @@ internal class ModelsSanityTest {
         val idealUnitMotor = MotorModel.fromCoefficients(1.0, 1.0, 1.0, 0.0)
 
         val halfMotor = MotorModel.fromCoefficients(2.0, 1.0, 2.0, 0.0)
-
-        val idealUnitTransmission = TransmissionModel.fromTorqueLosses(idealUnitMotor, 1.0)
-
-        val halfLossTransmission = TransmissionModel.fromTorqueLosses(idealUnitMotor, 1.0, 0.0, 0.5)
-
-        val negativeGearedTransmission = TransmissionModel.fromTorqueLosses(idealUnitMotor, -2.0)
     }
 }

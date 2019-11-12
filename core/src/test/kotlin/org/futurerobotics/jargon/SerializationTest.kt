@@ -29,8 +29,9 @@ internal class SerializationTest {
 
     @Test
     fun gen() {
+        val random = SecureRandom()
         repeat(10) {
-            println(SecureRandom().nextLong())
+            println(random.nextLong())
         }
     }
 }
