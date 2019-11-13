@@ -43,7 +43,7 @@ const val kilograms: Double = 1.0
 const val kg: Double = kilograms
 const val grams: Double = 1 / 1000.0
 const val g: Double = grams
-const val pounds: Double = 2.20462
+const val pounds: Double = 0.45359237
 const val lbs: Double = pounds
 const val ounces: Double = pounds / 16
 const val oz: Double = ounces
@@ -58,7 +58,7 @@ const val deg: Double = degrees
 
 const val newtons: Double = kg * m / s
 const val N: Double = newtons
-const val poundsForce: Double = pounds * 9.80665
+const val poundsForce: Double = 4.44822
 const val lbf: Double = poundsForce
 const val ouncesForce: Double = poundsForce / 16
 const val ozf: Double = ouncesForce

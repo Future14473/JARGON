@@ -34,20 +34,20 @@ open class NominalDriveModel
         require(moi >= 0) { "moi ($moi) should be >= 0" }
     }
 
-    private val wheels: List<WheelModel> = wheelsAboutCenter.map { (t, l) ->
-        WheelModel(t, l.copy(position = l.position - centerOfGravity))
+    private val wheels: List<WheelModel> = wheelsAboutCenter.map { (l, t) ->
+        WheelModel(l.copy(locationAboutCenter = l.locationAboutCenter - centerOfGravity), t)
     }
     /**
      * The transmission models that this uses.
      */
     // todo: think about this
-    val transmissions: List<TransmissionModel> = wheels.map { (a) -> a }
+    val transmissions: List<TransmissionModel> = wheels.map { it.transmission }
     //private
     private val wheelBotDynamicsMatrix: Mat = kotlin.run {
-        val velPerOmega = wheels.map { it.wheelLocation.tangentVelPerBotVel }
+        val velPerOmega = wheels.map { it.wheelPosition.tangentVelPerBotVel }
         zeroMat(3, wheels.size).also {
-            wheels.zipForEachIndexed(velPerOmega) { i, wheel, c ->
-                val (fx, fy) = wheel.wheelLocation.orientation
+            wheels.zipForEachIndexed(velPerOmega) { i, (wheelPosition), c ->
+                val (fx, fy) = wheelPosition.orientation
                 it[0, i] = fx
                 it[1, i] = fy
                 it[2, i] = c
@@ -85,7 +85,7 @@ open class NominalDriveModel
 
     override val voltsFromMotorVel: Mat by lazy { diagMat(wheels.map { it.transmission.motor.voltsPerAngVel }) }
 
-    override val voltsFromMotorAccel: Mat by lazy { motorAccelFromVolts.inv() }
+    override val voltsFromMotorAccel: Mat by lazy { motorAccelFromVolts.pinv() }
     override val motorAccelFromVolts: Mat by lazy { motorVelFromComVel * comAccelFromVolts }
 
     override val motorAccelFromMotorVel: Mat by lazy { -motorAccelFromVolts * voltsFromMotorVel }
@@ -142,8 +142,8 @@ open class NominalDriveModel
                 Vector2d(-verticalRadius, horizontalRadius), Vector2d(-verticalRadius, -horizontalRadius)
             )
             val wheels = orientations.zip(locations) { o, l ->
-                val location = WheelLocation(l, wheelRadius, o)
-                WheelModel(transmission, location)
+                val location = WheelPosition(l, o, wheelRadius)
+                WheelModel(location, transmission)
             }
             return NominalDriveModel(mass, moi, wheels, true, centerOfGravity)
         }
@@ -162,11 +162,11 @@ open class NominalDriveModel
             centerOfGravity: Vector2d = Vector2d.ZERO
         ): NominalDriveModel {
             val wheels = listOf(1, -1).map {
-                val wheelLocation = WheelLocation(
+                val wheelLocation = WheelPosition(
                     Vector2d(0.0, it * horizontalRadius),
-                    wheelRadius, Vector2d.polar(1.0, 0.0)
+                    Vector2d.polar(1.0, 0.0), wheelRadius
                 )
-                WheelModel(transmission, wheelLocation)
+                WheelModel(wheelLocation, transmission)
             }
             return NominalDriveModel(mass, moi, wheels, false, centerOfGravity)
         }

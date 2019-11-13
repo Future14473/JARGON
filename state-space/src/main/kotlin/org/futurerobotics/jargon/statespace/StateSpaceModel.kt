@@ -144,7 +144,7 @@ open class ContinuousLinSSModelImpl @JvmOverloads constructor(A: Mat, B: Mat, C:
         return model to QRCost(q, r)
     }
 
-    override fun discretize(period: Double): DiscreteLinSSModelImpl {
+    override fun discretize(period: Double): DiscreteLinearStateSpaceModel {
         val (ad, bd) = expm(MatConcat.dynamic2x2Square(A, B, 0, 0) * period).let {
             it.getQuad(A.rows, 0, 0) to it.getQuad(A.rows, 0, 1)
         }

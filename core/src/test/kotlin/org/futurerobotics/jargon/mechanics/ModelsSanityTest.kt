@@ -1,14 +1,12 @@
 package org.futurerobotics.jargon.mechanics
 
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.avg
+import org.futurerobotics.jargon.math.*
 import org.futurerobotics.jargon.math.convert.*
-import org.futurerobotics.jargon.math.isEpsEqTo
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import kotlin.math.pow
+import kotlin.math.sqrt
 import kotlin.random.Random
 
 internal class ModelsSanityTest {
@@ -49,27 +47,55 @@ internal class ModelsSanityTest {
     }
 
     @Test
-    fun inspect() {
-        val motorModel = MotorModel.fromMotorData(
+    fun `inspect single wheel`() {
+        val motor = idealUnitMotor
+        val transmission = TransmissionModel.fromTorqueLosses(motor, 2.0, 0.0, 1.0)
+        val loc = Vector2d(1, 1) / sqrt(2.0)
+        val position = WheelPosition(loc, 1.0 zcross loc, 1.0)
+        val wheelModel = WheelModel(position, transmission)
+        val model = NominalDriveModel(1.0, 1.0, listOf(wheelModel), false)
+        model.run {
+            listOf(
+                motorVelFromBotVel,
+                motorAccelFromVolts,
+                voltsFromMotorVel,
+                motorAccelFromMotorVel
+            )
+        }.forEach {
+            println(it.formatReadable())
+        }
+    }
+
+    @Test
+    fun `inspect holonomic`() {
+        val motor = MotorModel.fromMotorData(
             12 * volts,
             260 * ozf * `in`,
             9.2 * A,
             435 * rev / mins,
             0.25 * A
         )
-        val transmissionModel =
-            TransmissionModel.fromTorqueLosses(motorModel, 2.0, 0.0, 0.9)
+        val transmission = TransmissionModel.fromTorqueLosses(motor, 2.0, 50 * ozf * `in`, 0.9)
         val mass = 10.8 * lbs
-        val mecanum = NominalDriveModel.mecanumLike(
+        val model = NominalDriveModel.mecanumLike(
             mass,
-            mass / 6 * (18 * `in`).pow(2),
-            transmissionModel,
+            mass / 4 * (18 * `in`).pow(2),
+            transmission,
             2 * `in`,
             16 * `in`,
-            14 * `in`,
-            Vector2d(-5 * `in`, 0.0)
+            14 * `in`
         )
-        println(mecanum.motorVelFromBotVel.formatReadable())
+
+        model.run {
+            listOf(
+                motorVelFromBotVel,
+                motorAccelFromVolts,
+                voltsFromMotorVel,
+                motorAccelFromMotorVel
+            )
+        }.forEach {
+            println(it.formatReadable())
+        }
     }
 
     companion object {

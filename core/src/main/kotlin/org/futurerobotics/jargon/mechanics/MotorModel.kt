@@ -122,6 +122,18 @@ class TransmissionModel private constructor(
 
     companion object {
         /**
+         * Constructs a [TransmissionModel] with the given parameters, with no modeled friction.
+         *
+         * @param motor the motor model used
+         * @param gearRatio the gear ratio of this transmission (higher ratio means more torque, less speed)
+         */
+        @JvmStatic
+        fun ideal(
+            motor: MotorModel,
+            gearRatio: Double
+        ): TransmissionModel = fromTorqueLosses(motor, gearRatio)
+
+        /**
          * Constructs a [TransmissionModel] with the given parameters, with friction based on torque losses.
          *
          * Frictional forces are divided into two parts: [ratioTorqueLoss] and [constantTorqueLoss].
