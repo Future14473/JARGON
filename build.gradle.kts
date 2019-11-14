@@ -65,7 +65,6 @@ subprojects {
 
 fun Project.configureKotlin() {
     dependencies {
-        // <3 contextual String.invoke
         implementation(kotlin("stdlib-jdk8"))
     }
     tasks.withType<KotlinCompile> {
@@ -108,7 +107,6 @@ fun Project.configurePublish() {
         archiveClassifier.set("sources")
     }
     val dokkaJar by tasks.creating(Jar::class) {
-        description = "Assembles Kotlin docs with dokka"
         group = JavaBasePlugin.DOCUMENTATION_GROUP
         archiveClassifier.set("javadoc")
         from(tasks.dokka)
