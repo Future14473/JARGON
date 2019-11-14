@@ -2,8 +2,6 @@ package org.futurerobotics.jargon.pathing.trajectory
 
 import org.futurerobotics.jargon.math.Interval
 import org.futurerobotics.jargon.pathing.PathPoint
-import org.futurerobotics.jargon.util.toImmutableList
-import org.futurerobotics.jargon.util.zipForEach
 
 /**
  * Common superclass of all Motion Constraints, used in a [MotionConstraintSet] for dynamic motion profile generation.
@@ -107,36 +105,3 @@ abstract class MaxBasedConstraint(protected val max: Double) : SingleConstraint 
         return "$name(max=$max)"
     }
 }
-
-/**
- * Common components of all multiple-max based constraints.
- */
-abstract class MultipleMaxBasedConstraint(maxes: List<Double>) : SingleConstraint {
-
-    /** A list of maxes of some value */
-    protected val maxes: List<Double> = maxes.toImmutableList()
-
-    init {
-        require(maxes.all { it > 0 }) { "All maxes should be > 0; got ${maxes.joinToString()}" }
-    }
-
-    override fun otherIsRedundant(other: SingleConstraint): Boolean {
-        if (other !is MultipleMaxBasedConstraint) return false
-        if (commonSupertype(this.javaClass, other.javaClass) == MaxBasedConstraint::class.java) return false
-        other.maxes.zipForEach(maxes) { them, me -> if (them < me) return false }
-        return true
-    }
-}
-
-//Fallback constraints
-private const val FALLBACK_MAX_VEL = 1000000.0
-private const val FALLBACK_MAX_ACCEL = 1000000.0
-internal val FALLBACK_VELOCITY_CONSTRAINTS = listOf<VelConstraint>(object : VelConstraint {
-    override fun maxVelocity(point: PathPoint): Double = FALLBACK_MAX_VEL
-    override fun toString(): String = "FallbackVelocityConstraint(max=$FALLBACK_MAX_VEL)"
-})
-private val FALLBACK_MAX_ACCEL_INTERVAL = Interval.symmetric(FALLBACK_MAX_ACCEL)
-internal val FALLBACK_ACCEL_CONSTRAINTS = listOf<AccelConstraint>(object : AccelConstraint {
-    override fun accelRange(point: PathPoint, curVelocity: Double) = FALLBACK_MAX_ACCEL_INTERVAL
-    override fun toString(): String = "FallbackAccelConstraint(max=$FALLBACK_MAX_ACCEL)"
-})

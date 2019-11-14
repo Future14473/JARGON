@@ -29,13 +29,12 @@ class MotionConstraintSet(
     val velConstraints: List<VelConstraint> =
         (velConstraints + multipleConstraints.flatMap { it.velConstraints })
             .removeRedundant()
-            .takeIf { it.isNotEmpty() } ?: FALLBACK_VELOCITY_CONSTRAINTS
+            .also { require(it.isNotEmpty()) { "Need at least one velocity constraint." } }
 
     /** This set's acceleration constraints */
     val accelConstraints: List<AccelConstraint> =
         (accelConstraints + multipleConstraints.flatMap { it.accelConstraints })
             .removeRedundant()
-            .takeIf { it.isNotEmpty() } ?: FALLBACK_ACCEL_CONSTRAINTS
 
     constructor(constraints: Iterable<MotionConstraint>) : this(
         constraints.filterIsInstance<VelConstraint>(),
@@ -80,11 +79,11 @@ class TrajectoryConstrainer(
 
     private fun getMaxVel(point: PathPoint): Double = velConstraints.map { it.maxVelocity(point) }.min()!!
 
-    private fun getMaxAccel(point: PathPoint, curVelocity: Double): Interval {
-        return accelConstrains.map {
-            it.accelRange(point, curVelocity)
-        }.reduce(Interval::intersect)
-    }
+    private fun getMaxAccel(point: PathPoint, curVelocity: Double): Interval =
+        if (accelConstrains.isEmpty()) Interval.REAL else
+            accelConstrains.map {
+                it.accelRange(point, curVelocity)
+            }.reduce(Interval::intersect)
 
     override fun stepper(): Stepper<Double, PointConstraint> {
         val pathStepper = path.stepper()
