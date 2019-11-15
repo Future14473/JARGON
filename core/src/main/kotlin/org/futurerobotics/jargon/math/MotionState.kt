@@ -8,7 +8,7 @@ import java.io.Serializable
  * @see ValueMotionOnly
  * @see LinearMotionOnly
  */
-interface MotionOnly<T : Any> : Serializable {
+interface MotionOnly<T : Any> {
 
     /** The velocity of this [MotionOnly] */
     val vel: T
@@ -30,7 +30,7 @@ interface MotionOnly<T : Any> : Serializable {
  * @see MotionOnly
  * @see LinearMotionState
  */
-interface MotionState<T : Any> : Serializable {
+interface MotionState<T : Any> {
 
     /** The value of this [MotionState] */
     val value: T
@@ -60,8 +60,9 @@ interface MotionState<T : Any> : Serializable {
 }
 
 /** An simple implementation of [MotionOnly] that holds values in fields */
-open class ValueMotionOnly<T : Any>(override val vel: T, override val accel: T) :
-    MotionOnly<T> {
+open class ValueMotionOnly<T : Any>(
+    final override val vel: T, final override val accel: T
+) : MotionOnly<T>, Serializable {
 
     override fun equals(other: Any?): Boolean = when {
         this === other -> true
@@ -72,13 +73,14 @@ open class ValueMotionOnly<T : Any>(override val vel: T, override val accel: T) 
     override fun hashCode(): Int = 31 * vel.hashCode() + accel.hashCode()
 
     companion object {
-        private const val serialVersionUID = 2320972993764450935
+        private const val serialVersionUID: Long = 2320972993764450935
     }
 }
 
 /** An simple implementation of [MotionState] that holds values in fields */
-open class ValueMotionState<T : Any>(override val value: T, override val deriv: T, override val secondDeriv: T) :
-    MotionState<T> {
+open class ValueMotionState<T : Any>(
+    final override val value: T, final override val deriv: T, final override val secondDeriv: T
+) : MotionState<T>, Serializable {
 
     override fun equals(other: Any?): Boolean = when {
         this === other -> true
@@ -90,7 +92,7 @@ open class ValueMotionState<T : Any>(override val value: T, override val deriv: 
     override fun toString(): String = "ValueMotionState(s=$value, v=$deriv, a=$secondDeriv)"
 
     companion object {
-        private const val serialVersionUID = 8517629014322200560
+        private const val serialVersionUID: Long = 8517629014322200560
 
         /** Creates a [ValueMotionState] with all s,v,a values equal to [value] */
         @JvmStatic

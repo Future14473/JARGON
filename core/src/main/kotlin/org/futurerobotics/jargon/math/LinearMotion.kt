@@ -1,6 +1,5 @@
 package org.futurerobotics.jargon.math
 
-import java.io.Serializable
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -9,9 +8,9 @@ import kotlin.math.sqrt
  */
 class LinearMotionOnly
 @JvmOverloads constructor(
-    override val vel: Double,
-    override val accel: Double = 0.0
-) : MotionOnly<Double> {
+    vel: Double,
+    accel: Double = 0.0
+) : ValueMotionOnly<Double>(vel, accel) {
 
     /**
      * Returns the new motion after time [t], assuming constant acceleration.
@@ -28,8 +27,16 @@ class LinearMotionOnly
     fun afterForwardDist(s: Double): LinearMotionOnly =
         LinearMotionOnly(sqrt(vel.pow(2) + 2 * accel * s), accel)
 
+    /** Adds component-wise. */
+    operator fun plus(other: LinearMotionOnly): LinearMotionOnly =
+        LinearMotionOnly(vel + other.vel, accel + other.accel)
+
+    /** Subtracts component-wise. */
+    operator fun minus(other: LinearMotionOnly): LinearMotionOnly =
+        LinearMotionOnly(vel - other.vel, accel - other.accel)
+
     companion object {
-        private const val serialVersionUID = 2975183939284281640
+        private const val serialVersionUID: Long = 2975183939284281640
     }
 }
 
@@ -38,10 +45,10 @@ class LinearMotionOnly
  */
 class LinearMotionState
 @JvmOverloads constructor(
-    override val value: Double,
-    override val deriv: Double,
-    override val secondDeriv: Double = 0.0
-) : MotionState<Double>, Serializable {
+    value: Double,
+    deriv: Double,
+    secondDeriv: Double = 0.0
+) : ValueMotionState<Double>(value, deriv, secondDeriv) {
 
     /** Returns the new state after time [t], assuming constant acceleration. */
     fun afterTime(t: Double): LinearMotionState =
@@ -65,7 +72,15 @@ class LinearMotionState
     fun atDist(s: Double): LinearMotionState =
         LinearMotionState(s, sqrt(deriv.pow(2) + 2 * secondDeriv * (s - value)), secondDeriv)
 
+    /** Adds component-wise. */
+    operator fun plus(other: LinearMotionState): LinearMotionState =
+        LinearMotionState(value + other.value, deriv + other.deriv, secondDeriv + other.secondDeriv)
+
+    /** Subtracts component-wise. */
+    operator fun minus(other: LinearMotionState): LinearMotionState =
+        LinearMotionState(value - other.value, deriv - other.deriv, secondDeriv - other.secondDeriv)
+
     companion object {
-        private const val serialVersionUID = 6199743470386206427
+        private const val serialVersionUID: Long = 6199743470386206427
     }
 }

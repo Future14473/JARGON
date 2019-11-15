@@ -1,7 +1,6 @@
 package org.futurerobotics.jargon.pathing
 
-import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.math.Vector2d
+import org.futurerobotics.jargon.math.*
 
 /**
  * Holds all needed info about a specific point on a [Curve]. This does not include heading info.
@@ -64,6 +63,14 @@ inline val CurvePoint.curvature: Double
 inline val CurvePoint.curvatureDeriv: Double
     get() = tanAngleSecondDeriv
 
+/** Gets a position motion state for this [CurvePoint]. */
+fun CurvePoint.positionMotionState(): ValueMotionState<Vector2d> =
+    ValueMotionState(position, positionDeriv, positionSecondDeriv)
+
+/** Gets a tanAngle motion state for this [CurvePoint]. */
+fun CurvePoint.tanAngleMotionState(): LinearMotionState =
+    LinearMotionState(tanAngle, tanAngleDeriv, tanAngleSecondDeriv)
+
 /**
  * Holds all needed info about a specific point on a [Path]. This _does_ include heading info.
  *
@@ -111,4 +118,10 @@ interface PathPoint : CurvePoint {
         get() = Pose2d(positionSecondDeriv, headingSecondDeriv)
 }
 
+/** Gets a heading motion state for this [PathPoint]. */
+fun PathPoint.headingMotionState(): LinearMotionState =
+    LinearMotionState(heading, headingDeriv, headingSecondDeriv)
 
+/** Gets a pose motion state for this [PathPoint]. */
+fun PathPoint.poseMotionState(): MotionState<Pose2d> =
+    ValueMotionState(pose, poseDeriv, poseSecondDeriv)
