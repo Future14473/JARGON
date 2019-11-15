@@ -99,7 +99,7 @@ private constructor(
     }
 
     companion object {
-        private const val serialVersionUID = 6139535055955172664
+        private const val serialVersionUID: Long = 6139535055955172664
         /**
          * Creates a reparam mapping from a list of (s,t) samples.
          */

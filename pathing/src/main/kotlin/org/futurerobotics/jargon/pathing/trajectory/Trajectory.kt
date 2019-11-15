@@ -71,6 +71,6 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
     }
 
     companion object {
-        private const val serialVersionUID = 5481952978810220011
+        private const val serialVersionUID: Long = 5481952978810220011
     }
 }

@@ -105,7 +105,7 @@ constructor(paths: List<Path>) : GenericPath<Point> {
 private class MultipleCurve(paths: List<Curve>) : MultipleGeneric<Curve, CurvePoint>(paths), Curve {
 
     companion object {
-        private const val serialVersionUID = -6008569752536122191
+        private const val serialVersionUID: Long = -6008569752536122191
     }
 }
 
@@ -130,7 +130,7 @@ private class MultiplePath(paths: List<Path>) : MultipleGeneric<Path, PathPoint>
     }
 
     companion object {
-        private const val serialVersionUID = 1903180955913210312
+        private const val serialVersionUID: Long = 1903180955913210312
     }
 }
 

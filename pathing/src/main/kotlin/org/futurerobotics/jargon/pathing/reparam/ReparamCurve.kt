@@ -64,6 +64,6 @@ class ReparamCurve(internal val func: VectorFunction, internal val mapping: Repa
     }
 
     companion object {
-        private const val serialVersionUID = 6498795086341258477
+        private const val serialVersionUID: Long = 6498795086341258477
     }
 }

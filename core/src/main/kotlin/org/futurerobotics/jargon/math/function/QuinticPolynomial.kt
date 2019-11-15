@@ -31,7 +31,7 @@ class QuinticPolynomial(
     override fun toString(): String = "QuinticPoly(%.4ft^5+%.4ft^4+%.4ft^3+%.4ft^2+%.4ft+%.4f)".format(a, b, c, d, e, f)
 
     companion object {
-        private const val serialVersionUID = 6276660574389428855
+        private const val serialVersionUID: Long = 6276660574389428855
         private val fromControlPoints = Mat(
             -1, 5, -10, 10, -5, 1 end
                     5, -20, 30, -20, 5, 0 end

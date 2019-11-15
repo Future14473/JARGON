@@ -36,7 +36,7 @@ private class ReverseCurve(curve: Curve) : ReverseGeneric<Curve, CurvePoint>(cur
     }
 
     companion object {
-        private const val serialVersionUID = -8380484370027657370
+        private const val serialVersionUID: Long = -8380484370027657370
     }
 }
 
@@ -54,7 +54,7 @@ private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path), P
     }
 
     companion object {
-        private const val serialVersionUID = -9173494841041408460
+        private const val serialVersionUID: Long = -9173494841041408460
     }
 }
 

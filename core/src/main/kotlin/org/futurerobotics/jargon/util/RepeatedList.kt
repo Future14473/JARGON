@@ -29,7 +29,7 @@ private class RepeatedList<T>(override val size: Int, private val value: T) : Ab
     }
 
     companion object {
-        private const val serialVersionUID = 8108384652630940398
+        private const val serialVersionUID: Long = 8108384652630940398
     }
 }
 

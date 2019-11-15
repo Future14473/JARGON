@@ -90,6 +90,6 @@ open class ComponentVectorFunction(protected val x: RealFunction, protected val 
     override fun toString(): String = "ComponentVecFunc(x: $x, y: $y)"
 
     companion object {
-        private const val serialVersionUID = -347968637717556096
+        private const val serialVersionUID: Long = -347968637717556096
     }
 }

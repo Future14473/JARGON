@@ -52,7 +52,7 @@ class ComponentPath(internal val curve: Curve, private val heading: HeadingProvi
     }
 
     companion object {
-        private const val serialVersionUID = 1491948110600520820
+        private const val serialVersionUID: Long = 1491948110600520820
     }
 }
 

@@ -31,7 +31,13 @@ internal class SerializationTest {
     fun gen() {
         val random = SecureRandom()
         repeat(10) {
-            println(random.nextLong())
+            println(
+                """
+            companion object {
+                private const val serialVersionUID: Long = ${random.nextLong()}
+            }
+           """.trimIndent()
+            )
         }
     }
 }
