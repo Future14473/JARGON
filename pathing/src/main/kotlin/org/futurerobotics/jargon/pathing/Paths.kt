@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.util.asUnmodifiableList
+import org.futurerobotics.jargon.util.asUnmodifiableSet
 
 /**
  * A [Curve] that is traveling along a straight Line, starting at [startPos] and ending at [endPos]
@@ -23,7 +23,7 @@ class Line(private val startPos: Vector2d, endPos: Vector2d) : Curve {
     }
 
     companion object {
-        private const val serialVersionUID = 8675802911613244747
+        private const val serialVersionUID: Long = 8675802911613244747
     }
 }
 
@@ -34,7 +34,7 @@ class Line(private val startPos: Vector2d, endPos: Vector2d) : Curve {
 class PointTurn(private val point: Vector2d, private val startHeading: Double, private val turnAngle: Double) : Path {
 
     override val length: Double get() = 1.0
-    override val stopPoints: List<Double> = listOf(0.0, 1.0).asUnmodifiableList()
+    override val stopPoints: Set<Double> = hashSetOf(0.0, 1.0).asUnmodifiableSet()
 
     override fun pointAt(s: Double): PathPoint = Point(s)
 
@@ -53,6 +53,6 @@ class PointTurn(private val point: Vector2d, private val startHeading: Double, p
     }
 
     companion object {
-        private const val serialVersionUID = -5248410607320510785
+        private const val serialVersionUID: Long = -5248410607320510785
     }
 }

@@ -4,13 +4,13 @@ package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.util.Stepper
-import org.futurerobotics.jargon.util.asUnmodifiableList
+import org.futurerobotics.jargon.util.asUnmodifiableSet
 
 private sealed class ReverseGeneric<Path : GenericPath<Point>, Point : CurvePoint>
 constructor(internal val path: Path) : GenericPath<Point> {
 
     final override val length: Double get() = path.length
-    override val stopPoints: List<Double> get() = path.stopPoints.map { length - it }.asUnmodifiableList()
+    override val stopPoints: Set<Double> get() = path.stopPoints.mapTo(HashSet()) { length - it }.asUnmodifiableSet()
 
     final override fun pointAt(s: Double): Point = mapPoint(path.pointAt(length - s))
 
