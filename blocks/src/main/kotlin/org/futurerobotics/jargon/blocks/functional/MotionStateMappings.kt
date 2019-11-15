@@ -67,6 +67,7 @@ abstract class MapMotionOnly<T : Any, R : Any> : PipeBlock<MotionOnly<T>, Motion
         input: MotionOnly<T>
     ): MotionOnly<R> =
         ValueMotionOnly(map(input.vel), map(input.accel))
+
     /** Maps the [value] into a new value; run on all components of a [MotionOnly]. */
     protected abstract fun map(value: T): R
 

@@ -46,7 +46,7 @@ internal class TestBlock(
     internal fun fromAll(builder: BCBuilder, vararg outputs: Output<out String?>) {
         require(outputs.size <= numInputs) { "the given number of outputs ${outputs.size} must not exceed the block's number of inputs $this.numInputs" }
         outputs.forEachIndexed { index, output ->
-            builder.connect(input(index), outputs[index])
+            builder.connect(input(index), output)
         }
     }
 

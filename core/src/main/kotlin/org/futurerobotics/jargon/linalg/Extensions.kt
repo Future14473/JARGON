@@ -96,7 +96,6 @@ infix fun Vec.emul(other: Vec): Vec = ebeMultiply(other)
 inline val Mat.T: Mat get() = transpose()
 val Vec.T: Mat get() = toRowMatrix()
 
-
 inline val Mat.cols: Int get() = columnDimension
 inline val Mat.rows: Int get() = rowDimension
 
