@@ -45,8 +45,11 @@ inline fun <reified T> fixedSizeMutableListOfNulls(size: Int): MutableList<T?> =
 /** Wraps this list with [Collections.unmodifiableList]. */
 fun <T> List<T>.asUnmodifiableList(): List<T> = Collections.unmodifiableList(this)
 
-/** Wraps this list with [Collections.unmodifiableMap]. */
+/** Wraps this map with [Collections.unmodifiableMap]. */
 fun <T, R> Map<T, R>.asUnmodifiableMap(): Map<T, R> = Collections.unmodifiableMap(this)
+
+/** Wraps this set with [Collections.unmodifiableSet]. */
+fun <T> Set<T>.asUnmodifiableSet(): Set<T> = Collections.unmodifiableSet(this)
 
 /**
  * Until kotlinx.immutableCollections becomes stable, turns this list into an effectively immutable list

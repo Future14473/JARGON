@@ -1,5 +1,8 @@
 package org.futurerobotics.jargon.math.function
 
+import org.futurerobotics.jargon.math.LinearMotionState
+import org.futurerobotics.jargon.math.MotionState
+import org.futurerobotics.jargon.math.ValueMotionState
 import org.futurerobotics.jargon.math.Vector2d
 import java.io.Serializable
 
@@ -8,8 +11,8 @@ import java.io.Serializable
  */
 interface RealFunction {
 
-    /** The function's output at [t] */
-    operator fun invoke(t: Double): Double
+    /** The function's value at [t] */
+    fun value(t: Double): Double
 
     /** The function's first derivative at [t] */
     fun deriv(t: Double): Double
@@ -20,6 +23,14 @@ interface RealFunction {
     /** The function's third derivative at [t] */
     fun thirdDeriv(t: Double): Double
 }
+
+/** [RealFunction.value] */
+operator fun RealFunction.invoke(t: Double): Double = value(t)
+
+/**
+ * Gets a [LinearMotionState] for the value and first and second derivatives at [t].
+ */
+fun RealFunction.motionState(t: Double): LinearMotionState = LinearMotionState(value(t), deriv(t), secondDeriv(t))
 
 /**
  *  Represents a vector-valued function with first, second, and third derivatives.
@@ -56,6 +67,12 @@ interface VectorFunction {
         return (v cross j) / v.lengthPow(3.0) - 3 * (v cross a) * (v dot a) / v.lengthPow(5.0)
     }
 }
+
+/**
+ * Gets a [LinearMotionState] for the value and first and second derivatives at [t].
+ */
+fun VectorFunction.motionState(t: Double): MotionState<Vector2d> =
+    ValueMotionState(vec(t), vecDeriv(t), vecSecondDeriv(t))
 
 /**
  * A vector function defined by separate [x] and [y] component functions.

@@ -20,7 +20,7 @@ class QuinticPolynomial(
 
     constructor(vec: DoubleArray) : this(vec[0], vec[1], vec[2], vec[3], vec[4], vec[5])
 
-    override fun invoke(t: Double): Double = ((((a * t + b) * t + c) * t + d) * t + e) * t + f
+    override fun value(t: Double): Double = ((((a * t + b) * t + c) * t + d) * t + e) * t + f
 
     override fun deriv(t: Double): Double = (((5 * a * t + 4 * b) * t + 3 * c) * t + 2 * d) * t + e
 

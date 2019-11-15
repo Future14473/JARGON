@@ -85,7 +85,7 @@ internal abstract class PoseVelocityControllingSimulation(
                             recordY(pipe { it[i] }, "Voltages", "Voltage $i")
                         }
                     }
-                
+
 
                 LinearKalmanFilter(ssModel, kfilterQ, kfilterR)() {
                     measurement from motorsBlock.motorVelocities.pipe { it.toVec() }

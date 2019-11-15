@@ -9,7 +9,10 @@ import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.convert.*
 import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.randomVectorDerivatives
-import org.futurerobotics.jargon.pathing.*
+import org.futurerobotics.jargon.pathing.Line
+import org.futurerobotics.jargon.pathing.TangentHeading
+import org.futurerobotics.jargon.pathing.addHeading
+import org.futurerobotics.jargon.pathing.multiplePath
 import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
 import org.futurerobotics.jargon.pathing.trajectory.*
 import org.futurerobotics.jargon.profile.MotionProfileGenParams
@@ -33,7 +36,7 @@ internal fun randomTrajectory(
                 List(4) {
                     randomVectorDerivatives(random, 5.0)
                 }).zipWithNext { a, b ->
-            QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(OffsetTangentHeading(74 * deg))
+            QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(TangentHeading(74 * deg))
         }
     val path = multiplePath(segs)
     return generateTrajectory(path, constraints, MotionProfileGenParams())
