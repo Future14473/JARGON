@@ -3,7 +3,7 @@ package org.futurerobotics.jargon.pathing
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.epsEq
 import org.futurerobotics.jargon.util.Stepper
-import org.futurerobotics.jargon.util.asUnmodifiableList
+import org.futurerobotics.jargon.util.asUnmodifiableSet
 import org.futurerobotics.jargon.util.replaceIf
 import org.futurerobotics.jargon.util.uncheckedCast
 
@@ -14,7 +14,7 @@ constructor(paths: List<Path>) : GenericPath<Point> {
     private val startLengths: DoubleArray
     final override val length: Double
 
-    final override val stopPoints: List<Double>
+    final override val stopPoints: Set<Double>
 
     init {
         require(paths.isNotEmpty()) { "MultiplePath needs at least one path segment" }
@@ -24,26 +24,32 @@ constructor(paths: List<Path>) : GenericPath<Point> {
             else realPaths += it
         }
 
-//        if (checkContinuity) paths.checkContinuity()
+        val stops = hashSetOf<Double>()
         startLengths = DoubleArray(realPaths.size)
         var curLen = 0.0
         var prevPath: Path? = null
-        val stops = sortedSetOf<Double>()
+
         realPaths.forEachIndexed { i, curPath ->
             startLengths[i] = curLen
             prevPath?.let { prevPath ->
                 if (needStop(prevPath, curPath)) stops += curLen
             }
             stops += curPath.stopPoints.map { it + curLen }
-
             curLen += curPath.length
             prevPath = curPath
         }
         length = curLen
         this.paths = realPaths
-        this.stopPoints = stops.toList().asUnmodifiableList()
+        this.stopPoints = stops.asUnmodifiableSet()
     }
 
+    override val criticalPoints: Set<Double> = hashSetOf<Double>().let {
+        it += stopPoints
+        for (i in 1 until startLengths.size - 1) {
+            it += startLengths[i]
+        }
+        it.asUnmodifiableSet()
+    }
     private inline val maxInd get() = paths.size - 1
 
     /** Gets a [Point] for a point [s] units along this path. */

@@ -23,11 +23,12 @@ interface HeadingProvider : Serializable {
 class ComponentPath(internal val curve: Curve, private val heading: HeadingProvider) : Path {
 
     override val length: Double get() = curve.length
-    override val stopPoints: List<Double> get() = curve.stopPoints
+    override val stopPoints: Set<Double> get() = curve.stopPoints
+    override val criticalPoints: Set<Double> get() = curve.criticalPoints
 
     override fun pointAt(s: Double): PathPoint {
         val point = curve.pointAt(s)
-        return ComponentPathPoint(
+        return Point(
             point,
             heading.getHeading(point, s)
         )
@@ -37,14 +38,11 @@ class ComponentPath(internal val curve: Curve, private val heading: HeadingProvi
         val curveStepper = curve.stepper()
         return Stepper { s ->
             val point = curveStepper.stepTo(s)
-            ComponentPathPoint(
-                point,
-                heading.getHeading(point, s)
-            )
+            Point(point, heading.getHeading(point, s))
         }
     }
 
-    private class ComponentPathPoint(
+    private class Point(
         private val curvePoint: CurvePoint, private val headingVal: MotionState<Double>
     ) : PathPoint, CurvePoint by curvePoint {
 

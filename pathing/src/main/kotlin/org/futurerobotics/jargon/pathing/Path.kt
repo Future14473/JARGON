@@ -28,11 +28,30 @@ interface GenericPath<out Point : CurvePoint> : Steppable<Double, Point>, Serial
     @JvmDefault
     override fun stepper(): Stepper<Double, Point> = Stepper { pointAt(it) }
 
-    /** A sorted list of points that it is required for the bot to stop on this path.*/
+    /** A set of points that it is required for the bot to stop at. */
     @JvmDefault
-    val stopPoints: List<Double>
-        get() = emptyList()
+    val stopPoints: Set<Double>
+        get() = emptySet()
+
+    /**
+     * A set of points that the trajectory generation algorithm must consider.
+     *
+     * This should include [stopPoints].
+     */
+    @JvmDefault
+    val criticalPoints: Set<Double>
+        get() = stopPoints
 }
+
+/**
+ * Gets the first point of this Curve/Path.
+ */
+fun <Point : CurvePoint> GenericPath<Point>.startPoint(): Point = pointAt(0.0)
+
+/**
+ * Gets the last point of this Curve/Path.
+ */
+fun <Point : CurvePoint> GenericPath<Point>.endPoint(): Point = pointAt(length)
 
 /**
  * Represents a parametric curve. ***parameterized by arc length***, without heading. This is essentially a [Path] but

@@ -29,7 +29,7 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
 
     @Test
     fun `reparameterization inspect`() {
-        testValue({ it }, curve::tOfS, 0.001, 0.0)
+        testValue({ it }, { curve.mapping.tOfS(it) }, 0.001, 0.0)
     }
 
     @Test

@@ -1,5 +1,6 @@
 package org.futurerobotics.jargon.pathing.reparam
 
+import org.futurerobotics.jargon.math.ValueMotionState
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.function.VectorFunction
 import org.futurerobotics.jargon.math.ifNan
@@ -15,22 +16,20 @@ import org.futurerobotics.jargon.util.replaceIf
  *
  * If you want to create your own re-parameterization, make a implementor of [ReparamMapping].
  */
-class ReparamCurve(private val func: VectorFunction, internal val mapping: ReparamMapping) : Curve {
+class ReparamCurve(internal val func: VectorFunction, internal val mapping: ReparamMapping) : Curve {
 
     override val length: Double get() = mapping.length
-    /** Gets the t parameter on the original function that corresponds to an arc length of [s] */
-    fun tOfS(s: Double): Double = mapping.tOfS(s)
 
-    override fun pointAt(s: Double): CurvePoint = ReparamCurvePoint(tOfS(s))
+    override fun pointAt(s: Double): CurvePoint = Point(mapping.tOfS(s))
 
     override fun stepper(): Stepper<Double, CurvePoint> {
         val mappingStepper = mapping.stepper()
         return Stepper { s ->
-            ReparamCurvePoint(mappingStepper.stepTo(s))
+            Point(mappingStepper.stepTo(s))
         }
     }
 
-    private inner class ReparamCurvePoint constructor(t: Double) : CurvePoint {
+    internal inner class Point(t: Double) : CurvePoint {
         private val p: Vector2d = func.vec(t)
         private val v: Vector2d = func.vecDeriv(t)
         private val a: Vector2d = func.vecSecondDeriv(t)
@@ -60,6 +59,8 @@ class ReparamCurve(private val func: VectorFunction, internal val mapping: Repar
                     .ifNan { 0.0 }
                     .also { _tanAngleSecondDeriv = it }
             }
+
+        internal fun motionState() = ValueMotionState(p, v, a)
     }
 
     companion object {

@@ -74,8 +74,8 @@ class TrajectoryConstrainer(
     private val velConstraints = motionConstraintSet.velConstraints
     private val accelConstrains = motionConstraintSet.accelConstraints
 
-    override val requiredPoints: List<Double>
-        get() = path.stopPoints
+    override val requiredPoints: Set<Double>
+        get() = path.criticalPoints
 
     private fun getMaxVel(point: PathPoint): Double = velConstraints.map { it.maxVelocity(point) }.min()!!
 

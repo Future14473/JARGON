@@ -10,7 +10,9 @@ class Line(private val startPos: Vector2d, endPos: Vector2d) : Curve {
 
     override val length: Double = startPos distTo endPos
     private val diffNorm = (endPos - startPos).normalized()
-    override fun pointAt(s: Double): CurvePoint = object : CurvePoint {
+    override fun pointAt(s: Double): CurvePoint = Point(s)
+
+    private inner class Point(s: Double) : CurvePoint {
         override val length: Double get() = this@Line.length
         override val position: Vector2d = startPos + diffNorm * s //not get
         override val positionDeriv: Vector2d get() = diffNorm
@@ -27,14 +29,17 @@ class Line(private val startPos: Vector2d, endPos: Vector2d) : Curve {
 
 /**
  * A special "[Path]" that only consists of changing heading, not position.
+ * It has a `length` of 1.0 so that it can fit in to the rest of the trajectory creation system.
  */
-class PointTurn(private val point: Vector2d, private val startAngle: Double, private val turnAngle: Double) : Path {
+class PointTurn(private val point: Vector2d, private val startHeading: Double, private val turnAngle: Double) : Path {
 
     override val length: Double get() = 1.0
     override val stopPoints: List<Double> = listOf(0.0, 1.0).asUnmodifiableList()
 
-    override fun pointAt(s: Double): PathPoint = object : PathPoint {
-        private val theHeading = startAngle + s * turnAngle
+    override fun pointAt(s: Double): PathPoint = Point(s)
+
+    private inner class Point(s: Double) : PathPoint {
+        private val theHeading = startHeading + s * turnAngle
         override val length: Double get() = 1.0
         override val heading: Double get() = theHeading
         override val headingDeriv: Double get() = turnAngle

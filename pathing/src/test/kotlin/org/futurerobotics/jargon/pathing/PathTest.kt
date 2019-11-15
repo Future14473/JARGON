@@ -52,7 +52,7 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
             }
             val headings = MutableList(2) {
                 listOf(
-                    OffsetTangentHeading(random.nextDouble(TAU)),
+                    TangentHeading(random.nextDouble(TAU)),
                     ConstantHeading(random.nextDouble(10_000.0)),
                     LinearInterpolatedHeading(
                         random.nextDouble(
