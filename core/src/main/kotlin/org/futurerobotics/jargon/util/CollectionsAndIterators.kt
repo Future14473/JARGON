@@ -111,11 +111,11 @@ inline fun <T, V> Iterable<T>.zipForEachIndexed(p2: Iterable<V>, action: (index:
         callsInPlace(action)
     }
     var i = 0
-    let(this.iterator(), p2.iterator()) { it1, it2 ->
-        while (it1.hasNext() && it2.hasNext()) {
-            if (i < 0) throw ArithmeticException("Index overflow")
-            action(i++, it1.next(), it2.next())
-        }
+    val it1 = this.iterator()
+    val it2 = p2.iterator()
+    while (it1.hasNext() && it2.hasNext()) {
+        if (i < 0) throw ArithmeticException("Index overflow")
+        action(i++, it1.next(), it2.next())
     }
 }
 
@@ -127,10 +127,10 @@ inline fun <T, V> Iterable<T>.zipForEach(p2: Iterable<V>, action: (T, V) -> Unit
     contract {
         callsInPlace(action)
     }
-    let(this.iterator(), p2.iterator()) { it1, it2 ->
-        while (it1.hasNext() && it2.hasNext()) {
-            action(it1.next(), it2.next())
-        }
+    val it1 = this.iterator()
+    val it2 = p2.iterator()
+    while (it1.hasNext() && it2.hasNext()) {
+        action(it1.next(), it2.next())
     }
 }
 
