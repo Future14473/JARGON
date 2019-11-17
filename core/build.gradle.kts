@@ -27,4 +27,4 @@ tasks.withType<KotlinCompile> {
         )
     }
 }
-val publish by extra(true)
+extra["publish"] = true

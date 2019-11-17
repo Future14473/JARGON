@@ -54,6 +54,9 @@ class FixedTestClock(var nanos: Long) : Clock {
  *
  * It both keeps track of elapsed time per cycle, and possibly enforces a cycle to be run at a certain speed.
  *
+ * Note that although only one method will be called at a time, due to coroutines this should ideally also be thread
+ * safe.
+ *
  * Every control system has exactly one of these.
  */
 interface LoopRegulator {
@@ -64,16 +67,11 @@ interface LoopRegulator {
     fun start()
 
     /**
-     * Possibly pauses the current thread so that the time between the last call to [start] is
-     * controlled to this [LoopRegulator]'s liking, then returns the elapsed time in nanoseconds.
-     *
-     * The sum of the elapsed times given should equal any used [Clock]'s elapsed nanoTime as closely as possible.
-     *
-     * This is also allowed to throw [InterruptedException] if either the thread is interrupted or to inidcate an
-     * immediate quitting of the loop.
+     * Gets the amount of nanoseconds needed to delay so that the time between the last call to [start] is
+     * controlled to this [LoopRegulator]'s liking, and the amount of nanoseconds elapsed since the last
+     * call to [start] or [getDelayAndElapsedNanos], in that order.
      */
-    @Throws(InterruptedException::class)
-    fun syncAndRestart(): Long
+    fun getDelayAndElapsedNanos(): Pair<Long, Long>
 
     /**
      * Stops timing.
@@ -86,14 +84,16 @@ interface LoopRegulator {
  */
 open class LoopAsFastAsPossible(private val clock: Clock = Default) : LoopRegulator {
 
+    @Volatile
     private var lastNanos = clock.nanoTime()
+
     override fun start() {
         lastNanos = clock.nanoTime()
     }
 
-    override fun syncAndRestart(): Long {
+    override fun getDelayAndElapsedNanos(): Pair<Long, Long> {
         val nanos = clock.nanoTime()
-        return (nanos - lastNanos)
+        return (0L to nanos - lastNanos)
             .also { lastNanos = nanos }
     }
 
@@ -113,59 +113,25 @@ open class LoopAsFastAsPossible(private val clock: Clock = Default) : LoopRegula
 class LoopWithMaxSpeed(maxHertz: Double, private val clock: Clock = Default) : LoopRegulator {
 
     private var lastNanos = clock.nanoTime()
+
     private val minNanos = (1e9 / maxHertz).roundToLong()
     override fun start() {
         lastNanos = clock.nanoTime()
     }
 
-    override fun syncAndRestart(): Long {
+    override fun getDelayAndElapsedNanos(): Pair<Long, Long> {
         val nanos = clock.nanoTime()
         val elapsed = nanos - lastNanos
 
         return if (elapsed >= minNanos) {
             lastNanos = nanos
-            elapsed
+            0L to elapsed
         } else {
-            val neededNanos = minNanos - elapsed
             lastNanos += minNanos
-
-            Thread.sleep(neededNanos / 1_000_000, (neededNanos % 1_000_000).toInt())
-            minNanos
+            minNanos - elapsed to minNanos
         }
     }
 
     override fun stop() {
-    }
-}
-
-/**
- * A loop regulator that limits the total number of loops that can happen, and wraps an[otherRegulator].
- *
- * At least one loop will always be run.
- */
-class LoopMaxTimes @JvmOverloads constructor(
-    private val maxTimes: Int,
-    private val otherRegulator: LoopRegulator = LoopAsFastAsPossible()
-) : LoopRegulator {
-
-    private var timesRun = 0
-
-    init {
-        require(maxTimes > 0) { "Max times ($maxTimes) cannot be negative." }
-    }
-
-    override fun start() {
-        timesRun = 0
-        otherRegulator.start()
-    }
-
-    override fun syncAndRestart(): Long {
-        if (++timesRun >= maxTimes) throw InterruptedException()
-        return otherRegulator.syncAndRestart()
-    }
-
-    override fun stop() {
-        timesRun = 0
-        otherRegulator.stop()
     }
 }

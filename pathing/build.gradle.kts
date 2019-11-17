@@ -22,4 +22,4 @@ tasks.named("cleanTest") {
         delete("graphs")
     }
 }
-val publish by extra(true)
+extra["publish"] = true

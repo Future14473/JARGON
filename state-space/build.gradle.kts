@@ -14,4 +14,4 @@ dependencies {
     implementation(hipparchus("filtering"))
 
 }
-val publish by extra(true)
+extra["publish"] = true

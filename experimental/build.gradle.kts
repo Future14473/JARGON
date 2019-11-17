@@ -13,4 +13,4 @@ dependencies {
     testImplementation(xchart)
 }
 
-val publish by extra(true)
+extra["publish"] = true

@@ -52,11 +52,9 @@ subprojects {
     }
     plugins.withId("org.jetbrains.kotlin.jvm") {
         configureKotlin()
+        configureTests()
     }
     afterEvaluate {
-        plugins.withId("org.jetbrains.kotlin.jvm") {
-            configureTests()
-        }
         if (extra.has("publish") && extra["publish"] == true) {
             configurePublish()
         }
@@ -78,6 +76,7 @@ fun Project.configureKotlin() {
     }
 }
 
+//workaround issues with apply from kts
 fun Project.configureTests() {
     dependencies {
         testImplementation(junit5)

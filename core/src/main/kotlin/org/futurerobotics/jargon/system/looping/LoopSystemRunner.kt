@@ -2,12 +2,12 @@ package org.futurerobotics.jargon.system.looping
 
 /**
  * A [Runnable] that runs a [LoopSystem], using with the given [regulator].
+ * This is single threaded.
  *
  * When run, it calls start, runs repeatedly until either the loop calls to break or [InterruptedException] is
  * thrown, and then stops.
  *
- * [LoopSystem.stop] is placed in a `finally` block, and any exception thrown during stopping is caught and
- * printed to System.err. Generally try not to throw things around.
+ * [LoopSystem.stop] is placed in a `finally` block.
  */
 class LoopSystemRunner(
     private val system: LoopSystem, private val regulator: LoopRegulator
@@ -22,10 +22,12 @@ class LoopSystemRunner(
             system.start()
             regulator.start()
 
-            var loopTimeInNanos = 0L
+            var elapsedNanos = 0L
             while (!Thread.interrupted()) {
-                if (system.loop(loopTimeInNanos)) break
-                loopTimeInNanos = regulator.syncAndRestart()
+                if (system.loop(elapsedNanos)) break
+                val (delayTime, elapsed) = regulator.getDelayAndElapsedNanos()
+                Thread.sleep(delayTime / 1_000_000, (delayTime % 1_000_000).toInt())
+                elapsedNanos = elapsed
             }
         } catch (ignored: InterruptedException) {
         } finally {
