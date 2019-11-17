@@ -5,38 +5,32 @@ import org.futurerobotics.jargon.blocks.config.BCBuilder
 /**
  * A block which is allowed to get the values of other blocks using [Block.ExtendedContext].
  *
- * This is mainly used within [BCBuilder].
+ * This can only be used within [BCBuilder], intended for quick implementations to perform a calculation between
+ * inputs and outputs. **Use sparingly**.
  *
- * As such, it has no input support, but additional outputs can be defined _publicly_.
+ * As such, it has no input support, but additional outputs can be defined _publicly_ via [newOutput].
  *
- * Intended for quick implementations only when it may be inconvenient otherwise. Use with caution.
  */
 class QuickBlock internal constructor(
-    override val processing: Processing,
-    private var run: (ExtendedContext.() -> Unit)?
-) : Block() {
+    processing: Processing,
+    private var process: (ExtendedContext.() -> Unit)?
+) : Block(processing) {
 
     override fun Context.process() {
-        (this as? ExtendedContext)?.process() ?: error("Given context is not an Extended Context")
+        (this as? ExtendedContext)?.process() ?: error("Given context is not an ExtendedContext")
     }
 
-    /**
-     * Adds a new output to this block, with the given [name].
-     *
-     * If given [name] is null, may show up as ?? (name cannot be found via reflection)
-     */
-    @JvmOverloads
-    fun <T> newOutput(name: String? = null): Output<T> = Output(name)
+    public override fun <T> newOutput(name: String?): Output<T> = Output(name)
 
     /**
-     * Sets the [run] function of this [QuickBlock].
+     * Sets the [proecss] function of this [QuickBlock].
      */
-    fun setProcess(run: ExtendedContext.() -> Unit) {
-        if (this.run != null) error("Run function already initialized")
-        this.run = run
+    fun setProcess(proecss: ExtendedContext.() -> Unit) {
+        if (this.process != null) error("Process function already initialized")
+        this.process = proecss
     }
 
     private fun ExtendedContext.process() {
-        run?.invoke(this) ?: error("Run function not initialized.")
+        process?.invoke(this) ?: error("Process function not initialized.")
     }
 }

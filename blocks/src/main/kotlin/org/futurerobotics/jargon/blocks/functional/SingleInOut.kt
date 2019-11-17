@@ -1,9 +1,8 @@
 package org.futurerobotics.jargon.blocks.functional
 
-import org.futurerobotics.jargon.blocks.Block.Processing.*
+import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.PipeBlock
-import org.futurerobotics.jargon.blocks.SingleInputBlock
-import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import org.futurerobotics.jargon.util.asUnmodifiableList
 
 /**
@@ -13,7 +12,7 @@ import org.futurerobotics.jargon.util.asUnmodifiableList
  *
  * @param value the constant value
  */
-class Constant<T>(private val value: T) : SingleOutputBlock<T>(LAZY) {
+class Constant<T>(private val value: T) : PrincipalOutputBlock<T>(Processing.LAZY) {
 
     override fun Context.getOutput(): T = value
 
@@ -27,7 +26,7 @@ class Constant<T>(private val value: T) : SingleOutputBlock<T>(LAZY) {
  *
  * @param value the value outputted
  */
-class ExternalValue<T>(@Volatile var value: T) : SingleOutputBlock<T>(LAZY) {
+class ExternalValue<T>(@Volatile var value: T) : PrincipalOutputBlock<T>(Processing.LAZY) {
 
     override fun Context.getOutput(): T = value
 
@@ -41,8 +40,10 @@ class ExternalValue<T>(@Volatile var value: T) : SingleOutputBlock<T>(LAZY) {
  * This is itself a [Block.Input] representing its only input.
  */
 @Suppress("UNCHECKED_CAST")
-class Monitor<T> : SingleInputBlock<T>(ALWAYS) {
+class Monitor<T> : Block(Processing.ALWAYS) {
 
+    /** The [input] into this monitor. */
+    val input: Input<T> = newInput()
     /**
      * The last value given to this monitor. Will be `null` if nothing has been received yet (or the given value
      * is null).
@@ -55,21 +56,21 @@ class Monitor<T> : SingleInputBlock<T>(ALWAYS) {
         value = null
     }
 
-    override fun Context.process(input: T) {
-        value = input
+    override fun Context.process() {
+        value = input.get
     }
 
     override fun toString(): String = "Monitor($value)"
 }
 
 /**
- * A block that simply stores its input, and outputs it the next loop; so it is [OUT_FIRST].
+ * A block that simply stores its input, and outputs it the next loop; so it is [Block.Processing.OUT_FIRST]
  * This is useful for breaking up loops.
  *
  * An [initialValue] must be given, which will be the first output given when the system first started, before
  * any inputs have been given.
  */
-class Delay<T>(private val initialValue: T) : PipeBlock<T, T>(OUT_FIRST) {
+class Delay<T>(private val initialValue: T) : PipeBlock<T, T>(Processing.OUT_FIRST) {
 
     override fun Context.pipe(
         input: T
@@ -80,14 +81,17 @@ class Delay<T>(private val initialValue: T) : PipeBlock<T, T>(OUT_FIRST) {
  * A block with a single input that records the values it received every loop.
  * Usually used for graphing.
  */
-class Recording<T> : SingleInputBlock<T>(ALWAYS) {
+class Recording<T> : Block(Processing.ALWAYS) {
+
+    /** The [input] into this [Recording]. */
+    val input: Input<T> = newInput()
 
     private val _values = ArrayList<T>()
 
     /** The values recorded by this block */
     val values: List<T> = _values.asUnmodifiableList()
 
-    override fun Context.process(input: T) {
-        _values += input
+    override fun Context.process() {
+        _values += input.get
     }
 }

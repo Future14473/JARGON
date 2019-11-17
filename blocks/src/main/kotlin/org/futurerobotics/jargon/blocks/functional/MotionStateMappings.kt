@@ -15,7 +15,7 @@ import org.futurerobotics.jargon.math.ValueMotionState
  *
  * It needs a [zero] value to fill in the empty acceleration of the outputted [MotionState]
  */
-class ShiftMotionOnlyToState<T : Any>(private val zero: T) : PipeBlock<MotionOnly<T>, MotionState<T>>(LAZY) {
+class MotionOnlyToVelocityState<T : Any>(private val zero: T) : PipeBlock<MotionOnly<T>, MotionState<T>>(LAZY) {
 
     override fun Context.pipe(
         input: MotionOnly<T>

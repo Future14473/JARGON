@@ -11,7 +11,6 @@ plugins {
 dependencies {
     api(project(":core"))
     api(project(":blocks"))
-    implementation(hipparchus("filtering"))
-
+    api(hipparchus("filtering"))
 }
 extra["publish"] = true

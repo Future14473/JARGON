@@ -8,50 +8,12 @@ import org.futurerobotics.jargon.blocks.config.ReadOnlyBlockConfig
 import org.futurerobotics.jargon.util.uncheckedCast
 
 /**
- * Base implementation of [Block].
- *
- * Subclasses can call [newInput]/[newOutput] and store them as public (final) fields/properties during
- * construction/initialization. These can then be used by client code during configuration, and internally
- * during [process]. This provides a generics-safe method of customizing any number of inputs/outputs.
- *
- *
- */
-abstract class BaseBlock(override val processing: Processing) : Block() {
-
-    /**
-     * Creates a new input to this block with the specified type [T], and given name [name].
-     *
-     * If passed [name] is null, will attempt to find name via reflection.
-     */
-    @JvmOverloads
-    protected fun <T> newInput(name: String? = null): Input<T> = Input(name, false)
-
-    /**
-     * Creates a new input to this block with the specified type [T], that can also be [isOptional].
-     *
-     * If an input is optional and not connected, the given values will be `null`.
-     *
-     * If passed [name] is null, will attempt to find name via reflection.
-     */
-    @JvmOverloads
-    protected fun <T> newInput(isOptional: Boolean, name: String? = null): Input<T?> = Input(name, isOptional)
-
-    /**
-     * Creates a new output to this block with the specified type [T].
-     *
-     * If passed [name] is null, will attempt to find name via reflection
-     */
-    @JvmOverloads
-    protected fun <T> newOutput(name: String? = null): Output<T> = Output(name)
-}
-
-/**
  * A block that only takes one [input] of type [T] and one [output] of type [R], that is ran through a [pipe] function.
  */
 abstract class PipeBlock<T, R>
 @JvmOverloads constructor(
-    override val processing: Processing = LAZY
-) : Block() {
+    processing: Processing = LAZY
+) : Block(processing) {
 
     /** Input to this [PipeBlock] */
     val input: Input<T> = Input(null, false)
@@ -63,10 +25,6 @@ abstract class PipeBlock<T, R>
 
     final override fun Context.process() {
         output.set = pipe(input.get)
-    }
-
-    final override fun finalizeConfig(config: ReadOnlyBlockConfig) {
-        super.finalizeConfig(config)
     }
 
     companion object {
@@ -81,70 +39,18 @@ abstract class PipeBlock<T, R>
 }
 
 /**
- * A block which has only one [input] of type [T], that is _not_ optional.
+ * A block which has a principle [output] of type [T].
  */
-abstract class SingleInputBlock<T> constructor(override val processing: Processing) : Block() {
+abstract class PrincipalOutputBlock<T>(processing: Processing) : Block(processing) {
 
-    /** The input to this block. */
-    @Suppress("LeakingThis")
-    val input: Input<T> = Input(null, false)
-
-    /**
-     * Creates a new output to this block with the specified type [T].
-     *
-     * If passed [name] is null, will attempt to find name via reflection
-     */
-    @JvmOverloads
-    protected fun <T> newOutput(name: String? = null): Output<T> = Output(name)
-
-    /** Processes with the given [input] */
-    protected abstract fun Context.process(input: T)
-
-    final override fun Context.process() {
-        this.process(input.get)
-    }
-
-    final override fun finalizeConfig(config: ReadOnlyBlockConfig) {
-        super.finalizeConfig(config)
-    }
-}
-
-/**
- * A block which has only one [output] of type [T].
- */
-abstract class SingleOutputBlock<T>(override val processing: Processing) : Block() {
-
-    /** The input to this block. */
-    @Suppress("LeakingThis")
-    val output: Output<T> = Output(null)
-
-    /**
-     * Creates a new input to this block with the specified type [T], and given name [name].
-     *
-     * If passed [name] is null, will attempt to find name via reflection.
-     */
-    @JvmOverloads
-    protected fun <T> newInput(name: String? = null): Input<T> = Input(name, false)
-
-    /**
-     * Creates a new input to this block with the specified type [T], that can also be [isOptional].
-     *
-     * If an input is optional and not connected, the given values will be `null`.
-     *
-     * If passed [name] is null, will attempt to find name via reflection.
-     */
-    @JvmOverloads
-    protected fun <T> newInput(isOptional: Boolean, name: String? = null): Input<T?> = Input(name, isOptional)
+    /** The output to this [PrincipalOutputBlock]. */
+    val output: Output<T> = newOutput()
 
     /** Gets the output of this block. */
     protected abstract fun Context.getOutput(): T
 
     final override fun Context.process() {
         output.set = getOutput()
-    }
-
-    final override fun finalizeConfig(config: ReadOnlyBlockConfig) {
-        super.finalizeConfig(config)
     }
 }
 
@@ -155,7 +61,7 @@ abstract class SingleOutputBlock<T>(override val processing: Processing) : Block
  *
  * The subsystem does not support [SpecialBlock]s.
  */
-abstract class CompositeBlock(processing: Processing) : BaseBlock(processing) {
+abstract class CompositeBlock(processing: Processing) : Block(processing) {
 
     private lateinit var subsystem: Subsystem
     private var outsideContext: Context? = null
@@ -238,7 +144,7 @@ abstract class CompositeBlock(processing: Processing) : BaseBlock(processing) {
         }
     }
 
-    private inner class Source<T>(private val outsideInput: Input<T>) : BaseBlock(LAZY) {
+    private inner class Source<T>(private val outsideInput: Input<T>) : Block(LAZY) {
         val subOutput = newOutput<T>()
 
         override fun Context.process() {
@@ -246,7 +152,7 @@ abstract class CompositeBlock(processing: Processing) : BaseBlock(processing) {
         }
     }
 
-    private inner class Outputs(private val outsideOutputs: Array<Output<Any?>>) : BaseBlock(ALWAYS) {
+    private inner class Outputs(private val outsideOutputs: Array<Output<Any?>>) : Block(ALWAYS) {
 
         val subInputs = Array(this@CompositeBlock.numOutputs) { newInput<Any?>() }
 

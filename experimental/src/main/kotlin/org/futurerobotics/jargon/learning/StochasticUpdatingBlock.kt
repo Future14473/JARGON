@@ -1,6 +1,5 @@
 package org.futurerobotics.jargon.learning
 
-import org.futurerobotics.jargon.blocks.BaseBlock
 import org.futurerobotics.jargon.blocks.Block
 
 /**
@@ -11,7 +10,7 @@ import org.futurerobotics.jargon.blocks.Block
  */
 class StochasticUpdatingBlock<Input, Output, Pred : Predictor<Input, Output>>(
     private val predictor: Pred, private val stochasticFitter: StochasticFitter<Input, Output, Pred>
-) : BaseBlock(Processing.ALWAYS) {
+) : Block(Processing.ALWAYS) {
 
     /** Where the x/input value is given */
     val inputValue: Block.Input<Input?> = newInput()

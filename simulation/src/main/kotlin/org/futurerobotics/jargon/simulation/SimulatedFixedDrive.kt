@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.simulation
 
-import org.futurerobotics.jargon.blocks.BaseBlock
+import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST
 import org.futurerobotics.jargon.blocks.control.MotorsBlock
 import org.futurerobotics.jargon.hardware.Gyro
@@ -107,25 +107,25 @@ class SimulatedFixedDrive(
  * 1. A List<Double> of motor positions in radians
  * 2. A List<Double> of motor velocities in radians
  */
-class SimulatedDriveBlock(private val drive: SimulatedFixedDrive) : BaseBlock(OUT_FIRST),
+class SimulatedDriveBlock(private val drive: SimulatedFixedDrive) : Block(OUT_FIRST),
                                                                     MotorsBlock {
 
 
     override val numMotors: Int
         get() = drive.numMotors
-    override val motorPositions: Output<List<Double>> = newOutput()
-    override val motorVelocities: Output<List<Double>> = newOutput()
+    override val motorPositions: Output<Vec> = newOutput()
+    override val motorVelocities: Output<Vec> = newOutput()
     /** The actual pose as monitored by the simulated drive. Usually will not have direct info about this; used for testing. */
     val actualPose: Output<Pose2d> = newOutput()
-    override val motorVolts: Input<List<Double>?> = newInput(true)
+    override val motorVolts: Input<Vec?> = newOptionalInput(isOptional = true)
 
     override fun Context.process() {
         val volts = motorVolts.get
         if (volts != null)
-            drive.update(createVec(volts), loopTime)
+            drive.update(volts, loopTime)
 
-        motorPositions.set = (drive.curMotorPositions + drive.getMeasurementNoise()).toList()
-        motorVelocities.set = (drive.curMotorVelocities + drive.getMeasurementNoise()).toList()
+        motorPositions.set = drive.curMotorPositions + drive.getMeasurementNoise()
+        motorVelocities.set = drive.curMotorVelocities + drive.getMeasurementNoise()
         actualPose.set = drive.curGlobalPose
     }
 }

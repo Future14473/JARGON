@@ -3,8 +3,9 @@ package org.futurerobotics.jargon.blocks.control
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
+import org.futurerobotics.jargon.blocks.BlockIndicator
 import org.futurerobotics.jargon.blocks.CompositeBlock
-import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import org.futurerobotics.jargon.blocks.config.BCBuilder
 import org.futurerobotics.jargon.blocks.config.BlockConfig
 import org.futurerobotics.jargon.blocks.control.FeedForwardWrapper.Companion.withAdder
@@ -25,7 +26,7 @@ import org.futurerobotics.jargon.math.ValueMotionOnly
  *
  * This interface exists so that it can be recognized by other things.
  */
-interface Controller<Reference, State, Signal> {
+interface Controller<Reference, State, Signal> : BlockIndicator {
 
     /** The reference input. */
     val reference: Block.Input<Reference>
@@ -45,7 +46,7 @@ interface Controller<Reference, State, Signal> {
  */
 class BangBangController<State, Signal>(
     private val lessThanOutput: Signal, private val greaterThanOutput: Signal, private val equalOutput: Signal
-) : SingleOutputBlock<Signal>(LAZY),
+) : PrincipalOutputBlock<Signal>(LAZY),
     Controller<State, State, Signal> where State : Comparable<State> {
 
     override val reference: Input<State> = newInput()

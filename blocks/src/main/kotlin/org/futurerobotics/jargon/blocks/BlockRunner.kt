@@ -79,9 +79,9 @@ abstract class BlockRunner(config: BlockConfig) {
         /** Where the outputs from this block are stored. */
         @JvmField
         protected val outputs: Array<Any?> = arrayOfNulls(block.numOutputs)
-        private val values = Context()
+        private val context by lazy { Context() }
 
-        inner class Context : Block.ExtendedContext {
+        private inner class Context : Block.ExtendedContext, SystemValues by systemValues {
             override val isFirstTime: Boolean
                 get() = this@BlockRunner.loopNumber == 0
 
@@ -109,9 +109,6 @@ abstract class BlockRunner(config: BlockConfig) {
                 get() = allRunners[block]?.let {
                     it.getOutput(index).uncheckedCast<T>()
                 } ?: throw IllegalArgumentException("Attempted to get output $this for a block not in system")
-            override val loopTime: Double get() = systemValues.loopTime
-            override val totalTime: Double get() = systemValues.totalTime
-            override val loopNumber: Int get() = systemValues.loopNumber
         }
 
         /** Initializes this runner, and the block. */
@@ -135,17 +132,20 @@ abstract class BlockRunner(config: BlockConfig) {
         /** Processes the block. */
         fun processBlock() {
             outputs.fill(NO_VALUE)
-            block.process(values)
-            outputs.indexOf(NO_VALUE).let {
-                check(it == -1) {
-                    val output = block.outputs[it]
-                    "No value given for $output when processed."
+            try {
+                with(block) {
+                    context.process()
                 }
+                outputs.indexOf(NO_VALUE).let {
+                    check(it == -1) {
+                        val output = block.outputs[it]
+                        "No value given for $output when processed."
+                    }
+                }
+            } catch (e: Exception) {
+                throw BlockProcessException("Exception in running block $block", e)
             }
         }
-
-        @Suppress("NOTHING_TO_INLINE")
-        private inline fun Block.process(context: Block.Context) = context.process()
     }
 
     private inner class InFirstRunner(block: Block) : Runner(block) {
@@ -170,8 +170,9 @@ abstract class BlockRunner(config: BlockConfig) {
 
         fun ensureProcessed() {
             if (lastProcess == loopNumber) return
-
-            check(!processing) { "Loop in block system" }
+            if (processing) {
+                throw BlockProcessException("When running block $block, loop in block system")
+            }
 
             processing = true
             processBlock()
@@ -203,4 +204,14 @@ abstract class BlockRunner(config: BlockConfig) {
     private companion object {
         val NO_VALUE = Any()
     }
+}
+
+/** Thrown when an exception is made when running a given `block`. */
+class BlockProcessException :
+    RuntimeException {
+
+    constructor(message: String, cause: Throwable) : super(message, cause)
+    constructor(message: String) : super(message)
+    constructor(cause: Throwable) : super(cause)
+    constructor() : super()
 }

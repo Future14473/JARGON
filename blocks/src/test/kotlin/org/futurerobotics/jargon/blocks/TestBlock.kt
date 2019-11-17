@@ -7,9 +7,9 @@ internal class TestBlock(
     private val name: String,
     numInputs: Int,
     numOutputs: Int,
-    override val processing: Processing = Processing.LAZY,
+    processing: Processing = Processing.LAZY,
     private val requireAllInputs: Boolean = true
-) : Block() {
+) : Block(processing) {
 
     init {
         repeat(numInputs) { Input<String>(null, !requireAllInputs) }

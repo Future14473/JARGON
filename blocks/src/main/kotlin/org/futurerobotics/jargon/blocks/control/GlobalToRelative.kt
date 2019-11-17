@@ -1,9 +1,9 @@
 package org.futurerobotics.jargon.blocks.control
 
-import org.futurerobotics.jargon.blocks.BaseBlock
+import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
-import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import org.futurerobotics.jargon.math.MotionOnly
 import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.Pose2d
@@ -13,10 +13,10 @@ import org.futurerobotics.jargon.mechanics.GlobalToBot
 /**
  * Common parts of [GlobalPoseTrackerFromDelta] and [GlobalPoseTrackerFromVel]
  */
-abstract class AbstractGlobalPoseTracker(initialPose: Pose2d) : SingleOutputBlock<Pose2d>(ALWAYS) {
+abstract class AbstractGlobalPoseTracker(initialPose: Pose2d) : PrincipalOutputBlock<Pose2d>(ALWAYS) {
 
     /** The pose override input */
-    val poseOverride: Input<Pose2d?> = newInput(true)
+    val poseOverride: Input<Pose2d?> = newOptionalInput(isOptional = true)
     /** The currently tracked global pose. */
     val globalPose: Output<Pose2d> get() = super.output
 
@@ -41,7 +41,8 @@ abstract class AbstractGlobalPoseTracker(initialPose: Pose2d) : SingleOutputBloc
 }
 
 /**
- * Non-linearly tracks the _global_ pose, given _bot_ pose **velocities** (for example from [FixedDriveMotorToBotVel])
+ * Non-linearly tracks the **global** pose, given **bot** pose **velocities** (for example from
+ * [MotorToBotVel])
  *
  * The [currentPose] can also be overridden using input.
  * @see [GlobalPoseTrackerFromDelta]
@@ -51,12 +52,11 @@ class GlobalPoseTrackerFromVel(initialPose: Pose2d = Pose2d.ZERO) : AbstractGlob
     /** The velocity input */
     val velocityIn: Input<Pose2d> = newInput()
 
-    override fun Context.getPoseDelta(): Pose2d =
-        velocityIn.get * loopTime.ifNan { 0.0 }
+    override fun Context.getPoseDelta(): Pose2d = velocityIn.get * loopTime.ifNan { 0.0 }
 }
 
 /**
- * Non-linearly tracks the **global** pose, given **bot** pose **delta** (for example from [FixedDriveMotorToBotDelta]).
+ * Non-linearly tracks the **global** pose, given **bot** pose **delta** (for example from [MotorToBotDelta]).
  *
  * The [currentPose] can also overridden using input.
  *
@@ -71,7 +71,7 @@ open class GlobalPoseTrackerFromDelta(initialPose: Pose2d = Pose2d.ZERO) : Abstr
 }
 
 /**
- * Non-linearly tracks the _global__ pose, given _bot_ pose **delta** (for example from [FixedDriveMotorToBotDelta]),
+ * Non-linearly tracks the **global** pose, given _bot_ pose **delta** (for example from [MotorToBotDelta]),
  * _and uses gyroscope for heading_.
  *
  * The [currentPose] can also overridden using input.
@@ -83,9 +83,7 @@ class GlobalPoseTrackerFromDeltaAndGyro(initialPose: Pose2d = Pose2d.ZERO) : Glo
     val gyroIn: Input<Double> = newInput()
 
     override fun Context.getPoseDelta(): Pose2d = deltaIn.get
-    override fun Context.mapPose(
-        pose: Pose2d
-    ): Pose2d = pose.copy(heading = gyroIn.get)
+    override fun Context.mapPose(pose: Pose2d): Pose2d = pose.copy(heading = gyroIn.get)
 }
 
 /**
@@ -97,7 +95,7 @@ class GlobalPoseTrackerFromDeltaAndGyro(initialPose: Pose2d = Pose2d.ZERO) : Glo
  *
  * @see GlobalToBotMotion
  */
-class GlobalToBotReference : BaseBlock(LAZY) {
+class GlobalToBotReference : Block(LAZY) {
 
     /** The pose reference input */
     val globalState: Input<MotionState<Pose2d>> = newInput()
@@ -121,7 +119,7 @@ class GlobalToBotReference : BaseBlock(LAZY) {
  * This is how global motion is translated into bot motion.
  * @see GlobalToBotReference
  */
-class GlobalToBotMotion : SingleOutputBlock<MotionOnly<Pose2d>>(LAZY) {
+class GlobalToBotMotion : PrincipalOutputBlock<MotionOnly<Pose2d>>(LAZY) {
 
     /** The pose reference input */
     val globalMotion: Input<MotionOnly<Pose2d>> = newInput()

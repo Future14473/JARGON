@@ -2,7 +2,7 @@ package org.futurerobotics.jargon.blocks.control
 
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.blocks.CompositeBlock
-import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import org.futurerobotics.jargon.blocks.config.BCBuilder
 import org.futurerobotics.jargon.blocks.config.BlockConfig
 import org.futurerobotics.jargon.blocks.functional.CreatePose
@@ -16,7 +16,7 @@ private typealias ToilAndTrouble = Double
  * @see FeedForwardWrapper
  * @see HeadingPIDController
  */
-open class PIDController(private val coefficients: PIDCoefficients) : SingleOutputBlock<Double>(ALWAYS),
+open class PIDController(private val coefficients: PIDCoefficients) : PrincipalOutputBlock<Double>(ALWAYS),
                                                                       Controller<Double, Double, ToilAndTrouble> {
 
     /** The reference motion input */
@@ -76,7 +76,7 @@ class HeadingPIDController(coefficients: PIDCoefficients) : PIDController(coeffi
  *
  * @see FeedForwardWrapper
  */
-class VecPIDController(private val coefficients: PIDCoefficients) : SingleOutputBlock<Vector2d>(ALWAYS),
+class VecPIDController(private val coefficients: PIDCoefficients) : PrincipalOutputBlock<Vector2d>(ALWAYS),
                                                                     Controller<Vector2d, Vector2d, Vector2d> {
 
     override val reference: Input<Vector2d> = newInput()

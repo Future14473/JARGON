@@ -3,14 +3,13 @@ package org.futurerobotics.jargon.blocks.control
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
 import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST
-import org.futurerobotics.jargon.blocks.SingleInputBlock
-import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.blocks.BlockIndicator
+import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import org.futurerobotics.jargon.hardware.DcMotor
 import org.futurerobotics.jargon.hardware.Gyro
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.EPSILON
 import org.futurerobotics.jargon.mechanics.MotorVelocityModel
-import org.futurerobotics.jargon.util.zipForEach
 import kotlin.math.sign
 
 /**
@@ -23,46 +22,41 @@ import kotlin.math.sign
  * - [motorPositions]: a list of motor positions (in radians)
  * - [motorVelocities]: a list of motor velocities (in radians per second)
  */
-interface MotorsBlock {
+interface MotorsBlock : BlockIndicator {
 
     /** The number of motors in this motor block. */
     val numMotors: Int
     /** An output of measured motor positions, in radians. */
-    val motorPositions: Block.Output<List<Double>>
+    val motorPositions: Block.Output<Vec>
     /** An output of the measured motor velocities, in radians per second. */
-    val motorVelocities: Block.Output<List<Double>>
+    val motorVelocities: Block.Output<Vec>
     /** An input of motor voltages. Optional.*/
-    val motorVolts: Block.Input<List<Double>?>
+    val motorVolts: Block.Input<Vec?>
 }
 
 /** A [MotorsBlock] that operates with a list of [DcMotor]s. */
-class MotorList(private val motors: List<DcMotor>) : SingleInputBlock<List<Double>?>(OUT_FIRST), MotorsBlock {
+class MotorList(private val motors: List<DcMotor>) : Block(OUT_FIRST), MotorsBlock {
 
     override val numMotors: Int get() = motors.size
-    override val motorPositions: Output<List<Double>> = newOutput()
-    override val motorVelocities: Output<List<Double>> = newOutput()
-    override val motorVolts: Input<List<Double>?> get() = super.input
+    override val motorPositions: Output<Vec> = newOutput()
+    override val motorVelocities: Output<Vec> = newOutput()
+    override val motorVolts: Input<Vec?> = newOptionalInput()
 
-    private fun Context.writeMeasurements() {
-        motorPositions.set = motors.map { it.position }
-        motorVelocities.set = motors.map { it.velocity }
-    }
-
-    override fun Context.process(
-        input: List<Double>?
-    ) {
-        if (input != null) {
-            require(input.size == motors.size) { "Given voltage list is not the right size " }
-            motors.zipForEach(input) { m, v ->
-                m.voltage = v
+    override fun Context.process() {
+        val volts = motorVolts.get
+        if (volts != null) {
+            require(volts.size == motors.size) { "Given voltage list is not the right size " }
+            motors.forEachIndexed { i, motor ->
+                motor.voltage = volts[i]
             }
         }
-        writeMeasurements()
+        motorPositions.set = motors.mapToVec { it.position }
+        motorVelocities.set = motors.mapToVec { it.velocity }
     }
 }
 
 /** A block that outputs readings from a [Gyro]scope. */
-class GyroReading(private val gyro: Gyro) : SingleOutputBlock<Double>(LAZY) {
+class GyroReading(private val gyro: Gyro) : PrincipalOutputBlock<Double>(LAZY) {
 
     override fun Context.getOutput(): Double = gyro.currentAngle
 }
@@ -73,19 +67,21 @@ class GyroReading(private val gyro: Gyro) : SingleOutputBlock<Double>(LAZY) {
  *
  * @param motorVelocityModel the model used
  */
-class MotorFrictionFF(private val motorVelocityModel: MotorVelocityModel) : SingleOutputBlock<List<Double>>(LAZY) {
+class MotorFrictionFF(private val motorVelocityModel: MotorVelocityModel) : PrincipalOutputBlock<Vec>(LAZY) {
 
     /** The motor voltages input */
-    val motorVoltages: Input<List<Double>> = newInput()
+    val motorVolts: Input<Vec> = newInput()
     /** The motor velocities input */
-    val motorVelocities: Input<List<Double>> = newInput()
+    val motorVelocities: Input<Vec> = newInput()
 
-    override fun Context.getOutput(): List<Double> {
-        val voltages = motorVoltages.get
+    override fun Context.getOutput(): Vec {
+        val voltages = motorVolts.get
         val vels = motorVelocities.get
-        val signs = voltages.zip(vels) { voltage, vel ->
-            if (vel <= EPSILON) sign(voltage) else sign(vel)
-        }.toVec()
-        return (motorVelocityModel.motorAccelForMotorFriction * signs).toList()
+        val signs = genVec(voltages.size) {
+            val vel = vels[it]
+            val volts = voltages[it]
+            if (vel <= EPSILON) sign(volts) else sign(vel)
+        }
+        return voltages + motorVelocityModel.voltsForMotorFriction * signs
     }
 }

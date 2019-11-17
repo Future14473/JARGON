@@ -1,6 +1,7 @@
 package org.futurerobotics.jargon.blocks
 
 import org.futurerobotics.jargon.blocks.Block.Context
+import org.futurerobotics.jargon.blocks.Block.Processing
 import org.futurerobotics.jargon.blocks.Block.Processing.*
 import org.futurerobotics.jargon.blocks.config.BCBuilder
 import org.futurerobotics.jargon.blocks.config.BlockConfig
@@ -8,9 +9,8 @@ import org.futurerobotics.jargon.blocks.config.IllegalBlockConfigurationExceptio
 import org.futurerobotics.jargon.blocks.config.ReadOnlyBlockConfig
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
+import kotlin.reflect.KVisibility
 import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.jvm.javaField
-import kotlin.reflect.jvm.javaGetter
 import kotlin.reflect.jvm.javaType
 
 /**
@@ -39,13 +39,13 @@ import kotlin.reflect.jvm.javaType
  * The exact way a block is processed is defined by its [processing]; see there for more details.
  *
  * ## Creating a block implementation
- * One should usually subclass [BaseBlock] for a generic multi-input, multi-output block, but [SingleInputBlock],
- * [SingleOutputBlock], and [PipeBlock] also exists for convenience with blocks with only one input/output.
- * Within these blocks, one can define inputs/outputs using [newInput]/[newOutput] which creates [Block.Input]
+ * One should usually subclass [BaseBlock] for a generic multi-input, multi-output block, but [PrincipleInputBlock],
+ * [PrincipalOutputBlock], and [PipeBlock] also exists for convenience with blocks with only one input/output.
+ * Within these blocks, one can define inputs/outputs using [newOptionalInput]/[newOutput] which creates [Block.Input]
  * and [Block.Output] and store these in public fields. Client code can then use these to link configuration together.
  *
  * By default, all inputs must be connected for a block to function. One can instead create _optional_ inputs
- * using [newInput], in which case the value of `null` will be given for not connected inputs (will be `nullable` in
+ * using [newOptionalInput], in which case the value of `null` will be given for not connected inputs (will be `nullable` in
  * kotlin). Note that blocks can also possibly output these values too.
  *
  * The actual getting and setting of a block's inputs/outputs during [process] is provided through the [Context]
@@ -55,38 +55,61 @@ import kotlin.reflect.jvm.javaType
  * ## Other
  *
  * There are also [SpecialBlock]s which receive special treatment from [BlockSystem].
+ *
+ * @property processing The [Processing] of this block.
  */
-abstract class Block internal constructor() {
+abstract class Block(val processing: Processing) : BlockIndicator {
 
     // --- inputs/outputs ---
     internal val inputs: MutableList<Input<*>> = ArrayList()
     internal val outputs: MutableList<Output<*>> = ArrayList()
-    private val ioProps: List<KProperty<*>> = this::class.members
-        .filterIsInstance<KProperty<*>>()
-        .filter { prop ->
-            (prop.returnType.classifier as? KClass<*>)?.isSubclassOf(AnyIO::class)
-                ?: false
-        }
-    /**
-     * Is set to true when this block exists in a built [BlockConfig].
-     * After that it can not be added to another config.
-     * If you do things right you don't have to worry about it.
-     */
-    var finalized: Boolean = false
-        private set
+    private val ioProps: List<KProperty<*>> by lazy {
+        this::class.members
+            .filterIsInstance<KProperty<*>>()
+            .filter { it.visibility == KVisibility.PUBLIC }
+            .filter { prop ->
+                (prop.returnType.classifier as? KClass<*>)?.isSubclassOf(AnyIO::class) ?: false
+            }
+    }
 
     /** The number of inputs to this block. */
     val numInputs: Int get() = inputs.size
     /** The number of outputs to this block. */
     val numOutputs: Int get() = outputs.size
 
+    /**
+     * Creates a new input to this block with the specified type [T], and given name [name].
+     *
+     * If passed [name] is null, will attempt to find name via reflection.
+     */
+    @JvmOverloads
+    protected fun <T> newInput(name: String? = null): Input<T> =
+        Input(name, false)
+
+    /**
+     * Creates a new input to this block with the specified type [T], that can also be [isOptional].
+     *
+     * If an input is optional and not connected, the values returned will be `null`.
+     *
+     * If passed [name] is null, will attempt to find name via reflection.
+     */
+    @JvmOverloads
+    protected fun <T> newOptionalInput(name: String? = null, isOptional: Boolean = true): Input<T?> =
+        Input(name, isOptional)
+
+    /**
+     * Creates a new output to this block with the specified type [T].
+     *
+     * If passed [name] is null, will attempt to find name via reflection
+     */
+    @JvmOverloads
+    protected open fun <T> newOutput(name: String? = null): Output<T> = Output(name)
+
     /** Common components of [Input] and [Output]. */
-    abstract inner class AnyIO<T> internal constructor(name: String?) {
+    abstract inner class AnyIO<T> internal constructor(name: String?, internal val index: Int) {
 
         /**  block the [Block] that this input belongs to */
         val block: Block get() = this@Block
-
-        internal abstract val index: Int
 
         init {
             check(!finalized) { "Block is already used in a config, cannot create new ${javaClass.simpleName}" }
@@ -94,15 +117,7 @@ abstract class Block internal constructor() {
 
         private val reflectProperty: KProperty<*>? by lazy {
             ioProps.find { prop ->
-                prop.javaGetter?.let {
-                    if (it.trySetAccessible())
-                        it.invoke(this@Block)
-                    else null
-                } ?: prop.javaField?.let {
-                    if (it.trySetAccessible())
-                        it.get(this@Block)
-                    else null
-                } === this
+                prop.call(this@Block) === this
             }
         }
         private val _name: String? = name
@@ -147,9 +162,7 @@ abstract class Block internal constructor() {
      *
      * @property isOptional if this input is optional, and will not complain when not connected.
      */
-    inner class Input<T> internal constructor(name: String?, val isOptional: Boolean) : AnyIO<T>(name) {
-
-        override val index: Int = numInputs
+    inner class Input<T> internal constructor(name: String?, val isOptional: Boolean) : AnyIO<T>(name, numInputs) {
 
         init {
             inputs += this
@@ -169,9 +182,7 @@ abstract class Block internal constructor() {
      *
      * @property index the index of this output; used internally
      */
-    inner class Output<T> internal constructor(name: String?) : AnyIO<T>(name) {
-
-        override val index: Int = numOutputs
+    inner class Output<T> internal constructor(name: String?) : AnyIO<T>(name, numOutputs) {
 
         init {
             check(!finalized) { "Block is already used in a config, cannot create new output" }
@@ -189,8 +200,6 @@ abstract class Block internal constructor() {
     }
 
 // --- processing ---
-    /** The processing policy of this block. See [Processing] */
-    abstract val processing: Processing
 
     /**
      * Defines how this component is run, which can be:
@@ -203,41 +212,37 @@ abstract class Block internal constructor() {
      *
      * At least one block in a component system must be _not_ [LAZY] since if everyone is lazy nobody
      * will process.
-     *
-     * @property isAlwaysProcess if this [Processing] is an _always process_.
      */
-    enum class Processing(val isAlwaysProcess: Boolean) {
+    enum class Processing {
 
         /**
-         * A block with [LAZY] processing will only [process] or poll [getOutput] if another block requests its
-         * outputs, otherwise it may not process.
+         * A block with [LAZY] processing will only [process] if another blocks requests its outputs
+         * by calling `get` that sources to this block, otherwise will not process.
          *
          * Blocks that do nothing more than process their inputs directly into output without storing information
          * of any kind should have this processing.
          * @see [Processing]
          */
-        LAZY(false),
+        LAZY,
         /**
-         * A block with [ALWAYS] processing will always be [process]ed every loop, and inputs must be given
-         * before outputs are extracted. However, [getOutput] will still only be called if necessary.
+         * A block with [ALWAYS] processing will always be [process]ed every loop.
          *
          * Blocks that require that it receives information every single loop should have this kind of processing.
          * @see [Processing]
          */
-        ALWAYS(true),
+        ALWAYS,
         /**
          * A block with [OUT_FIRST] processing will only receive inputs of the _previous_ loop when called on
-         * [process]. The first time the block is processed, all inputs may be `null` even if not marked nullable
+         * [process]. The first time the block is processed, all inputs may be `null` **even if not marked nullable**.
          * **A block with [OUT_FIRST] will always request _every single input, every loop_**. This is (one of)
          * the only ways to prevent values for next cycle being given out instead.
          *
          * At least one block in a loop of blocks must be [OUT_FIRST]; For example a block that directly
          * interacts with hardware or external sources to be this kind of processing since measurements (outputs) are
          * usually taken _before_ signal (inputs)
-         * @see Delay
          * @see [Processing]
          */
-        OUT_FIRST(true);
+        OUT_FIRST;
         //There is no OUT_FIRST_LAZY since that causes problems and is rarely needed.
     }
 
@@ -310,6 +315,21 @@ abstract class Block internal constructor() {
     open fun stop() {}
 
 // --- other ---
+
+    /**
+     * May perform additional checks of connections of this block here. Called when a block config
+     * is built.
+     */
+    open fun checkConfig(config: ReadOnlyBlockConfig) {}
+
+    /**
+     * Is set to true when this block exists in a built [BlockConfig].
+     * After that it can not be added to another config.
+     * If you do things right you don't have to worry about it.
+     */
+    var finalized: Boolean = false
+        private set
+
     /**
      * Verifies that the current configuration on the given [BlockConfig] is valid (non-optional inputs will be
      * must be connected).
@@ -319,9 +339,10 @@ abstract class Block internal constructor() {
         check(!finalized) { "Block already used in another config" }
         finalized = true
         inputs.forEach {
-            if (it.isOptional || it in config) return@forEach
-            throw IllegalBlockConfigurationException("Non-optional input $it is not connected. ")
+            if (!it.isOptional && it !in config)
+                throw IllegalBlockConfigurationException("Non-optional input $it is not connected. ")
         }
+        checkConfig(config)
     }
 
     override fun toString(): String = javaClass.simpleName.ifEmpty { "Anonymous Block" }
@@ -335,8 +356,18 @@ interface SystemValues {
 
     /** The time in seconds the last loop has taken to run. */
     val loopTime: Double
+    /** The time in nanoSeconds the last loop has taken to run. */
+    val loopTimeInNanos: Long
     /** The total amount of time elapsed since the block has first run. */
     val totalTime: Double
+    /** The total time in nanoSeconds the last loop has taken to run. */
+    val totalTimeInNanos: Long
     /** The number of the current loop run since `init`, starting from 0. */
     val loopNumber: Int
 }
+
+/**
+ * Used to represent that an interface is supposed to represent a block. This is
+ * only so that it can be recognized by the [BCBuilder.invoke], while being an interface.
+ */
+interface BlockIndicator

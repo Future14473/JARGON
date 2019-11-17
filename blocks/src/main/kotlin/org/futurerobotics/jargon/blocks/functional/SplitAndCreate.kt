@@ -2,16 +2,15 @@
 
 package org.futurerobotics.jargon.blocks.functional
 
-import org.futurerobotics.jargon.blocks.BaseBlock
+import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
-import org.futurerobotics.jargon.blocks.SingleInputBlock
-import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import org.futurerobotics.jargon.math.*
 
 /**
  * A block that takes a [MotionState] and splits it into its components in order.
  */
-class SplitMotionState<T : Any> : BaseBlock(LAZY) {
+class SplitMotionState<T : Any> : Block(LAZY) {
 
     /** The motion state input */
     val input: Input<MotionState<T>> = newInput()
@@ -42,7 +41,7 @@ class SplitMotionState<T : Any> : BaseBlock(LAZY) {
 /**
  * A block that takes value, velocity, and acceleration, and combines it into a [MotionState].
  */
-class CreateMotionState<T : Any> : BaseBlock(LAZY) {
+class CreateMotionState<T : Any> : Block(LAZY) {
 
     /** The value input */
     val value: Input<T> = newInput()
@@ -70,7 +69,7 @@ class CreateMotionState<T : Any> : BaseBlock(LAZY) {
 /**
  * A block that takes a [MotionOnly] and splits it into its components in order.
  */
-class SplitMotionOnly<T : Any> : BaseBlock(LAZY) {
+class SplitMotionOnly<T : Any> : Block(LAZY) {
 
     /** The motion only input */
     val input: Input<MotionOnly<T>> = newInput()
@@ -95,7 +94,7 @@ class SplitMotionOnly<T : Any> : BaseBlock(LAZY) {
 /**
  * A block that takes velocity and acceleration and combines it into a [MotionOnly]
  */
-class CreateMotionOnly<T : Any> : BaseBlock(LAZY) {
+class CreateMotionOnly<T : Any> : Block(LAZY) {
 
     /** The velocity input */
     val vel: Input<T> = newInput()
@@ -121,8 +120,10 @@ class CreateMotionOnly<T : Any> : BaseBlock(LAZY) {
 /**
  * Creates a [Pose2d] from x, y, heading components.
  */
-class SplitPose : SingleInputBlock<Pose2d>(LAZY) {
+class SplitPose : Block(LAZY) {
 
+    /** the pose input. */
+    val input: Input<Pose2d> = newInput()
     /** x */
     val x: Output<Double> = newOutput()
     /** y */
@@ -130,7 +131,8 @@ class SplitPose : SingleInputBlock<Pose2d>(LAZY) {
     /** heading */
     val heading: Output<Double> = newOutput()
 
-    override fun Context.process(input: Pose2d) {
+    override fun Context.process() {
+        val input = input.get
         x.set = input.x
         y.set = input.y
         heading.set = input.heading
@@ -140,7 +142,7 @@ class SplitPose : SingleInputBlock<Pose2d>(LAZY) {
 /**
  * Splits a [Pose2d] into x, y, heading components.
  */
-class CreatePose : SingleOutputBlock<Pose2d>(LAZY) {
+class CreatePose : PrincipalOutputBlock<Pose2d>(LAZY) {
 
     /** x */
     val x: Input<Double> = newInput()
@@ -155,7 +157,7 @@ class CreatePose : SingleOutputBlock<Pose2d>(LAZY) {
 /**
  * A block that splits a [MotionState]<[Pose2d]> into 3 [LinearMotionState]s, each representing a component of [Pose2d]
  */
-class SplitPoseMotionState : BaseBlock(LAZY) {
+class SplitPoseMotionState : Block(LAZY) {
 
     /** The motion state input */
     val input: Input<MotionState<Pose2d>> = newInput()

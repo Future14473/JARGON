@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.blocks.functional
 
-import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import org.futurerobotics.jargon.util.value
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * When [pulse] is called externally; the output will be `true` the next time this component is processed, then
  * reset back to false. This is useful to "pulse" a condition to another component.
  */
-class Pulse : SingleOutputBlock<Boolean>(Processing.LAZY) {
+class Pulse : PrincipalOutputBlock<Boolean>(Processing.LAZY) {
 
     private val queuePulse = AtomicBoolean()
     /**

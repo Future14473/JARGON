@@ -7,7 +7,7 @@ import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
  *
  * As of now the only [SpecialBlock] is [Shutdown]
  */
-sealed class SpecialBlock(processing: Processing) : BaseBlock(processing)
+sealed class SpecialBlock(processing: Processing) : Block(processing)
 
 /**
  * This [SpecialBlock], when inputted a value of `true`, will tell the system to shutdown.

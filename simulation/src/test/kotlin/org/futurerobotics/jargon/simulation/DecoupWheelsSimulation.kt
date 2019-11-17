@@ -91,7 +91,7 @@ internal abstract class DecoupWheelsSimulation(
 
 
 
-                motorsBlock.motorVolts from ssController.signal.pipe { it.asList() }
+                motorsBlock.motorVolts from ssController.signal
                     .apply {
                         repeat(numWheels) { i ->
                             recordY(pipe { it[i] }, "Voltages", "Voltage $i")
@@ -100,7 +100,7 @@ internal abstract class DecoupWheelsSimulation(
 
 
                 LinearKalmanFilter(ssModel, kfilterQ, kfilterR)() {
-                    measurement from motorsBlock.motorVelocities.pipe { it.toVec() }
+                    measurement from motorsBlock.motorVelocities
                     signal from ssController.signal.delay(zeroVec(numWheels))
                     output into ssController.state
 
@@ -114,7 +114,7 @@ internal abstract class DecoupWheelsSimulation(
                     }
                 }
 
-                val delta = FixedDriveMotorToBotDelta(driveModel)() {
+                val delta = MotorToBotDelta(driveModel)() {
                     input from motorsBlock.motorPositions
                 }
 

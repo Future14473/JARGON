@@ -65,3 +65,13 @@ inline fun Vec.combineToSelf(other: Vec, func: Double.(Double) -> Double) {
         this[it] = this[it].func(other[it])
     }
 }
+
+/**
+ * Maps a list into a vector using the given [transform] function.
+ */
+inline fun <T> List<T>.mapToVec(transform: (T) -> Double): Vec =
+    zeroVec(size).also { v ->
+        forEachIndexed { index, t ->
+            v[index] = transform(t)
+        }
+    }

@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
-import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import org.futurerobotics.jargon.blocks.control.Controller
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.MotionState
@@ -29,7 +29,7 @@ class SSControllerWithFF @JvmOverloads constructor(
     private val kGain: Mat,
     private val ffQRCost: QRCost? = null,
     private val recalculateFeedForward: Boolean = false
-) : SingleOutputBlock<Vec>(LAZY), Controller<MotionState<Vec>, Vec, Vec> {
+) : PrincipalOutputBlock<Vec>(LAZY), Controller<MotionState<Vec>, Vec, Vec> {
 
     override val reference: Input<MotionState<Vec>> = newInput()
     override val state: Input<Vec> = newInput()

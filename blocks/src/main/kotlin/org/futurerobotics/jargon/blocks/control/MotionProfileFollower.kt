@@ -1,6 +1,5 @@
 package org.futurerobotics.jargon.blocks.control
 
-import org.futurerobotics.jargon.blocks.BaseBlock
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.profile.MotionProfiled
@@ -28,13 +27,12 @@ import org.futurerobotics.jargon.util.Stepper
  * @param initialOutput the initial output if the system is idle and no motion profiled has been given
  *              yet.
  */
-abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, private val initialOutput: T) :
-    BaseBlock(ALWAYS) {
+abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Block(ALWAYS) {
 
     /** The motion profile input. See [MotionProfileFollower]*/
     val profileInput: Input<MotionProfiled<T>?> = newInput()
     /** The stop input. See [MotionProfileFollower] */
-    val stop: Input<Boolean?> = newInput(isOptional = true)
+    val stop: Input<Boolean?> = newOptionalInput(isOptional = true)
     /** The [Block.Output] of this [MotionProfileFollower] */
     val output: Output<T> = newOutput()
     /** The progress [Block.Output] of this [MotionProfileFollower] */
@@ -46,11 +44,6 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
     private var currentTime: Double = 0.0
     private var endTime: Double = 1.0
     private var currentStepper: Stepper<Double, T>? = null //if null; means poll more.
-
-    init {
-        require(numInputs >= 2) { "NumInputs should be >= 2" }
-        require(numOutputs >= 3) { "NumOutputs should be >= 3" }
-    }
 
     final override fun init() {
         outputValue = initialOutput
@@ -108,7 +101,7 @@ abstract class MotionProfileFollower<T : Any>(numInputs: Int, numOutputs: Int, p
  *
  * @param initialIdleOutput the initial value to be outputted when no motion profile has been ever given.
  */
-class TimeOnlyMotionProfileFollower<T : Any>(initialIdleOutput: T) : MotionProfileFollower<T>(2, 3, initialIdleOutput) {
+class TimeOnlyMotionProfileFollower<T : Any>(initialIdleOutput: T) : MotionProfileFollower<T>(initialIdleOutput) {
 
     override fun Context.getNextTime(currentTime: Double, lastOutput: Any): Double = currentTime + loopTime
 }

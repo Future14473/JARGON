@@ -2,7 +2,7 @@ package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
-import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import org.futurerobotics.jargon.linalg.*
 import org.hipparchus.filtering.kalman.Measurement
 import org.hipparchus.filtering.kalman.ProcessEstimate
@@ -16,7 +16,7 @@ import org.hipparchus.filtering.kalman.linear.LinearKalmanFilter as InnerKalmanF
 private val DECOMP = LUDecomposer(1e-11)
 
 /**
- * A Kalman Filter [Block]. Assumes that the system always runs at the model's period.
+ * A Kalman Filter [Block]. Works best when the system always runs near the model's period.
  *
  * @param model the "base" state space model
  * @param Q the process noise covariance
@@ -27,7 +27,7 @@ class LinearKalmanFilter(
     private val model: DiscreteLinearStateSpaceModel,
     private val Q: Mat,
     private val R: Mat
-) : SingleOutputBlock<Vec>(ALWAYS) {
+) : PrincipalOutputBlock<Vec>(ALWAYS) {
 
     /** Measurement vector input */
     val measurement: Input<Vec> = newInput()
@@ -84,7 +84,7 @@ class LinearKalmanFilter(
         val periodNanos = (model.period * 1e9).roundToLong()
         if (loopTime != 0.0) {
             var curNanos = lastNanos
-            while (curNanos + periodNanos <= nowNanos) {
+            do {
                 curNanos += periodNanos
                 measurementObj.value = measurement
                 measurementObj.timeNanos = curNanos
@@ -93,7 +93,7 @@ class LinearKalmanFilter(
                 linearProcess.signal setTo signal
 
                 filter.estimationStep(measurementObj)
-            }
+            } while (curNanos + periodNanos <= nowNanos)
         }
         filter.corrected.let {
             lastUpdate = it

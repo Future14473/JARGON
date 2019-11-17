@@ -17,9 +17,7 @@ private typealias RecordingsMap<T> = MutableMap<String, RecordingsGroup<T>>
  * Recordings can be put in _groups_, and every group corresponds to a graph. Every group/graph can have multiple
  * recordings with different names.
  */
-class Recordings internal constructor(
-    builder: BCBuilder
-) {
+class Recordings(builder: BCBuilder) {
 
     private val xyRecordingsMap: RecordingsMap<Vector2d> = ConcurrentHashMap()
     private val yRecordingsMap: RecordingsMap<Double> = ConcurrentHashMap()

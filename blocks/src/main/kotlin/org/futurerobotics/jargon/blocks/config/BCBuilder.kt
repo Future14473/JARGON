@@ -3,9 +3,9 @@ package org.futurerobotics.jargon.blocks.config
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Input
 import org.futurerobotics.jargon.blocks.Block.Output
+import org.futurerobotics.jargon.blocks.BlockIndicator
 import org.futurerobotics.jargon.blocks.PipeBlock
 import org.futurerobotics.jargon.blocks.QuickBlock
-import org.futurerobotics.jargon.blocks.SingleInputBlock
 import org.futurerobotics.jargon.blocks.functional.Constant
 import org.futurerobotics.jargon.blocks.functional.Delay
 import org.futurerobotics.jargon.blocks.functional.Monitor
@@ -126,7 +126,7 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
 
     /** Runs the given [configuration] block on [this] block, and returns it. */
     @BCBuilderDsl
-    inline operator fun <T : Block> T.invoke(configuration: T.() -> Unit): T = apply(configuration)
+    inline operator fun <T : BlockIndicator> T.invoke(configuration: T.() -> Unit): T = apply(configuration)
 
     /**
      * Creates a new [PipeBlock] with the given [piping], connects this output to it, and returns the piping's
@@ -159,6 +159,7 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
      * @see listen
      * @see generate
      */
+    @BCBuilderDsl
     fun <T, R> Output<T>.pipe(pipeBlock: PipeBlock<T, R>): Output<R> {
         this into pipeBlock.input
         return pipeBlock.output
@@ -169,6 +170,7 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
      *
      * Useful for breaking up loops when it's ok for a block to delayed value.
      */
+    @BCBuilderDsl
     fun <T> Output<T>.delay(initialValue: T): Output<T> = Delay(
         initialValue
     )() { input from this@delay }.output
@@ -189,10 +191,12 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
      * Creates a new block that runs the given [func] every loop, given values from this output.
      * @see pipe
      */
+    @BCBuilderDsl
     inline fun <T> Output<T>.listen(crossinline func: Block.Context.(T) -> Unit) {
-        object : SingleInputBlock<T>(Processing.ALWAYS) {
-            override fun Context.process(input: T) {
-                func(input)
+        object : Block(Processing.ALWAYS) {
+            val input = newInput<T>()
+            override fun Context.process() {
+                func(input.get)
             }
 
             override fun toString(): String = "listen Block"
@@ -215,6 +219,7 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
      * @see runBlock
      */
     @JvmOverloads
+    @BCBuilderDsl
     fun <T> generate(
         processing: Block.Processing = Block.Processing.LAZY,
         producer: Block.ExtendedContext.() -> T
@@ -228,12 +233,13 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
     }
 
     /**
-     * Creates a block that that simply runs the given [block].
+     * Creates a block that that simply runs the given code [block].
      *
      * [Block.ExtendedContext] is supported to get outputs of other blocks.
      *
      * @see generate
      */
+    @BCBuilderDsl
     fun runBlock(block: Block.ExtendedContext.() -> Unit) {
         add(QuickBlock(Block.Processing.ALWAYS, block))
     }

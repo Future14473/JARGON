@@ -21,14 +21,14 @@ class BlockSystem(config: BlockConfig) : BlockRunner(config), LoopSystem {
 
     private val specials: Map<Class<*>, List<SpecialBlock>>
     private val _systemValues = object : SystemValues {
-        private var totalTimeNanos: Long = 0
-        var loopTimeInNanos: Long = 0
+        override var totalTimeInNanos: Long = 0
+        override val totalTime: Double get() = totalTimeInNanos / 1e9
+        override var loopTimeInNanos: Long = 0
             set(value) {
-                totalTimeNanos += value
+                totalTimeInNanos += value
                 field = value
             }
         override val loopTime: Double get() = loopTimeInNanos / 1e9
-        override val totalTime: Double get() = totalTimeNanos / 1e9
         override val loopNumber: Int get() = this@BlockSystem.loopNumber
     }
     override val systemValues: SystemValues = _systemValues

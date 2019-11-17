@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.blocks.functional
 
-import org.futurerobotics.jargon.blocks.SingleOutputBlock
+import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
  */
 class ExternalQueue<T> private constructor(
     private val clearOnStart: Boolean, private val queue: Queue<T>
-) : SingleOutputBlock<T>(Processing.LAZY), Queue<T> by queue {
+) : PrincipalOutputBlock<T>(Processing.LAZY), Queue<T> by queue {
 
     /**
      * @param clearOnStart when this is true, the queue is cleared when the system starts.
