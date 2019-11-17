@@ -2,6 +2,7 @@ package org.futurerobotics.jargon.simulation
 
 import org.futurerobotics.jargon.blocks.control.PIDCoefficients
 import org.futurerobotics.jargon.blocks.control.PosePIDController
+import org.futurerobotics.jargon.interruptAfter
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Interval
 import org.futurerobotics.jargon.math.ValueMotionState
@@ -20,10 +21,10 @@ import org.futurerobotics.jargon.saveGraph
 import org.futurerobotics.jargon.statespace.QRCost
 import org.futurerobotics.jargon.system.looping.FixedTestClock
 import org.futurerobotics.jargon.system.looping.LoopAsFastAsPossible
-import org.futurerobotics.jargon.system.looping.LoopMaxTimes
 import org.futurerobotics.jargon.system.looping.LoopSystemRunner
 import org.junit.jupiter.api.Test
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 import kotlin.random.asKotlinRandom
 
@@ -79,11 +80,13 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
         val path = Line(Vector2d.ZERO, Vector2d(2, 0)).addHeading(TangentHeading)
         val trajectory = generateTrajectory(path, constraints1, MotionProfileGenParams())
         trajectories.add(trajectory)
+        interruptAfter(5, TimeUnit.SECONDS) {
+            val runner = LoopSystemRunner(
+                system, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong()))
+            )
+            runner.run()
+        }
 
-        val runner = LoopSystemRunner(
-            system, LoopMaxTimes(5000, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong())))
-        )
-        runner.run()
 
         recordings.getAllGraphs().forEach { (name, graph) ->
             graph.saveGraph("${this.javaClass.simpleName}/simulation1/$name", 300)
@@ -106,10 +109,13 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
         val trajectory = randomTrajectory(random, constraints)
         trajectories.add(trajectory)
 
-        val driver = LoopSystemRunner(
-            system, LoopMaxTimes(5000, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong())))
-        )
-        driver.run()
+        interruptAfter(5, TimeUnit.SECONDS) {
+            val runner = LoopSystemRunner(
+                system, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong()))
+            )
+            runner.run()
+        }
+
         val method = Thread.currentThread().stackTrace[2].methodName
         recordings.getAllGraphs().forEach { (name, graph) ->
             graph.saveGraph("${this.javaClass.simpleName}/$method/$name", 300)

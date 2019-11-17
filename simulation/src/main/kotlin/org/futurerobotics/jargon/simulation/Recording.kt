@@ -7,6 +7,7 @@ import org.futurerobotics.jargon.math.Vector2d
 import org.knowm.xchart.XYChart
 import org.knowm.xchart.XYChartBuilder
 import org.knowm.xchart.style.markers.None
+import java.util.concurrent.ConcurrentHashMap
 
 private typealias RecordingsGroup<T> = MutableMap<String, Recording<T>>
 private typealias RecordingsMap<T> = MutableMap<String, RecordingsGroup<T>>
@@ -20,8 +21,8 @@ class Recordings internal constructor(
     builder: BCBuilder
 ) {
 
-    private val xyRecordingsMap: RecordingsMap<Vector2d> = HashMap()
-    private val yRecordingsMap: RecordingsMap<Double> = HashMap()
+    private val xyRecordingsMap: RecordingsMap<Vector2d> = ConcurrentHashMap()
+    private val yRecordingsMap: RecordingsMap<Double> = ConcurrentHashMap()
     private val times: Recording<Double>
 
     init {
