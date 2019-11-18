@@ -5,19 +5,15 @@ import org.futurerobotics.jargon.blocks.control.PosePIDController
 import org.futurerobotics.jargon.interruptAfter
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Interval
-import org.futurerobotics.jargon.math.ValueMotionState
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.convert.*
-import org.futurerobotics.jargon.math.function.QuinticSpline
-import org.futurerobotics.jargon.math.randomVectorDerivatives
 import org.futurerobotics.jargon.pathing.Line
 import org.futurerobotics.jargon.pathing.TangentHeading
 import org.futurerobotics.jargon.pathing.addHeading
-import org.futurerobotics.jargon.pathing.multiplePath
-import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
 import org.futurerobotics.jargon.pathing.trajectory.*
 import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import org.futurerobotics.jargon.saveGraph
+import org.futurerobotics.jargon.statespace.NoiseCovariance
 import org.futurerobotics.jargon.statespace.QRCost
 import org.futurerobotics.jargon.system.looping.FixedTestClock
 import org.futurerobotics.jargon.system.looping.LoopAsFastAsPossible
@@ -27,21 +23,6 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 import kotlin.random.asKotlinRandom
-
-internal fun randomTrajectory(
-    random: kotlin.random.Random,
-    constraints: MotionConstraintSet
-): Trajectory {
-    val segs =
-        (listOf(ValueMotionState(Vector2d.ZERO, Vector2d.polar(1.0, -74 * deg), Vector2d.ZERO)) +
-                List(4) {
-                    randomVectorDerivatives(random, 5.0)
-                }).zipWithNext { a, b ->
-            QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(TangentHeading(74 * deg))
-        }
-    val path = multiplePath(segs)
-    return generateTrajectory(path, constraints, MotionProfileGenParams())
-}
 
 internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
     SomeModels.mecanum,
@@ -55,8 +36,7 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
     1.0 / 20,
     PosePIDController(coeff, coeff, headingCoeff),
     QRCost(idenMat(3) * 2.0, idenMat(4)),
-    idenMat(3) * 0.05,
-    idenMat(4) * 0.05
+    NoiseCovariance(idenMat(3) * 0.05, idenMat(4) * 0.05)
 ) {
 
     private val constraints1 = MotionConstraintSet(
@@ -80,10 +60,11 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
         val path = Line(Vector2d.ZERO, Vector2d(2, 0)).addHeading(TangentHeading)
         val trajectory = generateTrajectory(path, constraints1, MotionProfileGenParams())
         trajectories.add(trajectory)
+
+        val runner = LoopSystemRunner(
+            system, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong()))
+        )
         interruptAfter(5, TimeUnit.SECONDS) {
-            val runner = LoopSystemRunner(
-                system, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong()))
-            )
             runner.run()
         }
 
@@ -109,10 +90,10 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
         val trajectory = randomTrajectory(random, constraints)
         trajectories.add(trajectory)
 
+        val runner = LoopSystemRunner(
+            system, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong()))
+        )
         interruptAfter(5, TimeUnit.SECONDS) {
-            val runner = LoopSystemRunner(
-                system, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong()))
-            )
             runner.run()
         }
 

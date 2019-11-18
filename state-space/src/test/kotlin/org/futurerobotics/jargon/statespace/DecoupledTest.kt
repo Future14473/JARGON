@@ -32,14 +32,14 @@ private val driveModel = NominalDriveModel.mecanumLike(
 internal class DecoupledTest {
     @Test
     fun `will it converge`() {
-        var ssModel = DriveStateSpaceModels.motorVelocityController(driveModel)
+        var mats = DriveStateSpaceModels.motorVelocityController(driveModel)
         //not controllable
         expectCatching {
-            continuousLQR(ssModel, QRCost(idenMat(ssModel.stateSize), idenMat(ssModel.inputSize)))
+            continuousLQR(mats.A, mats.B, idenMat(mats.numStates), idenMat(mats.numInputs))
         }.failed()
-        ssModel = DriveStateSpaceModels.decoupledMotorVelocityController(driveModel, 0.5)
+        mats = DriveStateSpaceModels.decoupledMotorVelocityController(driveModel, 0.5)
         expectCatching {
-            continuousLQR(ssModel, QRCost(idenMat(ssModel.stateSize), idenMat(ssModel.inputSize)))
+            continuousLQR(mats.A, mats.B, idenMat(mats.numStates), idenMat(mats.numInputs))
         }.succeeded()
     }
 }

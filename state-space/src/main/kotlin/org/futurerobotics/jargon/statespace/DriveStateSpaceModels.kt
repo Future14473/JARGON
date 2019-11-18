@@ -6,12 +6,12 @@ import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
 import org.futurerobotics.jargon.mechanics.MotorVelocityModel
 
 /**
- * Utilities for creating common [LinearStateSpaceModel]s from [BotVelocityModel]s.
+ * Utilities for creating common initial [ContinuousStateSpaceMatrices]s from [BotVelocityModel]s.
  */
 object DriveStateSpaceModels {
 
     /**
-     * Derives a [ContinuousLinSSModelImpl] from the given [botVelocityModel] that:
+     * Creates a [ContinuousStateSpaceMatrices] in which:
      *
      * - _state_: is bot's pose velocity in [x, y, heading],
      * - _signal/input_: is a vector of motors' voltages in the same order as given in the [botVelocityModel]
@@ -24,25 +24,20 @@ object DriveStateSpaceModels {
      *
      * @see decoupledMotorVelocityController
      */
-    @Suppress("UnnecessaryVariable")
     @JvmStatic
     fun poseVelocityController(
         botVelocityModel: BotVelocityModel,
         interaction: MotorBotVelInteraction
-    ): ContinuousLinSSModelImpl {
-//        require(driveModel.isHolonomic) { "Drive model must be holonomic" }
-        // perhaps we can get away with it; if we always set the y vel to 0. Needs testing.
-        val size = botVelocityModel.numMotors
-        val a = botVelocityModel.botAccelFromBotVel
-        val b = botVelocityModel.botAccelFromVolts
+    ): ContinuousStateSpaceMatrices {
+        val a = botVelocityModel.botAccelFromBotVel.copy()
+        val b = botVelocityModel.botAccelFromVolts.copy()
         val motorVelFromBotVel = interaction.motorVelFromBotVel
-        val c = motorVelFromBotVel
-        val d = zeroMat(size, size)
-        return ContinuousLinSSModelImpl(a, b, c, d)
+        val c = motorVelFromBotVel.copy()
+        return ContinuousStateSpaceMatrices(a, b, c)
     }
 
     /**
-     * Derives a [ContinuousLinSSModelImpl] from the given [motorVelocityModel] that:
+     * Creates a [ContinuousStateSpaceMatrices] in which:
      *
      * - _state_: is a vector of the motors' angular velocity in the same order as given in the [motorVelocityModel].
      * - _signal/input_: is a vector of motors' voltages in the same order as given in the [motorVelocityModel]
@@ -55,30 +50,25 @@ object DriveStateSpaceModels {
      * @see poseVelocityController
      * @see decoupledMotorVelocityController
      */
-    @Suppress("UnnecessaryVariable")
     @JvmStatic
-    fun motorVelocityController(motorVelocityModel: MotorVelocityModel):
-            ContinuousLinSSModelImpl {
+    fun motorVelocityController(motorVelocityModel: MotorVelocityModel): ContinuousStateSpaceMatrices {
         val motorAccelFromVolts = motorVelocityModel.motorAccelFromVolts
         return getMotorVelocityController(motorVelocityModel, motorAccelFromVolts)
     }
 
     /**
-     * Derives a [ContinuousLinSSModelImpl] similar to in [motorVelocityController]; while also "decoupling" wheel
-     * interactions by multiplying the coupling terms  a factor of [coupling]. 0 means complete decoupling,
-     * 1 means do nothing to the model.
+     * Derives a [ContinuousStateSpaceMatrices] similar to [motorVelocityController]; while also "decoupling" motor
+     * interactions by multiplying the coupling terms a factor of [coupling] (reducing how applying a voltage to one
+     * motor affects the motion of _other_ motors). means complete decoupling, 1 means do nothing to the model.
      *
-     * Empirical testing shows that this model does not perform well under not perfect conditions, which is the
-     * state of the world we live in. Instead, we suggest only using this model as a starting estimate of the actual
-     * model, and tune from there.
-     *
-     * The reason this might be required is that the controller assumes that all wheels have perfect traction, so
-     * the resulting system is uncontrollable for many holonomic drives/drives with more 4 or more wheels (moving one
-     * wheel must move the other wheels, since the bot moves). This breaks the assumption that assumption; by
-     * reducing the "coupling" terms.
+     * While this creates a motor velocity controller that is controllable, it does so at the cost of removing
+     * the model from reality slightly.
      */
     @JvmStatic
-    fun decoupledMotorVelocityController(driveModel: MotorVelocityModel, coupling: Double): ContinuousLinSSModelImpl {
+    fun decoupledMotorVelocityController(
+        driveModel: MotorVelocityModel,
+        coupling: Double
+    ): ContinuousStateSpaceMatrices {
         require(coupling in 0.0..1.0) { "coupling ($coupling) must be between 0 and 1, or else things don't make sense." }
         val motorAccelFromVolts = driveModel.motorAccelFromVolts.apply {
             repeat(rows) { r ->
@@ -90,16 +80,14 @@ object DriveStateSpaceModels {
         return getMotorVelocityController(driveModel, motorAccelFromVolts)
     }
 
-    @Suppress("UnnecessaryVariable")
     private fun getMotorVelocityController(
         motorVelocityModel: MotorVelocityModel,
         motorAccelFromVolts: Mat
-    ): ContinuousLinSSModelImpl {
+    ): ContinuousStateSpaceMatrices {
         val size = motorVelocityModel.numMotors
         val a = -motorAccelFromVolts * motorVelocityModel.voltsFromMotorVel
-        val b = motorAccelFromVolts
+        val b = motorAccelFromVolts.copy()
         val c = idenMat(size)
-        val d = zeroMat(size, size)
-        return ContinuousLinSSModelImpl(a, b, c, d)
+        return ContinuousStateSpaceMatrices(a, b, c)
     }
 }

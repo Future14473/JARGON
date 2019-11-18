@@ -6,10 +6,10 @@ import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import kotlin.random.Random
 
-internal class ContinuousLinSSModelTest {
+internal class DiscretizationTest {
 
     @Test
-    fun discretize() {
+    fun `discretize test`() {
         val random = Random("discretization test".hashCode())
         repeat(5) {
             val A = genMat(3, 3) { _, _ ->
@@ -20,8 +20,8 @@ internal class ContinuousLinSSModelTest {
             }
             val period = 0.5
 
-            val model = ContinuousLinSSModelImpl(A, B, zeroMat(3, 3), zeroMat(3, 2))
-            val discrete = model.discretize(period)
+            val model = ContinuousStateSpaceMatrices(A, B, zeroMat(3, 3))
+            val discrete = discretize(model, period)
             expectThat(discrete.A).isEpsEqTo(expm(A * period))
             val expectedB = A.inv()(discrete.A - idenMat(3)) * B
             expectThat(discrete.B).isEpsEqTo(expectedB)

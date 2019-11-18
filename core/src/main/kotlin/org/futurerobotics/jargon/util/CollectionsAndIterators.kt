@@ -51,6 +51,9 @@ fun <T, R> Map<T, R>.asUnmodifiableMap(): Map<T, R> = Collections.unmodifiableMa
 /** Wraps this set with [Collections.unmodifiableSet]. */
 fun <T> Set<T>.asUnmodifiableSet(): Set<T> = Collections.unmodifiableSet(this)
 
+/** Wraps this collection with [Collections.unmodifiableCollection] */
+fun <T> Collection<T>.asUnmodifiableCollection(): Collection<T> = Collections.unmodifiableCollection(this)
+
 /**
  * Until kotlinx.immutableCollections becomes stable, turns this list into an effectively immutable list
  * by wrapping a copy of this list in [asUnmodifiableList]. Call sparingly.

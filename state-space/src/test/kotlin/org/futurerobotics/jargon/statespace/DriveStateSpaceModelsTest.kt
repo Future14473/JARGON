@@ -39,8 +39,8 @@ internal class DriveStateSpaceModelsTest {
         }.forEach {
             println(it.formatReadable())
         }
-        DriveStateSpaceModels.decoupledMotorVelocityController(model, 0.0).discretize(1 / 20.0).printlnMe()
-        DriveStateSpaceModels.poseVelocityController(model, model).discretize(1 / 20.0).printlnMe()
+        discretize(DriveStateSpaceModels.decoupledMotorVelocityController(model, 0.0), 1 / 20.0).printlnMe()
+        discretize(DriveStateSpaceModels.poseVelocityController(model, model), 1 / 20.0).printlnMe()
     }
 
     @Test
@@ -72,6 +72,6 @@ internal class DriveStateSpaceModelsTest {
         }.forEach {
             println(it.formatReadable())
         }
-        DriveStateSpaceModels.decoupledMotorVelocityController(model, 1.0).discretize(1 / 20.0).printlnMe()
+        discretize(DriveStateSpaceModels.decoupledMotorVelocityController(model, 1.0), 1 / 20.0).printlnMe()
     }
 }

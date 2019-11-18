@@ -71,7 +71,8 @@ class SimulatedFixedDrive(
 
     override var curGlobalPose: Pose2d = Pose2d.ZERO
     //wheel velocity controller
-    private val wheelSSModel = DriveStateSpaceModels.motorVelocityController(driveModel).discretize(timeStep)
+    private val wheelSSModel =
+        DriveStateSpaceModels.motorVelocityController(driveModel).discretize(timeStep)
 
     override fun update(volts: Vec, time: Double) {
 //        require(!volts.isNaN) { "Received NaN volts" }
@@ -83,7 +84,7 @@ class SimulatedFixedDrive(
     private fun singleStep(volts: Vec) {
         val realVolts = volts.map { it.coerceIn(-maxVolts, maxVolts) } + getVoltageNoise()
         val pastMotorVelocities = curMotorVelocities
-        curMotorVelocities = wheelSSModel.processState(pastMotorVelocities, realVolts)
+        curMotorVelocities = wheelSSModel.A * pastMotorVelocities + wheelSSModel.B * realVolts
         val motorDelta = (pastMotorVelocities + curMotorVelocities) * (timeStep / 2)
         curMotorPositions += motorDelta
         val botPoseDelta = Pose2d(driveModel.botVelFromMotorVel(motorDelta))

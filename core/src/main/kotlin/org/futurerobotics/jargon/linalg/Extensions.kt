@@ -18,6 +18,11 @@ inline operator fun Mat.set(row: Int, col: Int, value: Mat): Unit = setSubMatrix
 inline operator fun Vec.set(ind: Int, value: Double): Unit = setEntry(ind, value)
 inline operator fun Vec.set(ind: Int, subVec: Vec): Unit = setSubVector(ind, subVec)
 
+inline operator fun Vec.set(range: IntRange, subVec: Vec) {
+    require(range.last - range.first + 1 == subVec.size) { "subVec $subVec must match range $range" }
+    setSubVector(range.first, subVec)
+}
+
 //times
 
 inline operator fun Mat.times(vec: Vec): Vec = operate(vec)

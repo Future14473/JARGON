@@ -13,6 +13,7 @@ import org.futurerobotics.jargon.pathing.addHeading
 import org.futurerobotics.jargon.pathing.trajectory.*
 import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import org.futurerobotics.jargon.saveGraph
+import org.futurerobotics.jargon.statespace.NoiseCovariance
 import org.futurerobotics.jargon.statespace.QRCost
 import org.futurerobotics.jargon.system.looping.FixedTestClock
 import org.futurerobotics.jargon.system.looping.LoopAsFastAsPossible
@@ -23,7 +24,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 import kotlin.random.asKotlinRandom
 
-//Verdict: clunky and unstable. Do not use directly.
+//Verdict: clunky and unstable, at least for holonomic drive
 internal class HolonomicSimulation2 : DecoupWheelsSimulation(
     SomeModels.mecanum,
     SimulatedFixedDrive(
@@ -46,8 +47,7 @@ internal class HolonomicSimulation2 : DecoupWheelsSimulation(
         idenMat(4),
         idenMat(4) * 20.0
     ),
-    idenMat(4) * 0.01,
-    idenMat(4) * 0.01
+    NoiseCovariance(idenMat(4) * 0.01, idenMat(4) * 0.01)
 ) {
 
     private val constraints1 = MotionConstraintSet(
@@ -75,10 +75,10 @@ internal class HolonomicSimulation2 : DecoupWheelsSimulation(
         val trajectory = generateTrajectory(path, constraints1, MotionProfileGenParams())
         trajectories.add(trajectory)
 
+        val runner = LoopSystemRunner(
+            system, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong()))
+        )
         interruptAfter(5, TimeUnit.SECONDS) {
-            val runner = LoopSystemRunner(
-                system, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong()))
-            )
             runner.run()
         }
 
@@ -104,10 +104,10 @@ internal class HolonomicSimulation2 : DecoupWheelsSimulation(
         val trajectory = randomTrajectory(random, constraints1)
         trajectories.add(trajectory)
 
+        val runner = LoopSystemRunner(
+            system, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong()))
+        )
         interruptAfter(5, TimeUnit.SECONDS) {
-            val runner = LoopSystemRunner(
-                system, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong()))
-            )
             runner.run()
         }
 

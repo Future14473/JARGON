@@ -6,7 +6,7 @@ import org.futurerobotics.jargon.blocks.Shutdown
 import org.futurerobotics.jargon.blocks.buildBlockSystem
 import org.futurerobotics.jargon.blocks.control.*
 import org.futurerobotics.jargon.blocks.functional.ExternalQueue
-import org.futurerobotics.jargon.blocks.functional.ShiftMotionOnlyToState
+import org.futurerobotics.jargon.blocks.functional.MotionOnlyToVelocityState
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.*
 import org.futurerobotics.jargon.mechanics.NominalDriveModel
@@ -18,10 +18,9 @@ internal abstract class DecoupWheelsSimulation(
     protected val driveModel: NominalDriveModel,
     simulatedDrive: SimulatedFixedDrive,
     val period: Double,
-    nonFFController: PosePIDController,
+    nonFFController: Controller<Pose2d, Pose2d, Pose2d>,
     lqrCost: QRCost,
-    kfilterQ: Mat,
-    kfilterR: Mat
+    noiseCovariance: NoiseCovariance
 ) {
 
     protected val trajectories: ExternalQueue<Trajectory> = ExternalQueue()
@@ -29,28 +28,39 @@ internal abstract class DecoupWheelsSimulation(
     protected val recordings: Recordings
 
     init {
-        val numWheels = driveModel.numMotors
+        val numMotors = driveModel.numMotors
         val motorsBlock = SimulatedDriveBlock(simulatedDrive)
         val gyro = GyroReading(
             SimulatedGyro(simulatedDrive)
         )
 
-        val continuous = DriveStateSpaceModels.decoupledMotorVelocityController(driveModel, 0.5)
-        val kGain = continuousLQR(continuous, lqrCost)
+        val matrices = DriveStateSpaceModels.decoupledMotorVelocityController(driveModel, 0.5)
 
-        val ssModel = continuous.discretize(period)
+        val discMatrices = discretize(matrices, 1 / 20.0)
+        val discCost = discretizeQrCost(matrices, lqrCost, 1 / 20.0)
+        val runner = StateSpaceRunnerBuilder()
+            .setMatrices(discMatrices)
+            .addGainController(discreteLQR(discMatrices, discCost))
+            .addReferenceTracking(plantInversion(discMatrices, null))
+            .addKalmanFilter {
+                setNoiseCovariance(noiseCovariance)
+                setInitialProcessCovariance(idenMat(numMotors) * 0.05)
+            }.build()
 
         val recordings: Recordings
         val system = buildBlockSystem {
             recordings = Recordings(this).apply {
-                val queue = trajectories
-                val follower = TimeOnlyMotionProfileFollower<MotionState<Pose2d>>(
+                fun Block.Output<Double>.recordY(s: String, s1: String) = recordY(this, s, s1)
+
+                fun Block.Output<Vector2d>.recordXY(s: String, s1: String) = recordXY(this, s, s1)
+
+                val profileFollower = TimeOnlyMotionProfileFollower<MotionState<Pose2d>>(
                     ValueMotionState.ofAll(Pose2d.ZERO)
                 )() {
-                    profileInput from queue.output
+                    profileInput from trajectories.output
                 }
 
-                val refState = follower.output
+                val refState = profileFollower.output
                 val positionController = FeedForwardWrapper.withAdder(
                     nonFFController,
                     Pose2d::plus
@@ -58,13 +68,6 @@ internal abstract class DecoupWheelsSimulation(
                     reference from refState
                 }
 
-                fun Block.Output<Double>.recordY(s: String, s1: String) {
-                    recordY(this, s, s1)
-                }
-
-                fun Block.Output<Vector2d>.recordXY(s: String, s1: String) {
-                    recordXY(this, s, s1)
-                }
                 refState.pipe { it.value.x }.recordY("x reference", "reference value")
                 refState.pipe { it.value.y }.recordY("y reference", "reference value")
                 refState.pipe { it.value.heading }.recordY("heading reference", "reference value")
@@ -81,37 +84,35 @@ internal abstract class DecoupWheelsSimulation(
                 val wheelVelRef = botMotion.output
                     .pipe(BotToMotorMotion(driveModel)).also {
                         val refs = it.pipe { it.vel }
-                        repeat(numWheels) { i ->
+                        repeat(numMotors) { i ->
                             recordY(refs.pipe { it[i] }, "Wheel velocities $i", "Reference $i")
                         }
                     }
-                    .pipe(ShiftMotionOnlyToState(zeroVec(numWheels)))
+                    .pipe(MotionOnlyToVelocityState(zeroVec(numMotors)))
 
-                val ssController = SSControllerWithFF(ssModel, kGain)() { reference from wheelVelRef }
+                val ssController = StateSpaceRunnerBlock(
+                    runner, zeroVec(numMotors)
+                )() {
+                    referenceMotionState from wheelVelRef
+                }
+                motorsBlock {
+                    motorVolts from ssController.signal
+                    ssController.measurement from motorVelocities
+                }
 
-
-
-                motorsBlock.motorVolts from ssController.signal
-                    .apply {
-                        repeat(numWheels) { i ->
-                            recordY(pipe { it[i] }, "Voltages", "Voltage $i")
-                        }
+                ssController.signal.apply {
+                    repeat(numMotors) { i ->
+                        recordY(pipe { it[i] }, "Voltages", "Voltage $i")
                     }
+                }
 
-
-                LinearKalmanFilter(ssModel, kfilterQ, kfilterR)() {
-                    measurement from motorsBlock.motorVelocities
-                    signal from ssController.signal.delay(zeroVec(numWheels))
-                    output into ssController.state
-
-                    val measured = this
-                    repeat(numWheels) { i ->
-                        recordY(measured.output.pipe { it[i] }, "Wheel velocities $i", "Estimated $i")
-                    }
-                    val actual = motorsBlock.motorVelocities
-                    repeat(numWheels) { i ->
-                        recordY(actual.pipe { it[i] }, "Wheel velocities $i", "Actual $i")
-                    }
+                val measured = ssController.measurement.source()!!
+                repeat(numMotors) { i ->
+                    recordY(measured.pipe { it[i] }, "Wheel velocities $i", "Estimated $i")
+                }
+                val actual = generate { simulatedDrive.curMotorVelocities }
+                repeat(numMotors) { i ->
+                    recordY(actual.pipe { it[i] }, "Wheel velocities $i", "Actual $i")
                 }
 
                 val delta = MotorToBotDelta(driveModel)() {
@@ -131,7 +132,7 @@ internal abstract class DecoupWheelsSimulation(
 
                 val refS = refState.pipe { it.value }
                 Shutdown().signal from generate {
-                    !follower.isFollowing.get && (tracker.output.get - refS.get).let { (vec, heading) ->
+                    !profileFollower.isFollowing.get && (tracker.output.get - refS.get).let { (vec, heading) ->
                         max(abs(vec.x), abs(vec.y), angleNorm(heading)) < 0.1
                     }
                 }
@@ -143,7 +144,7 @@ internal abstract class DecoupWheelsSimulation(
                 actualPose.pipe { it.x }.recordY("x reference", "Actual value")
                 actualPose.pipe { it.y }.recordY("y reference", "Actual value")
                 actualPose.pipe { it.heading }.recordY("heading reference", "Actual value")
-                repeat(numWheels) { i ->
+                repeat(numMotors) { i ->
                     recordY(ssController.signal.pipe { it[i] }, "Wheel velocities $i", "Voltage $i")
                 }
             }

@@ -2,7 +2,7 @@
  * The classes in this file are derivatives of similar classes in the Hipparchus project v1.5.
  * They were copied, converted to kotlin, and modified so that they solve the
  * *Discrete* Algebraic Ricatti Equation (approximately).
- * License for the Hipparchus project can be found in "Third Party Licences/Hipparchus"
+ * License (Apache 2.0) for the Hipparchus project can be found in "Third Party Licences/Hipparchus"
  *
  * The original Hipparchus project files have the following copyright notice:
  *
@@ -164,7 +164,7 @@ class DiscreteRicattiEquationSolverImpl(
      * @param A state transition matrix
      * @param B control multipliers matrix
      * @param Q state cost matrix
-     * @param A_inv state cost matrix
+     * @param A_inv inverse of matrix A
      * @param R_inv inverse of matrix R
      * @return initial solution
      */
@@ -176,7 +176,7 @@ class DiscreteRicattiEquationSolverImpl(
         val AiT = A_inv.T
         //formula changed for DARE instead
         //use kotlin extensions & func to build the z matrix instead
-        val z = MatConcat.concat2x2(
+        val z = concat2x2(
             A + B * R_inv * BT * AiT * Q, -B * R_inv * BT * AiT,
             -AiT * Q, AiT
         )

@@ -1,9 +1,21 @@
 package org.futurerobotics.jargon.simulation
 
+import org.futurerobotics.jargon.math.ValueMotionState
+import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.convert.*
+import org.futurerobotics.jargon.math.function.QuinticSpline
+import org.futurerobotics.jargon.math.randomVectorDerivatives
 import org.futurerobotics.jargon.mechanics.MotorModel
 import org.futurerobotics.jargon.mechanics.NominalDriveModel
 import org.futurerobotics.jargon.mechanics.TransmissionModel
+import org.futurerobotics.jargon.pathing.TangentHeading
+import org.futurerobotics.jargon.pathing.addHeading
+import org.futurerobotics.jargon.pathing.multiplePath
+import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
+import org.futurerobotics.jargon.pathing.trajectory.MotionConstraintSet
+import org.futurerobotics.jargon.pathing.trajectory.Trajectory
+import org.futurerobotics.jargon.pathing.trajectory.generateTrajectory
+import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import kotlin.math.pow
 
 internal object SomeModels {
@@ -27,4 +39,19 @@ internal object SomeModels {
             14 * `in`
         )
     }
+}
+
+internal fun randomTrajectory(
+    random: kotlin.random.Random,
+    constraints: MotionConstraintSet
+): Trajectory {
+    val segs =
+        (listOf(ValueMotionState(Vector2d.ZERO, Vector2d.polar(1.0, -74 * deg), Vector2d.ZERO)) +
+                List(4) {
+                    randomVectorDerivatives(random, 5.0)
+                }).zipWithNext { a, b ->
+            QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(TangentHeading(74 * deg))
+        }
+    val path = multiplePath(segs)
+    return generateTrajectory(path, constraints, MotionProfileGenParams())
 }

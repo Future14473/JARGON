@@ -52,4 +52,11 @@ interface BlockConnections {
  * A configuration of connected blocks. Created using [BCBuilder]
  */
 class BlockConfig internal constructor(override val connections: Map<Block, BlockConnections>) :
-    AbstractReadOnlyBlockConfig()
+    AbstractReadOnlyBlockConfig() {
+
+    companion object {
+        /** Creates a new [BCBuilder]. */
+        @JvmStatic
+        fun builder(): BCBuilder = BCBuilder()
+    }
+}

@@ -1,103 +1,99 @@
 package org.futurerobotics.jargon.statespace
 
-import org.futurerobotics.jargon.blocks.Block
-import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
-import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import org.futurerobotics.jargon.linalg.*
 import org.hipparchus.filtering.kalman.Measurement
 import org.hipparchus.filtering.kalman.ProcessEstimate
 import org.hipparchus.filtering.kalman.linear.LinearEvolution
 import org.hipparchus.filtering.kalman.linear.LinearProcess
 import org.hipparchus.linear.LUDecomposer
+import org.hipparchus.linear.RealMatrix
 import org.hipparchus.linear.RealVector
-import kotlin.math.roundToLong
 import org.hipparchus.filtering.kalman.linear.LinearKalmanFilter as InnerKalmanFilter
 
-private val DECOMP = LUDecomposer(1e-11)
+private val DECOMPOSITION = LUDecomposer(1e-11)
 
 /**
- * A Kalman Filter [Block]. Works best when the system always runs near the model's period.
+ * A Linear Kalman Filter for a [StateSpaceObserver].
  *
- * @param model the "base" state space model
- * @param Q the process noise covariance
- * @param R the measurement noise covariance
- *
+ * @param noiseCovarianceProvider the [NoiseCovarianceProvider]
+ * @param initialCovariance the initial process covariance
  */
 class LinearKalmanFilter(
-    private val model: DiscreteLinearStateSpaceModel,
-    private val Q: Mat,
-    private val R: Mat
-) : PrincipalOutputBlock<Vec>(ALWAYS) {
+    private val noiseCovarianceProvider: NoiseCovarianceProvider,
+    private val initialCovariance: Mat
+) : StateSpaceObserver {
 
-    /** Measurement vector input */
-    val measurement: Input<Vec> = newInput()
-    /** Signal vector input */
-    val signal: Input<Vec> = newInput()
+    private var initialized: Boolean = false
 
+    private var lastNanos = 0L
     private var filter: InnerKalmanFilter<Measurement>? = null
-    private val measurementObj = object : Measurement {
-        @JvmField
-        var value: Vec? = null
-        @JvmField
-        var timeNanos = 0L
 
-        override fun getCovariance(): Mat = R
+    private val data = object : Measurement, LinearProcess<Measurement> {
 
-        override fun getValue(): RealVector? = value
-
-        override fun getTime(): Double = timeNanos / 1e9
-    }
-    private val linearProcess = object : LinearProcess<Measurement> {
-        val signal: Vec = zeroVec(model.inputSize)
-
-        private val linearEvolution
-            get() = LinearEvolution(model.A, model.B, signal, Q, model.C)
-
-        override fun getEvolution(measurement: Measurement?): LinearEvolution = linearEvolution
-    }
-    private var stateCovariance = steadyStateKalmanErrorCov(model, Q, R)
-    private var lastUpdate: ProcessEstimate? = null
-    private var pastOutput: Vec? = null
-    override fun init() {
-        lastUpdate?.covariance?.let {
-            stateCovariance = it
+        private lateinit var evolution: LinearEvolution
+        private lateinit var y: Vec
+        lateinit var noise: NoiseCovariance
+        private var time: Double = 0.0
+        fun update(
+            matrices: StateSpaceMatrices,
+            x: Vec,
+            u: Vec,
+            y: Vec,
+            timeInNanos: Long
+        ) {
+            noise = noiseCovarianceProvider.getNoise(matrices, x, u, y, timeInNanos)
+            this.y = y
+            evolution = LinearEvolution(matrices.A, matrices.B, u, noise.Q, matrices.C)
+            time = timeInNanos / 1e9
         }
-        measurementObj.value = null
-        measurementObj.timeNanos = 0L
-        lastUpdate = null
-        filter = null //reset filter with new state, perhaps.
+
+        override fun getCovariance(): RealMatrix = noise.R
+
+        override fun getValue(): RealVector = y
+
+        override fun getTime(): Double = time
+
+        override fun getEvolution(measurement: Measurement?): LinearEvolution = evolution
     }
 
-    override fun Context.getOutput(): Vec {
-        val measurement = measurement.get
-        val filter = filter ?: InnerKalmanFilter(
-            DECOMP, linearProcess, ProcessEstimate(
-                totalTime, pastOutput
-                    ?: model.C.solve(measurement),
-                stateCovariance
-            )
-        ).also { filter = it }
-        val loopTime = loopTime
-        val lastNanos = measurementObj.timeNanos
-        val elapsedNanos = (loopTime * 1e9).roundToLong()
-        val nowNanos = lastNanos + elapsedNanos
-        val periodNanos = (model.period * 1e9).roundToLong()
-        if (loopTime != 0.0) {
+    private var stateOverride: Vec? = null
+
+    override var currentState: Vec
+        get() = filter?.corrected?.state ?: stateOverride
+        ?: throw IllegalStateException("Initial state must be provided.")
+        set(value) {
+            stateOverride = value
+        }
+
+    override fun reset(initialState: Vec) {
+        stateOverride = initialState
+        filter = null
+    }
+
+    override fun update(matrices: DiscreteStateSpaceMatrices, u: Vec, y: Vec, timeInNanos: Long): Vec {
+        val filter = filter
+        val stateOverride = stateOverride
+        return if (stateOverride != null || filter == null) {
+            //first time
+            val x = stateOverride ?: throw IllegalStateException("Initial state must be provided.")
+            this.stateOverride = null
+            data.update(matrices, x, u, y, timeInNanos)
+
+            val processEstimate = ProcessEstimate(0.0, x, initialCovariance)
+            this.filter = InnerKalmanFilter(DECOMPOSITION, data, processEstimate)
+            x
+        } else {
             var curNanos = lastNanos
-            do {
+            var x: Vec = filter.corrected.state
+            val periodNanos = matrices.periodInNanos
+            while (curNanos + periodNanos / 2 <= timeInNanos) {
                 curNanos += periodNanos
-                measurementObj.value = measurement
-                measurementObj.timeNanos = curNanos
-
-                val signal = signal.get
-                linearProcess.signal setTo signal
-
-                filter.estimationStep(measurementObj)
-            } while (curNanos + periodNanos <= nowNanos)
-        }
-        filter.corrected.let {
-            lastUpdate = it
-            return it.state
+                data.update(matrices, x, u, y, timeInNanos)
+                x = filter.estimationStep(data).state
+            }
+            x
+        }.also {
+            lastNanos = timeInNanos
         }
     }
 }
