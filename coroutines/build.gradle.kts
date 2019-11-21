@@ -1,10 +1,14 @@
+val ext = project.rootProject.extra
+
+val coroutines: String by ext
+
 plugins {
     kotlin("jvm")
 }
 
 dependencies {
     implementation(project(":core"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2")
+    implementation(coroutines)
 }
 
 extra["publish"] = true

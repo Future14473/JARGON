@@ -12,7 +12,7 @@ val dokka by extra("org.jetbrains.dokka")
 
 val hipparchus by extra<(String) -> String> { { "org.hipparchus:hipparchus-$it:$hipparchusVersion" } }
 
-val coroutines by extra("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1")
+val coroutines by extra("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2")
 
 val xchart by extra("org.knowm.xchart:xchart:$xchartVersion")
 val junit by extra("junit:junit:$junitVersion")
