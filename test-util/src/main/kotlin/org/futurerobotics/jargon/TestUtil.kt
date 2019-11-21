@@ -1,27 +1,24 @@
 package org.futurerobotics.jargon
 
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
-import kotlin.concurrent.withLock
 
 /**
- * Runs the [block] in a separate thread, and interrupts it after the given [time] and [unit].
+ * Runs the [block] in this thread, and interrupts it after the given [time] and [unit],
+ * then tries to clear the interrupt flag.
  */
-fun interruptAfter(time: Long, unit: TimeUnit, block: () -> Unit) {
-    val lock = ReentrantLock()
-    val condition = lock.newCondition()
+inline fun interruptAfter(time: Long, unit: TimeUnit, block: () -> Unit) {
 
-    var running = true
-    val thread = thread {
-        block()
-        lock.withLock {
-            running = false
-            condition.signalAll()
+    val runnerThread = Thread.currentThread()
+    val interrupter = thread {
+        try {
+            Thread.sleep(unit.toMillis(time))
+            runnerThread.interrupt()
+        } catch (e: InterruptedException) {
+
         }
     }
-    lock.withLock {
-        if (running) condition.await(time, unit)
-    }
-    thread.interrupt()
+    block()
+    interrupter.interrupt()
+    Thread.interrupted()
 }
