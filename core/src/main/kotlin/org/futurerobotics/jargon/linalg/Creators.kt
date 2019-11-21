@@ -86,73 +86,37 @@ fun normRandMat(rows: Int, cols: Int, random: Random = Random()): Mat = zeroMat(
 
 /** Creates a vector using the given [values]. Used for vector literals. */
 @Suppress("FunctionName")
+@JvmSynthetic
 fun Vec(vararg values: Number): Vec {
     val doubles = DoubleArray(values.size) { values[it].toDouble() }
     return ArrayRealVector(doubles, false)
 }
 
 /**
- * Creates a matrix using the given values. Used for matrix literals.
+ * Creates a matrix using the given number values, as a matrix literals.
  *
- * Values are separated by commas, and
- * use [end] to separate rows. [end] can be either with the value [end] or the infix function [end];
- * depending on if you are in kotlin land or java land.
+ * Number values should be separated by commas, and rows separated using the
+ * infix function [to].
  *
  * For example:
+ * ```kotlin
+ * Mat(
+ *  1, 2, 3 to
+ *  4, 5, 6 to
+ *  6, 7, 0
+ * )
+ * ```
  *
- * in java (static imports recommended)
- * ```
- * mat(3, -4,  5.2, end,
- *     5,  6,  7,   end,
- *     4, -1,  0)
- * ```
+ * In java, use [createMat] instead with a 2d array literal.
  */
 @Suppress("FunctionName")
+@JvmSynthetic
 fun Mat(vararg values: Any): Mat {
-    val ends = values.count { it === end }
-    val pairs = values.count { it is Pair<*, *> }
-    val items = values.size - ends + pairs
-    val rows = ends + pairs + 1
-    val cols = items / rows
-    require(rows * cols == items) { "Even rows/cols not given" }
-    val out = zeroMat(rows, cols)
-    var curRow = 0
-    var curCol = 0
-    values.forEach {
-        when (it) {
-            is Number -> {
-                require(curCol < cols) { "Even cols not given" }
-                out[curRow, curCol] = it.toDouble()
-                curCol++
-            }
-
-            is Pair<*, *> -> {
-                val (a, b) = it
-                require(a is Number && b is Number) { "Invalid value given" }
-                require(curRow < rows) { "Even cols not given" }
-                out[curRow, curCol] = a.toDouble()
-                curRow++
-                out[curRow, 0] = b.toDouble()
-                curCol = 1
-            }
-
-            end -> {
-                require(curRow < rows) { "Even rows not given" }
-                curRow++
-                curCol = 0
-            }
-            else -> require(false) { "Invalid value given" }
-        }
-    }
-    return out
+    lateinit var mat: Mat
+    varargEndToArr<Number>(
+        values,
+        { r, c -> mat = zeroMat(r, c) },
+        { r, c, e -> mat[r, c] = e.toDouble() }
+    )
+    return mat
 }
-
-/**
- * Value used to indicate the end of a row in [Mat]
- */
-val end: Any = Any()
-
-/**
- * Infix function used to indicate the end of a row in [Mat].
- */
-infix fun Number.end(other: Number): Pair<Number, Number> = this to other

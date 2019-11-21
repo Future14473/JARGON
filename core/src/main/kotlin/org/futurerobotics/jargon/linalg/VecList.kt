@@ -34,7 +34,7 @@ fun Vec.asMutableList(): MutableList<Double> = object : AbstractMutableList<Doub
 }
 
 /**
- * Converts this vector to a mutable list.
+ * Converts this vector to a list.
  */
 fun Vec.toList(): List<Double> = toMutableList()
 
@@ -45,3 +45,6 @@ fun Vec.toMutableList(): MutableList<Double> = MutableList(size) { get(it) }
 
 /** Converts this list of doubles to a [Vec]. */
 fun List<Double>.toVec(): Vec = createVec(this)
+
+/** Converts this array of doubles to a [Vec]. */
+fun DoubleArray.toVec(): Vec = createVec(this, true)

@@ -2,8 +2,6 @@
 
 package org.futurerobotics.jargon.linalg
 
-import org.hipparchus.linear.*
-
 //get set
 
 inline operator fun Mat.get(row: Int, col: Int): Double = getEntry(row, col)
@@ -100,15 +98,3 @@ inline val Mat.cols: Int get() = columnDimension
 inline val Mat.rows: Int get() = rowDimension
 
 inline val Vec.size: Int get() = dimension
-
-fun Mat.solve(vec: Vec): Vec = getSolver().solve(vec)
-fun Mat.solve(mat: Mat): Mat = getSolver().solve(mat)
-
-fun Mat.getSolver(): DecompositionSolver = when {
-    isSquare -> LUDecomposition(this).solver
-    else -> QRDecomposition(this).solver
-}
-
-fun Mat.inv(): Mat = MatrixUtils.inverse(this)
-
-fun Mat.pinv(): Mat = SingularValueDecomposition(this).solver.inverse

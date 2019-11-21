@@ -2,10 +2,40 @@
 
 package org.futurerobotics.jargon.linalg
 
+import org.futurerobotics.jargon.math.EPSILON
+import org.futurerobotics.jargon.math.distTo
 import org.futurerobotics.jargon.math.epsEq
-import org.hipparchus.linear.RealMatrixPreservingVisitor
+import org.hipparchus.linear.*
 import java.text.DecimalFormat
 import kotlin.math.*
+
+/**
+ * Solves for x in Ax=b, with a = this matrix, and b = the given [vec].
+ */
+fun Mat.solve(vec: Vec): Vec = getSolver().solve(vec)
+
+/**
+ * Solves for X in AX = B, with a = this matrix, and B = the given [mat].
+ */
+fun Mat.solve(mat: Mat): Mat = getSolver().solve(mat)
+
+/**
+ * Gets a general [DecompositionSolver] for the given matrix.
+ */
+fun Mat.getSolver(): DecompositionSolver = when {
+    isSquare -> LUDecomposition(this).solver
+    else -> QRDecomposition(this).solver
+}
+
+/**
+ * Finds the inverse of this matrix.
+ */
+fun Mat.inv(): Mat = MatrixUtils.inverse(this)
+
+/**
+ * Finds the pseudo inverse of this matrix.
+ */
+fun Mat.pinv(): Mat = SingularValueDecomposition(this).solver.inverse
 
 /**
  * Sets this vector to the given [vec].
@@ -49,6 +79,19 @@ fun Vec.epsEq(vec: Vec, epsilon: Double): Boolean {
     require(size == vec.size) { "Dimension mismatch" }
     repeat(size) { i ->
         if (!this[i].epsEq(vec[i], epsilon)) return false
+    }
+    return true
+}
+
+/**
+ * Returns true if this matrix is square, and symmetric with a tolerance of [epsilon].
+ */
+fun Mat.isSymmetric(epsilon: Double = EPSILON): Boolean {
+    if (!isSquare) return false
+    for (r in 0 until rows) {
+        for (c in r + 1 until cols) {
+            if (this[r, c] distTo this[c, r] >= epsilon) return false
+        }
     }
     return true
 }
@@ -151,6 +194,11 @@ fun Mat.normMax(): Double = walkInOptimizedOrder(object : RealMatrixPreservingVi
     override fun start(rows: Int, columns: Int, startRow: Int, endRow: Int, startColumn: Int, endColumn: Int) {
     }
 })
+
+/**
+ * Returns a copy of this matrix if [copyMat] is true, else returns this.
+ */
+fun Mat.copyIf(copyMat: Boolean): Mat = if (copyMat) copy() else this
 
 /**
  * Computes the matrix exponential (`e^X`) of the given matrix [mat].

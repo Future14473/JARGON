@@ -12,13 +12,13 @@ import java.util.*
 internal class MultipleMatrixFitterTest {
     private val real = listOf(
         Mat(
-            1.2, 2.1, end,
-            -3.2, 4.8, end,
-            5.3, 2.9
+            1.2, 2.1 to
+                    -3.2, 4.8 to
+                    5.3, 2.9
         ), Mat(
-            -1.0, 0, -4, end,
-            7.2, -1, 2, end,
-            3.3, 5, -0.5
+            -1.0, 0, -4 to
+                    7.2, -1, 2 to
+                    3.3, 5, -0.5
         )
     )
 

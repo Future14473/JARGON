@@ -33,11 +33,11 @@ class QuinticPolynomial(
     companion object {
         private const val serialVersionUID: Long = 6276660574389428855
         private val fromControlPoints = Mat(
-            -1, 5, -10, 10, -5, 1 end
-                    5, -20, 30, -20, 5, 0 end
-                    -10, 30, -30, 10, 0, 0 end
-                    10, -20, 10, 0, 0, 0 end
-                    -5, 5, 0, 0, 0, 0 end
+            -1, 5, -10, 10, -5, 1 to
+                    5, -20, 30, -20, 5, 0 to
+                    -10, 30, -30, 10, 0, 0 to
+                    10, -20, 10, 0, 0, 0 to
+                    -5, 5, 0, 0, 0, 0 to
                     1, 0, 0, 0, 0, 0
         )
 
@@ -65,11 +65,11 @@ class QuinticPolynomial(
         }
 
         private val fromDerivatives = Mat(
-            -6, -3, -0.5, 6, -3, 0.5 end
-                    15, 8, 1.5, -15, 7, -1 end
-                    -10, -6, -1.5, 10, -4, 0.5 end
-                    0, 0, 0.5, 0, 0, 0 end
-                    0, 1, 0, 0, 0, 0 end
+            -6, -3, -0.5, 6, -3, 0.5 to
+                    15, 8, 1.5, -15, 7, -1 to
+                    -10, -6, -1.5, 10, -4, 0.5 to
+                    0, 0, 0.5, 0, 0, 0 to
+                    0, 1, 0, 0, 0, 0 to
                     1, 0, 0, 0, 0, 0
         )
 
