@@ -12,8 +12,8 @@ inline operator fun Vec.get(ind: Int): Double = getEntry(ind)
 inline operator fun Vec.get(indices: IntRange): Vec =
     getSubVector(indices.first, indices.last - indices.first + 1)
 
-inline operator fun Mat.set(row: Int, col: Int, subMat: Double): Unit = setEntry(row, col, subMat)
-inline operator fun Mat.set(row: Int, col: Int, value: Mat): Unit = setSubMatrix(value.data, row, col)
+inline operator fun Mat.set(row: Int, col: Int, value: Double): Unit = setEntry(row, col, value)
+inline operator fun Mat.set(row: Int, col: Int, subMat: Mat): Unit = setSubMatrix(subMat.data, row, col)
 
 inline operator fun Vec.set(ind: Int, value: Double): Unit = setEntry(ind, value)
 inline operator fun Vec.set(ind: Int, subVec: Vec): Unit = setSubVector(ind, subVec)

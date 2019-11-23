@@ -4,7 +4,7 @@ import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.util.asUnmodifiableSet
 
 /**
- * A [Curve] that is traveling along a straight Line, starting at [startPos] and ending at [endPos]
+ * A [Curve] that is traveling along a straight Line, starting at [startPos] and ending at `endPos.`
  */
 class Line(private val startPos: Vector2d, endPos: Vector2d) : Curve {
 

@@ -74,7 +74,7 @@ class QuinticPolynomial(
         )
 
         /**
-         * Creates a Quintic polynomial defined by start and endpoint [Derivatives]
+         * Creates a Quintic polynomial defined by start and endpoint [MotionState]s.
          */
         @JvmStatic
         fun fromDerivatives(

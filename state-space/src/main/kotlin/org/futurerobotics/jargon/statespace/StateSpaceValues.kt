@@ -57,6 +57,13 @@ class ContinuousStateSpaceMatrices(
 
     /** Discretizes this state-space system using zero-order hold over a given [period]. */
     fun discretize(period: Double): DiscreteStateSpaceMatrices = discretize(this, period)
+
+    /**
+     * Discretizes a given [cost] in the context of these state space matrices, using zero-order hold over a
+     * given [period].
+     */
+    fun discretizeQRCost(cost: QRCost, period: Double): QRCost =
+        discretizeQRCost(this, cost, period)
 }
 
 /**

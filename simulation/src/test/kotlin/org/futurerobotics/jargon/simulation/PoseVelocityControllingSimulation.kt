@@ -38,7 +38,7 @@ internal abstract class PoseVelocityControllingSimulation(
         val matrices = DriveStateSpaceModels.poseVelocityController(driveModel, driveModel)
 
         val discMatrices = discretize(matrices, 1 / 20.0)
-        val discCost = discretizeQrCost(matrices, lqrCost, 1 / 20.0)
+        val discCost = discretizeQRCost(matrices, lqrCost, 1 / 20.0)
         val runner = StateSpaceRunnerBuilder()
             .setMatrices(discMatrices)
             .addGainController(discreteLQR(discMatrices, discCost))

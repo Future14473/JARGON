@@ -120,7 +120,7 @@ open class NominalDriveModel
 
         /**
          * Creates a drive model for a mecanum-like drive, with wheels in
-         * [front left, front right, back left, back right] order, using NWU orientation.
+         * `[`front left, front right, back left, back right`]` order, using NWU orientation.
          */
         @JvmStatic
         @JvmOverloads

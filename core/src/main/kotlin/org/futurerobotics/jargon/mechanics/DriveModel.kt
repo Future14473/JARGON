@@ -176,7 +176,6 @@ interface BotVelocityModel {
 /**
  * Represents how to transforming of motor velocities/accelerations into bot velocities/accelerations, and vice versa.
  */
-//neither continuous nor discrete
 interface MotorBotVelInteraction {
 
     /** The number of motors/wheels. */

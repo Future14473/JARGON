@@ -54,7 +54,7 @@ class StateSpaceRunner internal constructor(
      *
      * or set to manually override the current state _before [StateDecorator.augmentInitialState]_.
      *
-     * @throws IllegalStateException if reset has never been called yet.
+     * @throws IllegalStateException on _get_ if reset has never been called yet.
      *
      * @see allCurrentStates
      */
@@ -69,7 +69,7 @@ class StateSpaceRunner internal constructor(
      *
      * or set to manually override the state _including any augmentations_
      *
-     * @throws IllegalStateException if reset has never been called yet.
+     * @throws IllegalStateException on _get_ if reset has never been called yet.
      *
      * @see currentState
      */
@@ -209,6 +209,7 @@ class StateSpaceRunnerBuilder {
         setObserver(LinearKalmanFilterBuilder().apply(configuration).build())
     }
 
+    /** Builds the [StateSpaceRunner]. */
     fun build(): StateSpaceRunner {
         return StateSpaceRunner(
             controller ?: throw IllegalStateException("Controller not provided"),

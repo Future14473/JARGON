@@ -4,10 +4,10 @@ import org.futurerobotics.jargon.errorTo
 import kotlin.random.Random
 
 /**
- * Creates a random set of [ValueDerivatives] of [Vector2d]
+ * Creates a random set of [ValueMotionState] of [Vector2d]
  */
 fun randomVectorDerivatives(random: Random, range: Double): ValueMotionState<Vector2d> =
-    ValueMotionState<Vector2d>(
+    ValueMotionState(
         random.nextVector2d(range), random.nextVector2d(range), random.nextVector2d(range)
     )
 

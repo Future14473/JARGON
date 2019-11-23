@@ -40,6 +40,10 @@ abstract class VaryingReferenceTrackingFeedForward : FeedForward {
         } else zeroVec(Kff.rows)
     }
 
+    /**
+     * Gets the current `Kff` matrix, given the current [matrices], reference [r], and next reference [r1] if
+     * known.
+     */
     abstract fun getKff(matrices: DiscreteStateSpaceMatrices, r: Vec, r1: Vec?): Mat
 }
 

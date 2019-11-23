@@ -157,6 +157,7 @@ class PathBuilder(curveGenParams: CurveGenParams = CurveGenParams()) : GenericPa
         check(lastPoint == null && waypoints.size == 1) { "Can only set initial heading after first point" }
         val waypoint = waypoints.first()
         lastPoint = object : PathPoint {
+            @Suppress("ObjectPropertyName")
             private var _point: CurvePoint? = null
             private val point
                 get() = _point ?: curves.firstOrNull()?.startPoint()?.also {
@@ -224,9 +225,9 @@ class PathBuilder(curveGenParams: CurveGenParams = CurveGenParams()) : GenericPa
     fun heading(heading: ContinuationHeadingProvider): PathBuilder = builder {
         check(numCurves != 0) { "No curve to add heading to" }
         val numCurves = numCurves
-        when {
-            headingProviders.size == numCurves -> headingProviders[headingProviders.lastIndex] = heading
-            headingProviders.size == numCurves - 1 -> headingProviders += heading
+        when (headingProviders.size) {
+            numCurves -> headingProviders[headingProviders.lastIndex] = heading
+            numCurves - 1 -> headingProviders += heading
             else -> {
                 fillInHeadingProviders()
                 headingProviders[headingProviders.lastIndex] = heading

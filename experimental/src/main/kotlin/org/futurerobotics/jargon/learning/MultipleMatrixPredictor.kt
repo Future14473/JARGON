@@ -61,16 +61,16 @@ open class BaseMultipleMatrixPredictor(mats: List<Mat>) : MultipleMatrixPredicto
  */
 class MultipleDescentParams(
     learningRates: List<Double>,
-    regulariztion: List<Double>
+    regularization: List<Double>
 ) {
 
     /** The learning rate for each of the matrices. */
     val learningRates: List<Double> = learningRates.toImmutableList().also {
-        require(it.all { it > 0 }) { "All learning rates must be not zero" }
+        require(it.all { n -> n > 0 }) { "All learning rates must be not zero" }
     }
-    /** The regularzation parameter for each of the matrices. */
-    val regulariztion: List<Double> = regulariztion.toImmutableList().also {
-        require(it.all { it > 0 }) { "All regularization parameters must be not zero" }
+    /** The regularization parameter for each of the matrices. */
+    val regularization: List<Double> = regularization.toImmutableList().also {
+        require(it.all { n -> n > 0 }) { "All regularization parameters must be not zero" }
     }
 }
 
@@ -121,7 +121,7 @@ class BatchMultipleMatrixFitter(
         val mats = predictor.mats
         inputs.zip(outputs).shuffled(random).windowed(batchSize, batchSize, true).forEach {
             //batch
-            val descents = mats.mapTo(ArrayList(mats.size)) { zeroMat(it.rows, it.cols) }
+            val descents = mats.mapTo(ArrayList(mats.size)) { m -> zeroMat(m.rows, m.cols) }
             it.forEach { (x, y) ->
                 //item in the batch
                 val yPred = predictor.predict(x)
@@ -129,7 +129,7 @@ class BatchMultipleMatrixFitter(
                 descents.zipForEachIndexed(x) { matI, desc, xi ->
                     val mat = mats[matI]
 
-                    val grad = getGradient(error, xi, mat, params.regulariztion[matI]) / it.size.toDouble()
+                    val grad = getGradient(error, xi, mat, params.regularization[matI]) / it.size.toDouble()
                     desc -= grad * params.learningRates[matI]
                 }
             }
@@ -155,7 +155,7 @@ class StochasticMultipleMatrixFitter(
         input.forEachIndexed { matI, xi ->
             val mat = mats[matI]
 
-            val grad = getGradient(error, xi, mat, params.regulariztion[matI])
+            val grad = getGradient(error, xi, mat, params.regularization[matI])
             mat -= grad * params.learningRates[matI]
         }
     }

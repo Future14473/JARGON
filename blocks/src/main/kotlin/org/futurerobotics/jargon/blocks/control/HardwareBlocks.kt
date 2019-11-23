@@ -41,6 +41,9 @@ class MotorList(private val motors: List<DcMotor>) : Block(OUT_FIRST), MotorsBlo
     override val motorPositions: Output<Vec> = newOutput()
     override val motorVelocities: Output<Vec> = newOutput()
     override val motorVolts: Input<Vec?> = newOptionalInput()
+    override fun init() {
+        motors.forEach { it.init() }
+    }
 
     override fun Context.process() {
         val volts = motorVolts.get
@@ -52,6 +55,10 @@ class MotorList(private val motors: List<DcMotor>) : Block(OUT_FIRST), MotorsBlo
         }
         motorPositions.set = motors.mapToVec { it.position }
         motorVelocities.set = motors.mapToVec { it.velocity }
+    }
+
+    override fun stop() {
+        motors.forEach { it.stop() }
     }
 }
 

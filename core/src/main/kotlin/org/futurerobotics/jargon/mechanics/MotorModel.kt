@@ -11,7 +11,7 @@ import kotlin.math.sign
  * All units should be SI units; and values can also be derived off of a motor data sheet (see factory methods).
  *
  * This is based off of section 14.2 of
- * [calcmogul's state space guide][https://file.tavsys.net/control/state-space-guide.pdf], with an added [i0]
+ * [calcmogul's state space guide][https://file.tavsys.net/control/state-space-guide.pdf], with an added `i0` term.
  * term for friction.
  *
  * This also assumes a positive torque/angular velocity corresponds to a positive voltage.
@@ -92,6 +92,11 @@ class MotorModel private constructor(
  * Extends a [MotorModel] with transmission [gearRatio] and accounts for additional frictional forces.
  *
  * This is a simple yet good enough model for most use cases.
+ *
+ * @property motor the [MotorModel]
+ * @property gearRatio the gear ratio; higher means more output torque, less speed.
+ * @property additionalConstantTorque the additional amount of torque needed to overcome _constant_ friction
+ * @property outputTorqueMultiplier the percentage of the input torque that makes it to the output.
  */
 class TransmissionModel private constructor(
     val motor: MotorModel,

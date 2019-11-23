@@ -89,7 +89,7 @@ fun discretize(matrices: ContinuousStateSpaceMatrices, period: Double): Discrete
  * Discretizes a given [cost] in the context of a continuous state-space representation [matrices], using zero-order
  * hold over a given [period].
  */
-fun discretizeQrCost(matrices: ContinuousStateSpaceMatrices, cost: QRCost, period: Double): QRCost = with(matrices) {
+fun discretizeQRCost(matrices: ContinuousStateSpaceMatrices, cost: QRCost, period: Double): QRCost = with(matrices) {
     val Qd = expm(
         concat2x2dynamic(
             -A.T, cost.Q,

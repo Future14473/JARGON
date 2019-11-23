@@ -1,7 +1,6 @@
 package org.futurerobotics.jargon.system.looping
 
 import org.futurerobotics.jargon.system.looping.Clock.Default
-import kotlin.math.roundToLong
 
 /**
  * Represents a time keeping device. This can use real time or be manually set.
@@ -39,6 +38,8 @@ class ManualClock(var nanoTime: Long = 0) : Clock {
 
 /**
  * A clock that always outputs a time [nanos] nanoseconds after the previous.
+ *
+ * @param nanos The time in nanoseconds each step.
  */
 class FixedTestClock(var nanos: Long) : Clock {
 
@@ -108,13 +109,12 @@ open class LoopAsFastAsPossible(private val clock: Clock = Default) : LoopRegula
  *
  * With the current implementation there is no limit to how much "catching up" might occur.
  *
- * @param maxHertz the maximum hertz to run the loop at.
+ * @param periodNanos the minimum period in Nanos to run at.
  */
-class LoopWithMaxSpeed(maxHertz: Double, private val clock: Clock = Default) : LoopRegulator {
+class LoopWithMaxSpeed(private val periodNanos: Long, private val clock: Clock = Default) : LoopRegulator {
 
     private var lastNanos = clock.nanoTime()
 
-    private val minNanos = (1e9 / maxHertz).roundToLong()
     override fun start() {
         lastNanos = clock.nanoTime()
     }
@@ -123,12 +123,12 @@ class LoopWithMaxSpeed(maxHertz: Double, private val clock: Clock = Default) : L
         val nanos = clock.nanoTime()
         val elapsed = nanos - lastNanos
 
-        return if (elapsed >= minNanos) {
+        return if (elapsed >= periodNanos) {
             lastNanos = nanos
             0L to elapsed
         } else {
-            lastNanos += minNanos
-            minNanos - elapsed to minNanos
+            lastNanos += periodNanos
+            periodNanos - elapsed to periodNanos
         }
     }
 
