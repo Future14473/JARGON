@@ -4,7 +4,7 @@ import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.angleNorm
 import org.futurerobotics.jargon.pathing.*
-import org.futurerobotics.jargon.util.uncheckedCast
+import org.futurerobotics.jargon.util.builder
 
 /**
  * Common superclass of both [CurveBuilder] and [PathBuilder].
@@ -288,7 +288,3 @@ class PathBuilder(curveGenParams: CurveGenParams = CurveGenParams()) : GenericPa
     }
 }
 
-private inline fun <T, S : T> T.builder(block: () -> Unit): S {
-    block()
-    return this.uncheckedCast()
-}

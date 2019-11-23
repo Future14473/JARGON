@@ -17,3 +17,13 @@ inline fun <T> T.replaceIf(predicate: (T) -> Boolean, alternate: (T) -> T): T {
 /** Casts this to type [T] unchecked, but with type inference too. Use with caution. */
 @Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
 inline fun <T> Any?.uncheckedCast(): T = this as T
+
+/**
+ * Runs the block, then returns [this] as [S].
+ *
+ * Intended for use in builders that return self.
+ */
+inline fun <T, S : T> T.builder(block: () -> Unit): S {
+    block()
+    return this.uncheckedCast()
+}

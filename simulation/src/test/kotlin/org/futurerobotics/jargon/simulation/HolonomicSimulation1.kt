@@ -89,7 +89,7 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
 
 
         recordings.getAllGraphs().forEach { (name, graph) ->
-            graph.saveGraph("${this.javaClass.simpleName}/simulation1/$name", 300)
+            graph.saveGraph("${this.javaClass.simpleName}/simulation1/$name", 200)
         }
     }
 
@@ -118,7 +118,7 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
 
         val method = Thread.currentThread().stackTrace[2].methodName
         recordings.getAllGraphs().forEach { (name, graph) ->
-            graph.saveGraph("${this.javaClass.simpleName}/$method/$name", 300)
+            graph.saveGraph("${this.javaClass.simpleName}/$method/$name", 200)
         }
     }
 
