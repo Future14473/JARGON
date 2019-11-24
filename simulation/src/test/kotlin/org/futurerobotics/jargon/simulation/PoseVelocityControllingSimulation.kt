@@ -31,7 +31,7 @@ internal abstract class PoseVelocityControllingSimulation(
     init {
         val numMotors = driveModel.numMotors
         val motorsBlock = SimulatedDriveBlock(simulatedDrive)
-        val gyro = GyroReading(
+        val gyro = GyroBlock(
             SimulatedGyro(simulatedDrive)
         )
 
@@ -117,8 +117,8 @@ internal abstract class PoseVelocityControllingSimulation(
                     input from motorsBlock.motorPositions
                 }
 
-                val tracker = GlobalPoseTrackerFromDeltaAndGyro()() {
-                    deltaIn from delta.output; gyroIn from gyro.output
+                val tracker = BotDeltaAndGyroLocalizer()() {
+                    botDelta from delta.output; gyroReading from gyro.output
                     output into positionController.state
                     output into botMotion.globalPose
 

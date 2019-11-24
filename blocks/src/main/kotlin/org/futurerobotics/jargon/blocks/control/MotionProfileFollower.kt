@@ -6,7 +6,7 @@ import org.futurerobotics.jargon.profile.MotionProfiled
 import org.futurerobotics.jargon.util.Stepper
 
 /**
- * Base class for implementing a block that follows a motion profiled path.
+ * Base class for implementing a block that follows a motion profile.
  *
  * When a motion profile is done following, the follower will stop on the last output of the previous
  * profile.
@@ -32,12 +32,15 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
     /** The motion profile input. See [MotionProfileFollower]*/
     val profileInput: Input<MotionProfiled<T>?> = newInput()
     /** The stop input. See [MotionProfileFollower] */
-    val stop: Input<Boolean?> = newOptionalInput(isOptional = true)
-    /** The [Block.Output] of this [MotionProfileFollower] */
+    val stop: Input<Boolean?> = newOptionalInput()
+    /** The output from the motion profile this [MotionProfileFollower] is at. */
     val output: Output<T> = newOutput()
-    /** The progress [Block.Output] of this [MotionProfileFollower] */
+    /**
+     * The progress along the current motion profile, as a number from 0 to 1. If not following any profile,
+     * the progress is 0.
+     */
     val progress: Output<Double> = newOutput()
-    /** True if this follower is following an output. */
+    /** If this follower is currently following a motion profile. */
     val isFollowing: Output<Boolean> = newOutput()
 
     private var outputValue: T = initialOutput
@@ -85,15 +88,12 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
     protected open fun processFurther(inputs: Context) {}
 
     /**
-     * Gets the next time to use to get the value out of the [MotionProfiled] object;
+     * Gets the next time to use to get the value out of the [MotionProfiled] object, given:
      *
-     * given the [currentTime] along the profile, the [lastOutput]ed value, and possible additional
-     * [this@getNextTime]. If this component specifies it (Please do not to access inputs (0-1) or things may break)
-     *
-     * Following the motion profile ends if [getNextTime] returns a time longer past the current motion profiled's
-     * duration.
+     * - the [currentTime] along the motion profile
+     * - the [lastOutput] of the motion profile.
      */
-    protected abstract fun Context.getNextTime(currentTime: Double, lastOutput: Any): Double
+    protected abstract fun Context.getNextTime(currentTime: Double, lastOutput: T): Double
 }
 
 /**
@@ -103,5 +103,5 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
  */
 class TimeOnlyMotionProfileFollower<T : Any>(initialIdleOutput: T) : MotionProfileFollower<T>(initialIdleOutput) {
 
-    override fun Context.getNextTime(currentTime: Double, lastOutput: Any): Double = currentTime + loopTime
+    override fun Context.getNextTime(currentTime: Double, lastOutput: T): Double = currentTime + loopTime
 }

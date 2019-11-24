@@ -2,7 +2,7 @@ package org.futurerobotics.jargon.simulation
 
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST
-import org.futurerobotics.jargon.blocks.control.MotorsBlock
+import org.futurerobotics.jargon.blocks.control.MotorInterface
 import org.futurerobotics.jargon.hardware.Gyro
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
@@ -109,7 +109,7 @@ class SimulatedFixedDrive(
  * 2. A List<Double> of motor velocities in radians
  */
 class SimulatedDriveBlock(private val drive: SimulatedFixedDrive) : Block(OUT_FIRST),
-                                                                    MotorsBlock {
+                                                                    MotorInterface {
 
 
     override val numMotors: Int

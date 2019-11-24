@@ -2,8 +2,6 @@ package org.futurerobotics.jargon.blocks
 
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST
-import org.futurerobotics.jargon.blocks.config.BCBuilder
-import org.futurerobotics.jargon.blocks.config.BlockConfig
 import org.futurerobotics.jargon.blocks.functional.Constant
 import org.futurerobotics.jargon.blocks.functional.Monitor
 import org.futurerobotics.jargon.util.uncheckedCast
@@ -20,9 +18,9 @@ internal class TestCompositeBlock : CompositeBlock(ALWAYS) {
         }
     }
 
-    override fun SubsystemMapper.configSubsystem(): BlockConfig = BCBuilder().build {
+    override fun SubsystemMapper.configSubsystem(): BlockArrangement = BlockArrangementBuilder().build {
         inputs.zipForEach(outputs) { i, o ->
-            i.subOutput() into o.subInput().uncheckedCast<Input<Any?>>()
+            i.subOutput into o.subInput.uncheckedCast<Input<Any?>>()
         }
     }
 

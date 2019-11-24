@@ -134,7 +134,7 @@ open class NominalDriveModel
             centerOfGravity: Vector2d = Vector2d.ZERO
         ): NominalDriveModel {
             val orientations = listOf(
-                -44.99 * deg, 45 * deg,
+                -45 * deg, 45 * deg,
                 45 * deg, -45 * deg
             ).map { Vector2d.polar(1.0, it) }
             val locations = listOf(

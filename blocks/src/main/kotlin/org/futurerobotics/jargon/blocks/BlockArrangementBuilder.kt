@@ -1,39 +1,29 @@
-package org.futurerobotics.jargon.blocks.config
+package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Input
 import org.futurerobotics.jargon.blocks.Block.Output
-import org.futurerobotics.jargon.blocks.BlockIndicator
-import org.futurerobotics.jargon.blocks.PipeBlock
-import org.futurerobotics.jargon.blocks.QuickBlock
 import org.futurerobotics.jargon.blocks.functional.Constant
 import org.futurerobotics.jargon.blocks.functional.Delay
 import org.futurerobotics.jargon.blocks.functional.Monitor
 import org.futurerobotics.jargon.blocks.functional.Recording
 import org.futurerobotics.jargon.util.asUnmodifiableList
 import org.futurerobotics.jargon.util.asUnmodifiableMap
+import org.futurerobotics.jargon.util.builder
 import java.util.*
 
-/** DSL marker for [BCBuilder] */
-@DslMarker
-annotation class BCBuilderDsl
-
 /**
- * A builder for a [BlockConfig], using a nice dsl.
+ * A builder for a [BlockArrangement], using a nice dsl.
  *
  * For kotlin, you should use the scoping function [with] or [apply] on this to configure, as then
  * several member extension functions can be used.
  *
- * This primarily works by using [connect], [from], or [into] to connect the inputs and outputs of blocks.
+ * This primarily works by using [connect], [from], or [into] to connect [Block.Input] and [Block.Output]s.
  * One can also:
  * - create common blocks using [constant], [recording], [monitor], [delay].
  * - can create quick transformations using [pipe] or [generate]
  * - can create their own, one time use multi input block using [quickBlock].
- *
- * Kotlin people can extend functionality by creating extension functions on [BCBuilder].
  */
-@BCBuilderDsl
-class BCBuilder : AbstractReadOnlyBlockConfig() {
+class BlockArrangementBuilder : ReadOnlyBlockArrangement {
 
     private var built: Boolean = false
     private val _connections: MutableMap<Block, BlockConnectionsImpl> = IdentityHashMap()
@@ -45,7 +35,8 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
             BlockConnectionsImpl(this)
         }
 
-    private class BlockConnectionsImpl(override val block: Block) : BlockConnections {
+    private class BlockConnectionsImpl(override val block: Block) :
+        BlockConnections {
         val internalSources = arrayOfNulls<Output<*>>(block.numInputs)
 
         override val sources: List<Output<*>?>
@@ -64,7 +55,7 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
     /**
      * Connects the given [input] and [output] together. Blocks will be added if necessary.
      */
-    fun <T> connect(input: Input<in T>, output: Output<out T>) {
+    fun <T> connect(input: Input<in T>, output: Output<out T>): BlockArrangementBuilder = builder {
         check(!built) { "BlockConfig already built; cannot connect input $input and output $output" }
         val inputCon = input.block.connections
         add(output.block)
@@ -90,26 +81,25 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
     }
 
     /**
-     * Builds the [BlockConfig].
+     * Builds the [BlockArrangement].
      *
-     * After building, any included blocks can no longer be added to any other [BlockConfig], and this builder
+     * After building, any included blocks can no longer be added to any other [BlockArrangement], and this builder
      * can no longer be modified.
      */
-    fun build(): BlockConfig {
+    fun build(): BlockArrangement {
         check(!built) { "Already built!" }
         built = true
         //really enforce no changing; only reading.
-        val delegate = object : ReadOnlyBlockConfig by this {}
+        val delegate = object : ReadOnlyBlockArrangement by this {}
         connections.keys.forEach { it.finalizeConfig(delegate) }
         //after built is true, can no longer mutate, so can directly use unmodifiable map
-        return BlockConfig(connections)
+        return BlockArrangement(connections)
     }
 
     /**
-     * Builds a [BlockConfig], by running the given [configuration], then calling [build].
+     * Builds a [BlockArrangement], by running the given [configuration], then calling [build].
      */
-    @BCBuilderDsl
-    inline fun build(configuration: BCBuilder.() -> Unit): BlockConfig {
+    inline fun build(configuration: BlockArrangementBuilder.() -> Unit): BlockArrangement {
         configuration()
         return build()
     }
@@ -124,9 +114,11 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
 
     //utilities
 
-    /** Runs the given [configuration] block on [this] block, and returns it. */
-    @BCBuilderDsl
-    inline operator fun <T : BlockIndicator> T.invoke(configuration: T.() -> Unit): T = apply(configuration)
+    /** Runs the given [configuration] block on [this] block, and returns it. Also ensures the given block is added.*/
+    inline operator fun <T : BlockIndicator> T.invoke(configuration: T.() -> Unit): T {
+        if (this is Block) add(this)
+        return apply(configuration)
+    }
 
     /**
      * Creates a new [PipeBlock] with the given [piping], connects this output to it, and returns the piping's
@@ -135,21 +127,20 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
      * in kotlin:
      * ```kotlin
      * with(builder){
-     *  val pose: BCBuilder.Output<Pose2d> = SomethingThat().outputsPose()
-     *  val x = a.pipe { it.x } //pipes to x value of pose
+     *  val pose: Block.Output<Pose2d> = SomethingThat().outputsPose()
+     *  val x = pose.pipe { it.x } //pipes to x value of pose
      * }
      * ```
      * in java:
      * ```java
-     * BCBuilder.Output<Pose2d> pose = builder.get(SomethingThat().outputsPose);
-     * BCBuilder.Output<Double> x = pose.pipe(p->p.x); //pipes to x value of pose
+     * Block.Output<Pose2d> pose = builder.get(SomethingThat().outputsPose);
+     * Block.Output<Double> x = builder.pipe<<(pose, (ctx, p)->p.x); //pipes to x value of pose
      *
      * ```
      * @see listen
      * @see generate
      */
-    @BCBuilderDsl
-    inline fun <T, R> Output<T>.pipe(crossinline piping: Block.Context.(T) -> R): Output<R> =
+    inline fun <T, R> Output<out T>.pipe(crossinline piping: Block.Context.(T) -> R): Output<R> =
         pipe(PipeBlock.with(piping))
 
     /**
@@ -159,8 +150,7 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
      * @see listen
      * @see generate
      */
-    @BCBuilderDsl
-    fun <T, R> Output<T>.pipe(pipeBlock: PipeBlock<T, R>): Output<R> {
+    fun <T, R> Output<out T>.pipe(pipeBlock: PipeBlock<T, R>): Output<R> {
         this into pipeBlock.input
         return pipeBlock.output
     }
@@ -170,36 +160,35 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
      *
      * Useful for breaking up loops when it's ok for a block to delayed value.
      */
-    @BCBuilderDsl
-    fun <T> Output<T>.delay(initialValue: T): Output<T> = Delay(
-        initialValue
-    )() { input from this@delay }.output
+    fun <T> Output<out T>.delay(initialValue: T): Output<T> = Delay(initialValue)() { input from this@delay }.output
 
     /**
      * Creates and connects a [Monitor] block from this output.
      * @see recording
      */
-    fun <T> Output<T>.monitor(): Monitor<T> = Monitor<T>().also { this into it.input }
+    fun <T> Output<out T>.monitor(): Monitor<T> = Monitor<T>().also { this into it.input }
 
     /**
      * Creates and connects a [Recording] block from this output.
      * @see monitor
      */
-    fun <T> Output<T>.recording(): Recording<T> = Recording<T>().also { this into it.input }
+    fun <T> Output<out T>.recording(): Recording<T> = Recording<T>().also { this into it.input }
 
     /**
-     * Creates a new block that runs the given [func] every loop, given values from this output.
+     * Creates a new block that runs the given [action] every loop, passing in values from [this] output.
+     * @see generate
      * @see pipe
+     * @see runBlock
+     * @see quickBlock
      */
-    @BCBuilderDsl
-    inline fun <T> Output<T>.listen(crossinline func: Block.Context.(T) -> Unit) {
+    inline fun <T> Output<out T>.listen(crossinline action: Block.Context.(T) -> Unit) {
         object : Block(Processing.ALWAYS) {
             val input = newInput<T>()
             override fun Context.process() {
-                func(input.get)
+                action(input.get)
             }
 
-            override fun toString(): String = "listen Block"
+            override fun toString(): String = "listen"
         }.let { this into it.input }
     }
 
@@ -216,16 +205,18 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
      *
      * Keep in mind that all referenced blocks need to be added to the system.
      *
+     * @see listen
+     * @see pipe
      * @see runBlock
+     * @see quickBlock
      */
     @JvmOverloads
-    @BCBuilderDsl
     fun <T> generate(
         processing: Block.Processing = Block.Processing.LAZY,
         producer: Block.ExtendedContext.() -> T
     ): Output<T> {
-        val block = quickBlock(processing)
-        val output = block.newOutput<T>()
+        val block = QuickBlock(processing, null, "generate")
+        val output = block.makeNewOutput<T>("output")
         block.setProcess {
             output.set = producer()
         }
@@ -233,15 +224,18 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
     }
 
     /**
-     * Creates a block that that simply runs the given code [block].
+     * Adds a block that that simply runs the given code [block]. This uses [QuickBlock] internally, so
+     * [Block.ExtendedContext] is supported to get output values of _other_ blocks.
      *
-     * [Block.ExtendedContext] is supported to get outputs of other blocks.
+     * (Note that these other blocks must be added to the system).
      *
+     * @see listen
      * @see generate
+     * @see pipe
+     * @see quickBlock
      */
-    @BCBuilderDsl
     fun runBlock(block: Block.ExtendedContext.() -> Unit) {
-        add(QuickBlock(Block.Processing.ALWAYS, block))
+        add(QuickBlock(Block.Processing.ALWAYS, block, "runBlock"))
     }
 
     /**
@@ -251,11 +245,13 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
      * Then, [QuickBlock.setProcess] should be called to set the behavior of the process function.
      * [Block.ExtendedContext] is supported to get outputs of other blocks.
      *
-     * As a very quick example:
+     * The default processing is [Block.Processing.LAZY].
+     *
+     * As an example:
      *
      * In kotlin:
      * ```kotlin
-     * val config = BCBuilder.build {
+     * val config = BlockArrangementBuilder.build {
      *    val a = constant(1)
      *    val b = constant(2)
      *
@@ -272,25 +268,26 @@ class BCBuilder : AbstractReadOnlyBlockConfig() {
      *
      * In java (use java 10 type inference!!! works on android too!!!)
      * ``` java
-     *  var bd = new BCBuilder();
-     *  var a = bd.constant(1);
-     *  var b = bd.constant(2);
-     *
-     *  var adderAndDiff = bd.quickBlock();
-     *  var sum = adderAndDiff.newOutput<Integer>("sum");
-     *  var diff = adderAndDiff.newOutput<Integer>("diff");
-     *  adderAndDiff.setProcess(ctx -> {
-     *     ctx.set(sum, ctx.get(a) + ctx.get(b));
-     *     ctx.set(diff, ctx.get(a) - ctx.get(b));
-     *  return Unit.INSTANCE;
-     *  });
-     *  var config = bd.build();
-     *
+    public static void main(String[] args) {
+    var bd = new BlockArrangementBuilder();
+    var a = bd.constant(1);
+    var b = bd.constant(2);
+
+    var adderAndDiff = bd.quickBlock();
+    var sum = adderAndDiff.<Integer>newOutput("sum");
+    var diff = adderAndDiff.<Integer>newOutput("diff");
+    adderAndDiff.setProcess(ctx -> {
+    ctx.set(sum, ctx.get(a) + ctx.get(b));
+    ctx.set(diff, ctx.get(a) - ctx.get(b));
+    return Unit.INSTANCE;
+    });
      * ```
-     * The default processing is [Block.Processing.LAZY]
+     * @see listen
      * @see generate
+     * @see pipe
+     * @see runBlock
      */
     @JvmOverloads
-    fun quickBlock(processing: Block.Processing = Block.Processing.LAZY) = QuickBlock(processing, null)
+    fun quickBlock(processing: Block.Processing = Block.Processing.LAZY): QuickBlock = QuickBlock(processing, null)
 }
 

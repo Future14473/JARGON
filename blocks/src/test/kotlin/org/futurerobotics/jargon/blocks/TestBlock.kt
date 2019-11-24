@@ -1,6 +1,5 @@
 package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.blocks.config.BCBuilder
 import org.futurerobotics.jargon.util.uncheckedCast
 
 internal class TestBlock(
@@ -43,7 +42,7 @@ internal class TestBlock(
     fun input(index: Int): Input<String?> = inputs[index].uncheckedCast()
 
     @Suppress("UNCHECKED_CAST")
-    internal fun fromAll(builder: BCBuilder, vararg outputs: Output<out String?>) {
+    internal fun fromAll(builder: BlockArrangementBuilder, vararg outputs: Output<out String?>) {
         require(outputs.size <= numInputs) { "the given number of outputs ${outputs.size} must not exceed the block's number of inputs $this.numInputs" }
         outputs.forEachIndexed { index, output ->
             builder.connect(input(index), output)

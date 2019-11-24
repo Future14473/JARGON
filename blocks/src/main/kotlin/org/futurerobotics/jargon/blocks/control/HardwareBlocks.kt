@@ -9,20 +9,16 @@ import org.futurerobotics.jargon.hardware.DcMotor
 import org.futurerobotics.jargon.hardware.Gyro
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.EPSILON
+import org.futurerobotics.jargon.math.angleNorm
 import org.futurerobotics.jargon.mechanics.MotorVelocityModel
 import kotlin.math.sign
 
 /**
  * A block that interacts directly with motors, either real or simulated.
  *
- * Inputs:
- * - `this`: Voltage signal as a list of doubles.
- *
- * Outputs:
- * - [motorPositions]: a list of motor positions (in radians)
- * - [motorVelocities]: a list of motor velocities (in radians per second)
+ * Can input [motorVolts], and output [motorPositions] and [motorVelocities].
  */
-interface MotorsBlock : BlockIndicator {
+interface MotorInterface : BlockIndicator {
 
     /** The number of motors in this motor block. */
     val numMotors: Int
@@ -34,8 +30,8 @@ interface MotorsBlock : BlockIndicator {
     val motorVolts: Block.Input<Vec?>
 }
 
-/** A [MotorsBlock] that operates with a list of [DcMotor]s. */
-class MotorList(private val motors: List<DcMotor>) : Block(OUT_FIRST), MotorsBlock {
+/** A [MotorInterface] that operates with a list of [DcMotor]s. */
+class MotorList(private val motors: List<DcMotor>) : Block(OUT_FIRST), MotorInterface {
 
     override val numMotors: Int get() = motors.size
     override val motorPositions: Output<Vec> = newOutput()
@@ -62,14 +58,51 @@ class MotorList(private val motors: List<DcMotor>) : Block(OUT_FIRST), MotorsBlo
     }
 }
 
-/** A block that outputs readings from a [Gyro]scope. */
-class GyroReading(private val gyro: Gyro) : PrincipalOutputBlock<Double>(LAZY) {
+/**
+ * A block that outputs readings from a [Gyro]scope.
+ *
+ * An [initialHeading] can be provided, where this will calibrate to when the system first starts.
+ * If the [initialHeading] is Double.NaN, no calibration will be performed.
+ */
+class GyroBlock @JvmOverloads constructor(
+    private val gyro: Gyro, initialHeading: Double = Double.NaN
+) : PrincipalOutputBlock<Double>(OUT_FIRST) {
 
-    override fun Context.getOutput(): Double = gyro.currentAngle
+    /** The current gyro heading reading, possibly with a constant offset. */
+    val headingMeasurement: Output<Double> get() = super.output
+
+    private var _initialheading: Double = angleNorm(initialHeading)
+
+    /**
+     * The initial heading that this will calibrate to when the system first starts.
+     * If the [initialHeading] is Double.NaN, no calibration will be performed.
+     *
+     * If this is set when the block is running, the offset will be recalculated.
+     */
+    var initialHeading: Double
+        get() = _initialheading
+        set(value) {
+            _initialheading = angleNorm(value)
+            if (!value.isNaN())
+                init()
+        }
+    @Volatile
+    private var offset: Double = 0.0
+
+    private fun calibrate() {
+    }
+
+    override fun init() {
+        offset =
+            if (initialHeading.isNaN()) 0.0
+            else angleNorm(initialHeading - gyro.currentAngle)
+    }
+
+    override fun Context.getOutput(): Double = gyro.currentAngle + offset
 }
 
 /**
- * A block that takes in motor voltages and the wheel's current velocities, and adds the voltage required to
+ * A block that takes in motor voltages and the wheel's current velocities, and adds the (modeled) voltage required to
  * overcome frictional forces.
  *
  * @param motorVelocityModel the model used

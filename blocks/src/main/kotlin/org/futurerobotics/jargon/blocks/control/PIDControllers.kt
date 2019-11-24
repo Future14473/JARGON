@@ -1,10 +1,10 @@
 package org.futurerobotics.jargon.blocks.control
 
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
+import org.futurerobotics.jargon.blocks.BlockArrangement
+import org.futurerobotics.jargon.blocks.BlockArrangementBuilder
 import org.futurerobotics.jargon.blocks.CompositeBlock
 import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
-import org.futurerobotics.jargon.blocks.config.BCBuilder
-import org.futurerobotics.jargon.blocks.config.BlockConfig
 import org.futurerobotics.jargon.blocks.functional.CreatePose
 import org.futurerobotics.jargon.blocks.functional.SplitPose
 import org.futurerobotics.jargon.math.*
@@ -12,11 +12,11 @@ import org.futurerobotics.jargon.math.*
 private typealias ToilAndTrouble = Double
 
 /**
- * A PID [Controller] that works with double values, as specified in [PIDCoefficients].
+ * A PID [Controller] that works with double values, as specified in [PidCoefficients].
  * @see FeedForwardWrapper
- * @see HeadingPIDController
+ * @see HeadingPidController
  */
-open class PIDController(private val coefficients: PIDCoefficients) : PrincipalOutputBlock<Double>(ALWAYS),
+open class PidController(private val coefficients: PidCoefficients) : PrincipalOutputBlock<Double>(ALWAYS),
                                                                       Controller<Double, Double, ToilAndTrouble> {
 
     /** The reference motion input */
@@ -62,22 +62,22 @@ open class PIDController(private val coefficients: PIDCoefficients) : PrincipalO
 }
 
 /**
- * A [PIDController] that doesn't go haywire when it sees a heading error with magnitude greater
+ * A [PidController] that doesn't go haywire when it sees a heading error with magnitude greater
  * than PI -- it normalizes error.
  */
-class HeadingPIDController(coefficients: PIDCoefficients) : PIDController(coefficients) {
+class HeadingPidController(coefficients: PidCoefficients) : PidController(coefficients) {
 
     override fun doPID(loopTime: Double, curError: Double): Double = super.doPID(loopTime, angleNorm(curError))
 }
 
 /**
- * A PID [Controller] that works with [Vector2d] values, as specified in [PIDCoefficients]. This may provide
+ * A PID [Controller] that works with [Vector2d] values, as specified in [PidCoefficients]. This may provide
  * interesting results.
  *
  * @see FeedForwardWrapper
  */
-class VecPIDController(private val coefficients: PIDCoefficients) : PrincipalOutputBlock<Vector2d>(ALWAYS),
-                                                                    Controller<Vector2d, Vector2d, Vector2d> {
+class VectorPidController(private val coefficients: PidCoefficients) : PrincipalOutputBlock<Vector2d>(ALWAYS),
+                                                                       Controller<Vector2d, Vector2d, Vector2d> {
 
     override val reference: Input<Vector2d> = newInput()
     override val state: Input<Vector2d> = newInput()
@@ -114,7 +114,7 @@ class VecPIDController(private val coefficients: PIDCoefficients) : PrincipalOut
 }
 
 /**
- * A PID controller for poses that uses separate [PIDController]s for axial, lateral, and heading components of
+ * A PID controller for poses that uses separate [PidController]s for axial, lateral, and heading components of
  * a pose.
  *
  * Input can be _either global or bot_ position,
@@ -127,28 +127,28 @@ class VecPIDController(private val coefficients: PIDCoefficients) : PrincipalOut
  * @param xCoeff the axial PID coefficients
  * @param yCoeff the lateral PID coefficients
  * @param headingCoeff the heading PID coefficients
- * @see PosePIDController
+ * @see PosePidController
  * @see FeedForwardWrapper
  */
-class PosePIDController(xCoeff: PIDCoefficients, yCoeff: PIDCoefficients, headingCoeff: PIDCoefficients) :
+class PosePidController(xCoeff: PidCoefficients, yCoeff: PidCoefficients, headingCoeff: PidCoefficients) :
     CompositeBlock(ALWAYS), Controller<Pose2d, Pose2d, Pose2d> {
 
     override val reference: Input<Pose2d> = newInput()
     override val state: Input<Pose2d> = newInput()
     override val signal: Output<Pose2d> = newOutput()
-    private val xController = PIDController(xCoeff) //x
-    private val yController = PIDController(yCoeff) //y
-    private val headingController = HeadingPIDController(headingCoeff)
+    private val xController = PidController(xCoeff) //x
+    private val yController = PidController(yCoeff) //y
+    private val headingController = HeadingPidController(headingCoeff)
 
-    override fun SubsystemMapper.configSubsystem(): BlockConfig = BCBuilder().build {
-        val ref = SplitPose()() { input from reference.subOutput() }
-        val state = SplitPose()() { input from state.subOutput() }
+    override fun SubsystemMapper.configSubsystem(): BlockArrangement = BlockArrangementBuilder().build {
+        val ref = SplitPose()() { input from reference.subOutput }
+        val state = SplitPose()() { input from state.subOutput }
 
         xController.reference from ref.x; xController.state from state.x
         yController.reference from ref.y; yController.state from state.y
         headingController.reference from ref.heading; headingController.state from state.heading
 
-        signal.subInput() from CreatePose()() {
+        signal.subInput from CreatePose()() {
             x from xController.signal
             y from yController.signal
             heading from headingController.signal

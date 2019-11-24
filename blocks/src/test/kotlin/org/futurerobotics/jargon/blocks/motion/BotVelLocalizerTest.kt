@@ -2,7 +2,7 @@ package org.futurerobotics.jargon.blocks.motion
 
 import org.futurerobotics.jargon.blocks.BlockSystem
 import org.futurerobotics.jargon.blocks.buildBlockSystem
-import org.futurerobotics.jargon.blocks.control.GlobalPoseTrackerFromVel
+import org.futurerobotics.jargon.blocks.control.BotVelLocalizer
 import org.futurerobotics.jargon.blocks.functional.ExternalValue
 import org.futurerobotics.jargon.blocks.functional.Monitor
 import org.futurerobotics.jargon.math.*
@@ -11,7 +11,7 @@ import strikt.api.expectThat
 import kotlin.math.roundToLong
 import kotlin.random.Random
 
-internal class GlobalPoseTrackerFromVelTest {
+internal class BotVelLocalizerTest {
     @Test
     fun `unit circle walk`() {
         //    x
@@ -61,8 +61,8 @@ internal class GlobalPoseTrackerFromVelTest {
         val input = ExternalValue(Pose2d.ZERO)
         var monitor: Monitor<Pose2d>
         return Triple(buildBlockSystem {
-            val tracker = GlobalPoseTrackerFromVel(initialPose)
-            tracker.velocityIn from input.output
+            val tracker = BotVelLocalizer(initialPose)
+            tracker.botVelocity from input.output
             monitor = tracker.output.monitor()
         }, input, monitor)
     }

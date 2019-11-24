@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 import strikt.assertions.isIn
+import kotlin.math.roundToLong
 import kotlin.system.measureNanoTime
 
 private class RunTimes(var times: Int) : LoopSystem {
@@ -45,7 +46,7 @@ internal class SimpleLoopSystemDriverTest {
     @RepeatedTest(4)
     fun `regulation works`() { //< a second, mostly sleeping
         val hertz = 100.0
-        val regulator = LoopWithMaxSpeed(hertz)
+        val regulator = LoopWithMaxSpeed((1e9 / hertz).roundToLong())
         val system = RunTimes(1)//only regulated on 2nd cycle onward.
         warmUp()
         for (times in 10..12) {

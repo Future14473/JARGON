@@ -12,12 +12,10 @@ interface MotionProfiled<out State : Any> : Steppable<Double, State> {
     /** The total duration of this profile, in seconds */
     val duration: Double
 
-    /**
-     * Returns the [State] of this motion profiled object at time [time]
-     */
+    /** Returns the [State] of this motion profiled object at the given [time]. */
     fun atTime(time: Double): State
 
-    /** Gets a [Stepper] for [atTime] */
+    /** Gets a [Stepper] that steps along time, returning the [State] at that time. */
     @JvmDefault
     override fun stepper(): Stepper<Double, State> = Stepper(::atTime)
 }

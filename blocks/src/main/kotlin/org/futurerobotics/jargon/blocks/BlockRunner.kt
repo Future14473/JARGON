@@ -1,16 +1,15 @@
 package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.blocks.config.BlockConfig
 import org.futurerobotics.jargon.util.fillWith
 import org.futurerobotics.jargon.util.fixedSizeMutableListOfNulls
 import org.futurerobotics.jargon.util.uncheckedCast
 
 /**
- * Most people do not have to deal with this.
+ * Framework to run a [BlockArrangement].
  *
- * Common components of [BlockSystem] and [CompositeBlock]. Use those instead unless you know what you're doing.
+ * Common components of [BlockSystem] and [CompositeBlock]. Most people should use those instead.
  */
-abstract class BlockRunner(config: BlockConfig) {
+abstract class BlockRunner(arrangement: BlockArrangement) {
 
     private val allRunners: Map<Block, Runner>
     private val alwaysRun: Array<InFirstRunner>
@@ -22,7 +21,7 @@ abstract class BlockRunner(config: BlockConfig) {
     protected abstract val systemValues: SystemValues
 
     init {
-        allRunners = config.connections.keys.associateWith {
+        allRunners = arrangement.connections.keys.associateWith {
             if (it.processing === Block.Processing.OUT_FIRST) {
                 OutFirstRunner(it)
             } else {
@@ -31,7 +30,7 @@ abstract class BlockRunner(config: BlockConfig) {
         }
         allRunners.forEach { (block, runner) ->
             runner.sources.fillWith { i ->
-                config.connections.getValue(block).sources[i]?.let {
+                arrangement.connections.getValue(block).sources[i]?.let {
                     val sourceRunner = allRunners[it.block] ?: throw IllegalArgumentException(
                         "Configuration has a block ($block) that references " +
                                 "another block not in the configuration ($it.block)"
@@ -79,16 +78,15 @@ abstract class BlockRunner(config: BlockConfig) {
         /** Where the outputs from this block are stored. */
         @JvmField
         protected val outputs: Array<Any?> = arrayOfNulls(block.numOutputs)
-        private val context by lazy { Context() }
+        private var _context: Context? = null
+        private val context get() = _context ?: Context().also { _context = it }
 
         private inner class Context : Block.ExtendedContext, SystemValues by systemValues {
-            override val isFirstTime: Boolean
-                get() = this@BlockRunner.loopNumber == 0
 
             override val <T> Block.Input<T>.get: T
                 get() {
                     require(this.block === this@Runner.block) {
-                        "Attempted to get input from $this while current block is ${this@Runner.block}"
+                        "Attempted to get $this while current block is ${this@Runner.block}"
                     }
                     return getInput(index).uncheckedCast()
                 }
@@ -104,7 +102,7 @@ abstract class BlockRunner(config: BlockConfig) {
                     }
                     outputs[index] = value
                 }
-            @Suppress("SimpleRedundantLet") //is not redundant.
+            @Suppress("SimpleRedundantLet") //is not redundant, need null values allowed.
             override val <T> Block.Output<T>.get: T
                 get() = allRunners[block]?.let {
                     it.getOutput(index).uncheckedCast<T>()
@@ -204,14 +202,4 @@ abstract class BlockRunner(config: BlockConfig) {
     private companion object {
         val NO_VALUE = Any()
     }
-}
-
-/** Thrown when an exception is made when running a given `block`. */
-class BlockProcessException :
-    RuntimeException {
-
-    constructor(message: String, cause: Throwable) : super(message, cause)
-    constructor(message: String) : super(message)
-    constructor(cause: Throwable) : super(cause)
-    constructor() : super()
 }

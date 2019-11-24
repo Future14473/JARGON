@@ -1,8 +1,8 @@
 package org.futurerobotics.jargon.blocks.control
 
 import org.futurerobotics.jargon.blocks.Block
-import org.futurerobotics.jargon.blocks.config.IllegalBlockConfigurationException
-import org.futurerobotics.jargon.blocks.config.ReadOnlyBlockConfig
+import org.futurerobotics.jargon.blocks.IllegalBlockConfigurationException
+import org.futurerobotics.jargon.blocks.ReadOnlyBlockArrangement
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.statespace.StateSpaceRunner
@@ -40,9 +40,9 @@ class StateSpaceRunnerBlock(private val runner: StateSpaceRunner, private val in
 
     private var useMotionState: Boolean = false
 
-    override fun checkConfig(config: ReadOnlyBlockConfig) {
-        val r = reference in config
-        val rs = referenceMotionState in config
+    override fun checkConfig(arrangement: ReadOnlyBlockArrangement) {
+        val r = reference in arrangement
+        val rs = referenceMotionState in arrangement
         if (!r && !rs) {
             throw IllegalBlockConfigurationException("Either reference or referenceState must be connected.")
         }

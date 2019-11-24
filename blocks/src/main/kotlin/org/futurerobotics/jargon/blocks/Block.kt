@@ -3,10 +3,6 @@ package org.futurerobotics.jargon.blocks
 import org.futurerobotics.jargon.blocks.Block.Context
 import org.futurerobotics.jargon.blocks.Block.Processing
 import org.futurerobotics.jargon.blocks.Block.Processing.*
-import org.futurerobotics.jargon.blocks.config.BCBuilder
-import org.futurerobotics.jargon.blocks.config.BlockConfig
-import org.futurerobotics.jargon.blocks.config.IllegalBlockConfigurationException
-import org.futurerobotics.jargon.blocks.config.ReadOnlyBlockConfig
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.KVisibility
@@ -17,44 +13,61 @@ import kotlin.reflect.jvm.javaType
  * # Blocks
  * This system was inspired by making block diagrams more literal.
  *
- * The root of the blocks system is the [Block]. A [Block] can represent anything with a notion of _inputs_
- * or _outputs_: any process, calculation, value, measurement, interaction, etc.
+ * A [Block] can represent anything with a notion of _inputs_ or _outputs_: any process, calculation, value,
+ * measurement, interaction, etc.
  *
- * A [Block] can have any number of _input_ and _outputs_, including 0, defined by [numInputs] and
- * [numOutputs]. Each input and output is usually associated with a given _type/class_. The outputs of some blocks
- * can then be connected to the inputs of others, in a way you might look at a block diagram.
+ * A [Block] can have any number of inputs/outputs, including 0. Each are represented using [Block.Input] and
+ * [Block.Output], and are each associated with a given class/type. The outputs of blocks can then be connected to the
+ * inputs of others in a way you might see in at a block diagram.
  *
- * An arrangement of connected blocks is a [BlockConfig], and can be created using a [BCBuilder] (with dsl).
+ * An arrangement of connected blocks is a [BlockArrangement], and can be created using a [BlockArrangementBuilder]
+ * (and its DSL).
  *
  * ## Running blocks and Block Systems.
  *
- * A [BlockConfig] can then be converted into a [BlockSystem] that runs it, (see "Configuring blocks" below), where
- * ever block will be processed in a series of _loops_ (discretely). In every loop, blocks will (maybe) be processed
- * and have input/output values transferred accordingly.
+ * A [BlockArrangement] can be passed into a [BlockSystem] that runs it, (see "Configuring blocks" below), where
+ * every block will be processed in a series of _loops_. Generally"
  *
  * - [init] and [stop] are called when an entire system first starts/stops.
- * - [process] will then (maybe) be called every loop, with a [Context] interface providing a way to get inputs to
- * blocks.
+ * - [process] will then (maybe) be called every loop, with a [Context] interface providing a way to get and set
+ * the actual values of inputs/outputs. [Context] is also a sub-interface of [SystemValues], providing other
+ * values based on the system run.
  *
  * The exact way a block is processed is defined by its [processing]; see there for more details.
  *
+ * There cannot be a loop of dependencies among blocks when the system is run(that do _not_ have a processing of
+ * [OUT_FIRST]): if A wants values from B, but B wants values from A, there is no way to process any of the blocks.
+ *
  * ## Creating a block implementation
- * One should usually subclass [BaseBlock] for a generic multi-input, multi-output block, but [PrincipleInputBlock],
- * [PrincipalOutputBlock], and [PipeBlock] also exists for convenience with blocks with only one input/output.
- * Within these blocks, one can define inputs/outputs using [newOptionalInput]/[newOutput] which creates [Block.Input]
- * and [Block.Output] and store these in public fields. Client code can then use these to link configuration together.
+ * Subclass a [Block], and then define inputs/outputs using [newInput]/[newOptionalInput]/[newOutput] which creates
+ * [Block.Input]s and [Block.Output]s, and store these in public (final) fields/properties. These should only be
+ * created during construction (in the constructor or initializer). Client code can then use these inputs/outputs to
+ * link blocks together
+ *
+ * [PrincipalOutputBlock], and [PipeBlock] also exists for convenience with one `main` output.
+ *
+ * [CompositeBlock] is a block that is made of an entire subsystem of blocks.
  *
  * By default, all inputs must be connected for a block to function. One can instead create _optional_ inputs
- * using [newOptionalInput], in which case the value of `null` will be given for not connected inputs (will be `nullable` in
- * kotlin). Note that blocks can also possibly output these values too.
- *
- * The actual getting and setting of a block's inputs/outputs during [process] is provided through the [Context]
- * interface, using since [Block.Input] and [Block.Output] have generics, this provides a type safe yet type generic
- * way to get inputs/outputs.
+ * using [newOptionalInput], in which case the value of `null` will be given for not connected inputs (will be
+ * `nullable` in kotlin). Note that blocks can also possibly output values of `null`.
  *
  * ## Other
  *
  * There are also [SpecialBlock]s which receive special treatment from [BlockSystem].
+ *
+ * ## Groups
+ *
+ * One can create a block that contains another block system using a [CompositeBlock].
+ * Alternatively, one can use the idiom of having a class that takes a [BlockArrangementBuilder] as
+ * a constructor parameter, uses it to create and configure a group of blocks, and exposes [Block.Input]
+ * and [Block.Output]s for the world to see. The class can also implement [BlockIndicator] so that it can be used
+ * more easily in a [BlockArrangementBuilder].
+ *
+ * @see SystemValues
+ * @see BlockArrangementBuilder
+ * @see BlockIndicator
+ *
  *
  * @property processing The [Processing] of this block.
  */
@@ -80,7 +93,7 @@ abstract class Block(val processing: Processing) : BlockIndicator {
     /**
      * Creates a new input to this block with the specified type [T], and given name [name].
      *
-     * If passed [name] is null, will attempt to find name via reflection.
+     * If passed [name] is null, name will be attempted to be found via reflection.
      */
     @JvmOverloads
     protected fun <T> newInput(name: String? = null): Input<T> =
@@ -91,7 +104,7 @@ abstract class Block(val processing: Processing) : BlockIndicator {
      *
      * If an input is optional and not connected, the values returned will be `null`.
      *
-     * If passed [name] is null, will attempt to find name via reflection.
+     * If passed [name] is null, name will be attempted to be found via reflection.
      */
     @JvmOverloads
     protected fun <T> newOptionalInput(name: String? = null, isOptional: Boolean = true): Input<T?> =
@@ -100,15 +113,15 @@ abstract class Block(val processing: Processing) : BlockIndicator {
     /**
      * Creates a new output to this block with the specified type [T].
      *
-     * If passed [name] is null, will attempt to find name via reflection
+     * If passed [name] is null, name will be attempted to be found via reflection.
      */
     @JvmOverloads
-    protected open fun <T> newOutput(name: String? = null): Output<T> = Output(name)
+    protected fun <T> newOutput(name: String? = null): Output<T> = Output(name)
 
     /** Common components of [Input] and [Output]. */
-    abstract inner class AnyIO<T> internal constructor(name: String?, internal val index: Int) {
+    abstract inner class AnyIO<T> internal constructor(private val _name: String?, internal val index: Int) {
 
-        /**  block the [Block] that this input belongs to */
+        /** The [Block] that this input/output belongs to */
         val block: Block get() = this@Block
 
         init {
@@ -120,7 +133,6 @@ abstract class Block(val processing: Processing) : BlockIndicator {
                 prop.call(this@Block) === this
             }
         }
-        private val _name: String? = name
         /**
          * The name of this input/output; either given explicitly, or attempted to find via reflection,
          * else 'null' if both fails.
@@ -146,19 +158,23 @@ abstract class Block(val processing: Processing) : BlockIndicator {
         /**
          * A string representation of this input/output shorter than [toString].
          *
-         * This includes the type and name of this block, _if_ it can be found via reflection by looking up fields.
+         * This includes the type and name of this block, _if_ they can be found via reflection by looking up fields.
          */
-        abstract fun shortName(): String
+        abstract fun name(): String
 
         /**
-         *  A name that includes the block that this belongs to's name, and the type and name of this input/output
-         *  (if found by reflection).
+         * A name that includes:
+         * - The name of the block that his belongs to.
+         * - The type of this input/output (if can be found via reflection)
+         * - The name of this input/output
          */
-        override fun toString(): String = "${this@Block}: ${shortName()}"
+        override fun toString(): String = "${this@Block}: ${name()}"
     }
 
     /**
      * Represents an input to a block.
+     *
+     * This can be created within blocks using [newInput]/[newOptionalInput], and is used to configure blocks.
      *
      * @property isOptional if this input is optional, and will not complain when not connected.
      */
@@ -168,7 +184,7 @@ abstract class Block(val processing: Processing) : BlockIndicator {
             inputs += this
         }
 
-        override fun shortName(): String {
+        override fun name(): String {
             val name = name ?: "??, index=$index"
             val typeName = typeName?.let {
                 if (javaTypeName != null && it != javaTypeName) "$it/$javaTypeName" else it
@@ -180,7 +196,9 @@ abstract class Block(val processing: Processing) : BlockIndicator {
     /**
      * Represents an output from a block.
      *
-     * @property index the index of this output; used internally
+     * This can be created within blocks using [newOutput], and is used to configure blocks.
+     *
+     * During process, _all_ outputs have to be set to a value.
      */
     inner class Output<T> internal constructor(name: String?) : AnyIO<T>(name, numOutputs) {
 
@@ -189,8 +207,7 @@ abstract class Block(val processing: Processing) : BlockIndicator {
             outputs += this
         }
 
-        /** A shorter name representation of this block than [toString]. */
-        override fun shortName(): String {
+        override fun name(): String {
             val name = name ?: "??, index=$index"
             val typeName = typeName?.let {
                 if (javaTypeName != null && it != javaTypeName) "$it/$javaTypeName" else it
@@ -204,9 +221,9 @@ abstract class Block(val processing: Processing) : BlockIndicator {
     /**
      * Defines how this component is run, which can be:
      *
-     * - [LAZY]
-     * - [ALWAYS]
-     * - [OUT_FIRST]
+     * - [LAZY]: only process if another block requires this block's outputs
+     * - [ALWAYS]: always process
+     * - [OUT_FIRST]: allow getting outputs before processing (first process will have inputs be null)
      *
      * These options allow for more dynamic behavior, as blocks may not be run every loop.
      *
@@ -216,11 +233,11 @@ abstract class Block(val processing: Processing) : BlockIndicator {
     enum class Processing {
 
         /**
-         * A block with [LAZY] processing will only [process] if another blocks requests its outputs
-         * by calling `get` that sources to this block, otherwise will not process.
+         * A block with [LAZY] processing will only [process] if another blocks requests its outputs,
+         * via calling `get` on [Context] that links to this block.
          *
          * Blocks that do nothing more than process their inputs directly into output without storing information
-         * of any kind should have this processing.
+         * should have this kind of processing.
          * @see [Processing]
          */
         LAZY,
@@ -252,20 +269,20 @@ abstract class Block(val processing: Processing) : BlockIndicator {
     open fun init() {}
 
     /**
-     * Processes the current block. Input/output interface is given by [Context]. Also, values given
-     * by [SystemValues] are supported.
+     * Processes the current block. Get inputs and set outputs via the provided [Context].
+     *
+     * Calling [Context.get] on an input will ensure that the block that sources that input is processed first.
+     *
+     * _All_ outputs this block has must be set to a value when processed.
+     *
+     * There cannot be a loop of blocks in which
+     *
+     * Also, values given by [SystemValues] are supported.
      */
     abstract fun Context.process()
 
     /** A block context. Used to get or set block values. Also supports values from [SystemValues] */
     interface Context : SystemValues {
-
-        /**
-         * If this is the first time this block is being processed this loop.
-         *
-         * Usually used in [Processing.OUT_FIRST]
-         */
-        val isFirstTime: Boolean
 
         /** Gets the current value of an [input] to this block. */
         @JvmDefault
@@ -294,17 +311,17 @@ abstract class Block(val processing: Processing) : BlockIndicator {
 
     /**
      * An extended block context that also supports getting the outputs of other values in a system.
-     * This should be used with caution, and should not be used in actually supported blocks.
+     * This should be used with caution.
+     *
+     * This is meant to ease creating "quick" calculations when creating block systems.
      */
     interface ExtendedContext : Context {
 
-        /** Gets the current value of an [output] to this block. */
+        /** Gets the [output] of _another_ block directly, bypassing connections. Use with caution. */
         @JvmDefault
         operator fun <T> get(output: Output<T>): T = output.get
 
-        /**
-         * Gets the output of _another_ block directly, bypassing connections. Use with caution.
-         */
+        /** Gets the output of _another_ block directly, bypassing connections. Use with caution. */
         @get:JvmSynthetic
         val <T> Output<T>.get: T
     }
@@ -317,32 +334,31 @@ abstract class Block(val processing: Processing) : BlockIndicator {
 // --- other ---
 
     /**
-     * May perform additional checks of connections of this block here. Called when a block config
-     * is built.
+     * This is called when a block arrangement is built. Custom checks of connectivity can be done here, and
+     * may throw [IllegalBlockConfigurationException].
      */
-    open fun checkConfig(config: ReadOnlyBlockConfig) {}
+    open fun checkConfig(arrangement: ReadOnlyBlockArrangement) {}
 
     /**
-     * Is set to true when this block exists in a built [BlockConfig].
+     * Is set to true when this block exists in a built [BlockArrangement].
      * After that it can not be added to another config.
-     * If you do things right you don't have to worry about it.
      */
     var finalized: Boolean = false
         private set
 
     /**
-     * Verifies that the current configuration on the given [BlockConfig] is valid (non-optional inputs will be
+     * Verifies that the current configuration on the given [BlockArrangement] is valid (non-optional inputs will be
      * must be connected).
      */
-    internal open fun finalizeConfig(config: ReadOnlyBlockConfig) {
-        assert(this in config) { "Block not in the given config" }
+    internal open fun finalizeConfig(arrangement: ReadOnlyBlockArrangement) {
+        assert(this in arrangement) { "Block not in the given config" }
         check(!finalized) { "Block already used in another config" }
         finalized = true
         inputs.forEach {
-            if (!it.isOptional && it !in config)
+            if (!it.isOptional && it !in arrangement)
                 throw IllegalBlockConfigurationException("Non-optional input $it is not connected. ")
         }
-        checkConfig(config)
+        checkConfig(arrangement)
     }
 
     override fun toString(): String = javaClass.simpleName.ifEmpty { "Anonymous Block" }
@@ -356,18 +372,27 @@ interface SystemValues {
 
     /** The time in seconds the last loop has taken to run. */
     val loopTime: Double
-    /** The time in nanoSeconds the last loop has taken to run. */
+    /** The time in nanoseconds the last loop has taken to run. */
     val loopTimeInNanos: Long
-    /** The total amount of time elapsed since the block has first run. */
+    /** The total amount of time in second elapsed since the system has started. */
     val totalTime: Double
-    /** The total time in nanoSeconds the last loop has taken to run. */
+    /** The total amount of time in nanoseconds elapsed since the system has started. */
     val totalTimeInNanos: Long
-    /** The number of the current loop run since `init`, starting from 0. */
+    /** The number of the current loop since the system has started, starting at 0. */
     val loopNumber: Int
+
+    /**
+     * If this is the first time this block is being processed this loop.
+     *
+     * Usually used in [Processing.OUT_FIRST].
+     */
+    @JvmDefault
+    val isFirstTime: Boolean
+        get() = loopNumber == 0
 }
 
 /**
  * Used to represent that an interface is supposed to represent a block. This is
- * only so that it can be recognized by the [BCBuilder.invoke], while being an interface.
+ * only so that it can be recognized by the [BlockArrangementBuilder.invoke], while being an interface.
  */
 interface BlockIndicator

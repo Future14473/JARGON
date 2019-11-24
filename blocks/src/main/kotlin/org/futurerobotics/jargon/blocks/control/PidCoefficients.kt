@@ -13,7 +13,7 @@ import org.futurerobotics.jargon.math.Interval
  * @param integralActivationThreshold The maximum error that the integral term can activate on.
  * @param maxIntegralContribution The maximum contribution to the output the integral term can have.
  */
-open class PIDCoefficients @JvmOverloads constructor(
+open class PidCoefficients @JvmOverloads constructor(
     val p: Double,
     val i: Double,
     val d: Double,
@@ -34,7 +34,7 @@ open class PIDCoefficients @JvmOverloads constructor(
     }
 
     /**
-     * The maximum Error sum due to `maxIntegralContribution` (see [PIDCoefficients])
+     * The maximum Error sum due to `maxIntegralContribution` (see [PidCoefficients])
      */
     val maxErrorSum: Double = maxIntegralContribution / i
 }

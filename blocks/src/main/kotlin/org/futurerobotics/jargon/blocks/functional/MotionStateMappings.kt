@@ -11,9 +11,9 @@ import org.futurerobotics.jargon.math.ValueMotionState
 
 /**
  * A block that is inputted [MotionOnly]; and pipes it by "shifting" the velocity and acceleration
- * into position and velocity, respectively, in a [MotionState].
+ * into position and velocity, respectively, into a velocity [MotionState].
  *
- * It needs a [zero] value to fill in the empty acceleration of the outputted [MotionState]
+ * It needs a [zero] value to fill in the empty acceleration of the outputted [MotionState].
  */
 class MotionOnlyToVelocityState<T : Any>(private val zero: T) : PipeBlock<MotionOnly<T>, MotionState<T>>(LAZY) {
 
@@ -31,7 +31,7 @@ class MotionOnlyToVelocityState<T : Any>(private val zero: T) : PipeBlock<Motion
 /**
  * A [PipeBlock] that maps each component of a [MotionState] through a [map] function.
  *
- * Can be created by subclassing or by using function/method [with] that takes a lambda.
+ * Can be created by subclassing or by using [with] that takes a lambda.
  */
 abstract class MapMotionState<T : Any, R : Any> : PipeBlock<MotionState<T>, MotionState<R>>(LAZY) {
 

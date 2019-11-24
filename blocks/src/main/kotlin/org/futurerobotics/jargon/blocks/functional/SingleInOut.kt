@@ -95,3 +95,16 @@ class Recording<T> : Block(Processing.ALWAYS) {
         _values += input.get
     }
 }
+
+/**
+ * A class that simply passes its input into its output.
+ *
+ * Useful in a limited number of cases.
+ */
+class Pass<T> : PrincipalOutputBlock<T>(Processing.LAZY) {
+
+    /** The input into this [Pass] block. */
+    val input: Input<T> = newInput()
+
+    override fun Context.getOutput(): T = input.get
+}

@@ -1,36 +1,41 @@
 package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.blocks.config.BCBuilder
-
 /**
- * A block which is allowed to get the values of other blocks using [Block.ExtendedContext].
+ * A block which is allowed to get the values of other blocks using [Block.ExtendedContext], as such, it has no
+ * input support, but additional outputs can be defined _publicly_ via [newOutput].
  *
- * This can only be used within [BCBuilder], intended for quick implementations to perform a calculation between
- * inputs and outputs. **Use sparingly**.
  *
- * As such, it has no input support, but additional outputs can be defined _publicly_ via [newOutput].
+ * The [process] function is set separately.
  *
+ * This can only be created using [BlockArrangementBuilder], intended for quick calculations when designing
+ * block systems.
+ *
+ * @property name the name of the block as reported by toString
  */
 class QuickBlock internal constructor(
     processing: Processing,
-    private var process: (ExtendedContext.() -> Unit)?
+    private var process: (ExtendedContext.() -> Unit)?,
+    var name: String = "QuickBlock"
 ) : Block(processing) {
 
     override fun Context.process() {
         (this as? ExtendedContext)?.process() ?: error("Given context is not an ExtendedContext")
     }
 
-    public override fun <T> newOutput(name: String?): Output<T> = Output(name)
+    /** Creates a new output to this [QuickBlock] with the given [name] and type [T]. */
+    fun <T> makeNewOutput(name: String): Output<T> = newOutput(name)
 
     /**
-     * Sets the [proecss] function of this [QuickBlock].
+     * Sets the [process] function of this [QuickBlock].
      */
-    fun setProcess(proecss: ExtendedContext.() -> Unit) {
+    fun setProcess(process: ExtendedContext.() -> Unit) {
         if (this.process != null) error("Process function already initialized")
-        this.process = proecss
+        this.process = process
     }
 
     private fun ExtendedContext.process() {
         process?.invoke(this) ?: error("Process function not initialized.")
     }
+
+    override fun toString(): String = name
 }

@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.simulation
 
-import org.futurerobotics.jargon.blocks.control.PIDCoefficients
-import org.futurerobotics.jargon.blocks.control.PosePIDController
+import org.futurerobotics.jargon.blocks.control.PidCoefficients
+import org.futurerobotics.jargon.blocks.control.PosePidController
 import org.futurerobotics.jargon.interruptAfter
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Interval
@@ -34,7 +34,7 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
         0.005
     ),
     1.0 / 20,
-    PosePIDController(coeff, coeff, headingCoeff),
+    PosePidController(coeff, coeff, headingCoeff),
     QRCost(idenMat(3) * 2.0, idenMat(4)),
     NoiseCovariance(idenMat(3) * 0.05, idenMat(4) * 0.05)
 ) {
@@ -104,12 +104,12 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
     }
 
     companion object {
-        val coeff = PIDCoefficients(
+        val coeff = PidCoefficients(
             3.0, 0.0, 0.001,
             errorBounds = Interval.symmetric(0.5)
         )
 
-        val headingCoeff = PIDCoefficients(
+        val headingCoeff = PidCoefficients(
             1.0, 0.0, 0.001,
             errorBounds = Interval.symmetric(0.5)
         )

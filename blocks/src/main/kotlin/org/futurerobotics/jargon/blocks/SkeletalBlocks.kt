@@ -2,9 +2,6 @@ package org.futurerobotics.jargon.blocks
 
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
-import org.futurerobotics.jargon.blocks.config.BlockConfig
-import org.futurerobotics.jargon.blocks.config.IllegalBlockConfigurationException
-import org.futurerobotics.jargon.blocks.config.ReadOnlyBlockConfig
 import org.futurerobotics.jargon.util.uncheckedCast
 
 /**
@@ -36,6 +33,8 @@ abstract class PipeBlock<T, R>
             override fun Context.pipe(input: T): R = piping(input)
         }
     }
+
+    override fun toString(): String = javaClass.simpleName.ifEmpty { "PipeBlock" }
 }
 
 /**
@@ -78,41 +77,43 @@ abstract class CompositeBlock(processing: Processing) : Block(processing) {
     }
 
     /**
-     * Builds and returns a [BlockConfig] for the subsystem, using the given a [SubsystemMapper] to map _this_ blocks
-     * inputs/outputs into the _subsystem's_ outputs.inputs.
+     * Builds and returns a [BlockArrangement] for the subsystem, using the given a [SubsystemMapper] to map _this_
+     * blocks inputs/outputs into the _subsystem's_ outputs.inputs.
      *
      * Try not to confuse inputs/outputs as that may result in errors.
      */
-    protected abstract fun SubsystemMapper.configSubsystem(): BlockConfig
+    protected abstract fun SubsystemMapper.configSubsystem(): BlockArrangement
 
-    final override fun finalizeConfig(config: ReadOnlyBlockConfig) {
-        super.finalizeConfig(config)
+    final override fun finalizeConfig(arrangement: ReadOnlyBlockArrangement) {
+        super.finalizeConfig(arrangement)
         val mapper = object : SubsystemMapper {
             val outputsArray = arrayOfNulls<Output<*>>(numOutputs)
             private val outputs = Outputs(outputsArray.uncheckedCast())
-            override fun <T> Input<T>.subOutput(): Output<T> {
-                require(block === this@CompositeBlock) {
-                    throw IllegalBlockConfigurationException(
-                        "In composite block ${this@CompositeBlock}: " +
-                                "Attempted to map from another block: ${this}"
-                    )
+            override val <T> Input<T>.subOutput: Output<T>
+                get() {
+                    require(block === this@CompositeBlock) {
+                        throw IllegalBlockConfigurationException(
+                            "In composite block ${this@CompositeBlock}: " +
+                                    "Attempted to map from another block: $this"
+                        )
+                    }
+                    return Source(this).subOutput
                 }
-                return Source(this).subOutput
-            }
 
-            override fun <T> Output<T>.subInput(): Input<T> {
-                require(block === this@CompositeBlock) {
-                    throw IllegalBlockConfigurationException(
-                        "In composite block ${this@CompositeBlock}: " +
-                                "Attempted to map from another block: ${this}"
-                    )
+            override val <T> Output<T>.subInput: Input<T>
+                get() {
+                    require(block === this@CompositeBlock) {
+                        throw IllegalBlockConfigurationException(
+                            "In composite block ${this@CompositeBlock}: " +
+                                    "Attempted to map from another block: $this"
+                        )
+                    }
+                    val index = index
+                    outputsArray[index] = this
+                    return outputs.subInputs[index].uncheckedCast()
                 }
-                val index = index
-                outputsArray[index] = this
-                return outputs.subInputs[index].uncheckedCast()
-            }
         }
-        val subConfig = mapper.configSubsystem() //confirms that all outputs need to be connected.
+        val subConfig = mapper.configSubsystem()
         subsystem = Subsystem(subConfig)
     }
 
@@ -124,16 +125,15 @@ abstract class CompositeBlock(processing: Processing) : Block(processing) {
         /**
          * Gets the _subsystem_ output corresponding _this block's_ input.
          */
-        fun <T> Input<T>.subOutput(): Output<T>
+        val <T> Input<T>.subOutput: Output<T>
 
         /**
          * Gets the _subsystem_ input corresponding to _this block's_ output.
          */
-        fun <T> Output<T>.subInput(): Input<T>
+        val <T> Output<T>.subInput: Input<T>
     }
 
-    private inner class Subsystem(config: BlockConfig) :
-        BlockRunner(config) {
+    private inner class Subsystem(arrangement: BlockArrangement) : BlockRunner(arrangement) {
 
         override val systemValues: SystemValues get() = outsideContext!!
         public override fun init() = super.init()

@@ -1,23 +1,20 @@
 package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.blocks.config.BCBuilder
-import org.futurerobotics.jargon.blocks.config.BlockConfig
 import org.futurerobotics.jargon.system.looping.LoopSystem
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
 /**
- * A system made up of several connected [Block]s, which when run, is processed accordingly to their
- * [processing][Block.processing]. Takes in a [BlockConfig] that defines the system.
- *
+ * A system that runs a given [BlockArrangement].
  * This system also supports all [SpecialBlock]s.
  *
- * This is the bridge to _systems_ via [LoopSystem]. Hurray for decoupling.
+ * This implements [LoopSystem], so it can tie in with the rest of the world.
+ *
  *
  * @see buildBlockSystem
  */
-class BlockSystem(config: BlockConfig) : BlockRunner(config), LoopSystem {
+class BlockSystem(arrangement: BlockArrangement) : BlockRunner(arrangement), LoopSystem {
 
     private val specials: Map<Class<*>, List<SpecialBlock>>
     private val _systemValues = object : SystemValues {
@@ -34,7 +31,7 @@ class BlockSystem(config: BlockConfig) : BlockRunner(config), LoopSystem {
     override val systemValues: SystemValues = _systemValues
 
     init {
-        specials = config.connections.keys
+        specials = arrangement.connections.keys
             .filterIsInstance<SpecialBlock>()
             .groupByTo(HashMap()) { it.javaClass }
     }
@@ -58,13 +55,13 @@ class BlockSystem(config: BlockConfig) : BlockRunner(config), LoopSystem {
 
 /**
  * DSL to build a block system.
- * Runs the [configuration] block on a [BCBuilder], and uses it to create a [BlockSystem].
+ * Runs the [configuration] block on a [BlockArrangementBuilder], and uses it to create a [BlockSystem].
  */
 @UseExperimental(ExperimentalContracts::class)
-inline fun buildBlockSystem(configuration: BCBuilder.() -> Unit): BlockSystem {
+inline fun buildBlockSystem(configuration: BlockArrangementBuilder.() -> Unit): BlockSystem {
     contract {
         callsInPlace(configuration, InvocationKind.EXACTLY_ONCE)
     }
-    val config = BCBuilder().build(configuration)
+    val config = BlockArrangementBuilder().build(configuration)
     return BlockSystem(config)
 }
