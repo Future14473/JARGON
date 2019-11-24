@@ -11,15 +11,15 @@ import strikt.api.expectThat
 import strikt.assertions.failed
 import strikt.assertions.isEqualTo
 
-internal fun testBlock(
+internal fun BlockArrangementBuilder.testBlock(
     name: String,
     numInputs: Int,
     numOutputs: Int,
     processing: Block.Processing = Block.Processing.LAZY,
     requireAllInputs: Boolean = true
-): TestBlock = TestBlock(name, numInputs, numOutputs, processing, requireAllInputs)
+): TestBlock = TestBlock(name, numInputs, numOutputs, processing, requireAllInputs).also { add(it) }
 
-internal fun emptyBlock(
+internal fun BlockArrangementBuilder.emptyBlock(
     processing: Block.Processing = Block.Processing.LAZY
 ) = testBlock("Empty", 0, 0, processing)
 
@@ -36,14 +36,14 @@ internal class BlockSystemTest {
             val g = testBlock("G", 2, 1, ALWAYS)
             val h = testBlock("H", 2, 1)
 
-            b.fromAll(this, constant("A"), e.output(0))
-            c.fromAll(this, b.output(0))
-            d.fromAll(this, h.output(0))
-            e.fromAll(this, f.output(1))
-            f.fromAll(this, b.output(1), d.output(0))
-            g.fromAll(this, c.output(0), f.output(0))
-            h.fromAll(this, c.output(0), g.output(0))
-            monitor = d.input(0).source()!!.monitor()
+            b.fromAll(constant("A"), e.output(0))
+            c.fromAll(b.output(0))
+            d.fromAll(h.output(0))
+            e.fromAll(f.output(1))
+            f.fromAll(b.output(1), d.output(0))
+            g.fromAll(c.output(0), f.output(0))
+            h.fromAll(c.output(0), g.output(0))
+            monitor = d.input(0).source!!.monitor()
         }
 
         expectThat(monitor) {
@@ -70,10 +70,10 @@ internal class BlockSystemTest {
                 val b = testBlock("1", 1, 1)
                 val c = testBlock("1", 1, 1)
                 val d = testBlock("1", 1, 1)
-                a.fromAll(this, b.output(0))
-                b.fromAll(this, c.output(0))
-                c.fromAll(this, d.output(0))
-                d.fromAll(this, a.output(0))
+                a.fromAll(b.output(0))
+                b.fromAll(c.output(0))
+                c.fromAll(d.output(0))
+                d.fromAll(a.output(0))
             }
             system.start()
             system.loop(0)
@@ -83,11 +83,11 @@ internal class BlockSystemTest {
     @Test
     fun `it actually shuts down`() {
         val monitor: Monitor<Int>
-        var externalConstant = 4
+        var externalConstant = 0
         val system = buildBlockSystem {
-            Shutdown().signal from generate { externalConstant == loopNumber }
+            Shutdown().config { signal from generate { externalConstant == loopNumber } }
 
-            monitor = generate { loopNumber }.monitor()
+            monitor = generate { loopNumber }.monitor().also { add(it) }
         }
         repeat(10) { i ->
             externalConstant = i

@@ -18,9 +18,9 @@ internal class TestCompositeBlock : CompositeBlock(ALWAYS) {
         }
     }
 
-    override fun SubsystemMapper.configSubsystem(): BlockArrangement = BlockArrangementBuilder().build {
+    override fun SubsystemMapper.configSubsystem(builder: BlockArrangementBuilder): Unit {
         inputs.zipForEach(outputs) { i, o ->
-            i.subOutput into o.subInput.uncheckedCast<Input<Any?>>()
+            i.subOutput into o.subInput.uncheckedCast()
         }
     }
 
@@ -44,14 +44,14 @@ internal class CompositeBlockTest {
             e.output(0) into pipe.input(0)
             d.output(0) into pipe.input(1)
 
-            b.fromAll(this, Constant("A").output, pipe.output(0))
-            c.fromAll(this, b.output(0))
-            d.fromAll(this, h.output(0))
-            e.fromAll(this, f.output(1))
-            f.fromAll(this, b.output(1), pipe.output(1))
-            g.fromAll(this, c.output(0), f.output(0))
-            h.fromAll(this, c.output(0), g.output(0))
-            monitor = d.input(0).source()!!.monitor()
+            b.fromAll(Constant("A").output, pipe.output(0))
+            c.fromAll(b.output(0))
+            d.fromAll(h.output(0))
+            e.fromAll(f.output(1))
+            f.fromAll(b.output(1), pipe.output(1))
+            g.fromAll(c.output(0), f.output(0))
+            h.fromAll(c.output(0), g.output(0))
+            monitor = d.input(0).source!!.monitor()
         }
 
         expectThat(monitor) {

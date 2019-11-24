@@ -1,8 +1,9 @@
 package org.futurerobotics.jargon.simulation
 
 import org.futurerobotics.jargon.blocks.Block
-import org.futurerobotics.jargon.blocks.BlockArrangementBuilder
 import org.futurerobotics.jargon.blocks.functional.Recording
+import org.futurerobotics.jargon.blocks.generate
+import org.futurerobotics.jargon.blocks.recording
 import org.futurerobotics.jargon.math.Vector2d
 import org.knowm.xchart.XYChart
 import org.knowm.xchart.XYChartBuilder
@@ -17,16 +18,14 @@ private typealias RecordingsMap<T> = MutableMap<String, RecordingsGroup<T>>
  * Recordings can be put in _groups_, and every group corresponds to a graph. Every group/graph can have multiple
  * recordings with different names.
  */
-class Recordings(builder: BlockArrangementBuilder) {
+class Recordings {
 
     private val xyRecordingsMap: RecordingsMap<Vector2d> = ConcurrentHashMap()
     private val yRecordingsMap: RecordingsMap<Double> = ConcurrentHashMap()
     private val times: Recording<Double>
 
     init {
-        with(builder) {
-            times = Recording<Double>()() { input from generate { totalTime } }
-        }
+        times = Recording<Double>().apply { input from generate { totalTime } }
     }
 
     /**
@@ -94,7 +93,11 @@ class Recordings(builder: BlockArrangementBuilder) {
      *
      * The group and name can later be used to generate a graph with time on the x axis and value on the y.
      */
-    fun BlockArrangementBuilder.recordY(output: Block.Output<Double>, group: String, name: String) {
+    fun recordY(
+        output: Block.Output<Double>,
+        group: String,
+        name: String
+    ) {
         val recordingsGroup = yRecordingsMap.getOrPut(group) { HashMap() }
         check(!recordingsGroup.contains(name)) { """group "$group" name "$name" already used!""" }
         recordingsGroup[name] = output.recording()
@@ -105,7 +108,11 @@ class Recordings(builder: BlockArrangementBuilder) {
      *
      * The group and name can later be used to generate a graph of the vector values in 2d space.
      */
-    fun BlockArrangementBuilder.recordXY(output: Block.Output<Vector2d>, group: String, name: String) {
+    fun recordXY(
+        output: Block.Output<Vector2d>,
+        group: String,
+        name: String
+    ) {
         val recordingsGroup = xyRecordingsMap.getOrPut(group) { HashMap() }
         check(!recordingsGroup.contains(name)) { """group "$group" name "$name" already used!""" }
         recordingsGroup[name] = output.recording()

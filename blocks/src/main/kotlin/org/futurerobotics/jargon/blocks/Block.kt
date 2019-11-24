@@ -1,10 +1,11 @@
 package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.blocks.Block.Context
-import org.futurerobotics.jargon.blocks.Block.Processing
+import org.futurerobotics.jargon.blocks.Block.*
 import org.futurerobotics.jargon.blocks.Block.Processing.*
+import org.futurerobotics.jargon.util.asUnmodifiableSet
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
+import kotlin.reflect.KType
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.javaType
@@ -61,18 +62,26 @@ import kotlin.reflect.jvm.javaType
  * One can create a block that contains another block system using a [CompositeBlock].
  * Alternatively, one can use the idiom of having a class that takes a [BlockArrangementBuilder] as
  * a constructor parameter, uses it to create and configure a group of blocks, and exposes [Block.Input]
- * and [Block.Output]s for the world to see. The class can also implement [BlockIndicator] so that it can be used
- * more easily in a [BlockArrangementBuilder].
+ * and [Block.Output]s for the world to see.
  *
  * @see SystemValues
  * @see BlockArrangementBuilder
- * @see BlockIndicator
- *
  *
  * @property processing The [Processing] of this block.
  */
-abstract class Block(val processing: Processing) : BlockIndicator {
+//unfortunately not easily separated responsibilities:
+// run block
+// manage connections
+// name inputs/outputs
+//TODO: Revise doc
+abstract class Block(val processing: Processing) {
 
+    /**
+     * If this block is finalized, and so used
+     * After that it can not be added to another config.
+     */
+    var finalized: Boolean = false
+        private set
     // --- inputs/outputs ---
     internal val inputs: MutableList<Input<*>> = ArrayList()
     internal val outputs: MutableList<Output<*>> = ArrayList()
@@ -97,51 +106,118 @@ abstract class Block(val processing: Processing) : BlockIndicator {
      */
     @JvmOverloads
     protected fun <T> newInput(name: String? = null): Input<T> =
-        Input(name, false)
+        Input(name, null, false)
 
     /**
      * Creates a new input to this block with the specified type [T], that can also be [isOptional].
      *
      * If an input is optional and not connected, the values returned will be `null`.
      *
-     * If passed [name] is null, name will be attempted to be found via reflection.
+     * If passed [name] is null, name will be attempted to be found via reflection (name of a public field/property).
      */
     @JvmOverloads
     protected fun <T> newOptionalInput(name: String? = null, isOptional: Boolean = true): Input<T?> =
-        Input(name, isOptional)
+        Input(name, null, isOptional)
 
     /**
      * Creates a new output to this block with the specified type [T].
      *
-     * If passed [name] is null, name will be attempted to be found via reflection.
+     * If passed [name] is null, name will be attempted to be found via reflection (name of a public field/property).
      */
     @JvmOverloads
-    protected fun <T> newOutput(name: String? = null): Output<T> = Output(name)
+    protected fun <T> newOutput(name: String? = null): Output<T> = Output(name, null)
 
-    /** Common components of [Input] and [Output]. */
-    abstract inner class AnyIO<T> internal constructor(private val _name: String?, internal val index: Int) {
+    internal val linkedWith = hashSetOf<Block>()
+
+    /**
+     * Ensures that when this block is added to a system, the given [blocks] are also added.
+     *
+     * Needed if you are adding to a block that does is not explicitly connected.
+     */
+    fun link(vararg blocks: Block) {
+        blocks.forEach {
+            linkedWith += it
+        }
+    }
+
+    /**
+     * Ensures that when this block is added to a system, the given [ios] are also added.
+     *
+     * Needed if you are adding to a block that does is not explicitly connected.
+     */
+    fun link(vararg ios: AnyIO<*>) {
+        ios.forEach { linkedWith += it.block }
+    }
+
+    /** Common superclass of [Input] and [Output]. */
+    abstract inner class AnyIO<T>
+    internal constructor(
+        name: String?, type: KType?, internal val index: Int
+    ) {
+
+        init {
+            check(!finalized) { "Block is already used, cannot create new ${javaClass.simpleName}" }
+        }
 
         /** The [Block] that this input/output belongs to */
         val block: Block get() = this@Block
 
-        init {
-            check(!finalized) { "Block is already used in a config, cannot create new ${javaClass.simpleName}" }
+        //connections
+
+        /** If this input/output is connected. */
+        abstract val isConnected: Boolean
+
+        /**
+         * Ensures that when this block is added to a system, the given [blocks] are also added.
+         *
+         * Needed if you are adding to a block that does is not explicitly connected.
+         */
+        fun link(vararg blocks: Block) {
+            this@Block.link(*blocks)
         }
 
+        /**
+         * Ensures that when this block is added to a system, the given [ios] are also added.
+         *
+         * Needed if you are adding to a block that does is not explicitly connected.
+         */
+        fun link(vararg ios: AnyIO<*>) {
+            this@Block.link(*ios)
+        }
+
+        //naming
         private val reflectProperty: KProperty<*>? by lazy {
             ioProps.find { prop ->
                 prop.call(this@Block) === this
             }
         }
+        private var _name: Any? = name
+            get() {
+                if (field == null) {
+                    field = reflectProperty?.name ?: UNKNOWN
+                }
+                return field.takeUnless { it === UNKNOWN }
+            }
+
         /**
          * The name of this input/output; either given explicitly, or attempted to find via reflection,
          * else 'null' if both fails.
          */
-        val name: String? get() = _name ?: reflectProperty?.name
+        val name: String? get() = _name as String?
 
-        private val type by lazy {
-            reflectProperty?.returnType?.arguments?.firstOrNull()?.type
-        }
+        private var _type: Any? = type
+            get() {
+                if (field == null) {
+                    field = reflectProperty?.returnType?.arguments?.firstOrNull()?.type ?: UNKNOWN
+                }
+                return field.takeUnless { it === UNKNOWN }
+            }
+        /**
+         * The type of this input/output; either given explicitly, or attempted to find via reflection,
+         * else 'null' if both fails.
+         */
+        val type: KType? get() = _type as KType?
+
         /**
          * The type of this input, found via reflection, rendered as a kotlin type.
          *
@@ -156,19 +232,18 @@ abstract class Block(val processing: Processing) : BlockIndicator {
         val javaTypeName: String? get() = type?.javaType?.typeName
 
         /**
-         * A string representation of this input/output shorter than [toString].
-         *
-         * This includes the type and name of this block, _if_ they can be found via reflection by looking up fields.
-         */
-        abstract fun name(): String
-
-        /**
          * A name that includes:
          * - The name of the block that his belongs to.
          * - The type of this input/output (if can be found via reflection)
          * - The name of this input/output
          */
-        override fun toString(): String = "${this@Block}: ${name()}"
+        override fun toString(): String {
+            val name1 = name ?: "??, index=$index"
+            val typeName1 = typeName?.let {
+                if (javaTypeName != null && it != javaTypeName) "$it/$javaTypeName" else it
+            } ?: "??"
+            return "${this@Block}: ${javaClass.simpleName}<$typeName1>[name=$name1]"
+        }
     }
 
     /**
@@ -178,18 +253,26 @@ abstract class Block(val processing: Processing) : BlockIndicator {
      *
      * @property isOptional if this input is optional, and will not complain when not connected.
      */
-    inner class Input<T> internal constructor(name: String?, val isOptional: Boolean) : AnyIO<T>(name, numInputs) {
+    inner class Input<T> internal constructor(name: String?, type: KType?, val isOptional: Boolean) :
+        AnyIO<T>(name, type, numInputs) {
 
         init {
             inputs += this
         }
 
-        override fun name(): String {
-            val name = name ?: "??, index=$index"
-            val typeName = typeName?.let {
-                if (javaTypeName != null && it != javaTypeName) "$it/$javaTypeName" else it
-            } ?: "??"
-            return "Input<$typeName>[name=$name, isOptional=$isOptional]"
+        /** Source of this input (the output that is connected to this), or `null` if not yet connected. */
+        var source: Output<out T>? = null
+            private set
+
+        override val isConnected: Boolean get() = source != null
+
+        /** Connects this input from the given [output]. */
+        infix fun from(output: Output<out T>) {
+            check(!finalized) { "Input block already finalized, cannot connect $this and $output." }
+            check(!output.block.finalized) { "Output block already finalized, cannot connect $this and $output." }
+            check(source == null) { "$this already connected to $source, cannot connect to $output." }
+            source = output
+            output.registerConnectedTo(this)
         }
     }
 
@@ -200,19 +283,31 @@ abstract class Block(val processing: Processing) : BlockIndicator {
      *
      * During process, _all_ outputs have to be set to a value.
      */
-    inner class Output<T> internal constructor(name: String?) : AnyIO<T>(name, numOutputs) {
+    inner class Output<T> internal constructor(name: String?, type: KType?) :
+        AnyIO<T>(name, type, numOutputs) {
 
         init {
-            check(!finalized) { "Block is already used in a config, cannot create new output" }
             outputs += this
         }
 
-        override fun name(): String {
-            val name = name ?: "??, index=$index"
-            val typeName = typeName?.let {
-                if (javaTypeName != null && it != javaTypeName) "$it/$javaTypeName" else it
-            } ?: "??"
-            return "Output<$typeName>[name=$name]"
+        private val _connectedTo: MutableSet<Input<in T>> = hashSetOf()
+        internal fun registerConnectedTo(input: Input<in T>) {
+            _connectedTo += input
+        }
+
+        /** A set of [Input]s that this is connected to. */
+        val connectedTo: Set<Input<in T>> = _connectedTo.asUnmodifiableSet()
+
+        override val isConnected: Boolean get() = connectedTo.isNotEmpty()
+
+        /** Connects this output _into_ the given [input]. */
+        infix fun into(input: Input<in T>) {
+            input from this
+        }
+
+        /** Connects this output _into all_ of the given [inputs]. */
+        fun intoAll(vararg inputs: Input<in T>) {
+            inputs.forEach { it from this }
         }
     }
 
@@ -273,11 +368,11 @@ abstract class Block(val processing: Processing) : BlockIndicator {
      *
      * Calling [Context.get] on an input will ensure that the block that sources that input is processed first.
      *
+     * Also, values given by [SystemValues] are supported.
+     *
      * _All_ outputs this block has must be set to a value when processed.
      *
-     * There cannot be a loop of blocks in which
-     *
-     * Also, values given by [SystemValues] are supported.
+     * There cannot be a loop of blocks in which process is called.
      */
     abstract fun Context.process()
 
@@ -337,31 +432,30 @@ abstract class Block(val processing: Processing) : BlockIndicator {
      * This is called when a block arrangement is built. Custom checks of connectivity can be done here, and
      * may throw [IllegalBlockConfigurationException].
      */
-    open fun checkConfig(arrangement: ReadOnlyBlockArrangement) {}
+    open fun checkConfig() {}
 
     /**
-     * Is set to true when this block exists in a built [BlockArrangement].
-     * After that it can not be added to another config.
+     * Finalizes this block so that no other configurations can be made on it.
+     *
+     * Also checks to make sure all non-optional inputs are connected.
      */
-    var finalized: Boolean = false
-        private set
-
-    /**
-     * Verifies that the current configuration on the given [BlockArrangement] is valid (non-optional inputs will be
-     * must be connected).
-     */
-    internal open fun finalizeConfig(arrangement: ReadOnlyBlockArrangement) {
-        assert(this in arrangement) { "Block not in the given config" }
+    internal open fun finalizeConfig() {
         check(!finalized) { "Block already used in another config" }
         finalized = true
         inputs.forEach {
-            if (!it.isOptional && it !in arrangement)
-                throw IllegalBlockConfigurationException("Non-optional input $it is not connected. ")
+            if (!it.isOptional && !it.isConnected)
+                throw IllegalBlockConfigurationException("$it is not connected. ")
         }
-        checkConfig(arrangement)
+        checkConfig()
+
+        linkedWith.clear()
     }
 
     override fun toString(): String = javaClass.simpleName.ifEmpty { "Anonymous Block" }
+
+    companion object {
+        private val UNKNOWN = Any()
+    }
 }
 
 /**
@@ -390,9 +484,3 @@ interface SystemValues {
     val isFirstTime: Boolean
         get() = loopNumber == 0
 }
-
-/**
- * Used to represent that an interface is supposed to represent a block. This is
- * only so that it can be recognized by the [BlockArrangementBuilder.invoke], while being an interface.
- */
-interface BlockIndicator

@@ -1,10 +1,10 @@
 package org.futurerobotics.jargon.blocks.control
 
-import org.futurerobotics.jargon.blocks.BlockArrangement
 import org.futurerobotics.jargon.blocks.BlockArrangementBuilder
 import org.futurerobotics.jargon.blocks.CompositeBlock
 import org.futurerobotics.jargon.blocks.control.FeedForwardWrapper.Companion.withAdder
 import org.futurerobotics.jargon.blocks.functional.SplitMotionState
+import org.futurerobotics.jargon.blocks.generate
 import org.futurerobotics.jargon.math.MotionOnly
 import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.ValueMotionOnly
@@ -34,11 +34,11 @@ abstract class FeedForwardWrapper<T : Any>(private val nonFFController: Controll
     /** Adds t1 and t2 together. Unfortunately `Double` doesn't implement an addable interface or the like.*/
     protected abstract operator fun T.plus(other: T): T
 
-    override fun SubsystemMapper.configSubsystem(): BlockArrangement = BlockArrangementBuilder().build {
+    override fun SubsystemMapper.configSubsystem(builder: BlockArrangementBuilder): Unit = with(builder) {
         val refInput = reference.subOutput
         val stateInput = state.subOutput
 
-        val (refS, refV, refA) = SplitMotionState<T>()() { input from refInput }
+        val (refS, refV, refA) = SplitMotionState<T>().config() { input from refInput }
 
         val nonFFSignal = nonFFController.signal
         nonFFController.run { reference from refS; state from stateInput }

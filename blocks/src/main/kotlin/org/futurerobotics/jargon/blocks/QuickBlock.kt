@@ -1,41 +1,37 @@
 package org.futurerobotics.jargon.blocks
 
 /**
- * A block which is allowed to get the values of other blocks using [Block.ExtendedContext], as such, it has no
- * input support, but additional outputs can be defined _publicly_ via [newOutput].
+ * A helper to create a quick block when creating block systems, that:
  *
- *
- * The [process] function is set separately.
- *
- * This can only be created using [BlockArrangementBuilder], intended for quick calculations when designing
- * block systems.
- *
+ * - Supporting creating inputs/outputs that directly. connect to existing outputs/inputs via [inputTo] and [inputFrom]
+ * - Getting outputs from other blocks directly via [Block.ExtendedContext]
  * @property name the name of the block as reported by toString
  */
-class QuickBlock internal constructor(
+abstract class QuickBlock @JvmOverloads constructor(
     processing: Processing,
-    private var process: (ExtendedContext.() -> Unit)?,
     var name: String = "QuickBlock"
 ) : Block(processing) {
 
-    override fun Context.process() {
-        (this as? ExtendedContext)?.process() ?: error("Given context is not an ExtendedContext")
+    final override fun Context.process() {
+        (this as? ExtendedContext)?.process() ?: error("Process function not set.")
     }
-
-    /** Creates a new output to this [QuickBlock] with the given [name] and type [T]. */
-    fun <T> makeNewOutput(name: String): Output<T> = newOutput(name)
 
     /**
-     * Sets the [process] function of this [QuickBlock].
+     * [process] but with [Block.ExtendedContext]
      */
-    fun setProcess(process: ExtendedContext.() -> Unit) {
-        if (this.process != null) error("Process function already initialized")
-        this.process = process
-    }
+    protected abstract fun ExtendedContext.process()
 
-    private fun ExtendedContext.process() {
-        process?.invoke(this) ?: error("Process function not initialized.")
-    }
+    /** Adds a new output to a [QuickBlock] that also is connected from this input. */
+    @JvmOverloads
+    fun <T> inputTo(input: Input<in T>, name: String? = null): Output<T> =
+        Output<T>(name ?: input.name ?: "??", input.type)
+            .also { input from it }
+
+    /** Adds a new input to a [QuickBlock] that also is connected from this output. */
+    @JvmOverloads
+    fun <T> inputFrom(output: Output<out T>, name: String? = null): Input<T> =
+        Input<T>(name ?: output.name ?: "??", output.type, false)
+            .also { output into it }
 
     override fun toString(): String = name
 }

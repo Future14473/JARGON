@@ -1,6 +1,7 @@
 package org.futurerobotics.jargon.blocks.functional
 
 import org.futurerobotics.jargon.blocks.buildBlockSystem
+import org.futurerobotics.jargon.blocks.monitor
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -12,7 +13,7 @@ internal class ExternalQueueTest {
         val queue = ExternalQueue<Any>()
         val monitor: Monitor<out Any?>
         val system = buildBlockSystem {
-            monitor = queue.output.monitor()
+            monitor = queue.output.monitor().add()
         }
         system.start()
         queue.addAll(items)

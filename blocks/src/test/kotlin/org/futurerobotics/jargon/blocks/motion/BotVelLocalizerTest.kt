@@ -5,6 +5,7 @@ import org.futurerobotics.jargon.blocks.buildBlockSystem
 import org.futurerobotics.jargon.blocks.control.BotVelLocalizer
 import org.futurerobotics.jargon.blocks.functional.ExternalValue
 import org.futurerobotics.jargon.blocks.functional.Monitor
+import org.futurerobotics.jargon.blocks.monitor
 import org.futurerobotics.jargon.math.*
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
@@ -61,8 +62,9 @@ internal class BotVelLocalizerTest {
         val input = ExternalValue(Pose2d.ZERO)
         var monitor: Monitor<Pose2d>
         return Triple(buildBlockSystem {
-            val tracker = BotVelLocalizer(initialPose)
-            tracker.botVelocity from input.output
+            val tracker = BotVelLocalizer(initialPose).config {
+                botVelocity from input.output
+            }
             monitor = tracker.output.monitor()
         }, input, monitor)
     }

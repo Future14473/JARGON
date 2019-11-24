@@ -31,7 +31,7 @@ class BlockSystem(arrangement: BlockArrangement) : BlockRunner(arrangement), Loo
     override val systemValues: SystemValues = _systemValues
 
     init {
-        specials = arrangement.connections.keys
+        specials = arrangement.blocks
             .filterIsInstance<SpecialBlock>()
             .groupByTo(HashMap()) { it.javaClass }
     }

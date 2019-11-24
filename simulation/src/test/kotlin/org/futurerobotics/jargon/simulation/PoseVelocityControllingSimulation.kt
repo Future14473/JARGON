@@ -1,9 +1,6 @@
 package org.futurerobotics.jargon.simulation
 
-import org.futurerobotics.jargon.blocks.Block
-import org.futurerobotics.jargon.blocks.BlockSystem
-import org.futurerobotics.jargon.blocks.Shutdown
-import org.futurerobotics.jargon.blocks.buildBlockSystem
+import org.futurerobotics.jargon.blocks.*
 import org.futurerobotics.jargon.blocks.control.*
 import org.futurerobotics.jargon.blocks.functional.ExternalQueue
 import org.futurerobotics.jargon.blocks.functional.MapMotionState
@@ -50,14 +47,14 @@ internal abstract class PoseVelocityControllingSimulation(
 
         val recordings: Recordings
         val system = buildBlockSystem {
-            recordings = Recordings(this).apply {
+            recordings = Recordings().apply {
                 fun Block.Output<Double>.recordY(s: String, s1: String) = recordY(this, s, s1)
 
                 fun Block.Output<Vector2d>.recordXY(s: String, s1: String) = recordXY(this, s, s1)
 
                 val profileFollower = TimeOnlyMotionProfileFollower<MotionState<Pose2d>>(
                     ValueMotionState.ofAll(Pose2d.ZERO)
-                )() {
+                ).config {
                     profileInput from trajectories.output
                 }
 
@@ -65,7 +62,7 @@ internal abstract class PoseVelocityControllingSimulation(
                 val positionController = FeedForwardWrapper.withAdder(
                     nonFFController,
                     Pose2d::plus
-                )() {
+                ).config {
                     reference from refState
                 }
 
@@ -77,7 +74,7 @@ internal abstract class PoseVelocityControllingSimulation(
                 refState.pipe { it.deriv.y }.recordY("y reference", "reference velocity")
                 refState.pipe { it.deriv.heading }.recordY("heading reference", "reference velocity")
 
-                val botMotion = GlobalToBotMotion()() { globalMotion from positionController.signal }
+                val botMotion = GlobalToBotMotion().config { globalMotion from positionController.signal }
                 recordY(botMotion.output.pipe { it.vel.x }, "x reference", "velocity signal")
                 recordY(botMotion.output.pipe { it.vel.y }, "y reference", "velocity signal")
                 recordY(botMotion.output.pipe { it.vel.heading }, "heading reference", "velocity signal")
@@ -88,12 +85,12 @@ internal abstract class PoseVelocityControllingSimulation(
 
                 val ssController = StateSpaceRunnerBlock(
                     runner, zeroVec(3)
-                )() {
+                ).config {
                     referenceMotionState from poseVelRef
                 }
 
 
-                motorsBlock {
+                motorsBlock.config {
                     motorVolts from ssController.signal
                     ssController.measurement from motorVelocities
                 }
@@ -104,7 +101,7 @@ internal abstract class PoseVelocityControllingSimulation(
                     }
                 }
 
-                val measured = ssController.measurement.source()!!
+                val measured = ssController.measurement.source!!
                 repeat(numMotors) { i ->
                     recordY(measured.pipe { it[i] }, "Wheel velocities $i", "Estimated $i")
                 }
@@ -113,11 +110,11 @@ internal abstract class PoseVelocityControllingSimulation(
                     recordY(actual.pipe { it[i] }, "Wheel velocities $i", "Actual $i")
                 }
 
-                val delta = MotorToBotDelta(driveModel)() {
+                val delta = MotorToBotDelta(driveModel).config {
                     input from motorsBlock.motorPositions
                 }
 
-                val tracker = BotDeltaAndGyroLocalizer()() {
+                val tracker = BotDeltaAndGyroLocalizer().config {
                     botDelta from delta.output; gyroReading from gyro.output
                     output into positionController.state
                     output into botMotion.globalPose

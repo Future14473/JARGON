@@ -1,8 +1,6 @@
 package org.futurerobotics.jargon.blocks.control
 
 import org.futurerobotics.jargon.blocks.Block
-import org.futurerobotics.jargon.blocks.BlockArrangementBuilder
-import org.futurerobotics.jargon.blocks.BlockIndicator
 import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
@@ -17,7 +15,7 @@ import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
  * @see EncoderOnlyLocalizer
  * @see EncoderAndStrictGyroLocalizer
  */
-interface PoseLocalizer : BlockIndicator {
+interface PoseLocalizer {
 
     /** The current tracked/estimated [globalPose]. */
     val globalPose: Block.Output<Pose2d>
@@ -109,17 +107,15 @@ class BotDeltaAndGyroLocalizer(initialPose: Pose2d = Pose2d.ZERO) : BotDeltaLoca
  * A [PoseLocalizer] block group that only uses bot encoder measurements to estimate pose.
  */
 class EncoderOnlyLocalizer(
-    builder: BlockArrangementBuilder,
     interaction: MotorBotVelInteraction
 ) : PoseLocalizer {
 
     /** Constructor for [EncoderOnlyLocalizer] that also connects now. */
     constructor(
-        builder: BlockArrangementBuilder,
         interaction: MotorBotVelInteraction,
         motors: MotorInterface
-    ) : this(builder, interaction) {
-        builder.connect(motorPositions, motors.motorPositions)
+    ) : this(interaction) {
+        motorPositions from motors.motorPositions
     }
 
     override val poseOverride: Block.Input<Pose2d?>
@@ -128,17 +124,15 @@ class EncoderOnlyLocalizer(
     val motorPositions: Block.Input<Vec>
 
     init {
-        with(builder) {
-            val deltaGetter = MotorToBotDelta(interaction)
-            motorPositions = deltaGetter.motorPositions
+        val deltaGetter = MotorToBotDelta(interaction)
+        motorPositions = deltaGetter.motorPositions
 
-            val delta = deltaGetter.botDelta
-            val tracker = BotDeltaLocalizer()() {
-                botDelta from delta
-            }
-            poseOverride = tracker.poseOverride
-            globalPose = tracker.globalPose
+        val delta = deltaGetter.botDelta
+        val tracker = BotDeltaLocalizer().apply {
+            botDelta from delta
         }
+        poseOverride = tracker.poseOverride
+        globalPose = tracker.globalPose
     }
 }
 
@@ -147,17 +141,16 @@ class EncoderOnlyLocalizer(
  * _THE_ heading. This might cause problems if your gyro starts to drift.
  */
 class EncoderAndStrictGyroLocalizer(
-    builder: BlockArrangementBuilder, interaction: MotorBotVelInteraction
+    interaction: MotorBotVelInteraction
 ) : PoseLocalizer {
 
     constructor(
-        builder: BlockArrangementBuilder,
         interaction: MotorBotVelInteraction,
         motors: MotorInterface,
         gyroBlock: GyroBlock
-    ) : this(builder, interaction) {
-        builder.connect(motorPositions, motors.motorPositions)
-        builder.connect(headingMeasurement, gyroBlock.headingMeasurement)
+    ) : this(interaction) {
+        motorPositions from motors.motorPositions
+        headingMeasurement from gyroBlock.headingMeasurement
     }
 
     override val poseOverride: Block.Input<Pose2d?>
@@ -169,17 +162,15 @@ class EncoderAndStrictGyroLocalizer(
     val headingMeasurement: Block.Input<Double>
 
     init {
-        with(builder) {
-            val deltaGetter = MotorAndGyroToBotDelta(interaction)
-            motorPositions = deltaGetter.motorPositions
-            headingMeasurement = deltaGetter.headingMeasurement
+        val deltaGetter = MotorAndGyroToBotDelta(interaction)
+        motorPositions = deltaGetter.motorPositions
+        headingMeasurement = deltaGetter.headingMeasurement
 
-            val delta = deltaGetter.botDelta
-            val tracker = BotDeltaLocalizer()() {
-                botDelta from delta
-            }
-            poseOverride = tracker.poseOverride
-            globalPose = tracker.globalPose
+        val delta = deltaGetter.botDelta
+        val tracker = BotDeltaLocalizer().apply {
+            botDelta from delta
         }
+        poseOverride = tracker.poseOverride
+        globalPose = tracker.globalPose
     }
 }

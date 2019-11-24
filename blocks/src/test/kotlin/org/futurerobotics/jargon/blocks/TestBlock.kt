@@ -11,8 +11,8 @@ internal class TestBlock(
 ) : Block(processing) {
 
     init {
-        repeat(numInputs) { Input<String>(null, !requireAllInputs) }
-        repeat(numOutputs) { Output<String>(null) }
+        repeat(numInputs) { newOptionalInput<String>(isOptional = !requireAllInputs) }
+        repeat(numOutputs) { newOutput<String>() }
     }
 
     private var updateNum = 0
@@ -42,10 +42,10 @@ internal class TestBlock(
     fun input(index: Int): Input<String?> = inputs[index].uncheckedCast()
 
     @Suppress("UNCHECKED_CAST")
-    internal fun fromAll(builder: BlockArrangementBuilder, vararg outputs: Output<out String?>) {
+    internal fun fromAll(vararg outputs: Output<out String?>) {
         require(outputs.size <= numInputs) { "the given number of outputs ${outputs.size} must not exceed the block's number of inputs $this.numInputs" }
         outputs.forEachIndexed { index, output ->
-            builder.connect(input(index), output)
+            input(index) from output
         }
     }
 

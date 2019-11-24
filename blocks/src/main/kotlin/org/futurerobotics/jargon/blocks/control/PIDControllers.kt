@@ -1,7 +1,6 @@
 package org.futurerobotics.jargon.blocks.control
 
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
-import org.futurerobotics.jargon.blocks.BlockArrangement
 import org.futurerobotics.jargon.blocks.BlockArrangementBuilder
 import org.futurerobotics.jargon.blocks.CompositeBlock
 import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
@@ -140,15 +139,15 @@ class PosePidController(xCoeff: PidCoefficients, yCoeff: PidCoefficients, headin
     private val yController = PidController(yCoeff) //y
     private val headingController = HeadingPidController(headingCoeff)
 
-    override fun SubsystemMapper.configSubsystem(): BlockArrangement = BlockArrangementBuilder().build {
-        val ref = SplitPose()() { input from reference.subOutput }
-        val state = SplitPose()() { input from state.subOutput }
+    override fun SubsystemMapper.configSubsystem(builder: BlockArrangementBuilder): Unit = with(builder) {
+        val ref = SplitPose().config { input from reference.subOutput }
+        val state = SplitPose().config { input from state.subOutput }
 
         xController.reference from ref.x; xController.state from state.x
         yController.reference from ref.y; yController.state from state.y
         headingController.reference from ref.heading; headingController.state from state.heading
 
-        signal.subInput from CreatePose()() {
+        signal.subInput from CreatePose().config {
             x from xController.signal
             y from yController.signal
             heading from headingController.signal

@@ -1,11 +1,10 @@
 package org.futurerobotics.jargon.blocks
 
 import org.futurerobotics.jargon.util.fillWith
-import org.futurerobotics.jargon.util.fixedSizeMutableListOfNulls
 import org.futurerobotics.jargon.util.uncheckedCast
 
 /**
- * Framework to run a [BlockArrangement].
+ * Framework to run blocks.
  *
  * Common components of [BlockSystem] and [CompositeBlock]. Most people should use those instead.
  */
@@ -21,7 +20,7 @@ abstract class BlockRunner(arrangement: BlockArrangement) {
     protected abstract val systemValues: SystemValues
 
     init {
-        allRunners = arrangement.connections.keys.associateWith {
+        allRunners = arrangement.blocks.associateWith {
             if (it.processing === Block.Processing.OUT_FIRST) {
                 OutFirstRunner(it)
             } else {
@@ -30,7 +29,7 @@ abstract class BlockRunner(arrangement: BlockArrangement) {
         }
         allRunners.forEach { (block, runner) ->
             runner.sources.fillWith { i ->
-                arrangement.connections.getValue(block).sources[i]?.let {
+                block.inputs[i].source?.let {
                     val sourceRunner = allRunners[it.block] ?: throw IllegalArgumentException(
                         "Configuration has a block ($block) that references " +
                                 "another block not in the configuration ($it.block)"
@@ -134,10 +133,10 @@ abstract class BlockRunner(arrangement: BlockArrangement) {
                 with(block) {
                     context.process()
                 }
-                outputs.indexOf(NO_VALUE).let {
-                    check(it == -1) {
-                        val output = block.outputs[it]
-                        "No value given for $output when processed."
+                outputs.forEachIndexed { i, value ->
+                    if (value === NO_VALUE) {
+                        val output = block.outputs[i]
+                        throw IllegalStateException("No value given for $output when processed.")
                     }
                 }
             } catch (e: Exception) {
@@ -181,7 +180,7 @@ abstract class BlockRunner(arrangement: BlockArrangement) {
     }
 
     private inner class OutFirstRunner(block: Block) : Runner(block) {
-        private val inputs = fixedSizeMutableListOfNulls<Any>(block.numInputs)
+        private val inputs = arrayOfNulls<Any>(block.numInputs)
 
         override fun init() {
             super.init()
@@ -200,6 +199,6 @@ abstract class BlockRunner(arrangement: BlockArrangement) {
     }
 
     private companion object {
-        val NO_VALUE = Any()
+        private val NO_VALUE = Any()
     }
 }

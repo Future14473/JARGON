@@ -13,9 +13,9 @@ abstract class PipeBlock<T, R>
 ) : Block(processing) {
 
     /** Input to this [PipeBlock] */
-    val input: Input<T> = Input(null, false)
+    val input: Input<T> = newInput()
     /** Output to this [PipeBlock] */
-    val output: Output<R> = Output(null)
+    val output: Output<R> = newOutput()
 
     /** Pipes the input to the output. */
     protected abstract fun Context.pipe(input: T): R
@@ -23,6 +23,8 @@ abstract class PipeBlock<T, R>
     final override fun Context.process() {
         output.set = pipe(input.get)
     }
+
+    override fun toString(): String = javaClass.simpleName.ifEmpty { "PipeBlock" }
 
     companion object {
 
@@ -33,8 +35,6 @@ abstract class PipeBlock<T, R>
             override fun Context.pipe(input: T): R = piping(input)
         }
     }
-
-    override fun toString(): String = javaClass.simpleName.ifEmpty { "PipeBlock" }
 }
 
 /**
@@ -82,13 +82,15 @@ abstract class CompositeBlock(processing: Processing) : Block(processing) {
      *
      * Try not to confuse inputs/outputs as that may result in errors.
      */
-    protected abstract fun SubsystemMapper.configSubsystem(): BlockArrangement
+    protected abstract fun SubsystemMapper.configSubsystem(builder: BlockArrangementBuilder)
 
-    final override fun finalizeConfig(arrangement: ReadOnlyBlockArrangement) {
-        super.finalizeConfig(arrangement)
+    final override fun finalizeConfig() {
+        super.finalizeConfig()
+        val builder = BlockArrangementBuilder()
         val mapper = object : SubsystemMapper {
-            val outputsArray = arrayOfNulls<Output<*>>(numOutputs)
-            private val outputs = Outputs(outputsArray.uncheckedCast())
+            val outputs = Outputs()
+            val sources = Array(numInputs) { Source(inputs[it]) }
+            val usedOutputs = BooleanArray(numOutputs)
             override val <T> Input<T>.subOutput: Output<T>
                 get() {
                     require(block === this@CompositeBlock) {
@@ -97,7 +99,7 @@ abstract class CompositeBlock(processing: Processing) : Block(processing) {
                                     "Attempted to map from another block: $this"
                         )
                     }
-                    return Source(this).subOutput
+                    return sources[index].subOutput.uncheckedCast()
                 }
 
             override val <T> Output<T>.subInput: Input<T>
@@ -108,13 +110,14 @@ abstract class CompositeBlock(processing: Processing) : Block(processing) {
                                     "Attempted to map from another block: $this"
                         )
                     }
-                    val index = index
-                    outputsArray[index] = this
+                    usedOutputs[index] = true
                     return outputs.subInputs[index].uncheckedCast()
                 }
         }
-        val subConfig = mapper.configSubsystem()
-        subsystem = Subsystem(subConfig)
+        builder.add(mapper.outputs)
+
+        mapper.configSubsystem(builder)
+        subsystem = Subsystem(builder.build())
     }
 
     /**
@@ -145,20 +148,22 @@ abstract class CompositeBlock(processing: Processing) : Block(processing) {
     }
 
     private inner class Source<T>(private val outsideInput: Input<T>) : Block(LAZY) {
-        val subOutput = newOutput<T>()
+        val subOutput = Output<T>("Mapped " + outsideInput.name, outsideInput.type)
 
         override fun Context.process() {
             subOutput.set = outsideContext!![outsideInput]
         }
     }
 
-    private inner class Outputs(private val outsideOutputs: Array<Output<Any?>>) : Block(ALWAYS) {
+    private inner class Outputs : Block(ALWAYS) {
 
-        val subInputs = Array(this@CompositeBlock.numOutputs) { newInput<Any?>() }
+        val subInputs = Array(this@CompositeBlock.numOutputs) {
+            Input<Any?>("Mapped " + this@CompositeBlock.outputs[it].name, this@CompositeBlock.outputs[it].type, false)
+        }
 
         override fun Context.process() {
             repeat(subInputs.size) {
-                outsideContext!![outsideOutputs[it]] = subInputs[it].get
+                outsideContext!![this@CompositeBlock.outputs[it].uncheckedCast<Output<Any?>>()] = subInputs[it].get
             }
         }
     }
