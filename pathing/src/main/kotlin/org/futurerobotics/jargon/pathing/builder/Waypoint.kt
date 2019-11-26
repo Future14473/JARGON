@@ -14,7 +14,7 @@ import org.futurerobotics.jargon.pathing.reparam.ReparamCurve
  * Has known [location] and possibly not known [direction], [derivMagnitude], and [secondDeriv].
  *
  * Unknown values will be optimized heuristically to try and generate a smooth and efficient curve.
- * @see heruesticCurves
+ * @see heuristicCurves
  */
 data class Waypoint(
     /** The known position. */

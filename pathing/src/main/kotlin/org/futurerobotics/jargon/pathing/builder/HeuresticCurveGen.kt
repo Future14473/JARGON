@@ -11,7 +11,7 @@ import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
 import kotlin.math.min
 
 /**
- * Parameters given to [heruesticCurves] for curve generation.
+ * Parameters given to [heuristicCurves] for curve generation.
  */
 data class CurveGenParams @JvmOverloads constructor(
     /**
@@ -32,13 +32,11 @@ data class CurveGenParams @JvmOverloads constructor(
 }
 
 /**
- * Creates a list of connected and heruestic optimized smooth splines that goes through all the given [waypoints],
+ * Creates a list of connected and heuristic optimized smooth splines that goes through all the given [waypoints],
  * using the given [curveGenParams] for additional options.
- *
- * This uses just the heruestics given by TODO
  */
-fun heruesticCurves(waypoints: List<Waypoint>, curveGenParams: CurveGenParams): List<Curve> {
-    return heruesticSplines(waypoints, curveGenParams)
+fun heuristicCurves(waypoints: List<Waypoint>, curveGenParams: CurveGenParams): List<Curve> {
+    return heuristicSplines(waypoints, curveGenParams)
         .map { curveGenParams.reparameterizer(it) }
 }
 
@@ -48,7 +46,7 @@ fun heruesticCurves(waypoints: List<Waypoint>, curveGenParams: CurveGenParams): 
  *
  * This is also used by [CurveBuilder].
  */
-fun heruesticSplines(
+fun heuristicSplines(
     waypoints: List<Waypoint>,
     curveGenParams: CurveGenParams
 ): List<QuinticSpline> {

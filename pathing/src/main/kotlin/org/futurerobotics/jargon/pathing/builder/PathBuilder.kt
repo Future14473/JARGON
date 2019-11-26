@@ -99,7 +99,7 @@ sealed class GenericPathBuilder<Self : GenericPathBuilder<Self>>(private val cur
         //if only 0 or 1 ignore.
         check(waypoints.isNotEmpty()) { "No waypoints given." }
         if (waypoints.size < 2) return
-        curves += heruesticCurves(waypoints, curveGenParams)
+        curves += heuristicCurves(waypoints, curveGenParams)
         val lastWaypoint = waypoints.last()
         waypoints.clear()
         waypoints += lastWaypoint
@@ -119,14 +119,14 @@ class CurveBuilder
     /**
      * Builds the [Curve].
      *
-     * @see heruesticCurves
+     * @see heuristicCurves
      */
     fun build(): Curve = multipleCurve(buildCurves())
 
     /**
      * Builds the curve as a list of connected [Curve] (segments).
      *
-     * @see heruesticCurves
+     * @see heuristicCurves
      */
     fun buildCurves(): List<Curve> {
         waypointsToCurves()
