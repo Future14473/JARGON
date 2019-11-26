@@ -2,7 +2,7 @@
  * The classes in this file are derivatives of similar classes in the Hipparchus project v1.5.
  * They were copied, converted to kotlin, and modified so that they solve the
  * *Discrete* Algebraic Ricatti Equation (approximately).
- * License (Apache 2.0) for the Hipparchus project can be found in "Third Party Licences/Hipparchus"
+ * License (Apache 2.0) for the Hipparchus project can be found in "thirdparty/Hipparchus"
  *
  * The original Hipparchus project files have the following copyright notice:
  *
