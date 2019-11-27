@@ -1,4 +1,5 @@
-@file:Suppress("NOTHING_TO_INLINE")
+@file:JvmMultifileClass
+@file:JvmName("Paths")
 
 package org.futurerobotics.jargon.pathing
 

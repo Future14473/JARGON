@@ -1,6 +1,5 @@
-package org.futurerobotics.jargon.pathing.builder
+package org.futurerobotics.jargon.pathing.graph
 
-import org.futurerobotics.jargon.math.ValueMotionState
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.angleNorm
 import org.futurerobotics.jargon.math.function.QuinticSpline
@@ -11,7 +10,7 @@ import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
 import kotlin.math.min
 
 /**
- * Parameters given to [heuristicCurves] for curve generation.
+ * Parameters given to [heuristicSplineCurves] for curve generation.
  */
 data class CurveGenParams @JvmOverloads constructor(
     /**
@@ -27,44 +26,47 @@ data class CurveGenParams @JvmOverloads constructor(
 ) {
 
     init {
-        require(derivMagnitudeMultiplier >= 0) { "derivFactor ($derivMagnitudeMultiplier) must be >= 0" }
+        require(derivMagnitudeMultiplier >= 0) { "derivMagnitudeMutiplier ($derivMagnitudeMultiplier) must be >= 0" }
+    }
+
+    companion object {
+        /** Default [CurveGenParams]. */
+        @JvmField
+        val DEFAULT: CurveGenParams = CurveGenParams()
     }
 }
 
 /**
- * Creates a list of connected and heuristic optimized smooth splines that goes through all the given [waypoints],
- * using the given [curveGenParams] for additional options.
+ * Creates a list of connected and heuristically optimized smooth splines that goes through all the given [waypoints].
+ *
+ * [curveGenParams] provides additional options.
  */
-fun heuristicCurves(waypoints: List<Waypoint>, curveGenParams: CurveGenParams): List<Curve> {
-    return heuristicSplines(waypoints, curveGenParams)
+fun heuristicSplineCurves(waypoints: List<Waypoint>, curveGenParams: CurveGenParams): List<Curve> {
+    return resolveWaypoints(waypoints, curveGenParams)
+        .asSequence()
+        .map { it.toMotionState() }
+        .zipWithNext { a, b -> QuinticSpline.fromDerivatives(a, b) }
         .map { curveGenParams.reparameterizer(it) }
+        .toList()
 }
 
-/**
- * Creates a MultipleCurve that goes through all the given [waypoints],
- * using the given [curveGenParams].
- *
- * This is also used by [CurveBuilder].
- */
-fun heuristicSplines(
+private fun resolveWaypoints(
     waypoints: List<Waypoint>,
     curveGenParams: CurveGenParams
-): List<QuinticSpline> {
+): List<Waypoint> {
     require(waypoints.size > 1) { "Num waypoints (${waypoints.size}) must be > 1" }
-    val points = waypoints.toList()
-
-    val derivs = points.mapIndexed { i, cur ->
-        val (fromVec, toVec) = getVecs(points, i, cur)
+    val derivs = waypoints.mapIndexed { i, cur ->
+        val (fromVec, toVec) = getVecs(waypoints, i, cur)
         val fromDirection = fromVec?.angle
         val toDirection = toVec?.angle
 
-        val direction = cur.direction
+        val direction = cur.constraint.direction
             ?: if (fromDirection != null && toDirection != null) {
                 fromDirection + 0.5 * angleNorm(toDirection - fromDirection)
             } else {
                 fromDirection ?: toDirection!!
             }
-        val magnitude = cur.derivMagnitude
+        val magnitude = cur.constraint.derivMagnitude
             ?: curveGenParams.derivMagnitudeMultiplier * 0.5 * if (fromVec != null && toVec != null) {
                 min(fromVec.length, toVec.length)
             } else {
@@ -73,13 +75,13 @@ fun heuristicSplines(
 
         Vector2d.polar(magnitude, direction)
     }
-    val secondDerivs = points.mapIndexed { i, cur ->
-        cur.secondDeriv?.let { return@mapIndexed it }
-        val (fromVec, toVec) = getVecs(points, i, cur)
+    val secondDerivs = waypoints.mapIndexed { i, cur ->
+        cur.constraint.secondDeriv?.let { return@mapIndexed it }
+        val (fromVec, toVec) = getVecs(waypoints, i, cur)
 
-        val prevDeriv = derivs.tryGet(i - 1)
+        val prevDeriv = derivs.getOrNull(i - 1)
         val curDeriv = derivs[i]
-        val nextDeriv = derivs.tryGet(i + 1)
+        val nextDeriv = derivs.getOrNull(i + 1)
 
         val prevSplineSecondDeriv = if (prevDeriv == null) null else {
             -6 * fromVec!! + 2 * prevDeriv + 4 * curDeriv
@@ -94,23 +96,26 @@ fun heuristicSplines(
             a * prevSplineSecondDeriv!! + b * nextSplineSecondDeriv!!
         } else prevSplineSecondDeriv ?: nextSplineSecondDeriv!!
     }
-    return List(points.size) {
-        val loc = points[it].location
-        val deriv = derivs[it]
-        val secondDeriv = secondDerivs[it]
-        ValueMotionState(loc, deriv, secondDeriv)
-    }.zipWithNext { a, b -> QuinticSpline.fromDerivatives(a, b) }
+    return waypoints.mapIndexed { index, (position, c) ->
+        val deriv = derivs[index]
+        val secondDeriv = secondDerivs[index]
+        Waypoint(
+            position = position,
+            direction = deriv.angle,
+            derivMagnitude = deriv.length,
+            secondDeriv = secondDeriv,
+            heading = c.heading
+        )
+    }
 }
-
-private fun <T : Any> List<T>.tryGet(index: Int): T? = if (index !in indices) null else this[index]
 
 private fun getVecs(
     points: List<Waypoint>, i: Int, cur: Waypoint
 ): Pair<Vector2d?, Vector2d?> {
-    val prev = points.tryGet(i - 1)
-    val next = points.tryGet(i + 1)
+    val prev = points.getOrNull(i - 1)
+    val next = points.getOrNull(i + 1)
 
-    val fromVec = if (prev == null) null else cur.location - prev.location
-    val toVec = if (next == null) null else next.location - cur.location
+    val fromVec = if (prev == null) null else cur.position - prev.position
+    val toVec = if (next == null) null else next.position - cur.position
     return Pair(fromVec, toVec)
 }

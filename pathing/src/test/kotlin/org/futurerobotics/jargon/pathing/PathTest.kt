@@ -54,7 +54,7 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
                 listOf(
                     TangentHeading(random.nextDouble(TAU)),
                     ConstantHeading(random.nextDouble(10_000.0)),
-                    LinearInterpolatedHeading(
+                    LinearlyInterpolatedHeading(
                         random.nextDouble(-1000.0, 1000.0),
                         random.nextDouble(-1000.0, 1000.0)
                     )

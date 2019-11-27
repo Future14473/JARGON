@@ -20,7 +20,7 @@ internal class SerializationTest {
         val path = List(5) {
             randomVectorDerivatives(Random(2384234), 10.0)
         }.zipWithNext { a, b ->
-            QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(LinearInterpolatedHeading(0.0, TAU))
+            QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(LinearlyInterpolatedHeading(0.0, TAU))
         }.let { multiplePath(it) }
 
         val constraints = MotionConstraintSet(

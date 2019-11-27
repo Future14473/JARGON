@@ -23,7 +23,7 @@ class ConstantHeading(heading: Double) : HeadingProvider {
  * A [HeadingProvider] that interpolates linearly along the curve from `fromHeading` to `toHeading`.
  * @see PolyInterpolatedHeading
  */
-class LinearInterpolatedHeading(fromHeading: Double, toHeading: Double) : HeadingProvider {
+class LinearlyInterpolatedHeading(fromHeading: Double, toHeading: Double) : HeadingProvider {
 
     private val fromHeading = angleNorm(fromHeading)
     private val turnHeading = angleNorm(toHeading - fromHeading)
@@ -41,7 +41,7 @@ class LinearInterpolatedHeading(fromHeading: Double, toHeading: Double) : Headin
 /** A [HeadingProvider] that interpolates using a [QuinticPolynomial] along the curve from `fromHeading` to `toHeading`.
  *
  * This allows for smooth interpolation between curves.
- * @see LinearInterpolatedHeading
+ * @see LinearlyInterpolatedHeading
  */
 class PolyInterpolatedHeading(fromHeading: MotionState<Double>, toHeading: MotionState<Double>) : HeadingProvider {
 
@@ -58,24 +58,47 @@ open class TangentHeading
 @JvmOverloads constructor(offset: Double = 0.0) : HeadingProvider {
 
     private val offset = angleNorm(offset)
-    final override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> = object : MotionState<Double> {
-        override val value: Double get() = angleNorm(point.tanAngle + offset)
-        override val deriv: Double get() = point.tanAngleDeriv
-        override val secondDeriv: Double get() = point.tanAngleSecondDeriv
-    }
+    final override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> =
+        ValueMotionState(
+            angleNorm(point.tanAngle + offset),
+            point.tanAngleDeriv,
+            point.tanAngleSecondDeriv
+        )
 
-    /**
-     * The default tangent heading with angle offset of 0.
-     */
-    companion object Default : TangentHeading(0.0) {
+    companion object : TangentHeading(0.0) {
 
         private const val serialVersionUID: Long = 5331301765766845360
     }
 }
 
 /**
+ * A [HeadingProvider] that is like [TangentHeading], but the offset is linearly interpolated from `fromOffset` to
+ * `toOffset`.
+ */
+open class LinearlyInterpolatedTangentHeading
+constructor(fromOffset: Double, toOffset: Double) : HeadingProvider {
+
+    private val fromOffset = angleNorm(fromOffset)
+    private val turnOffset = angleNorm(toOffset - this.fromOffset)
+
+    override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> {
+        val dcl = turnOffset / point.length
+        return ValueMotionState(
+            angleNorm(point.tanAngle + fromOffset + s * dcl),
+            dcl + point.tanAngle,
+            point.tanAngleSecondDeriv
+        )
+    }
+
+    companion object {
+
+        private const val serialVersionUID: Long = 2345984578934978
+    }
+}
+
+/**
  * A [HeadingProvider] that is like [TangentHeading], but the offset is polynomial interpolated from `fromOffset` to
- * `toOffset`
+ * `toOffset`.
  */
 class PolyInterpolatedTangentHeading(fromOffset: MotionState<Double>, toOffset: MotionState<Double>) : HeadingProvider {
 
@@ -83,11 +106,11 @@ class PolyInterpolatedTangentHeading(fromOffset: MotionState<Double>, toOffset: 
 
     override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> {
         val state = spline.motionState(s / point.length)
-        return object : MotionState<Double> {
-            override val value: Double get() = angleNorm(point.tanAngle + state.value)
-            override val deriv: Double get() = point.tanAngleDeriv + state.deriv
-            override val secondDeriv: Double get() = point.tanAngleSecondDeriv + state.secondDeriv
-        }
+        return ValueMotionState(
+            angleNorm(point.tanAngle + state.value),
+            point.tanAngleDeriv + state.deriv,
+            point.tanAngleSecondDeriv + state.secondDeriv
+        )
     }
 
     companion object {
@@ -101,11 +124,13 @@ class PolyInterpolatedTangentHeading(fromOffset: MotionState<Double>, toOffset: 
  */
 class FunctionHeading(private val function: RealFunction) : HeadingProvider {
 
-    override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> = object : MotionState<Double> {
-        private val t = s / point.length
-        override val value: Double get() = angleNorm(function(t))
-        override val deriv: Double get() = function.deriv(t)
-        override val secondDeriv: Double get() = function.secondDeriv(t)
+    override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> {
+        val t = s / point.length
+        return ValueMotionState(
+            angleNorm(function(t)),
+            function.deriv(t),
+            function.secondDeriv(t)
+        )
     }
 
     companion object {

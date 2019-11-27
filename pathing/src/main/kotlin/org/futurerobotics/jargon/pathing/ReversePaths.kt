@@ -1,10 +1,12 @@
-@file:JvmName("ReversePaths")
+@file:JvmMultifileClass
+@file:JvmName("Paths")
 
 package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.asUnmodifiableSet
+import org.futurerobotics.jargon.util.uncheckedCast
 
 private sealed class ReverseGeneric<Path : GenericPath<Point>, Point : CurvePoint>
 constructor(internal val path: Path) : GenericPath<Point> {
@@ -60,7 +62,6 @@ private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path), P
 
 /**
  * Returns this curve, but traversed in the reverse direction.
- * First derivatives will be negated.
  */
 fun Curve.reversed(): Curve =
     if (this is ReverseCurve) this.path
@@ -68,8 +69,22 @@ fun Curve.reversed(): Curve =
 
 /**
  * Returns this path, but traversed in the reverse direction.
- * First derivatives will be negated.
  */
 fun Path.reversed(): Path =
     if (this is ReversePath) this.path
     else ReversePath(this)
+
+/**
+ * Returns this curve or path, but traversed in the reverse direction.
+ *
+ * If neither curve nor path, will attempt to make a [Curve] using [asCurve].
+ */
+fun <T : GenericPath<*>> T.reversed(): T =
+    when (this) {
+        is ReverseCurve -> this.path
+        is ReversePath -> this.path
+        is Curve -> ReverseCurve(this)
+        is Path -> ReversePath(this)
+        else -> asCurve().reversed()
+    }.uncheckedCast()
+

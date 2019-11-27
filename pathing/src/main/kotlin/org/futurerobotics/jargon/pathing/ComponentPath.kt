@@ -1,3 +1,6 @@
+@file:JvmMultifileClass
+@file:JvmName("Paths")
+
 package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.MotionState
@@ -42,8 +45,8 @@ class ComponentPath(internal val curve: Curve, private val heading: HeadingProvi
         }
     }
 
-    private class Point(
-        private val curvePoint: CurvePoint, private val headingVal: MotionState<Double>
+    internal class Point(
+        internal val curvePoint: CurvePoint, private val headingVal: MotionState<Double>
     ) : PathPoint, CurvePoint by curvePoint {
 
         override val heading: Double get() = headingVal.value

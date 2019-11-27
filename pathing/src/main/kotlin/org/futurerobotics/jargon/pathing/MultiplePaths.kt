@@ -1,11 +1,16 @@
+@file:JvmMultifileClass
+@file:JvmName("Paths")
+
 package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.Vector2d
+import org.futurerobotics.jargon.math.angleNorm
 import org.futurerobotics.jargon.math.epsEq
 import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.asUnmodifiableSet
 import org.futurerobotics.jargon.util.replaceIf
 import org.futurerobotics.jargon.util.uncheckedCast
+import kotlin.math.roundToInt
 
 private sealed class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>
 constructor(paths: List<Path>) : GenericPath<Point> {
@@ -13,27 +18,39 @@ constructor(paths: List<Path>) : GenericPath<Point> {
     private val paths: List<Path>
     private val startLengths: DoubleArray
     final override val length: Double
-
     final override val stopPoints: Set<Double>
 
     init {
         require(paths.isNotEmpty()) { "MultiplePath needs at least one path segment" }
-        val realPaths = ArrayList<Path>(paths.size)
+        val flatPaths = ArrayList<Path>(paths.size)
         paths.forEach {
-            if (it is MultipleGeneric<*, *>) realPaths += it.paths.uncheckedCast<List<Path>>()
-            else realPaths += it
+            if (it is MultipleGeneric<*, *>) flatPaths += it.paths.uncheckedCast<List<Path>>()
+            else flatPaths += it
         }
 
         val stops = hashSetOf<Double>()
-        startLengths = DoubleArray(realPaths.size)
+        val initialCapacity = (flatPaths.size * 1.05).roundToInt()
+        val startLengths = ArrayList<Double>(initialCapacity)
+        val realPaths = ArrayList<Path>(initialCapacity)
+
         var curLen = 0.0
         var prevPath: Path? = null
-
-        realPaths.forEachIndexed { i, curPath ->
-            startLengths[i] = curLen
+        flatPaths.forEach { curPath ->
             prevPath?.let { prevPath ->
-                if (needStop(prevPath, curPath)) stops += curLen
+                when (val action = checkCont(prevPath, curPath)) {
+                    is PathAction.AddPointTurn -> {
+                        val turn = action.getTurn().uncheckedCast<Path>()
+                        realPaths += turn
+                        startLengths += curLen
+                        stops += turn.stopPoints.map { it + curLen }
+                        curLen += turn.length
+                    }
+                    PathAction.Stop -> stops += curLen
+                }
             }
+            //dup code... any way around this?
+            realPaths += curPath
+            startLengths += curLen
             stops += curPath.stopPoints.map { it + curLen }
             curLen += curPath.length
             prevPath = curPath
@@ -41,6 +58,7 @@ constructor(paths: List<Path>) : GenericPath<Point> {
         length = curLen
         this.paths = realPaths
         this.stopPoints = stops.asUnmodifiableSet()
+        this.startLengths = startLengths.toDoubleArray()
     }
 
     override val criticalPoints: Set<Double> = hashSetOf<Double>().let {
@@ -82,23 +100,26 @@ constructor(paths: List<Path>) : GenericPath<Point> {
         }
     }
 
-    private fun needStop(prevPath: Path, curPath: Path): Boolean {
+    private fun checkCont(prevPath: Path, curPath: Path): PathAction {
         val prev = prevPath.pointAt(prevPath.length)
         val cur = curPath.pointAt(0.0)
         return checkPointContinuity(prev, cur)
     }
 
-    protected open fun checkPointContinuity(prev: Point, cur: Point): Boolean {
-        var stop = false
-        checkCont("Position", prev.position, cur.position, true)
-        stop = stop || checkCont("PositionDeriv", prev.positionDeriv, cur.positionDeriv, false)
-        stop = stop || checkCont(
-            "PositionSecondDeriv",
-            prev.positionSecondDeriv,
-            cur.positionSecondDeriv,
-            false
-        )
-        return stop
+    protected open fun checkPointContinuity(prev: Point, cur: Point): PathAction {
+        require(prev.position epsEq cur.position) { "Position discontinuity: ${prev.position}, ${cur.position}" }
+        return if (!(prev.positionDeriv epsEq cur.positionDeriv)) PathAction.Stop
+        else PathAction.None
+    }
+
+    protected sealed class PathAction {
+
+        class AddPointTurn(val location: Vector2d, val from: Double, val to: Double) : PathAction() {
+            fun getTurn() = PointTurn(location, from, angleNorm(to - from))
+        }
+
+        object None : PathAction()
+        object Stop : PathAction()
     }
 }
 
@@ -111,43 +132,18 @@ private class MultipleCurve(paths: List<Curve>) : MultipleGeneric<Curve, CurvePo
 
 private class MultiplePath(paths: List<Path>) : MultipleGeneric<Path, PathPoint>(paths), Path {
 
-    override fun checkPointContinuity(prev: PathPoint, cur: PathPoint): Boolean {
-        var stop = super.checkPointContinuity(prev, cur)
-        checkCont("Heading", prev.heading, cur.heading, true)
-        stop = stop || checkCont(
-            "HeadingDeriv/Curvature",
-            prev.headingDeriv,
-            cur.headingDeriv,
-            false
-        )
-        stop = stop || checkCont(
-            "HeadingSecondDeriv",
-            prev.headingSecondDeriv,
-            cur.headingSecondDeriv,
-            false
-        )
-        return stop
+    override fun checkPointContinuity(prev: PathPoint, cur: PathPoint): PathAction {
+        val superCheck = super.checkPointContinuity(prev, cur)
+        if (!(angleNorm(prev.heading - cur.heading) epsEq 0.0)) {
+            return PathAction.AddPointTurn(prev.position, prev.heading, cur.heading)
+        }
+        if (superCheck !== PathAction.Stop) return superCheck
+        return if (!(prev.headingDeriv epsEq cur.headingDeriv)) PathAction.Stop else PathAction.None
     }
 
     companion object {
         private const val serialVersionUID: Long = 1903180955913210312
     }
-}
-
-private fun checkCont(name: String, prev: Vector2d, cur: Vector2d, throwIfDisc: Boolean): Boolean {
-    if (!(prev epsEq cur)) {
-        require(!throwIfDisc) { "$name discontinuity: $prev, $cur" }
-        return true
-    }
-    return false
-}
-
-private fun checkCont(name: String, prev: Double, cur: Double, throwIfDisc: Boolean): Boolean {
-    if (!(prev epsEq cur)) {
-        require(!throwIfDisc) { "$name discontinuity: $prev, $cur" }
-        return true
-    }
-    return false
 }
 
 /**
@@ -157,7 +153,7 @@ private fun checkCont(name: String, prev: Double, cur: Double, throwIfDisc: Bool
  */
 fun multipleCurve(curves: List<Curve>): Curve = when (curves.size) {
     0 -> throw IllegalArgumentException("Must contain at least 1 curve")
-    1 -> curves.first()
+    1 -> curves[0]
     else -> MultipleCurve(curves)
 }
 
@@ -176,7 +172,7 @@ fun multipleCurve(vararg curves: Curve): Curve = MultipleCurve(curves.asList())
  */
 fun multiplePath(paths: List<Path>): Path = when (paths.size) {
     0 -> throw IllegalArgumentException("Must contain at least 1 path")
-    1 -> paths.first()
+    1 -> paths[0]
     else -> MultiplePath(paths)
 }
 

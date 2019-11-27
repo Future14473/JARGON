@@ -1,3 +1,6 @@
+@file:JvmMultifileClass
+@file:JvmName("Paths")
+
 package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.*

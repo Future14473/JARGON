@@ -106,16 +106,16 @@ inline fun <T> List<T>.forEachReversed(action: (T) -> Unit) {
 }
 
 /**
- * Runs forEach on each of the iterables [this], [p2], zipped.
+ * Runs forEach on each of the iterables [this], [other], zipped.
  */
 @UseExperimental(ExperimentalContracts::class)
-inline fun <T, V> Iterable<T>.zipForEachIndexed(p2: Iterable<V>, action: (index: Int, T, V) -> Unit) {
+inline fun <T, V> Iterable<T>.zipForEachIndexed(other: Iterable<V>, action: (index: Int, T, V) -> Unit) {
     contract {
         callsInPlace(action)
     }
     var i = 0
     val it1 = this.iterator()
-    val it2 = p2.iterator()
+    val it2 = other.iterator()
     while (it1.hasNext() && it2.hasNext()) {
         if (i < 0) throw ArithmeticException("Index overflow")
         action(i++, it1.next(), it2.next())
@@ -123,19 +123,65 @@ inline fun <T, V> Iterable<T>.zipForEachIndexed(p2: Iterable<V>, action: (index:
 }
 
 /**
- * Runs forEach on each of the iterables [this], [p2], zipped.
+ * Runs forEach on each of the iterables [this], [other], zipped.
  */
 @UseExperimental(ExperimentalContracts::class)
-inline fun <T, V> Iterable<T>.zipForEach(p2: Iterable<V>, action: (T, V) -> Unit) {
+inline fun <T, V> Iterable<T>.zipForEach(other: Iterable<V>, action: (T, V) -> Unit) {
     contract {
         callsInPlace(action)
     }
     val it1 = this.iterator()
-    val it2 = p2.iterator()
+    val it2 = other.iterator()
     while (it1.hasNext() && it2.hasNext()) {
         action(it1.next(), it2.next())
     }
 }
+
+/**
+ * Adds to the given [destination] the results of applying the given [transform] function
+ * to an each pair of two adjacent elements in this collection, then returns the [destination].
+ *
+ * No elements are added if this collection contains less than two elements.
+ */
+inline fun <C : MutableCollection<in R>, T, R> Iterable<T>.zipWithNextTo(
+    destination: C,
+    transform: (a: T, b: T) -> R
+): C {
+    val iterator = iterator()
+    if (!iterator.hasNext()) return destination
+    var current = iterator.next()
+    while (iterator.hasNext()) {
+        val next = iterator.next()
+        destination.add(transform(current, next))
+        current = next
+    }
+    return destination
+}
+
+/**
+ * Returns a list of values built from the elements of `this` collection and the [other] collection with the same index
+ * using the provided [transform] function applied to each pair of elements, with index.
+ * The returned list has length of the shortest collection.
+ */
+inline fun <T, V, R> Iterable<T>.zipIndexed(
+    other: Iterable<V>,
+    transform: (index: Int, T, V) -> R
+): List<R> {
+    val first = iterator()
+    val second = other.iterator()
+    val list = ArrayList<R>(minOf(collectionSizeOrDefault(10), other.collectionSizeOrDefault(10)))
+    var i = 0
+    while (first.hasNext() && second.hasNext()) {
+        if (i < 0) throw ArithmeticException("Index overflow")
+        list.add(transform(i, first.next(), second.next()))
+        i++
+    }
+    return list
+}
+
+@PublishedApi
+internal fun <T> Iterable<T>.collectionSizeOrDefault(default: Int): Int =
+    if (this is Collection<*>) this.size else default
 
 /**
  * Returns a list of all possible pairs of elements from the given lists.
