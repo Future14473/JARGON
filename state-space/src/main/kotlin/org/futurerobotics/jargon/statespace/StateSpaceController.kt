@@ -3,11 +3,9 @@ package org.futurerobotics.jargon.statespace
 import org.futurerobotics.jargon.linalg.*
 
 /**
- * A state space controller, that produces signals, _not including_ feed-forward.
+ * A state space controller, that produces signals, _not including_ [FeedForward]s.
  *
- * This should include any augmentations.
- *
- * [FeedForward]s may then be applied.
+ * This should take into account any augmentations.
  */
 interface StateSpaceController {
 

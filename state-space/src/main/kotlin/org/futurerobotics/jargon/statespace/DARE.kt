@@ -153,8 +153,8 @@ class DiscreteRicattiEquationSolverImpl(
 
         P = computeInitialP(A, B, Q, A_inv, R_inv)
         //formula here changed.
-        val BT = B.T
-        K = (R + BT * P * B).solve(BT * P * A)
+        val BtP = B.T * P
+        K = (R + BtP * B).pinv() * (BtP * A)
     }
 
     /**
@@ -172,7 +172,7 @@ class DiscreteRicattiEquationSolverImpl(
         A: RealMatrix, B: RealMatrix,
         Q: RealMatrix, A_inv: RealMatrix, R_inv: RealMatrix
     ): RealMatrix {
-        val BT = B.transpose()
+        val BT = B.T
         val AiT = A_inv.T
         //formula changed for DARE instead
         //use kotlin extensions & func to build the z matrix instead

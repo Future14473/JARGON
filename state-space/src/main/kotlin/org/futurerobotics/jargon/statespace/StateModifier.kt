@@ -10,7 +10,7 @@ import org.futurerobotics.jargon.linalg.*
  * StateDecorators may be applied before giving [FeedForward]s depending on the order they are added to a
  * [StateSpaceRunnerBuilder].
  */
-interface StateDecorator {
+interface StateModifier {
 
     /**
      * Augments an outside inputted initial state [x], also given the previous augmented state [prevXAug] if known.

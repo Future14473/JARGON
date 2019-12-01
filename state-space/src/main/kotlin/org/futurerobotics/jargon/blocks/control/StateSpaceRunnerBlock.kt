@@ -10,14 +10,14 @@ import org.futurerobotics.jargon.statespace.StateSpaceRunner
 /**
  * A block that runs a [StateSpaceRunner].
  *
- * An `initialState` can to be provided. If it is null, [stateOverride] **must** be connected
+ * An [initialState] can be provided, which will be set upon `init`. If it is null, [stateOverride] **must** be connected
  * and provide an initial state on the first cycle.
  *
  * Either [reference] and [nextReference] can be connected, or [referenceMotionState] can be connected.
  * The former provides reference tracking (if an appropriate [FeedForwardWrapper] is given) in discrete time,
  * while the latter approximates it from continuous time.
  */
-class StateSpaceRunnerBlock(private val runner: StateSpaceRunner, private val initialState: Vec?) :
+class StateSpaceRunnerBlock(private val runner: StateSpaceRunner, var initialState: Vec?) :
     Block(Processing.ALWAYS) {
 
     /** The reference vector input. Either this or [referenceMotionState] must be connected. */
@@ -53,8 +53,8 @@ class StateSpaceRunnerBlock(private val runner: StateSpaceRunner, private val in
     }
 
     override fun init() {
-        if (initialState != null) {
-            runner.reset(initialState)
+        initialState?.let {
+            runner.reset(it)
         }
     }
 

@@ -42,6 +42,17 @@ abstract class StateSpaceMatrices(
 
     /** [C] */
     operator fun component3(): Mat = C
+
+    override fun toString(): String {
+        return """${javaClass.simpleName}:
+A
+${A.formatReadable()}
+B
+${B.formatReadable()}
+C
+${C.formatReadable()}
+"""
+    }
 }
 
 /**

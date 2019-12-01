@@ -3,10 +3,12 @@ package org.futurerobotics.jargon.statespace
 import org.futurerobotics.jargon.linalg.*
 
 /**
- * Provides [DiscreteStateSpaceMatrices] for a system to use. This may vary over time/input (be linearized/time
- * variant).
+ * Provides [DiscreteStateSpaceMatrices] for a system to use. This may (or may not) vary over time/input (be
+ * linearized/time variant).
  *
  * This should include any augmentations.
+ *
+ * @see ConstantStateSpaceMatricesProvider
  */
 interface StateSpaceMatricesProvider {
 

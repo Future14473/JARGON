@@ -4,7 +4,7 @@ import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.util.builder
 
 /**
- * Runs a state space system, where the plant is external.
+ * Runs a state space system, supporting several components, and the "plant" is external.
  *
  * This can be created using a [StateSpaceRunnerBuilder]
  *
@@ -14,11 +14,11 @@ class StateSpaceRunner internal constructor(
     private val controller: StateSpaceController,
     private val observer: StateSpaceObserver,
     private val matricesProvider: StateSpaceMatricesProvider,
-    private val decAndFfs: List<Any>
+    private val pipings: List<StatePiping>,
+    private val signalModifiers: List<SignalModifier>
 ) {
 
-    private val decorators = decAndFfs.filterIsInstance<StateDecorator>()
-    private val ffs = decAndFfs.filterIsInstance<FeedForward>()
+    private val decorators = pipings.filterIsInstance<StatePiping.StateModify>().map { it.modifier }
 
     private fun augmentInitialState(initialState: Vec, reset: Boolean): Vec {
         val prevXAug = if (reset) null else observer.currentState
@@ -50,9 +50,9 @@ class StateSpaceRunner internal constructor(
         private set
 
     /**
-     * Gets the current estimated state _after [StateDecorator.deAugmentState]_,
+     * Gets the current estimated state _after [StateModifier.deAugmentState]_,
      *
-     * or set to manually override the current state _before [StateDecorator.augmentInitialState]_.
+     * or set to manually override the current state _before [StateModifier.augmentInitialState]_.
      *
      * @throws IllegalStateException on _get_ if reset has never been called yet.
      *
@@ -113,25 +113,30 @@ class StateSpaceRunner internal constructor(
         var curR = r
         var curR1 = r1
 
-        decAndFfs.forEach {
-            when (it) {
-                is FeedForward -> {
-                    val ff = it.getFeedForward(matrices, curR, curR1)
-                    if (it.includeInObserver)
+        pipings.forEach { piping ->
+            when (piping) {
+                is StatePiping.StateModify -> {
+                    val modifier = piping.modifier
+                    curR = modifier.augmentReference(curR)
+                    curR1?.let { theR1 ->
+                        curR1 = modifier.augmentReference(theR1)
+                    }
+                }
+                is StatePiping.FF -> {
+                    val feedForward = piping.feedForward
+                    val ff = feedForward.getFeedForward(matrices, curR, curR1)
+                    if (feedForward.includeInObserver)
                         uffInc += ff
                     else
                         uffExt += ff
                 }
-                is StateDecorator -> {
-                    curR = it.augmentReference(curR)
-                    curR1?.let { theR1 ->
-                        curR1 = it.augmentReference(theR1)
-                    }
-                }
-                else -> throw AssertionError()
             }
         }
-        val u = controller.getSignal(matrices, x, curR, timeInNanos)
+
+        val rawU = controller.getSignal(matrices, x, curR, timeInNanos)
+        val u = signalModifiers.fold(rawU) { curU, m ->
+            m.modifySignal(matrices, x, curU, y)
+        }
         observerSignal = u + uffInc
         signal = observerSignal + uffExt
     }
@@ -140,7 +145,7 @@ class StateSpaceRunner internal constructor(
 /**
  * A builder for a [StateSpaceRunner].
  *
- * This requries:
+ * This requires:
  *
  * - [StateSpaceMatrices]
  * - [StateSpaceObserver]
@@ -148,7 +153,7 @@ class StateSpaceRunner internal constructor(
  *
  * And can optionally include one or more of:
  *
- * - [StateDecorator]
+ * - [StateModifier]
  * - [FeedForward]
  */
 class StateSpaceRunnerBuilder {
@@ -156,7 +161,8 @@ class StateSpaceRunnerBuilder {
     private var controller: StateSpaceController? = null
     private var observer: StateSpaceObserver? = null
     private var matricesProvider: StateSpaceMatricesProvider? = null
-    private val decAndFfs = mutableListOf<Any>()
+    private val statePipings = mutableListOf<StatePiping>()
+    private val signalModifiers = mutableListOf<SignalModifier>()
 
     /** Sets the matrices to use the given [matricesProvider]. */
     fun setMatrices(matricesProvider: StateSpaceMatricesProvider): StateSpaceRunnerBuilder = builder {
@@ -185,19 +191,24 @@ class StateSpaceRunnerBuilder {
 
     /** Adds a given [feedForward]. */
     fun addFeedForward(feedForward: FeedForward): StateSpaceRunnerBuilder = builder {
-        this.decAndFfs += feedForward
+        this.statePipings += StatePiping.FF(feedForward)
     }
 
     /**
      * Adds a [ReferenceTrackingFeedForward] with the given [Kff] feed-forward gain.
      */
     fun addReferenceTracking(Kff: Mat): StateSpaceRunnerBuilder = builder {
-        this.decAndFfs += ReferenceTrackingFeedForward(Kff)
+        addFeedForward(ReferenceTrackingFeedForward(Kff))
     }
 
-    /** Adds a [stateDecorator]. */
-    fun addDecorator(stateDecorator: StateDecorator): StateSpaceRunnerBuilder = builder {
-        this.decAndFfs += stateDecorator
+    /** Adds a [stateModifier]. */
+    fun addStateModifier(stateModifier: StateModifier): StateSpaceRunnerBuilder = builder {
+        this.statePipings += StatePiping.StateModify(stateModifier)
+    }
+
+    /** Adds a [signalModifier]. */
+    fun addSignalModifier(signalModifier: SignalModifier): StateSpaceRunnerBuilder = builder {
+        this.signalModifiers += signalModifier
     }
 
     /**
@@ -215,7 +226,13 @@ class StateSpaceRunnerBuilder {
             controller ?: throw IllegalStateException("Controller not provided"),
             observer ?: throw IllegalStateException("Observer not provided"),
             matricesProvider ?: throw IllegalStateException("Matrices not provided"),
-            decAndFfs
+            statePipings,
+            signalModifiers
         )
     }
+}
+
+internal sealed class StatePiping {
+    class StateModify(val modifier: StateModifier) : StatePiping()
+    class FF(val feedForward: FeedForward) : StatePiping()
 }
