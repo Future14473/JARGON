@@ -115,3 +115,4 @@ gradle-app.setting
 */graphs/
 tmp/
 .idea/git_toolbox_prj.xml
+.idea/jarRepositories.xml
