@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.blocks
 
-import org.futurerobotics.jargon.system.looping.LoopSystem
+import org.futurerobotics.jargon.running.LoopSystem
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -14,7 +14,8 @@ import kotlin.contracts.contract
  *
  * @see buildBlockSystem
  */
-class BlockSystem(arrangement: BlockArrangement) : BlockRunner(arrangement), LoopSystem {
+class BlockSystem(arrangement: BlockArrangement) : BlockRunner(arrangement),
+                                                   LoopSystem {
 
     private val specials: Map<Class<*>, List<SpecialBlock>>
     private val _systemValues = object : SystemValues {

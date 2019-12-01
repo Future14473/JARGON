@@ -1,8 +1,10 @@
-package org.futurerobotics.jargon.system.looping
+package org.futurerobotics.jargon.running
 
 /**
- * Represents something that can be run with a loop, using [start], then [loop] which is called repeatedly, and finally
+ * Represents something that can be run as a loop, using [start], then [loop] which is called repeatedly, and finally
  * [stop].
+ *
+ * This can later be run using a [LoopSystemRunner]/[SuspendLoopSystemRunner].
  */
 interface LoopSystem {
 

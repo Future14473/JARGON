@@ -1,16 +1,11 @@
-package org.futurerobotics.jargon.system
+package org.futurerobotics.jargon.running
 
-import org.futurerobotics.jargon.system.looping.LoopAsFastAsPossible
-import org.futurerobotics.jargon.system.looping.LoopSystem
-import org.futurerobotics.jargon.system.looping.LoopSystemRunner
-import org.futurerobotics.jargon.system.looping.LoopWithMaxSpeed
 import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import strikt.assertions.isIn
-import kotlin.math.roundToLong
 import kotlin.system.measureNanoTime
 
 private class RunTimes(var times: Int) : LoopSystem {
@@ -37,20 +32,20 @@ internal class SimpleLoopSystemDriverTest {
         expect {
             repeat(10) {
                 val system = RunTimes(it + 1)
-                LoopSystemRunner(system, LoopAsFastAsPossible()).run()
+                LoopSystemRunner(system, UnregulatedRegulator()).run()
                 that(system.finalNumber).isEqualTo(it + 1)
             }
         }
     }
 
     private fun warmUp() {
-        LoopSystemRunner(RunTimes(5000), LoopAsFastAsPossible()).run()
+        LoopSystemRunner(RunTimes(5000), UnregulatedRegulator()).run()
     }
 
     @RepeatedTest(4)
     fun `regulation works`() { //< a second, mostly sleeping
         val hertz = 100.0
-        val regulator = LoopWithMaxSpeed((1e9 / hertz).roundToLong())
+        val regulator = LoopWithMaxSpeed(1 / hertz)
         val system = RunTimes(1)//only regulated on 2nd cycle onward.
         warmUp()
         for (times in 10..12) {

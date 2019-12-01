@@ -12,12 +12,12 @@ import org.futurerobotics.jargon.pathing.TangentHeading
 import org.futurerobotics.jargon.pathing.addHeading
 import org.futurerobotics.jargon.pathing.trajectory.*
 import org.futurerobotics.jargon.profile.MotionProfileGenParams
+import org.futurerobotics.jargon.running.FixedTestClock
+import org.futurerobotics.jargon.running.LoopSystemRunner
+import org.futurerobotics.jargon.running.UnregulatedRegulator
 import org.futurerobotics.jargon.saveGraph
 import org.futurerobotics.jargon.statespace.NoiseCovariance
 import org.futurerobotics.jargon.statespace.QRCost
-import org.futurerobotics.jargon.system.looping.FixedTestClock
-import org.futurerobotics.jargon.system.looping.LoopAsFastAsPossible
-import org.futurerobotics.jargon.system.looping.LoopSystemRunner
 import org.junit.jupiter.api.Test
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -62,7 +62,10 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
         trajectories.add(trajectory)
 
         val runner = LoopSystemRunner(
-            system, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong()))
+            system,
+            UnregulatedRegulator(
+                FixedTestClock((1e9 * period).roundToLong())
+            )
         )
         interruptAfter(5, TimeUnit.SECONDS) {
             runner.run()
@@ -91,7 +94,10 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
         trajectories.add(trajectory)
 
         val runner = LoopSystemRunner(
-            system, LoopAsFastAsPossible(FixedTestClock((1e9 * period).roundToLong()))
+            system,
+            UnregulatedRegulator(
+                FixedTestClock((1e9 * period).roundToLong())
+            )
         )
         interruptAfter(5, TimeUnit.SECONDS) {
             runner.run()

@@ -3,8 +3,8 @@ package org.futurerobotics.jargon.blocks
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST
 import org.futurerobotics.jargon.blocks.functional.Monitor
-import org.futurerobotics.jargon.system.looping.LoopAsFastAsPossible
-import org.futurerobotics.jargon.system.looping.LoopSystemRunner
+import org.futurerobotics.jargon.running.LoopSystemRunner
+import org.futurerobotics.jargon.running.UnregulatedRegulator
 import org.junit.jupiter.api.Test
 import strikt.api.expectCatching
 import strikt.api.expectThat
@@ -91,7 +91,7 @@ internal class BlockSystemTest {
         }
         repeat(10) { i ->
             externalConstant = i
-            LoopSystemRunner(system, LoopAsFastAsPossible()).run()
+            LoopSystemRunner(system, UnregulatedRegulator()).run()
             expectThat(monitor.value).isEqualTo(i)
         }
     }
