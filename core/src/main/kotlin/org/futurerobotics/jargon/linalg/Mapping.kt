@@ -27,7 +27,7 @@ inline fun Mat.mapIndexed(func: (r: Int, c: Int, Double) -> Double): Mat = zeroM
 /**
  * Creates a new vector with all the values mapped through the given [map] function, indexed
  */
-inline fun Vec.mapIndexed(func: (ind: Int, Double) -> Double): Vec = zeroVec(size).apply {
+inline fun Vec.mapIndexed(func: (index: Int, Double) -> Double): Vec = zeroVec(size).apply {
     repeat(size) {
         this[it] = func(it, this@mapIndexed[it])
     }
