@@ -33,7 +33,7 @@ inline fun <T> Any?.uncheckedCast(): T = this as T
  * Intended for use in builders that return self.
  */
 @UseExperimental(ExperimentalContracts::class)
-inline fun <T, S : T> T.builder(block: () -> Unit): S {
+inline fun <S> Any?.builder(block: () -> Unit): S {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
