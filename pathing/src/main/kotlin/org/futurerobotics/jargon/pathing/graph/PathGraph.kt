@@ -56,13 +56,20 @@ class PathGraph
 
     /**
      * Attempts to create a path between the node named [start] and the node name [end], using the given
-     * [curveGenParams].
+     * [curveGenParams], or `null` if not possible.
      */
     @JvmOverloads
-    fun getPath(start: String, end: String, curveGenParams: CurveGenParams = CurveGenParams.DEFAULT): Path? {
+    fun getPath(start: String, end: String, curveGenParams: CurveGenParams = CurveGenParams.DEFAULT): Path? =
+        getPaths(start, end, curveGenParams)?.let { multiplePath(it) }
+
+    /**
+     * Attempts to create a path between the node named [start] and the node name [end], using the given
+     * [curveGenParams], or `null` if not possible.
+     */
+    @JvmOverloads
+    fun getPaths(start: String, end: String, curveGenParams: CurveGenParams = CurveGenParams.DEFAULT): List<Path>? {
         val edges = dijkstras(getNode(start).index, getNode(end).index)?.takeIf { it.isNotEmpty() } ?: return null
-        val paths = createPaths(edges, curveGenParams)
-        return multiplePath(paths)
+        return createPaths(edges, curveGenParams)
     }
 
     //rather ad-hoc...
@@ -141,8 +148,8 @@ class PathGraph
         val from = arrayOfNulls<EdgeTraversal>(nodes.size)
 
         val queue = PriorityQueue<MarkedNode>(compareBy { it.distance })
-        queue += MarkedNode(start, 0, true)
         queue += MarkedNode(start, 0, false)
+        queue += MarkedNode(start, 0, true)
         while (queue.isNotEmpty()) {
             val next = queue.remove()
             val (nodeIndex, dist, backwards) = next

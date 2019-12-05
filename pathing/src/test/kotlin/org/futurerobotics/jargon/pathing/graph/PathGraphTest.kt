@@ -1,6 +1,7 @@
 package org.futurerobotics.jargon.pathing.graph
 
-import org.futurerobotics.jargon.pathing.graphPath
+import org.futurerobotics.jargon.pathing.graphPathWithHeading
+import org.futurerobotics.jargon.pathing.multiplePath
 import org.futurerobotics.jargon.saveGraph
 import org.junit.jupiter.api.Test
 import org.knowm.xchart.XYChart
@@ -21,7 +22,9 @@ internal class PathGraphTest {
                 .to("B")
         }
 
-        val path = graph.getPath("Start", "End", CurveGenParams(1.5))!!
+        val paths = graph.getPaths("Start", "End", CurveGenParams(1.5))!!
+
+        val path = multiplePath(paths)
         XYChart(600, 400).apply {
             styler.apply {
                 xAxisMin = -3.0
@@ -29,8 +32,8 @@ internal class PathGraphTest {
                 yAxisMin = -3.0
                 yAxisMax = 5.0
             }
-            graphPath("curve", path, 1000)
-        }.saveGraph("builder/PathGraphTest/forward", 300)
+            graphPathWithHeading("path", path, 1000)
+        }.saveGraph("builder/PathGraphTest/direct", 300)
     }
 
     @Test
@@ -42,13 +45,13 @@ internal class PathGraphTest {
         repeat(size + 1) { x ->
             repeat(size + 1) { y ->
                 val node = graph.newNode(x.toDouble(), y.toDouble()).setName("$x,$y").setTurnAroundWeight(0)
-                if (x != 0) node.lineTo(graph.getNode("${x - 1},$y"))
+                if (x != 0) node.to(graph.getNode("${x - 1},$y"))
                     .setWeights(random.nextInt(-1000, 1000))
                 if (y != 0) node.to(graph.getNode("$x,${y - 1}"))
                     .setWeights(random.nextInt(-1000, 1000))
             }
         }
-        val path = graph.getPath("0,0", "$size,$size")!!
+        val path = graph.getPath("0,0", "$size,$size", CurveGenParams(1.3))!!
         XYChart(500, 400).apply {
             styler.apply {
                 xAxisMin = 0.0
@@ -56,7 +59,7 @@ internal class PathGraphTest {
                 yAxisMin = 0.0
                 yAxisMax = size.toDouble()
             }
-            graphPath("curve", path, 1000)
+            graphPathWithHeading("path", path, 1000, lineSpacing = 5)
         }.saveGraph("builder/PathGraphTest/grid", 300)
     }
 }
