@@ -52,7 +52,7 @@ internal class DriveStateSpaceModelsTest {
             435 * rev / mins,
             0.25 * A
         )
-        val transmission = TransmissionModel.fromTorqueLosses(motor, 2.0, 50 * ozf * `in`, 0.9)
+        val transmission = TransmissionModel.fromTorqueMultiplier(motor, 2.0, 50 * ozf * `in`, 0.9)
         val mass = 20 * lbs
         val model = NominalDriveModel.mecanumLike(
             mass,

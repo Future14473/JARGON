@@ -96,26 +96,26 @@ class MotorModel private constructor(
  * @property motor the [MotorModel]
  * @property gearRatio the gear ratio; higher means more output torque, less speed.
  * @property additionalConstantTorque the additional amount of torque needed to overcome _constant_ friction
- * @property outputTorqueMultiplier the percentage of the input torque that makes it to the output.
+ * @property torqueMultiplier the percentage of the input torque that makes it to the output.
  */
 class TransmissionModel private constructor(
     val motor: MotorModel,
     val gearRatio: Double,
     val additionalConstantTorque: Double = 0.0,
-    val outputTorqueMultiplier: Double = 1.0
+    val torqueMultiplier: Double = 1.0
 ) {
 
     init {
         require(gearRatio > 0) { "gearRatio ($gearRatio) must be > 0" }
         require(additionalConstantTorque >= 0) { "constantTorqueLoss ($additionalConstantTorque) must be >= 0" }
-        require(outputTorqueMultiplier in 0.0..1.0)
-        { "ratioTorqueLoss ($outputTorqueMultiplier) must be in the range 0.0..1.0" }
+        require(torqueMultiplier in 0.0..1.0)
+        { "ratioTorqueLoss ($torqueMultiplier) must be in the range 0.0..1.0" }
     }
 
     /**
      * Gets the expected amount of volts per output torque, given zero velocity.
      */
-    val voltsPerOutputTorque: Double get() = motor.voltsPerTorque / gearRatio / outputTorqueMultiplier
+    val voltsPerOutputTorque: Double get() = motor.voltsPerTorque / gearRatio / torqueMultiplier
     /**
      * Gets the expected amount of volts per angVel needed to maintain a constant velocity, assuming no output torque.
      */
@@ -136,27 +136,27 @@ class TransmissionModel private constructor(
         fun ideal(
             motor: MotorModel,
             gearRatio: Double
-        ): TransmissionModel = fromTorqueLosses(motor, gearRatio)
+        ): TransmissionModel = fromTorqueMultiplier(motor, gearRatio)
 
         /**
          * Constructs a [TransmissionModel] with the given parameters, with friction based on torque losses.
          *
-         * Frictional forces are divided into two parts: [ratioTorqueLoss] and [constantTorqueLoss].
+         * Frictional forces are divided into two parts: [torqueMultiplier] and [constantTorqueLoss].
          *
          * @param motor the motor model used
          * @param gearRatio the gear ratio of this transmission (higher ratio means more torque, less speed)
          * @param constantTorqueLoss the constant component of the torque required to overcome frictional forces.
-         * @param ratioTorqueLoss the ratio from the output motor torque and the applied motor torque, some lost due to
+         * @param torqueMultiplier the ratio from the output motor torque and the applied motor torque, some lost due to
          *                      acceleration related friction. This can also be interpreted as the the "percentage of torque"
          *                      that makes it to the output. In an ideal world, 1.0, for a deadlocked motor, 0.0.
          */
         @JvmStatic
         @JvmOverloads
-        fun fromTorqueLosses(
+        fun fromTorqueMultiplier(
             motor: MotorModel,
             gearRatio: Double,
             constantTorqueLoss: Double = 0.0,
-            ratioTorqueLoss: Double = 1.0
-        ): TransmissionModel = TransmissionModel(motor, gearRatio, constantTorqueLoss, ratioTorqueLoss)
+            torqueMultiplier: Double = 1.0
+        ): TransmissionModel = TransmissionModel(motor, gearRatio, constantTorqueLoss, torqueMultiplier)
     }
 }

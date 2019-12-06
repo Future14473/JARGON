@@ -27,7 +27,7 @@ internal object SomeModels {
         0.25 * A
     )
     private val transmissionModel =
-        TransmissionModel.fromTorqueLosses(motorModel, 2.0, 0.0, 0.9)
+        TransmissionModel.fromTorqueMultiplier(motorModel, 2.0, 0.0, 0.9)
     val mecanum = run {
         val mass = 10.8 * lbs
         NominalDriveModel.mecanumLike(

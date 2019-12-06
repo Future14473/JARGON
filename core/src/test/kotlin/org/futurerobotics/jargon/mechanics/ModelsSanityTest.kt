@@ -26,7 +26,7 @@ internal class ModelsSanityTest {
     fun `differential works`() {
         val differential = NominalDriveModel.differential(
             2.0, 3.0,
-            TransmissionModel.fromTorqueLosses(idealUnitMotor, 2.0, 0.0, 0.5),
+            TransmissionModel.fromTorqueMultiplier(idealUnitMotor, 2.0, 0.0, 0.5),
             5.0, 7.0
         )
         expectThat(differential) {
@@ -49,7 +49,7 @@ internal class ModelsSanityTest {
     @Test
     fun `inspect single wheel`() {
         val motor = idealUnitMotor
-        val transmission = TransmissionModel.fromTorqueLosses(motor, 2.0, 0.0, 1.0)
+        val transmission = TransmissionModel.fromTorqueMultiplier(motor, 2.0, 0.0, 1.0)
         val loc = Vector2d(1, 1) / sqrt(2.0)
         val position = WheelPosition(loc, 1.0 zcross loc, 1.0)
         val wheelModel = WheelModel(position, transmission)
@@ -75,7 +75,7 @@ internal class ModelsSanityTest {
             435 * rev / mins,
             0.25 * A
         )
-        val transmission = TransmissionModel.fromTorqueLosses(motor, 2.0, 50 * ozf * `in`, 0.9)
+        val transmission = TransmissionModel.fromTorqueMultiplier(motor, 2.0, 50 * ozf * `in`, 0.9)
         val mass = 10.8 * lbs
         val model = NominalDriveModel.mecanumLike(
             mass,

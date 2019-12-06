@@ -18,7 +18,7 @@ private val motorModel = MotorModel.fromMotorData(
     435 * rev / mins,
     0.25 * A
 )
-private val transmissionModel = TransmissionModel.fromTorqueLosses(motorModel, 2.0, 0.0, 0.9)
+private val transmissionModel = TransmissionModel.fromTorqueMultiplier(motorModel, 2.0, 0.0, 0.9)
 private const val mass = 10.8 * lbs
 private val driveModel = NominalDriveModel.mecanumLike(
     mass,
