@@ -8,17 +8,17 @@ import org.futurerobotics.jargon.util.builder
  */
 class LinearKalmanFilterBuilder {
 
-    private var noiseCovarianceProvider: NoiseCovarianceProvider? = null
+    private var varyingNoiseCovariance: VaryingNoiseCovariance? = null
     private var initialProcessCovariance: Mat? = null
 
-    /** Sets the [noiseCovariance] to the given provider. */
-    fun setNoiseCovariance(noiseCovariance: NoiseCovarianceProvider): LinearKalmanFilterBuilder = builder {
-        this.noiseCovarianceProvider = noiseCovariance
+    /** Sets the [varyingNoiseCovariance] to the given provider. */
+    fun setNoiseCovariance(varyingNoiseCovariance: VaryingNoiseCovariance): LinearKalmanFilterBuilder = builder {
+        this.varyingNoiseCovariance = varyingNoiseCovariance
     }
 
     /** Sets the [noiseCovariance] to the given value. */
     fun setNoiseCovariance(noiseCovariance: NoiseCovariance): LinearKalmanFilterBuilder = builder {
-        this.noiseCovarianceProvider = ConstantNoiseCovarianceProvider(noiseCovariance)
+        this.varyingNoiseCovariance = ConstantNoiseCovariance(noiseCovariance)
     }
 
     /** Sets the initial process covariance to the given value. */
@@ -30,7 +30,7 @@ class LinearKalmanFilterBuilder {
      * Builds the [LinearKalmanFilter]
      */
     fun build(): LinearKalmanFilter {
-        val ncp = noiseCovarianceProvider ?: throw IllegalStateException("Noise covariance not given.")
+        val ncp = varyingNoiseCovariance ?: throw IllegalStateException("Noise covariance not given.")
         val ipc = initialProcessCovariance ?: throw IllegalStateException("Initial process covariance not given.")
         return LinearKalmanFilter(ncp, ipc)
     }
