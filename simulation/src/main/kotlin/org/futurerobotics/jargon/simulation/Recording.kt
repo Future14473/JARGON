@@ -25,7 +25,7 @@ class Recordings(builder: BlockArrangementBuilder) {
 
     init {
         with(builder) {
-            times = Recording<Double>()() { input from generate { totalTime } }
+            times = Recording<Double>().apply { input from generate { totalTime } }
         }
     }
 

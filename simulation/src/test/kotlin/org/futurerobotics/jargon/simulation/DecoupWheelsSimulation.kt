@@ -56,7 +56,7 @@ internal abstract class DecoupWheelsSimulation(
 
                 val profileFollower = TimeOnlyMotionProfileFollower<MotionState<Pose2d>>(
                     ValueMotionState.ofAll(Pose2d.ZERO)
-                )() {
+                ).apply {
                     profileInput from trajectories.output
                 }
 
@@ -64,7 +64,7 @@ internal abstract class DecoupWheelsSimulation(
                 val positionController = FeedForwardWrapper.withAdder(
                     nonFFController,
                     Pose2d::plus
-                )() {
+                ).apply {
                     reference from refState
                 }
 
@@ -76,7 +76,7 @@ internal abstract class DecoupWheelsSimulation(
                 refState.pipe { it.deriv.y }.recordY("y reference", "reference velocity")
                 refState.pipe { it.deriv.heading }.recordY("heading reference", "reference velocity")
 
-                val botMotion = GlobalToBotMotion()() { globalMotion from positionController.signal }
+                val botMotion = GlobalToBotMotion().apply { globalMotion from positionController.signal }
                 recordY(botMotion.output.pipe { it.vel.x }, "x reference", "velocity signal")
                 recordY(botMotion.output.pipe { it.vel.y }, "y reference", "velocity signal")
                 recordY(botMotion.output.pipe { it.vel.heading }, "heading reference", "velocity signal")
@@ -92,10 +92,10 @@ internal abstract class DecoupWheelsSimulation(
 
                 val ssController = StateSpaceRunnerBlock(
                     runner, zeroVec(numMotors)
-                )() {
+                ).apply {
                     referenceMotionState from wheelVelRef
                 }
-                motorsBlock {
+                motorsBlock.apply {
                     motorVolts from ssController.signal
                     ssController.measurement from motorVelocities
                 }
@@ -115,11 +115,11 @@ internal abstract class DecoupWheelsSimulation(
                     recordY(actual.pipe { it[i] }, "Wheel velocities $i", "Actual $i")
                 }
 
-                val delta = MotorToBotDelta(driveModel)() {
+                val delta = MotorToBotDelta(driveModel).apply {
                     input from motorsBlock.motorPositions
                 }
 
-                val tracker = BotDeltaAndGyroLocalizer()() {
+                val tracker = BotDeltaAndGyroLocalizer().apply {
                     botDelta from delta.output; gyroReading from gyro.output
                     output into positionController.state
                     output into botMotion.globalPose

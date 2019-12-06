@@ -3,7 +3,6 @@ package org.futurerobotics.jargon.blocks.control
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
 import org.futurerobotics.jargon.blocks.Block.Processing.OUT_FIRST
-import org.futurerobotics.jargon.blocks.BlockIndicator
 import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import org.futurerobotics.jargon.hardware.DcMotor
 import org.futurerobotics.jargon.hardware.Gyro
@@ -18,7 +17,7 @@ import kotlin.math.sign
  *
  * Can input [motorVolts], and output [motorPositions] and [motorVelocities].
  */
-interface MotorInterface : BlockIndicator {
+interface MotorsBlock {
 
     /** The number of motors in this motor block. */
     val numMotors: Int
@@ -30,8 +29,8 @@ interface MotorInterface : BlockIndicator {
     val motorVolts: Block.Input<Vec?>
 }
 
-/** A [MotorInterface] that operates with a list of [DcMotor]s. */
-class MotorList(private val motors: List<DcMotor>) : Block(OUT_FIRST), MotorInterface {
+/** A [MotorsBlock] that operates with a list of [DcMotor]s. */
+class MotorListBlock(private val motors: List<DcMotor>) : Block(OUT_FIRST), MotorsBlock {
 
     override val numMotors: Int get() = motors.size
     override val motorPositions: Output<Vec> = newOutput()

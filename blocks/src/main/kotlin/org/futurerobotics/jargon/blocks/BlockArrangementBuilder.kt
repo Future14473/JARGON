@@ -37,6 +37,7 @@ class BlockArrangementBuilder : ReadOnlyBlockArrangement {
 
     private class BlockConnectionsImpl(override val block: Block) :
         BlockConnections {
+
         val internalSources = arrayOfNulls<Output<*>>(block.numInputs)
 
         override val sources: List<Output<*>?>
@@ -114,12 +115,6 @@ class BlockArrangementBuilder : ReadOnlyBlockArrangement {
 
     //utilities
 
-    /** Runs the given [configuration] block on [this] block, and returns it. Also ensures the given block is added.*/
-    inline operator fun <T : BlockIndicator> T.invoke(configuration: T.() -> Unit): T {
-        if (this is Block) add(this)
-        return apply(configuration)
-    }
-
     /**
      * Creates a new [PipeBlock] with the given [piping], connects this output to it, and returns the piping's
      * output. Useful for quick transformations. For instance:
@@ -160,7 +155,8 @@ class BlockArrangementBuilder : ReadOnlyBlockArrangement {
      *
      * Useful for breaking up loops when it's ok for a block to delayed value.
      */
-    fun <T> Output<out T>.delay(initialValue: T): Output<T> = Delay(initialValue)() { input from this@delay }.output
+    fun <T> Output<out T>.delay(initialValue: T): Output<T> =
+        Delay(initialValue).apply { input from this@delay }.output
 
     /**
      * Creates and connects a [Monitor] block from this output.
@@ -290,4 +286,3 @@ class BlockArrangementBuilder : ReadOnlyBlockArrangement {
     @JvmOverloads
     fun quickBlock(processing: Block.Processing = Block.Processing.LAZY): QuickBlock = QuickBlock(processing, null)
 }
-

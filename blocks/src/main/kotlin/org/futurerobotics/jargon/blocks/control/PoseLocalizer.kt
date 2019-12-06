@@ -2,7 +2,6 @@ package org.futurerobotics.jargon.blocks.control
 
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.BlockArrangementBuilder
-import org.futurerobotics.jargon.blocks.BlockIndicator
 import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
@@ -17,7 +16,7 @@ import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
  * @see EncoderOnlyLocalizer
  * @see EncoderAndStrictGyroLocalizer
  */
-interface PoseLocalizer : BlockIndicator {
+interface PoseLocalizer {
 
     /** The current tracked/estimated [globalPose]. */
     val globalPose: Block.Output<Pose2d>
@@ -117,7 +116,7 @@ class EncoderOnlyLocalizer(
     constructor(
         builder: BlockArrangementBuilder,
         interaction: MotorBotVelInteraction,
-        motors: MotorInterface
+        motors: MotorsBlock
     ) : this(builder, interaction) {
         builder.connect(motorPositions, motors.motorPositions)
     }
@@ -133,7 +132,7 @@ class EncoderOnlyLocalizer(
             motorPositions = deltaGetter.motorPositions
 
             val delta = deltaGetter.botDelta
-            val tracker = BotDeltaLocalizer()() {
+            val tracker = BotDeltaLocalizer().apply {
                 botDelta from delta
             }
             poseOverride = tracker.poseOverride
@@ -153,7 +152,7 @@ class EncoderAndStrictGyroLocalizer(
     constructor(
         builder: BlockArrangementBuilder,
         interaction: MotorBotVelInteraction,
-        motors: MotorInterface,
+        motors: MotorsBlock,
         gyroBlock: GyroBlock
     ) : this(builder, interaction) {
         builder.connect(motorPositions, motors.motorPositions)
@@ -175,7 +174,7 @@ class EncoderAndStrictGyroLocalizer(
             headingMeasurement = deltaGetter.headingMeasurement
 
             val delta = deltaGetter.botDelta
-            val tracker = BotDeltaLocalizer()() {
+            val tracker = BotDeltaLocalizer().apply {
                 botDelta from delta
             }
             poseOverride = tracker.poseOverride

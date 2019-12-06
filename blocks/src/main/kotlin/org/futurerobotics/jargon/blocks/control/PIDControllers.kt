@@ -141,14 +141,14 @@ class PosePidController(xCoeff: PidCoefficients, yCoeff: PidCoefficients, headin
     private val headingController = HeadingPidController(headingCoeff)
 
     override fun SubsystemMapper.configSubsystem(): BlockArrangement = BlockArrangementBuilder().build {
-        val ref = SplitPose()() { input from reference.subOutput }
-        val state = SplitPose()() { input from state.subOutput }
+        val ref = SplitPose().apply { input from reference.subOutput }
+        val state = SplitPose().apply { input from state.subOutput }
 
         xController.reference from ref.x; xController.state from state.x
         yController.reference from ref.y; yController.state from state.y
         headingController.reference from ref.heading; headingController.state from state.heading
 
-        signal.subInput from CreatePose()() {
+        signal.subInput from CreatePose().apply {
             x from xController.signal
             y from yController.signal
             heading from headingController.signal

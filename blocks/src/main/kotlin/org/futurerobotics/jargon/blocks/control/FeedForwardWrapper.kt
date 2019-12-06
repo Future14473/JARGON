@@ -38,7 +38,7 @@ abstract class FeedForwardWrapper<T : Any>(private val nonFFController: Controll
         val refInput = reference.subOutput
         val stateInput = state.subOutput
 
-        val (refS, refV, refA) = SplitMotionState<T>()() { input from refInput }
+        val (refS, refV, refA) = SplitMotionState<T>().apply { input from refInput }
 
         val nonFFSignal = nonFFController.signal
         nonFFController.run { reference from refS; state from stateInput }

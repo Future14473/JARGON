@@ -1,7 +1,6 @@
 package org.futurerobotics.jargon.blocks.control
 
 import org.futurerobotics.jargon.blocks.Block
-import org.futurerobotics.jargon.blocks.BlockIndicator
 import org.futurerobotics.jargon.math.MotionOnly
 import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.Pose2d
@@ -14,7 +13,7 @@ import org.futurerobotics.jargon.math.Pose2d
  *
  * @see BotPoseController
  */
-interface Controller<Reference, State, Signal> : BlockIndicator {
+interface Controller<Reference, State, Signal> {
 
     /** The reference input. */
     val reference: Block.Input<Reference>

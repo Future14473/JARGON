@@ -31,13 +31,13 @@ class HolonomicPidBotPoseController(
             val poseController = FeedForwardWrapper.withAdder(
                 PosePidController(xCoeff, yCoeff, headingCoeff),
                 Pose2d::plus
-            )() {
+            ).apply {
                 state from theState
             }
             reference = poseController.reference
 
             val globalSignal = poseController.signal
-            val globalToBot = GlobalToBotMotion()() {
+            val globalToBot = GlobalToBotMotion().apply {
                 globalMotion from globalSignal
                 globalPose from theState
             }

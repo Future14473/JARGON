@@ -61,17 +61,15 @@ import kotlin.reflect.jvm.javaType
  * One can create a block that contains another block system using a [CompositeBlock].
  * Alternatively, one can use the idiom of having a class that takes a [BlockArrangementBuilder] as
  * a constructor parameter, uses it to create and configure a group of blocks, and exposes [Block.Input]
- * and [Block.Output]s for the world to see. The class can also implement [BlockIndicator] so that it can be used
- * more easily in a [BlockArrangementBuilder].
+ * and [Block.Output]s for the world to see.
  *
  * @see SystemValues
  * @see BlockArrangementBuilder
- * @see BlockIndicator
  *
  *
  * @property processing The [Processing] of this block.
  */
-abstract class Block(val processing: Processing) : BlockIndicator {
+abstract class Block(val processing: Processing) {
 
     // --- inputs/outputs ---
     internal val inputs: MutableList<Input<*>> = ArrayList()
@@ -390,9 +388,3 @@ interface SystemValues {
     val isFirstTime: Boolean
         get() = loopNumber == 0
 }
-
-/**
- * Used to represent that an interface is supposed to represent a block. This is
- * only so that it can be recognized by the [BlockArrangementBuilder.invoke], while being an interface.
- */
-interface BlockIndicator
