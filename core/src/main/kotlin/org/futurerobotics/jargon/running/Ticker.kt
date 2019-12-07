@@ -55,7 +55,6 @@ interface TickerListener {
     suspend fun awaitNextTicks(ticks: Int)
 
     /**
-
      * Awaits the next tick, or returns immediately if the next tick has already passed.
      *
      * This will throw InterruptedException if thread is interrupted.
@@ -108,16 +107,6 @@ abstract class BaseTicker : Ticker {
     private class Tick(val tickNum: Int, val deferred: CompletableDeferred<Nothing?>) {
 
         fun isTickPassed(num: Int): Boolean = num - tickNum < 0
-
-        @Throws(InterruptedException::class)
-        fun awaitBlocking(num: Int) {
-            if (isTickPassed(num) || deferred.isCompleted) { //fast path, avoid runBlocking
-                if (Thread.interrupted()) throw InterruptedException()
-            }
-            runBlocking {
-                deferred.await()
-            }
-        }
     }
 
     private inner class TickerListenerImpl(override var maximumTicksBehind: Int) : TickerListener {
@@ -135,13 +124,13 @@ abstract class BaseTicker : Ticker {
         override suspend fun awaitNextTicks(ticks: Int) {
             val waitFor = getToWaitFor(ticks)
             var tick = this@BaseTicker.tick.value
-            if (!tick.isTickPassed(waitFor)) {
+            if (tick.isTickPassed(waitFor)) {
+                yield()
+            } else {
                 do {
                     tick.deferred.await()
                     tick = this@BaseTicker.tick.value
                 } while (!tick.isTickPassed(waitFor))
-            } else {
-                yield()
             }
         }
 
@@ -162,15 +151,13 @@ abstract class BaseTicker : Ticker {
         override fun awaitNextTicksBlocking(ticks: Int) {
             val waitFor = getToWaitFor(ticks)
             var tick = this@BaseTicker.tick.value
-            if (!tick.isTickPassed(waitFor)) {
-                runBlocking {
-                    do {
-                        tick.deferred.await()
-                        tick = this@BaseTicker.tick.value
-                    } while (!tick.isTickPassed(waitFor))
-                }
-            } else {
+            if (tick.isTickPassed(waitFor)) {
                 if (Thread.interrupted()) throw InterruptedException()
+            } else runBlocking {
+                do {
+                    tick.deferred.await()
+                    tick = this@BaseTicker.tick.value
+                } while (!tick.isTickPassed(waitFor))
             }
         }
 
@@ -257,9 +244,7 @@ fun TickerListener.asFrequencyRegulator(clock: Clock = Clock.Default): TickerLis
 
 /**
  * Runs an loop with the [block] that syncs with this [TickerListener] before every loop,
- * and breaks when the [block]'s return is `true` or coroutine is cancelled. This uses suspend functions.
- *
- * _This will reset first._
+ * and breaks when the [block]'s return is `true`, or throws if coroutine is cancelled. This uses suspend functions.
  */
 suspend inline fun TickerListener.syncedLoop(block: () -> Boolean) {
     while (true) {
@@ -270,9 +255,7 @@ suspend inline fun TickerListener.syncedLoop(block: () -> Boolean) {
 
 /**
  * Runs an loop with the [block] that syncs with this [TickerListener] every loop,
- * and breaks when the [block]'s return is `true` or thread is interrupted.
- *
- *  _This will reset first._
+ * and breaks when the [block]'s return is `true`, or throws if the thread is interrupted.
  */
 @Throws(InterruptedException::class)
 inline fun TickerListener.syncedLoopBlocking(block: () -> Boolean) {
