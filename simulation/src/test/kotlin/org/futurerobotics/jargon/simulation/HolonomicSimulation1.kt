@@ -35,7 +35,7 @@ internal class HolonomicSimulation1 : PoseVelocityControllingSimulation(
     ),
     1.0 / 20,
     PosePidController(coeff, coeff, headingCoeff),
-    QRCost(idenMat(3) * 2.0, idenMat(4)),
+    QRCost(idenMat(3) * 2.1, idenMat(4)),
     NoiseCovariance(idenMat(3) * 0.05, idenMat(4) * 0.05)
 ) {
 

@@ -37,10 +37,10 @@ internal abstract class DecoupWheelsSimulation(
         val matrices = DriveStateSpaceModels.decoupledMotorVelocityController(driveModel, 0.5)
 
         val discMatrices = discretize(matrices, 1 / 20.0)
-        val discCost = discretizeQRCost(matrices, lqrCost, 1 / 20.0)
+//        val discCost = discretizeQRCost(matrices, lqrCost, 1 / 20.0)
         val runner = StateSpaceRunnerBuilder()
             .setMatrices(discMatrices)
-            .addGainController(discreteLQR(discMatrices, discCost))
+            .addGainController(continuousLQR(matrices, lqrCost))
             .addReferenceTracking(plantInversion(discMatrices, null))
             .addKalmanFilter {
                 setNoiseCovariance(noiseCovariance)

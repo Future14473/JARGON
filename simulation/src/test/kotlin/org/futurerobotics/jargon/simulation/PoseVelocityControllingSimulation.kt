@@ -41,7 +41,7 @@ internal abstract class PoseVelocityControllingSimulation(
         val discCost = discretizeQRCost(matrices, lqrCost, 1 / 20.0)
         val runner = StateSpaceRunnerBuilder()
             .setMatrices(discMatrices)
-            .addGainController(discreteLQR(discMatrices, discCost))
+            .addGainController(continuousLQR(matrices, lqrCost))
             .addReferenceTracking(plantInversion(discMatrices, null))
             .addKalmanFilter {
                 setNoiseCovariance(noiseCovariance)
