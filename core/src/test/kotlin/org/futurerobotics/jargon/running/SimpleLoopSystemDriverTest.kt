@@ -45,7 +45,7 @@ internal class SimpleLoopSystemDriverTest {
     @RepeatedTest(4)
     fun `regulation works`() { //< a second, mostly sleeping
         val hertz = 100.0
-        val regulator = LoopWithMaxSpeed(1 / hertz)
+        val regulator = MaxSpeedRegulator(1 / hertz)
         val system = RunTimes(1)//only regulated on 2nd cycle onward.
         warmUp()
         for (times in 10..12) {
