@@ -19,8 +19,18 @@ class Interval private constructor(val a: Double, val b: Double) : java.io.Seria
     /** If this interval is not empty. */
     fun isNotEmpty(): Boolean = !isEmpty()
 
+    /** Gets the size of this interval. Is always >= 0. */
+    val size: Double get() = if (isEmpty()) 0.0 else b - a
+
     /** If this interval consists of a single point. */
     fun isPoint(): Boolean = a == b
+
+    /**
+     * If this interval is finite.
+     *
+     * Will return true if [isEmpty].
+     */
+    fun isFinite(): Boolean = isEmpty() || (a.isFinite() && b.isFinite())
 
     /**
      * Gets a bound by [index], which must be 0 or 1.
@@ -38,14 +48,14 @@ class Interval private constructor(val a: Double, val b: Double) : java.io.Seria
     operator fun contains(v: Double): Boolean = v in a..b //includes empty case
 
     /** @return if [v] is contained in this interval, with leniency at the endpoints. */
-    fun epsContains(v: Double): Boolean = !isEmpty() && v in (a - EPSILON)..(b + EPSILON)
+    infix fun epsContains(v: Double): Boolean = !isEmpty() && v in (a - EPSILON)..(b + EPSILON)
 
     /** @return if this interval epsilon equals the other via endpoints */
     infix fun epsEq(other: Interval): Boolean =
         this.isEmpty() && other.isEmpty() || a epsEq other.a && b epsEq other.b
 
     /** @return the intersection of this interval with another. */
-    fun intersect(other: Interval): Interval {
+    infix fun intersect(other: Interval): Interval {
         if (this.isEmpty() || other.isEmpty() || other.a > b || a > other.b) return EMPTY
         val gta: Interval
         val lta: Interval
@@ -84,8 +94,6 @@ class Interval private constructor(val a: Double, val b: Double) : java.io.Seria
 
         /**
          * Returns a interval by endpoints [a] and [b].
-         *
-         * Will return an empty interval if b < a, or either endpoint is `NaN`
          */
         @JvmStatic
         fun of(a: Double, b: Double): Interval {
@@ -96,11 +104,15 @@ class Interval private constructor(val a: Double, val b: Double) : java.io.Seria
         }
 
         /**
+         * Returns a interval by a given [range].
+         */
+        @JvmStatic
+        fun of(range: ClosedFloatingPointRange<Double>): Interval = of(range.start, range.endInclusive)
+
+        /**
          * Returns an interval by endpoints [a] and [b].
          *
          * Will swap endpoints if b < a.
-         *
-         * Will return empty interval if either endpoint is `NaN`
          */
         @JvmStatic
         fun ofRegular(a: Double, b: Double): Interval {
@@ -112,9 +124,7 @@ class Interval private constructor(val a: Double, val b: Double) : java.io.Seria
         /**
          * Returns an interval using a [center] and a [radius].
          *
-         * Will return an empty interval if radius < 0,
-         *
-         * or `center` or `radius` is `NaN`
+         * Will return an empty interval if radius < 0.
          */
         @JvmOverloads
         @JvmStatic
@@ -130,8 +140,6 @@ class Interval private constructor(val a: Double, val b: Double) : java.io.Seria
          * Returns an interval using a [center] and a [radius].
          *
          * Radius will be interpreted as absolute value.
-         *
-         * Will return an empty interval if `center` or `radius` is `NaN`
          */
         @JvmOverloads
         @JvmStatic
@@ -167,4 +175,4 @@ infix fun Double.coerceIn(i: Interval): Double =
 /**
  * Returns this Double range as an interval.
  */
-fun ClosedFloatingPointRange<Double>.asInterval(): Interval = Interval.of(start, endInclusive)
+fun ClosedFloatingPointRange<Double>.asInterval(): Interval = Interval.of(this)
