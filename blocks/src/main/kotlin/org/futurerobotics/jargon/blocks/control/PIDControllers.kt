@@ -51,7 +51,7 @@ open class PidController(private val coefficients: PidCoefficients) : PrincipalO
             errorSum = if (error <= coefficients.integralActivationThreshold) {
                 val curI = (error + prevError) * (loopTime / 2)
                 (errorSum + curI).coerceIn(-coefficients.maxErrorSum, coefficients.maxErrorSum)
-            } else 0.0
+            } else errorSum
             val p = error * coefficients.p
             val i = errorSum * coefficients.i
             val d = (error - prevError) * (coefficients.d / loopTime)
@@ -103,7 +103,7 @@ class VectorPidController(private val coefficients: PidCoefficients) : Principal
             errorSum = if (curError.length <= coefficients.integralActivationThreshold) {
                 val curI = (curError + prevError) * (loopTime / 2)
                 (errorSum + curI).coerceLengthAtMost(coefficients.maxErrorSum)
-            } else Vector2d.ZERO
+            } else errorSum
             val p = curError * coefficients.p
             val i = errorSum * coefficients.i
             val d = (curError - prevError) * (coefficients.d / loopTime)
