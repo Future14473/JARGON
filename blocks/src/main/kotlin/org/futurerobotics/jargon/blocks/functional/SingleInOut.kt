@@ -8,8 +8,6 @@ import org.futurerobotics.jargon.util.asUnmodifiableList
 /**
  * A block with one constant output [value].
  *
- * This is itself a [Block.Output] representing this block's only output.
- *
  * @param value the constant value
  */
 class Constant<T>(private val value: T) : PrincipalOutputBlock<T>(Processing.LAZY) {
@@ -21,8 +19,6 @@ class Constant<T>(private val value: T) : PrincipalOutputBlock<T>(Processing.LAZ
 
 /**
  * A block with only one output [value], which can be changed externally.
- *
- * This is itself a [Block.Output] representing this block's only output.
  *
  * @param value the value outputted
  */
@@ -36,8 +32,6 @@ class ExternalValue<T>(@Volatile var value: T) : PrincipalOutputBlock<T>(Process
 /**
  * A block with only one input, and stores the value inputted in [value]. Useful for extracting information
  * out of a system.
- *
- * This is itself a [Block.Input] representing its only input.
  */
 @Suppress("UNCHECKED_CAST")
 class Monitor<T> : Block(Processing.ALWAYS) {
