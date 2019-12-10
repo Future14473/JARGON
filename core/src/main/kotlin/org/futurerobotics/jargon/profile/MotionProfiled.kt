@@ -21,8 +21,8 @@ interface MotionProfiled<out State : Any> : Steppable<State> {
 }
 
 /**
- * Represents a Motion Profile: a graph/profile of velocity (and position and acceleration) over time, or over a
- * "distance" along _profiled path_. Distance values can be length or angle, or something else.
+ * Represents a Motion Profile: a graph/profile of velocity (and position and acceleration) over time or over a
+ * "distance" along _profiled path_.
  *
  * This is also a [MotionProfiled] for one-dimensional motion (state type [LinearMotionState])
  */

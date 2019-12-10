@@ -10,7 +10,12 @@ class LinearMotionOnly
 @JvmOverloads constructor(
     vel: Double,
     accel: Double = 0.0
-) : ValueMotionOnly<Double>(vel, accel) {
+) : MotionOnly<Double> {
+
+    private val _vel = vel
+    override val vel: Double get() = _vel
+    private val _accel = accel
+    override val accel: Double get() = _accel
 
     /**
      * Returns the new motion after time [t], assuming constant acceleration.
@@ -41,14 +46,21 @@ class LinearMotionOnly
 }
 
 /**
- * An implementation for [MotionState] with double values, also containing some useful physics calculations.
+ * An implementation for [MotionState] with double values, also containing some useful calculations.
  */
 class LinearMotionState
 @JvmOverloads constructor(
     value: Double,
     deriv: Double,
     secondDeriv: Double = 0.0
-) : ValueMotionState<Double>(value, deriv, secondDeriv) {
+) : MotionState<Double> {
+
+    private val _value = value
+    override val value: Double get() = _value
+    private val _deriv = deriv
+    override val deriv: Double get() = _deriv
+    private val _secondDeriv = secondDeriv
+    override val secondDeriv: Double get() = _secondDeriv
 
     /** Returns the new state after time [t], assuming constant acceleration. */
     fun afterTime(t: Double): LinearMotionState =

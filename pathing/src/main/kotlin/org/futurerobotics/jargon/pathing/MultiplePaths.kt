@@ -61,7 +61,7 @@ constructor(paths: List<Path>) : GenericPath<Point> {
         this.startLengths = startLengths.toDoubleArray()
     }
 
-    override val criticalPoints: Set<Double> = hashSetOf<Double>().let {
+    override val importantPoints: Set<Double> = hashSetOf<Double>().let {
         it += stopPoints
         for (i in 1 until startLengths.size - 1) {
             it += startLengths[i]

@@ -62,7 +62,6 @@ fun generateDynamicProfile(
     constrainer: MotionProfileConstrainer,
     totalDistance: Double,
     params: MotionProfileGenParams
-    //may introduce a parameters class if start to have too many parameters
 ): MotionProfile = params.run {
     require(totalDistance > 0) { "distance ($totalDistance) must be > 0" }
 
@@ -74,7 +73,7 @@ fun generateDynamicProfile(
         .toSortedSet()
         .also { it.addAll(constrainer.requiredPoints) }
         .toList()
-    val pointConstraints: List<PointConstraint> = constrainer.stepToAll(points)
+    val pointConstraints = constrainer.stepToAll(points)
     val maxVels = pointConstraints.mapIndexedTo(ArrayList(points.size)) { i, it ->
         it.maxVelocity.also {
             require(it >= 0) { "All maximum velocities given by constrainer should be >= 0, got $it at segment $i" }
@@ -82,7 +81,7 @@ fun generateDynamicProfile(
     }
 
 
-    maxVels[0] = min(maxVels[0], this.targetStartVel)
+    maxVels[0] = min(maxVels[0], targetStartVel)
     maxVels.lastIndex.let {
         maxVels[it] = min(maxVels[it], targetEndVel)
     }

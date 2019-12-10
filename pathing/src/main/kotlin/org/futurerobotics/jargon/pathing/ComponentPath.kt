@@ -27,7 +27,7 @@ class ComponentPath(internal val curve: Curve, private val heading: HeadingProvi
 
     override val length: Double get() = curve.length
     override val stopPoints: Set<Double> get() = curve.stopPoints
-    override val criticalPoints: Set<Double> get() = curve.criticalPoints
+    override val importantPoints: Set<Double> get() = curve.importantPoints
 
     override fun pointAt(s: Double): PathPoint {
         val point = curve.pointAt(s)

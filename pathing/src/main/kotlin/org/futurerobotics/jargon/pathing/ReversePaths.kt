@@ -81,10 +81,8 @@ fun Path.reversed(): Path =
  */
 fun <T : GenericPath<*>> T.reversed(): T =
     when (this) {
-        is ReverseCurve -> this.path
-        is ReversePath -> this.path
-        is Curve -> ReverseCurve(this)
-        is Path -> ReversePath(this)
+        is Curve -> reversed()
+        is Path -> reversed()
         else -> asCurve().reversed()
-    }.uncheckedCast()
+    }.uncheckedCast() //may ClassCastException here
 
