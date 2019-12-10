@@ -10,9 +10,9 @@ import org.futurerobotics.jargon.pathing.reparam.IntegrationReparamer.reparam
 object IntegrationReparamer {
 
     /** The default stepsPerSample used in [IntegrationReparamer]'s overloads/default parameters. */
-    const val defaultStepsPerSample: Int = 5
-    /** The default maxDeltaK used for [IntegrationReparamer] for overloads/default parameters. */
-    const val defaultNumSamples: Int = 500
+    const val defaultStepsPerSample: Int = 4
+    /** The default numSamples used for [IntegrationReparamer] for overloads/default parameters. */
+    const val defaultNumSamples: Int = 250
 
     /**
      * Reparameterizes a [VectorFunction] [func] by using a midpoint Riemann sum integration.

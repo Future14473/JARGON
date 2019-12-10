@@ -26,8 +26,8 @@ import kotlin.math.*
 data class MotionProfileGenParams(
     val targetStartVel: Double = 0.0,
     val targetEndVel: Double = 0.0,
-    val maxSegmentSize: Double = 0.01,
-    val maxVelSearchTolerance: Double = 0.005
+    val maxSegmentSize: Double = 0.02,
+    val maxVelSearchTolerance: Double = 0.02
 ) {
 
     init {
@@ -39,7 +39,7 @@ data class MotionProfileGenParams(
 }
 
 private const val MAX_VEL = 10000.0
-private const val BINARY_SEARCH_INITIAL_STEP_RATIO = 2
+private const val EXTENDING_SEARCH_INITIAL_STEP_RATIO = 2
 
 /**
  * Calculates an approximately optimal [MotionProfile], given a [MotionProfileConstrainer] and [MotionProfileGenParams]

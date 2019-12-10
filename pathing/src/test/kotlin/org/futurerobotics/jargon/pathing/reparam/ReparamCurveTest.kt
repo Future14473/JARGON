@@ -7,7 +7,6 @@ import org.futurerobotics.jargon.reportError
 import org.futurerobotics.jargon.saveGraph
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.jupiter.api.Tag
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
@@ -19,7 +18,6 @@ import kotlin.math.pow
 import kotlin.random.Random
 
 @RunWith(Parameterized::class)
-@Tag("Inspection")
 internal class ReparamCurveTest(private val func: VectorFunction, private val curve: ReparamCurve) {
 
     @Test
@@ -72,26 +70,39 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
         )
     }
 
-    private fun testVector(
-        trueValT: (Double) -> Vector2d, testValS: (Double) -> Vector2d, maxError: Double, offset: Double
+    private inline fun testVector(
+        crossinline trueValT: (Double) -> Vector2d,
+        crossinline testValS: (Double) -> Vector2d,
+        maxError: Double,
+        offset: Double
     ) {
         testStep(trueValT, testValS, { this distTo it }, offset, maxError)
     }
 
-    private fun testValue(
-        trueValT: (Double) -> Double, testValS: (Double) -> Double, maxError: Double, offset: Double
+    private inline fun testValue(
+        crossinline trueValT: (Double) -> Double,
+        crossinline testValS: (Double) -> Double,
+        maxError: Double,
+        offset: Double
     ) {
         testStep(trueValT, testValS, { this distTo it }, offset, maxError)
     }
 
-    private fun testAngle(
-        trueValT: (Double) -> Double, testValS: (Double) -> Double, maxError: Double, offset: Double
+    private inline fun testAngle(
+        crossinline trueValT: (Double) -> Double,
+        crossinline testValS: (Double) -> Double,
+        maxError: Double,
+        offset: Double
     ) {
         testStep(trueValT, testValS, { angleNorm(distTo(it)) }, offset, maxError)
     }
 
-    private fun <T> testStep(
-        trueValT: (Double) -> T, testValS: (Double) -> T, getError: T.(T) -> Double, offset: Double, maxError: Double
+    private inline fun <T> testStep(
+        crossinline trueValT: (Double) -> T,
+        crossinline testValS: (Double) -> T,
+        crossinline getError: T.(T) -> Double,
+        offset: Double,
+        maxError: Double
     ) {
         val offsetInt = (steps * offset).toInt()
 
@@ -108,7 +119,7 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
                 s += func.vecDeriv((i + 0.5) / steps).length / steps
             }
         }.let {
-            println(Thread.currentThread().stackTrace[3 + 1].methodName + ":")
+            println(Thread.currentThread().stackTrace[1].methodName + ":")
             println(it.report())
             println()
             assertTrue(it.averageError <= maxError)
