@@ -39,7 +39,8 @@ class PathGraph
     var defaultInterpolator: HeadingInterpolator = TangentInterpolator
 ) {
 
-    private val nodes = mutableListOf<Node>()
+    private var index = 0
+    private val nodes = hashMapOf<Int, Node>()
     private val nodesByName = hashMapOf<String, Node>()
     /** Gets a node with the given [name], or `null` if it does not exist. */
     fun getNodeOrNull(name: String): Node? = nodesByName[name]
@@ -53,6 +54,22 @@ class PathGraph
 
     /** Creates a node with at the given ([x], [y]) location */
     fun newNode(x: Double, y: Double): Node = newNode(Vector2d(x, y))
+
+    /**
+     * Removes a node and all edges from this graph.
+     */
+    fun removeNode(node: Node) {
+        node.edges.forEach {
+            it.toNode.edges.remove(it.reverse)
+        }
+        nodes.remove(node.index)
+        node.name?.let { nodesByName.remove(it) }
+    }
+
+    /**
+     * Removes a node and all edges from this graph.
+     */
+    fun removeNode(name: String): Unit = removeNode(getNode(name))
 
     /**
      * Attempts to create a path between the node named [start] and the node name [end], using the given
@@ -161,7 +178,7 @@ class PathGraph
                 break
             }
             //expand
-            nodes[nodeIndex].edges.forEach { edge ->
+            nodes[nodeIndex]!!.edges.forEach { edge ->
                 assert(edge.fromNode.index == nodeIndex)
                 val nextNodeIndex = edge.toNode.index
                 val nextVisIndex = nextNodeIndex.replaceIf(backwards) { it + numNodes }
@@ -186,7 +203,7 @@ class PathGraph
             val reverseVisIndex = nodeIndex.replaceIf(!backwards) { it + numNodes }
             if (!visited[reverseVisIndex]) {
                 visited[reverseVisIndex] = true
-                val nextDist = (dist.toLong() + nodes[nodeIndex].turnAroundWeight).also {
+                val nextDist = (dist.toLong() + nodes.getValue(nodeIndex).turnAroundWeight).also {
                     if (it !in Int.MIN_VALUE until Int.MAX_VALUE) throw ArithmeticException("Integer overflow")
                 }.toInt()
                 if (nextDist < distances[reverseVisIndex]) {
@@ -282,9 +299,9 @@ class PathGraph
      *
      * @property position the position of this node.
      */
-    inner class Node internal constructor(val position: Vector2d) : NodeContinuation<Node> {
+    inner class Node(val position: Vector2d) : NodeContinuation<Node> {
 
-        internal val index: Int = nodes.size
+        internal val index: Int = this@PathGraph.index++
         internal val edges = hashSetOf<Edge<*>>()
 
         override var name: String? = null
@@ -301,7 +318,7 @@ class PathGraph
         override var turnAroundWeight: Int = DEFAULT_TURNAROUND_WEIGHT
 
         init {
-            nodes += this
+            nodes[index] = this
         }
 
         override fun to(node: Node): FreeEdge = FreeEdge(this, node, defaultInterpolator)
