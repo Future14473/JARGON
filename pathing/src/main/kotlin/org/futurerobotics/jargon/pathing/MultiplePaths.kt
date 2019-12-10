@@ -78,9 +78,9 @@ constructor(paths: List<Path>) : GenericPath<Point> {
         return paths[i].pointAt(s - startLengths[i])
     }
 
-    override fun stepper(): Stepper<Double, Point> = object : Stepper<Double, Point> {
+    override fun stepper(): Stepper<Point> = object : Stepper<Point> {
         private var i = -1
-        private lateinit var curStepper: Stepper<Double, Point>
+        private lateinit var curStepper: Stepper<Point>
         override fun stepTo(step: Double): Point = step.let { s ->
             val pastI = i
             if (i == -1) {

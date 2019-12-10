@@ -7,7 +7,7 @@ import org.futurerobotics.jargon.util.Stepper
 /**
  * Represents a transformed motion of a [MotionProfile], returning some representation of [State] over time.
  */
-interface MotionProfiled<out State : Any> : Steppable<Double, State> {
+interface MotionProfiled<out State : Any> : Steppable<State> {
 
     /** The total duration of this profile, in seconds */
     val duration: Double
@@ -17,7 +17,7 @@ interface MotionProfiled<out State : Any> : Steppable<Double, State> {
 
     /** Gets a [Stepper] that steps along time, returning the [State] at that time. */
     @JvmDefault
-    override fun stepper(): Stepper<Double, State> = Stepper(::atTime)
+    override fun stepper(): Stepper<State> = Stepper(::atTime)
 }
 
 /**

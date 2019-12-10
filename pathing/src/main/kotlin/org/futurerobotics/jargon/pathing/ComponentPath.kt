@@ -37,7 +37,7 @@ class ComponentPath(internal val curve: Curve, private val heading: HeadingProvi
         )
     }
 
-    override fun stepper(): Stepper<Double, PathPoint> {
+    override fun stepper(): Stepper<PathPoint> {
         val curveStepper = curve.stepper()
         return Stepper { s ->
             val point = curveStepper.stepTo(s)

@@ -14,7 +14,7 @@ import java.io.Serializable
  *
  * GenericCurve<? extends CurvePoint> or GenericCurve<out CurvePoint> is the superclass of both [Curve] and [Path]
  */
-interface GenericPath<out Point : CurvePoint> : Steppable<Double, Point>, Serializable {
+interface GenericPath<out Point : CurvePoint> : Steppable<Point>, Serializable {
 
     /**
      * The total (arc) length of this curve/path, and the maximum `s` value the functions
@@ -27,7 +27,7 @@ interface GenericPath<out Point : CurvePoint> : Steppable<Double, Point>, Serial
 
     /** Gets a stepper that steps through points along the path, returning a Point containing info about that point. */
     @JvmDefault
-    override fun stepper(): Stepper<Double, Point> = Stepper { pointAt(it) }
+    override fun stepper(): Stepper<Point> = Stepper { pointAt(it) }
 
     /** A set of points that it is required for the bot to stop at. */
     @JvmDefault

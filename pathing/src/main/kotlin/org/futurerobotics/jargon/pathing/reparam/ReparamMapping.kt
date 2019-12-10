@@ -9,7 +9,7 @@ import java.io.Serializable
 /**
  * Represents a mapping of s values (arc length) to t value (parameter on a parametric func).
  */
-interface ReparamMapping : Steppable<Double, Double>, Serializable {
+interface ReparamMapping : Steppable<Double>, Serializable {
 
     /** The total length of this mapping; i.e., the last sample's `s` value. */
     val length: Double
@@ -19,7 +19,7 @@ interface ReparamMapping : Steppable<Double, Double>, Serializable {
 
     /** Returns a stepper for [tOfS] */
     @JvmDefault
-    override fun stepper(): Stepper<Double, Double> = Stepper(::tOfS)
+    override fun stepper(): Stepper<Double> = Stepper(::tOfS)
 }
 
 /**
@@ -77,7 +77,7 @@ private constructor(
         return tBefore + progress * (tAfter - tBefore)
     }
 
-    override fun stepper(): Stepper<Double, Double> = object : Stepper<Double, Double> {
+    override fun stepper(): Stepper<Double> = object : Stepper<Double> {
         private var i = -1
 
         override fun stepTo(step: Double): Double {

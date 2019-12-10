@@ -16,7 +16,7 @@ constructor(internal val path: Path) : GenericPath<Point> {
 
     final override fun pointAt(s: Double): Point = mapPoint(path.pointAt(length - s))
 
-    final override fun stepper(): Stepper<Double, Point> {
+    final override fun stepper(): Stepper<Point> {
         val baseStepper = path.stepper()
         return Stepper { s ->
             mapPoint(baseStepper.stepTo(length - s))

@@ -29,7 +29,7 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
         return segments[i].stateAtDist(distance)
     }
 
-    override fun stepper(): Stepper<Double, LinearMotionState> = object : Stepper<Double, LinearMotionState> {
+    override fun stepper(): Stepper<LinearMotionState> = object : Stepper<LinearMotionState> {
         private var i = -1
 
         override fun stepTo(step: Double): LinearMotionState {

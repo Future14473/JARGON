@@ -52,7 +52,7 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
     private var currentTime: Double = 0.0
     private var currentProfile: MotionProfiled<T>? = null
     private var currentCallback: CompletableCallback? = null
-    private var currentStepper: Stepper<Double, T>? = null //if null; means poll more.
+    private var currentStepper: Stepper<T>? = null //if null; means poll more.
 
     final override fun init() {
         outputValue = initialOutput

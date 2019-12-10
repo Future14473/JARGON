@@ -14,14 +14,14 @@ import org.futurerobotics.jargon.util.Stepper
  *  the profiled path.
  * @see PointConstraint
  */
-interface MotionProfileConstrainer : Steppable<Double, PointConstraint> {
+interface MotionProfileConstrainer : Steppable<PointConstraint> {
 
     /**
      * Returns a [Stepper] that steps on distances along a profiled object and returns a [PointConstraint]
      * representing the constraints at that point.
      * @see [MotionProfileConstrainer]
      */
-    override fun stepper(): Stepper<Double, PointConstraint>
+    override fun stepper(): Stepper<PointConstraint>
 
     /**
      * Gets a list of required points that must be considered in the motion profile.
@@ -74,7 +74,7 @@ abstract class ComponentsMotionProfileConstrainer : MotionProfileConstrainer {
     /** Gets a range of allowable acceleration at the point [x] units from the start, given the [curVelocity]. */
     abstract fun getMaxAccel(x: Double, curVelocity: Double): Interval
 
-    override fun stepper(): Stepper<Double, PointConstraint> =
+    override fun stepper(): Stepper<PointConstraint> =
         Stepper {
             object : PointConstraint {
                 override val maxVelocity: Double = getMaxVelocity(it)

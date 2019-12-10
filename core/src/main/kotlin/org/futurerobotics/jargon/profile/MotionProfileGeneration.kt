@@ -115,9 +115,6 @@ private fun accelerationPass(
         var aMax = getAMaxOrNaN(dx, v0, accelGetter, reversed)
         if (aMax.isNaN()) {
             if (v0 == 0.0) throwBadAccelAtZeroVel(points[it], points[it + 1], reversed)
-            //OH NO, ITS BINARY SEARCH!
-            // heuristic search, typically < 10 iterations, and only occurs when necessary,
-            // and typically happens < 1% of the time
             val newV0 = extendingDownDoubleSearch(
                 0.0, v0, tolerance, searchingFor = false
             ) { v -> getAMaxOrNaN(dx, v, accelGetter, reversed).isNaN() }

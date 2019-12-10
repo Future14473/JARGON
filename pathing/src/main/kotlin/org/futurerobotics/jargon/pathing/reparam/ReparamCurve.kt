@@ -22,7 +22,7 @@ class ReparamCurve(internal val func: VectorFunction, internal val mapping: Repa
 
     override fun pointAt(s: Double): CurvePoint = Point(mapping.tOfS(s))
 
-    override fun stepper(): Stepper<Double, CurvePoint> {
+    override fun stepper(): Stepper<CurvePoint> {
         val mappingStepper = mapping.stepper()
         return Stepper { s ->
             Point(mappingStepper.stepTo(s))

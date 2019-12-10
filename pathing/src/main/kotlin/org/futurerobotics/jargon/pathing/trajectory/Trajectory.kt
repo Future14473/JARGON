@@ -49,7 +49,7 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
         return getState(state, point)
     }
 
-    override fun stepper(): Stepper<Double, MotionState<Pose2d>> {
+    override fun stepper(): Stepper<MotionState<Pose2d>> {
         val pathStepper = path.stepper()
         val profileStepper = profile.stepper()
         return Stepper {

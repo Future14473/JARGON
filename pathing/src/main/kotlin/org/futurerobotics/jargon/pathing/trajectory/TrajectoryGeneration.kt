@@ -85,7 +85,7 @@ class TrajectoryConstrainer(
                 it.accelRange(point, curVelocity)
             }.reduce(Interval::intersect)
 
-    override fun stepper(): Stepper<Double, PointConstraint> {
+    override fun stepper(): Stepper<PointConstraint> {
         val pathStepper = path.stepper()
         return Stepper { x ->
             val point = pathStepper.stepTo(x)
