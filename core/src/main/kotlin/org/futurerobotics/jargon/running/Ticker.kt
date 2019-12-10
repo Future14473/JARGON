@@ -187,15 +187,9 @@ class ManualTicker : BaseTicker() {
 class FrequencyRegulatedTicker(private val regulator: SuspendFrequencyRegulator) : BaseTicker(), SuspendRunnable {
 
     private val system = object : LoopSystem {
-        override fun start() {
-        }
-
         override fun loop(loopTimeInNanos: Long): Boolean {
             tick()
             return false
-        }
-
-        override fun stop() {
         }
     }
 
@@ -210,8 +204,10 @@ class FrequencyRegulatedTicker(private val regulator: SuspendFrequencyRegulator)
  *
  * @see FrequencyRegulatedTicker
  */
-class TickerListeningRegulator(private val listener: TickerListener, private val clock: Clock = Clock.Default) :
-    SuspendFrequencyRegulator {
+class TickerListeningRegulator
+@JvmOverloads constructor(
+    private val listener: TickerListener, private val clock: Clock = Clock.Default
+) : SuspendFrequencyRegulator {
 
     private var lastNanos = clock.nanoTime()
     override fun start() {

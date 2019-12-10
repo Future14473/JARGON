@@ -14,25 +14,23 @@ interface SuspendRunnable {
 }
 
 /**
- * Returns this [SuspendRunnable] as a function.
+ * Returns this [SuspendRunnable] as a suspend function.
  */
-val SuspendRunnable.asFunc: suspend () -> Unit get() = { runSuspend() }
+fun SuspendRunnable.asFunction(): suspend () -> Unit = { runSuspend() }
 
 /**
  * Returns this [SuspendRunnable] as a blocking [Runnable].
  */
-val SuspendRunnable.asBlocking: Runnable
-    get() = Runnable {
-        runBlocking {
-            runSuspend()
-        }
+fun SuspendRunnable.asBlocking(): Runnable = Runnable {
+    runBlocking {
+        runSuspend()
     }
+}
 
 /**
  * Creates a [SuspendRunnable] that runs the given [action].
  */
+@Suppress("FunctionName")
 inline fun SuspendRunnable(crossinline action: suspend () -> Unit): SuspendRunnable = object : SuspendRunnable {
-    override suspend fun runSuspend() {
-        action()
-    }
+    override suspend fun runSuspend() = action()
 }
