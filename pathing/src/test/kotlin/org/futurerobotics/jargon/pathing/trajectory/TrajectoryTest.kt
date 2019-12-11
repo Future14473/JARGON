@@ -56,8 +56,8 @@ class TrajectoryTest(private val trajectory: Trajectory) {
         private const val epsilon = 1e-9
         private const val steps = 10_000
         private const val range = 12.0
-        private const val maxError = 0.005
-        private val random = Random(23934827)
+        private const val maxError = 0.01
+        private val random = Random(234828)
         private val constraints = MotionConstraintSet(
             MaxVelConstraint(2.0),
             MaxPathAngularVelConstraint(1.5),
@@ -69,24 +69,22 @@ class TrajectoryTest(private val trajectory: Trajectory) {
 
         @JvmStatic
         @Parameterized.Parameters
-        fun trajectories(): List<Array<Trajectory>> {
-            return List(30) {
-                List(6) {
-                    randomVectorDerivatives(
-                        random,
-                        range
-                    )
-                }.zipWithNext { a, b ->
-                    QuinticSpline.fromDerivatives(a, b)
-                        .reparamByIntegration()
-                        .addHeading(TangentHeading)
-                }.let {
-                    multiplePath(it)
-                }.let {
-                    constraints.generateTrajectory(it, MotionProfileGenParams())
-                }.let {
-                    arrayOf(it)
-                }
+        fun trajectories(): Iterable<Array<Trajectory>> = List(20) {
+            generateSequence {
+                randomVectorDerivatives(
+                    random,
+                    range
+                )
+            }.take(6).zipWithNext { a, b ->
+                QuinticSpline.fromDerivatives(a, b)
+                    .reparamByIntegration()
+                    .addHeading(TangentHeading)
+            }.let {
+                multiplePath(it.toList())
+            }.let {
+                constraints.generateTrajectory(it, MotionProfileGenParams())
+            }.let {
+                arrayOf(it)
             }
         }
     }

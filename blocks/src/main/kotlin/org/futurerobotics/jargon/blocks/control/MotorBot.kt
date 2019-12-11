@@ -67,7 +67,7 @@ class MotorAndGyroToBotDelta(private val interaction: MotorBotVelInteraction) : 
 
         botDelta.set = if (pastPositions == null) Pose2d.ZERO else {
             Pose2d(interaction.botVelFromMotorVel(curPositions - pastPositions)
-                       .also { it[2] = angleNorm(pastAngle - curAngle) })
+                       .also { it[2] = angleNorm(curAngle - pastAngle) })
         }
     }
 

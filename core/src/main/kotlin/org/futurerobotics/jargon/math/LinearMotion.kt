@@ -1,5 +1,6 @@
 package org.futurerobotics.jargon.math
 
+import java.io.Serializable
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -10,7 +11,7 @@ class LinearMotionOnly
 @JvmOverloads constructor(
     vel: Double,
     accel: Double = 0.0
-) : MotionOnly<Double> {
+) : MotionOnly<Double>, Serializable {
 
     private val _vel = vel
     override val vel: Double get() = _vel
@@ -53,7 +54,7 @@ class LinearMotionState
     value: Double,
     deriv: Double,
     secondDeriv: Double = 0.0
-) : MotionState<Double> {
+) : MotionState<Double>, Serializable {
 
     private val _value = value
     override val value: Double get() = _value
@@ -89,7 +90,8 @@ class LinearMotionState
      * of velocity. This may return NaN if it will never reach that distance.
      */
     fun timeElapsedAtDist(s: Double): Double =
-        (-deriv + sqrt(deriv.pow(2) + 2 * secondDeriv * (s - value))) / secondDeriv
+        if (secondDeriv epsEq 0.0) (s - value) / deriv else
+            (-deriv + sqrt(deriv.pow(2) + 2 * secondDeriv * (s - value))) / secondDeriv
 
     /** Adds component-wise. */
     operator fun plus(other: LinearMotionState): LinearMotionState =

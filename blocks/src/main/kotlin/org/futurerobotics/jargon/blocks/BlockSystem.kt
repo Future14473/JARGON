@@ -51,7 +51,7 @@ class BlockSystem(arrangement: BlockArrangement) : BlockRunner(arrangement),
     }
 
     @Suppress("RedundantOverride") //trust me, it's not redundant
-    override fun stop(): Unit = super.stop()
+    override fun stop(): Unit = super<BlockRunner>.stop()
 }
 
 /**

@@ -53,7 +53,10 @@ class TrajectoryCompleteCallback(override val callback: CompletionCallback) : Tr
 /**
  * A callback that is run when the trajectory is complete.
  */
-class TrajectoryStartedCallback
+class TrajectoryStartedCallback(override val callback: CompletionCallback) : TrajectoryCallback {
+
+    override fun getTime(trajectory: Trajectory): Double = -1.0
+}
 
 /**
  * A wrapper around a [Trajectory] that also supports it running with [callbacks].
@@ -66,11 +69,11 @@ class TrajectoryWithCallbacks(val trajectory: Trajectory, callbacks: Collection<
 
     private val callbacks =
         callbacks.mapTo(ArrayList()) { it.getTime(trajectory) to it.callback }
-            .apply { sortByDescending { it.first } }
+            .apply { sortBy { it.first } }
             .toCollection(ArrayDeque<Pair<Double, CompletionCallback>>() as Queue<Pair<Double, CompletionCallback>>)
 
     override val duration: Double
-        get() = TODO("not implemented")
+        get() = trajectory.duration
 
     override fun atTime(time: Double): MotionState<Pose2d> = trajectory.atTime(time)
 

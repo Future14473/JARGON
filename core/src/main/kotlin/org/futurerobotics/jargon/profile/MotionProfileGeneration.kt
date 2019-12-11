@@ -36,6 +36,14 @@ data class MotionProfileGenParams(
         require(maxSegmentSize > 0) { "segmentSize ($maxSegmentSize) must be > 0" }
         require(maxVelSearchTolerance > 0) { "maxVelSearchTolerance ($maxVelSearchTolerance) must be > 0" }
     }
+
+    companion object {
+        /**
+         * Default [MotionProfileGenParams].
+         */
+        @JvmField
+        val DEFAULT: MotionProfileGenParams = MotionProfileGenParams()
+    }
 }
 
 private const val MAX_VEL = 10000.0

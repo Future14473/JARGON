@@ -27,9 +27,9 @@ interface CompletionCallback {
 /**
  * A [CompletionCallback] that completes a [CompletableFuture] with a `null` value when complete.
  */
-class CompletableFutureCallback(future: CompletableFuture<Any?>) : CompletionCallback {
+class CompletableFutureCallback(future: CompletableFuture<*>) : CompletionCallback {
 
-    private var future: CompletableFuture<Any?>? = future
+    private var future: CompletableFuture<*>? = future
     override fun complete() {
         future?.complete(null)
         future = null

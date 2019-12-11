@@ -43,7 +43,7 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
     /**
      * Gets the time along the profile at a given [distance].
      */
-    fun timeAtDistance(distance: Double) = profile.timeAtDistance(distance)
+    fun timeAtDistance(distance: Double): Double = profile.timeAtDistance(distance)
 
     /**
      * Gets the [MotionState] of Poses after the specified [time] traversing this trajectory.
