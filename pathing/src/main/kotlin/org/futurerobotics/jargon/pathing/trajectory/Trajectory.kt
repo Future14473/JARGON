@@ -19,6 +19,12 @@ import kotlin.math.pow
 class Trajectory(private val path: Path, private val profile: MotionProfile) : MotionProfiled<MotionState<Pose2d>>,
                                                                                Serializable {
 
+    init {
+        require(path.length epsEq profile.distance) {
+            "Path length ${path.length} and profile length ${profile.distance} must match"
+        }
+    }
+
     /**
      * The duration of time to traverse this [Trajectory] (ideally)
      *
@@ -34,11 +40,10 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
      */
     val distance: Double get() = path.length
 
-    init {
-        require(path.length epsEq profile.distance) {
-            "Path length ${path.length} and profile length ${profile.distance} must match"
-        }
-    }
+    /**
+     * Gets the time along the profile at a given [distance].
+     */
+    fun timeAtDistance(distance: Double) = profile.timeAtDistance(distance)
 
     /**
      * Gets the [MotionState] of Poses after the specified [time] traversing this trajectory.

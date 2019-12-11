@@ -22,11 +22,18 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
         return segments[i].stateAtTime(time)
     }
 
-    override fun atDistance(distance: Double): LinearMotionState {
+    override fun atDistance(distance: Double): LinearMotionState = segmentByDistance(distance).stateAtDist(distance)
+
+    override fun timeAtDistance(distance: Double): Double = segmentByDistance(distance).timeAtDist(distance)
+
+    private fun segmentByDistance(
+        distance: Double
+    ): Segment {
         var i = segments.binarySearchBy(distance) { it.x }
-        if (i >= 0) return segments[i].state
-        i = (-i - 2).coerceAtLeast(0)
-        return segments[i].stateAtDist(distance)
+        if (i < 0) {
+            i = (-i - 2).coerceAtLeast(0)
+        }
+        return segments[i]
     }
 
     override fun stepper(): Stepper<LinearMotionState> = object : Stepper<LinearMotionState> {
@@ -55,7 +62,8 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
 
         val x get() = state.value
         fun stateAtTime(t: Double) = state.afterTime(t - this.t)
-        fun stateAtDist(x: Double) = state.atDist(x)
+        fun stateAtDist(x: Double) = state.atDistance(x)
+        fun timeAtDist(x: Double) = t + state.timeElapsedAtDist(x)
 
         companion object {
             private const val serialVersionUID: Long = 2348723486724367

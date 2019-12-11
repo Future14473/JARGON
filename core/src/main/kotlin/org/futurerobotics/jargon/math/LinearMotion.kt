@@ -81,8 +81,15 @@ class LinearMotionState
      *
      * This may return a velocity of NaN if this state will never reach a position of [s].
      */
-    fun atDist(s: Double): LinearMotionState =
+    fun atDistance(s: Double): LinearMotionState =
         LinearMotionState(s, sqrt(deriv.pow(2) + 2 * secondDeriv * (s - value)), secondDeriv)
+
+    /**
+     * Returns the time elapsed to get to the specified [s] distance, favoring the solution in the direction
+     * of velocity. This may return NaN if it will never reach that distance.
+     */
+    fun timeElapsedAtDist(s: Double): Double =
+        (-deriv + sqrt(deriv.pow(2) + 2 * secondDeriv * (s - value))) / secondDeriv
 
     /** Adds component-wise. */
     operator fun plus(other: LinearMotionState): LinearMotionState =

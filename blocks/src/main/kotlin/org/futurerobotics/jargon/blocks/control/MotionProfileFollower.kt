@@ -3,7 +3,7 @@ package org.futurerobotics.jargon.blocks.control
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.profile.MotionProfiled
-import org.futurerobotics.jargon.running.CompletableCallback
+import org.futurerobotics.jargon.running.CompletionCallback
 import org.futurerobotics.jargon.util.Stepper
 
 /**
@@ -15,7 +15,7 @@ import org.futurerobotics.jargon.util.Stepper
  * Inputs:
  * - [profileInput]: The [MotionProfiled] object to follow, or null to indicate to idling at the last reference given.
  *      WILL ONLY BE POLLED upon reaching end of the previous motion profile, or input #2 is pulsed:
- * - [profileWithCallback]: Profiles can also be given with a [CompletableCallback] which will be called
+ * - [profileWithCallback]: Profiles can also be given with a [CompletionCallback] which will be called
  *   when the profile is done being traversed. This will be prioritized over [profileInput]
  * - [stop] to stop following motion profile. When given `true`, will immediately cancel following the
  *      current motion profile and the next profile will be polled, if any. For example, using [Pulse].
@@ -35,7 +35,7 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
     /** The motion profile input. See [MotionProfileFollower]*/
     val profileInput: Input<MotionProfiled<T>?> = newOptionalInput()
     /** Motion profile input with callbacks. See [MotionProfileFollower] */
-    val profileWithCallback: Input<Pair<MotionProfiled<T>, CompletableCallback>?> = newOptionalInput()
+    val profileWithCallback: Input<Pair<MotionProfiled<T>, CompletionCallback>?> = newOptionalInput()
     /** The stop input. See [MotionProfileFollower] */
     val stop: Input<Boolean?> = newOptionalInput()
     /** The output from the motion profile this [MotionProfileFollower] is at. */
@@ -51,7 +51,7 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
     private var outputValue: T = initialOutput
     private var currentTime: Double = 0.0
     private var currentProfile: MotionProfiled<T>? = null
-    private var currentCallback: CompletableCallback? = null
+    private var currentCallback: CompletionCallback? = null
     private var currentStepper: Stepper<T>? = null //if null; means poll more.
 
     final override fun init() {

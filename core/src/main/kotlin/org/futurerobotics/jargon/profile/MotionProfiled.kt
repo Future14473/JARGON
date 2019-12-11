@@ -36,5 +36,10 @@ interface MotionProfile : MotionProfiled<LinearMotionState> {
      * the profiled path.
      */
     fun atDistance(distance: Double): LinearMotionState
+
+    /**
+     * Gets the time along the profile at a given [distance].
+     */
+    fun timeAtDistance(distance: Double): Double
 }
 
