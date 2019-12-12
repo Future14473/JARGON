@@ -15,7 +15,7 @@ import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
  *
  * Maybe pass through a filter first.
  */
-class MotorToBotDelta(private val interaction: MotorBotVelInteraction) : PipeBlock<Vec, Pose2d>(Processing.LAZY) {
+class MotorToBotDelta(private val interaction: MotorBotVelInteraction) : PipeBlock<Vec, Pose2d>(Processing.ALWAYS) {
 
     /** Motor positions input. */
     val motorPositions: Input<Vec> get() = super.input
@@ -44,7 +44,7 @@ class MotorToBotDelta(private val interaction: MotorBotVelInteraction) : PipeBlo
  *
  * This will produce the same values if the values the gyro produces is offset by a constant value.
  */
-class MotorAndGyroToBotDelta(private val interaction: MotorBotVelInteraction) : Block(Processing.LAZY) {
+class MotorAndGyroToBotDelta(private val interaction: MotorBotVelInteraction) : Block(Processing.ALWAYS) {
 
     /** Motor positions input. */
     val motorPositions: Input<Vec> = newInput()
