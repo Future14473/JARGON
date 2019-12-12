@@ -2,8 +2,8 @@ package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.convert.*
+import org.futurerobotics.jargon.mechanics.FixedWheelDriveModel
 import org.futurerobotics.jargon.mechanics.MotorModel
-import org.futurerobotics.jargon.mechanics.NominalDriveModel
 import org.futurerobotics.jargon.mechanics.TransmissionModel
 import org.futurerobotics.jargon.printlnMe
 import org.junit.jupiter.api.Test
@@ -21,7 +21,7 @@ internal class DriveStateSpaceModelsTest {
         )
         val transmission = TransmissionModel.ideal(motor, 1.0)
         val mass = 5.0
-        val model = NominalDriveModel.mecanumLike(
+        val model = FixedWheelDriveModel.mecanumLike(
             mass,
             0.5,
             transmission,
@@ -54,7 +54,7 @@ internal class DriveStateSpaceModelsTest {
         )
         val transmission = TransmissionModel.fromTorqueMultiplier(motor, 2.0, 50 * ozf * `in`, 0.9)
         val mass = 20 * lbs
-        val model = NominalDriveModel.mecanumLike(
+        val model = FixedWheelDriveModel.mecanumLike(
             mass,
             mass / 12 * (18 * `in`).pow(2),
             transmission,

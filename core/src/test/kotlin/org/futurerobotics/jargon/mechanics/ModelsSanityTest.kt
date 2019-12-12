@@ -24,7 +24,7 @@ internal class ModelsSanityTest {
 
     @Test
     fun `differential works`() {
-        val differential = NominalDriveModel.differential(
+        val differential = FixedWheelDriveModel.differential(
             2.0, 3.0,
             TransmissionModel.fromTorqueMultiplier(idealUnitMotor, 2.0, 0.0, 0.5),
             5.0, 7.0
@@ -53,7 +53,7 @@ internal class ModelsSanityTest {
         val loc = Vector2d(1, 1) / sqrt(2.0)
         val position = WheelPosition(loc, 1.0 zcross loc, 1.0)
         val wheelModel = WheelModel(position, transmission)
-        val model = NominalDriveModel(1.0, 1.0, listOf(wheelModel), false)
+        val model = FixedWheelDriveModel(1.0, 1.0, listOf(wheelModel), false)
         model.run {
             listOf(
                 motorVelFromBotVel,
@@ -77,7 +77,7 @@ internal class ModelsSanityTest {
         )
         val transmission = TransmissionModel.fromTorqueMultiplier(motor, 2.0, 50 * ozf * `in`, 0.9)
         val mass = 10.8 * lbs
-        val model = NominalDriveModel.mecanumLike(
+        val model = FixedWheelDriveModel.mecanumLike(
             mass,
             mass / 4 * (18 * `in`).pow(2),
             transmission,

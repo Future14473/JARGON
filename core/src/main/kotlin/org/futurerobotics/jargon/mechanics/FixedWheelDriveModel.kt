@@ -12,14 +12,14 @@ import org.futurerobotics.jargon.util.zipForEachIndexed
  * **More importantly**, This model relies on an assumption tha the wheels have perfect traction and are perfectly
  * fixed to the drive body (so moving one wheel may affect all the others). One should consider using the values produced
  * by this model as only a starting point in creating a real model; although sometimes it may
- * perform well enough (for drives with few wheels).
+ * perform well enough.
  *
  * @param wheelsAboutCenter the list of [WheelModel]s relative to the center _position_ of the robot
  * @param mass the mass of the bot
  * @param moi the moment of inertia of the bot
  * @param centerOfGravity the center of gravity of the bot relative to the center _position_. default <0, 0>.
  */
-open class NominalDriveModel
+open class FixedWheelDriveModel
 @JvmOverloads constructor(
     val mass: Double,
     val moi: Double,
@@ -61,9 +61,6 @@ open class NominalDriveModel
         it[1, 2] = -centerOfGravity.x
     }
     private val comVelFromBotVel = botVelFromComVel.pinv()
-
-    private val botAccelFromComAccel get() = botVelFromComVel
-    private val comAccelFromBotAccel get() = comVelFromBotVel
 
     private val comAccelFromWheelForce by lazy {
         val comAccelFromBotForce = diagMat(1 / mass, 1 / mass, 1 / moi)
@@ -132,7 +129,7 @@ open class NominalDriveModel
             horizontalRadius: Double,
             verticalRadius: Double,
             centerOfGravity: Vector2d = Vector2d.ZERO
-        ): NominalDriveModel {
+        ): FixedWheelDriveModel {
             val orientations = listOf(
                 -45 * deg, 44.99 * deg, //problems with singular matrices...
                 45 * deg, -45 * deg
@@ -145,7 +142,7 @@ open class NominalDriveModel
                 val location = WheelPosition(l, o, wheelRadius)
                 WheelModel(location, transmission)
             }
-            return NominalDriveModel(mass, moi, wheels, true, centerOfGravity)
+            return FixedWheelDriveModel(mass, moi, wheels, true, centerOfGravity)
         }
 
         /**
@@ -160,7 +157,7 @@ open class NominalDriveModel
             wheelRadius: Double,
             horizontalRadius: Double,
             centerOfGravity: Vector2d = Vector2d.ZERO
-        ): NominalDriveModel {
+        ): FixedWheelDriveModel {
             val wheels = listOf(1, -1).map {
                 val wheelLocation = WheelPosition(
                     Vector2d(0.0, it * horizontalRadius),
@@ -168,7 +165,7 @@ open class NominalDriveModel
                 )
                 WheelModel(wheelLocation, transmission)
             }
-            return NominalDriveModel(mass, moi, wheels, false, centerOfGravity)
+            return FixedWheelDriveModel(mass, moi, wheels, false, centerOfGravity)
         }
     }
 }

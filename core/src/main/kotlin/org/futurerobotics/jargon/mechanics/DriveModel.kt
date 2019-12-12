@@ -174,7 +174,7 @@ interface BotVelocityModel {
 }
 
 /**
- * Represents how to transforming of motor velocities/accelerations into bot velocities/accelerations, and vice versa.
+ * Represents the transforming of motor velocities/accelerations into bot velocities/accelerations, and vice versa.
  */
 interface MotorBotVelInteraction {
 

@@ -2,8 +2,8 @@ package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.convert.*
+import org.futurerobotics.jargon.mechanics.FixedWheelDriveModel
 import org.futurerobotics.jargon.mechanics.MotorModel
-import org.futurerobotics.jargon.mechanics.NominalDriveModel
 import org.futurerobotics.jargon.mechanics.TransmissionModel
 import org.junit.jupiter.api.Test
 import strikt.api.expectCatching
@@ -20,7 +20,7 @@ private val motorModel = MotorModel.fromMotorData(
 )
 private val transmissionModel = TransmissionModel.fromTorqueMultiplier(motorModel, 2.0, 0.0, 0.9)
 private const val mass = 10.8 * lbs
-private val driveModel = NominalDriveModel.mecanumLike(
+private val driveModel = FixedWheelDriveModel.mecanumLike(
     mass,
     mass / 6 * (18 * `in`).pow(2),
     transmissionModel,

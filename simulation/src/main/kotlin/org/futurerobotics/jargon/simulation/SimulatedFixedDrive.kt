@@ -7,8 +7,8 @@ import org.futurerobotics.jargon.hardware.Gyro
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.mechanics.BotVelocityModel
+import org.futurerobotics.jargon.mechanics.FixedWheelDriveModel
 import org.futurerobotics.jargon.mechanics.GlobalToBot
-import org.futurerobotics.jargon.mechanics.NominalDriveModel
 import org.futurerobotics.jargon.statespace.DriveStateSpaceModels
 import java.util.*
 import kotlin.math.roundToInt
@@ -48,7 +48,7 @@ interface SimulatedDrive {
  * @param timeStep the minimum amount of time passed between samples. Because I don't like euler approximations.
  */
 class SimulatedFixedDrive(
-    private val driveModel: NominalDriveModel,
+    private val driveModel: FixedWheelDriveModel,
     private val random: Random = Random(),
     private val voltageNoise: Mat,
     private val measurementNoise: Mat,

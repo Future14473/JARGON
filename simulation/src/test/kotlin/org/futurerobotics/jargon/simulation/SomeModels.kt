@@ -5,8 +5,8 @@ import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.convert.*
 import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.randomVectorDerivatives
+import org.futurerobotics.jargon.mechanics.FixedWheelDriveModel
 import org.futurerobotics.jargon.mechanics.MotorModel
-import org.futurerobotics.jargon.mechanics.NominalDriveModel
 import org.futurerobotics.jargon.mechanics.TransmissionModel
 import org.futurerobotics.jargon.pathing.TangentHeading
 import org.futurerobotics.jargon.pathing.addHeading
@@ -30,7 +30,7 @@ internal object SomeModels {
         TransmissionModel.fromTorqueMultiplier(motorModel, 2.0, 0.0, 0.9)
     val mecanum = run {
         val mass = 10.8 * lbs
-        NominalDriveModel.mecanumLike(
+        FixedWheelDriveModel.mecanumLike(
             mass,
             mass / 6 * (18 * `in`).pow(2),
             transmissionModel,
