@@ -2,6 +2,7 @@ package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.drawArrow
 import org.futurerobotics.jargon.math.DoubleProgression
+import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.util.stepToAll
 import org.knowm.xchart.XYChart
@@ -44,6 +45,21 @@ fun XYChart.graphPathWithHeading(
     pts.forEachIndexed { index, it ->
         if (index % lineSpacing == 0)
             drawPointArrow(it, lineMagnitude, lineColor)
+    }
+    return graph
+}
+
+fun XYChart.graphPathWithHeading(
+    name: String,
+    pts: List<Pose2d>,
+    pathColor: Color = Color.GREEN,
+    lineSpacing: Int = 20, lineMagnitude: Double = 0.3, lineColor: Color = Color.CYAN
+): XYSeries {
+
+    val graph = graphPath(name, pts.map { it.vec }, pathColor)
+    pts.forEachIndexed { index, it ->
+        if (index % lineSpacing == 0)
+            drawArrow(it.vec, it.heading, lineMagnitude, lineColor)
     }
     return graph
 }

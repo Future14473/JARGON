@@ -11,15 +11,15 @@ internal class PathGraphTest {
     @Test
     fun direct() {
         val graph = PathGraph().apply {
-            newNode(0.0, 0.0).setName("Start")
-                .to(-2.0, 4.0).setName("A")
+            addNode(0.0, 0.0).name("Start")
+                .splineTo(-2.0, 4.0).name("A")
 
-            newNode(3.0, 3.0).setName("B")
-            getNode("A").to("B")
+            addNode(3.0, 3.0).name("B")
+            getNode("A").splineTo("B")
 
-            newNode(3.0, 4.0).setName("End")
-                .to(1.0, -2.0)
-                .to("B")
+            addNode(3.0, 4.0).name("End")
+                .splineTo(1.0, -2.0)
+                .splineTo("B")
         }
 
         val paths = graph.getPaths("Start", "End", CurveGenParams(1.5))!!
@@ -44,14 +44,14 @@ internal class PathGraphTest {
         graph.defaultInterpolator = LinearInterpolator
         repeat(size + 1) { x ->
             repeat(size + 1) { y ->
-                val node = graph.newNode(x.toDouble(), y.toDouble()).setName("$x,$y").setTurnAroundWeight(0)
-                if (x != 0) node.to(graph.getNode("${x - 1},$y"))
+                val node = graph.addNode(x.toDouble(), y.toDouble()).name("$x,$y").setTurnAroundWeight(0)
+                if (x != 0) node.splineTo(graph.getNode("${x - 1},$y"))
                     .setWeights(random.nextInt(-1000, 1000))
-                if (y != 0) node.to(graph.getNode("$x,${y - 1}"))
+                if (y != 0) node.splineTo(graph.getNode("$x,${y - 1}"))
                     .setWeights(random.nextInt(-1000, 1000))
             }
         }
-        val path = graph.getPath("0,0", "$size,$size", CurveGenParams(1.3))!!
+        val path = graph.getPath("0,0", "$size,$size", CurveGenParams(1.3))
         XYChart(500, 400).apply {
             styler.apply {
                 xAxisMin = 0.0
