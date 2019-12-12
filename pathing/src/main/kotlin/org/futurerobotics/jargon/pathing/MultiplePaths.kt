@@ -160,15 +160,15 @@ fun multipleCurve(curves: List<Curve>): Curve = when (curves.size) {
 /**
  * Creates a new [Curve] which contains the given [curves] chained end on end.
  *
- * This must be at least continuous on position, and if not continuous on velocity, a point stop will be added.
+ * This must be at least continuous on position. If direction is not continuous, a point-stop will be added.
  */
 fun multipleCurve(vararg curves: Curve): Curve = MultipleCurve(curves.asList())
 
 /**
  * Creates a new [Path] which contains the given [paths] chained end on end.
  *
- * This must be at least continuous on position and heading, and if not continuous on velocity, a point stop will be
- * added.
+ * This must be at least continuous on position and heading. If direction or heading velocity is not continuous, a
+ * point-stop will be added. If heading is not continuous, a [PointTurn] will be added.
  */
 fun multiplePath(paths: List<Path>): Path = when (paths.size) {
     0 -> throw IllegalArgumentException("Must contain at least 1 path")
