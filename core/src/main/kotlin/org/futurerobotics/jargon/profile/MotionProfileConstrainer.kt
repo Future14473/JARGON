@@ -5,7 +5,7 @@ import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
 
 /**
- * Represents the constraints used to generate a dynamic [MotionProfile], using [generateDynamicProfile].
+ * Represents the constraints used to generate a dynamic [ForwardMotionProfile], using [generateDynamicProfile].
  *
  *
  * Distance values along a _profiled path_ can be length or angle, or something else.
@@ -32,10 +32,10 @@ interface MotionProfileConstrainer : Steppable<PointConstraint> {
 }
 
 /**
- * Represents the motion profile constraints at a specific point along the
+ * Represents the motion profile constraints at a specific point.
  *
  * This includes maximum velocity, and an [Interval] of allowable accelerations going along
- * a _profiled object_
+ * a _profiled object_.
  * @see [MotionProfileConstrainer]
  */
 interface PointConstraint {

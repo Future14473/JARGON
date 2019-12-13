@@ -9,12 +9,13 @@ import java.io.Serializable
 import kotlin.math.pow
 
 /**
- * A [MotionProfile] composed of interpolated segments with constant acceleration, for one-dimensional motion.
+ * A [ForwardMotionProfile] composed of interpolated segments with constant acceleration, for one-dimensional motion.
  */
-class SegmentsMotionProfile private constructor(private val segments: List<Segment>) : MotionProfile, Serializable {
+class SegmentsForwardMotionProfile private constructor(private val segments: List<Segment>) : ForwardMotionProfile,
+                                                                                              Serializable {
 
     override val duration: Double = segments.last().t
-    override val distance: Double = segments.last().state.value
+    override val length: Double = segments.last().state.value
     override fun atTime(time: Double): LinearMotionState {
         var i = segments.binarySearchBy(time) { it.t }
         if (i >= 0) return segments[i].state
@@ -22,9 +23,9 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
         return segments[i].stateAtTime(time)
     }
 
-    override fun atDistance(distance: Double): LinearMotionState = segmentByDistance(distance).stateAtDist(distance)
+    override fun atLength(length: Double): LinearMotionState = segmentByDistance(length).stateAtDist(length)
 
-    override fun timeAtDistance(distance: Double): Double = segmentByDistance(distance).timeAtDist(distance)
+    override fun timeAtLength(length: Double): Double = segmentByDistance(length).timeAtDist(length)
 
     private fun segmentByDistance(
         distance: Double
@@ -63,7 +64,7 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
         val x get() = state.value
         fun stateAtTime(t: Double) = state.afterTime(t - this.t)
         fun stateAtDist(x: Double) = state.atDistance(x)
-        fun timeAtDist(x: Double) = t + state.timeElapsedAtDist(x)
+        fun timeAtDist(x: Double) = t + state.timeElapsedAtDistance(x)
 
         companion object {
             private const val serialVersionUID: Long = 2348723486724367
@@ -74,7 +75,7 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
         private const val serialVersionUID: Long = -982347652334563
 
         /**
-         * Constructs a [SegmentsMotionProfile] from a pair of points with associated velocities.
+         * Constructs a [SegmentsForwardMotionProfile] from a pair of points with associated velocities.
          *
          * This only works if the motion is always progressing forward (v>=0)
          *
@@ -83,7 +84,7 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
          * Time and accelerations are calculated.
          */
         @JvmStatic
-        fun fromPointVelPairs(pairs: List<Pair<Double, Double>>): SegmentsMotionProfile {
+        fun fromPointVelPairs(pairs: List<Pair<Double, Double>>): SegmentsForwardMotionProfile {
             require(pairs.all { it.first.isFinite() && it.second.isFinite() }) { "All x and v should be finite" }
             require(pairs.isSortedBy { it.first }) { "Motion must be progressing forward; x's must progress forward" }
             require(pairs.all { it.second >= 0 }) { "Motion must be progressing forward; All velocities must be >= 0" }
@@ -99,7 +100,7 @@ class SegmentsMotionProfile private constructor(private val segments: List<Segme
             } + pairs.last().let {
                 Segment(LinearMotionState(it.first, it.second, 0.0), t)
             }
-            return SegmentsMotionProfile(segs)
+            return SegmentsForwardMotionProfile(segs)
         }
         //Other factory methods someday, probably not necessary.
     }

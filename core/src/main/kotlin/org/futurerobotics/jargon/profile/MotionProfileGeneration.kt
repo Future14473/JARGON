@@ -13,44 +13,10 @@ import org.futurerobotics.jargon.util.stepToAll
 import kotlin.math.*
 
 /**
- * Parameters for [generateDynamicProfile].
+ * Calculates an approximately optimal [ForwardMotionProfile], given a [MotionProfileConstrainer] and
+ * [MotionProfileGenParams].
  *
- * @param targetStartVel the target start velocity of the profile. May actually be lower if constraints are not
- * satisfied.
- * @param targetEndVel the target end vel. May actually be lower if constraints demand it.
- * @param maxSegmentSize the maximum segment size allowed when the object is divided.
- * @param maxVelSearchTolerance the tolerance used when binary searching the maximum velocity due to _acceleration_
- *      constraints. Note that we made an effort to avoid binary search as much possible and the algorithm is
- *      heuristically optimized.
- */
-data class MotionProfileGenParams(
-    val targetStartVel: Double = 0.0,
-    val targetEndVel: Double = 0.0,
-    val maxSegmentSize: Double = 0.02,
-    val maxVelSearchTolerance: Double = 0.02
-) {
-
-    init {
-        require(targetStartVel >= 0) { "targetStartVel ($targetStartVel) must be >= 0" }
-        require(targetEndVel >= 0) { "targetEndVel ($targetEndVel) must be >= 0" }
-        require(maxSegmentSize > 0) { "segmentSize ($maxSegmentSize) must be > 0" }
-        require(maxVelSearchTolerance > 0) { "maxVelSearchTolerance ($maxVelSearchTolerance) must be > 0" }
-    }
-
-    companion object {
-        /**
-         * Default [MotionProfileGenParams].
-         */
-        @JvmField
-        val DEFAULT: MotionProfileGenParams = MotionProfileGenParams()
-    }
-}
-
-private const val MAX_VEL = 10000.0
-private const val EXTENDING_SEARCH_INITIAL_STEP_RATIO = 2
-
-/**
- * Calculates an approximately optimal [MotionProfile], given a [MotionProfileConstrainer] and [MotionProfileGenParams]
+ * If the total distance is 0.0, a [PointMotionProfile] will be used.
  *
  * This uses a modified version of the algorithm described in section 3.2 of:
  *  [http://www2.informatik.uni-freiburg.de/~lau/students/Sprunk2008.pdf].
@@ -70,8 +36,15 @@ fun generateDynamicProfile(
     constrainer: MotionProfileConstrainer,
     totalDistance: Double,
     params: MotionProfileGenParams
-): MotionProfile = params.run {
-    require(totalDistance > 0) { "distance ($totalDistance) must be > 0" }
+): ForwardMotionProfile = params.run {
+    require(totalDistance >= 0) { "distance ($totalDistance) must be >= 0" }
+    if (totalDistance == 0.0) return PointMotionProfile(
+        0.0,
+        min(
+            params.targetStartVel,
+            constrainer.stepper().stepTo(0.0).maxVelocity
+        )
+    )
 
     require(maxSegmentSize <= totalDistance) {
         "segmentSize ($maxSegmentSize) must be <= dist ($totalDistance)"
@@ -104,8 +77,11 @@ fun generateDynamicProfile(
         true
     )
     val pointVelPairs = points.zip(maxVels)
-    return SegmentsMotionProfile.fromPointVelPairs(pointVelPairs)
+    return SegmentsForwardMotionProfile.fromPointVelPairs(pointVelPairs)
 }
+
+private const val MAX_VEL = 10000.0
+private const val EXTENDING_SEARCH_INITIAL_STEP_RATIO = 2
 
 private fun accelerationPass(
     maxVels: MutableList<Double>,
@@ -149,4 +125,38 @@ private fun throwBadAccelAtZeroVel(x1: Double, x2: Double, reversed: Boolean): N
         "On the interval from ($p1 to $p2, reversed = $reversed), constraints did not return a non-empty acceleration" +
                 " range even with a current velocity of 0.0."
     )
+}
+
+/**
+ * Parameters for [generateDynamicProfile].
+ *
+ * @param targetStartVel the target start velocity of the profile. May actually be lower if constraints are not
+ * satisfied.
+ * @param targetEndVel the target end vel. May actually be lower if constraints demand it.
+ * @param maxSegmentSize the maximum segment size allowed when the object is divided.
+ * @param maxVelSearchTolerance the tolerance used when binary searching the maximum velocity due to _acceleration_
+ *      constraints. Note that we made an effort to avoid binary search as much possible and the algorithm is
+ *      heuristically optimized.
+ */
+data class MotionProfileGenParams(
+    val targetStartVel: Double = 0.0,
+    val targetEndVel: Double = 0.0,
+    val maxSegmentSize: Double = 0.02,
+    val maxVelSearchTolerance: Double = 0.02
+) {
+
+    init {
+        require(targetStartVel >= 0) { "targetStartVel ($targetStartVel) must be >= 0" }
+        require(targetEndVel >= 0) { "targetEndVel ($targetEndVel) must be >= 0" }
+        require(maxSegmentSize > 0) { "segmentSize ($maxSegmentSize) must be > 0" }
+        require(maxVelSearchTolerance > 0) { "maxVelSearchTolerance ($maxVelSearchTolerance) must be > 0" }
+    }
+
+    companion object {
+        /**
+         * Default [MotionProfileGenParams].
+         */
+        @JvmField
+        val DEFAULT: MotionProfileGenParams = MotionProfileGenParams()
+    }
 }

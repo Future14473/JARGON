@@ -8,7 +8,7 @@ import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.randomVectorDerivatives
 import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
 import org.futurerobotics.jargon.pathing.trajectory.*
-import org.futurerobotics.jargon.profile.MotionProfile
+import org.futurerobotics.jargon.profile.ForwardMotionProfile
 import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import org.futurerobotics.jargon.profile.generateDynamicProfile
 import org.futurerobotics.jargon.saveGraph
@@ -37,7 +37,7 @@ class MotionProfileGraphs(
 
     private val xs = DoubleProgression.fromNumSegments(0.0, path.length, 1000).toList()
     private var generationTime: Long = 0L
-    private lateinit var profile: MotionProfile
+    private lateinit var profile: ForwardMotionProfile
     @Before
     fun generateAndTimeProfile() {
         generationTime = measureNanoTime {
@@ -81,7 +81,7 @@ class MotionProfileGraphs(
                 lineWidth = 1f
             }
         }
-        val profileSpeeds = xs.map { profile.atDistance(it).deriv }
+        val profileSpeeds = xs.map { profile.atLength(it).deriv }
         chart.addSeries("Final Profile", xs, profileSpeeds).apply {
             marker = None()
             lineWidth = 1f

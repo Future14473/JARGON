@@ -5,7 +5,7 @@ import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
 
 /**
- * Represents a transformed motion of a [MotionProfile], returning some representation of [State] over time.
+ * Represents a transformed motion of a [ForwardMotionProfile], returning some representation of [State] over time.
  */
 interface MotionProfiled<out State : Any> : Steppable<State> {
 
@@ -21,25 +21,29 @@ interface MotionProfiled<out State : Any> : Steppable<State> {
 }
 
 /**
- * Represents a Motion Profile: a graph/profile of velocity (and position and acceleration) over time or over a
- * "distance" along _profiled path_.
+ * Represents a motion profile, a graph/profile of velocity (and position and acceleration) over time.
  *
  * This is also a [MotionProfiled] for one-dimensional motion (state type [LinearMotionState])
  */
-interface MotionProfile : MotionProfiled<LinearMotionState> {
+interface MotionProfile : MotionProfiled<LinearMotionState>
+
+/**
+ * A [MotionProfiled] in which the velocity is always positive (position is always increasing).
+ *
+ * This way, it has a definite [length], and motion can also be polled along [length] as well as time.
+ */
+interface ForwardMotionProfile : MotionProfile {
 
     /** The total distance/magnitude of the profiled path. */
-    val distance: Double
+    val length: Double
 
     /**
-     * Returns the [LinearMotionState] of this motion profile after traveling a certain [distance] along
+     * Returns the [LinearMotionState] of this motion profile after traveling a certain [length] along
      * the profiled path.
      */
-    fun atDistance(distance: Double): LinearMotionState
+    fun atLength(length: Double): LinearMotionState
 
-    /**
-     * Gets the time along the profile at a given [distance].
-     */
-    fun timeAtDistance(distance: Double): Double
+    /** Gets the time along the profile at a given [length]. */
+    fun timeAtLength(length: Double): Double
 }
 

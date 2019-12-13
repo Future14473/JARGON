@@ -3,25 +3,26 @@ package org.futurerobotics.jargon.pathing.trajectory
 import org.futurerobotics.jargon.math.*
 import org.futurerobotics.jargon.pathing.Path
 import org.futurerobotics.jargon.pathing.PathPoint
-import org.futurerobotics.jargon.profile.MotionProfile
+import org.futurerobotics.jargon.profile.ForwardMotionProfile
 import org.futurerobotics.jargon.profile.MotionProfiled
 import org.futurerobotics.jargon.util.Stepper
 import java.io.Serializable
 import kotlin.math.pow
 
 /**
- * Represents a trajectory; that is a Path paired with time/velocity info (a [MotionProfile]).
+ * Represents a trajectory; that is a Path paired with time/velocity info (a [ForwardMotionProfile]).
  *
  * This links to the rest of the world through implementing the [MotionProfiled] interface.
  *
  * @see generateTrajectory
  */
-class Trajectory(private val path: Path, private val profile: MotionProfile) : MotionProfiled<MotionState<Pose2d>>,
-                                                                               Serializable {
+class Trajectory(private val path: Path, private val profile: ForwardMotionProfile) :
+    MotionProfiled<MotionState<Pose2d>>,
+    Serializable {
 
     init {
-        require(path.length epsEq profile.distance) {
-            "Path length ${path.length} and profile length ${profile.distance} must match"
+        require(path.length epsEq profile.length) {
+            "Path length ${path.length} and profile length ${profile.length} must match"
         }
     }
 
@@ -43,7 +44,7 @@ class Trajectory(private val path: Path, private val profile: MotionProfile) : M
     /**
      * Gets the time along the profile at a given [distance].
      */
-    fun timeAtDistance(distance: Double): Double = profile.timeAtDistance(distance)
+    fun timeAtDistance(distance: Double): Double = profile.timeAtLength(distance)
 
     /**
      * Gets the [MotionState] of Poses after the specified [time] traversing this trajectory.

@@ -89,7 +89,7 @@ class LinearMotionState
      * Returns the time elapsed to get to the specified [s] distance, favoring the solution in the direction
      * of velocity. This may return NaN if it will never reach that distance.
      */
-    fun timeElapsedAtDist(s: Double): Double =
+    fun timeElapsedAtDistance(s: Double): Double =
         if (secondDeriv epsEq 0.0) (s - value) / deriv else
             (-deriv + sqrt(deriv.pow(2) + 2 * secondDeriv * (s - value))) / secondDeriv
 
