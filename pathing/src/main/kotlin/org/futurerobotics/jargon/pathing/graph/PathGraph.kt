@@ -102,8 +102,9 @@ class PathGraph
         start: String, end: String,
         startFacing: Facing = Facing.Any, endFacing: Facing = startFacing,
         curveGenParams: CurveGenParams = CurveGenParams.DEFAULT
+
     ): Path = getPathOrNull(start, end, startFacing, endFacing, curveGenParams)
-        ?: throw IllegalArgumentException("No path exists between ($start) and ($end).")
+            ?: throw IllegalArgumentException("No path exists between ($start) and ($end).")
 
     /**
      * Attempts to create a path between the node named [start] and the node name [end], using the given
