@@ -123,12 +123,7 @@ constructor(paths: List<Path>) : GenericPath<Point> {
     }
 }
 
-private class MultipleCurve(paths: List<Curve>) : MultipleGeneric<Curve, CurvePoint>(paths), Curve {
-
-    companion object {
-        private const val serialVersionUID: Long = -6008569752536122191
-    }
-}
+private class MultipleCurve(paths: List<Curve>) : MultipleGeneric<Curve, CurvePoint>(paths), Curve
 
 private class MultiplePath(paths: List<Path>) : MultipleGeneric<Path, PathPoint>(paths), Path {
 
@@ -139,10 +134,6 @@ private class MultiplePath(paths: List<Path>) : MultipleGeneric<Path, PathPoint>
         }
         if (superCheck !== PathAction.Stop) return superCheck
         return if (!(prev.headingDeriv epsEq cur.headingDeriv)) PathAction.Stop else PathAction.None
-    }
-
-    companion object {
-        private const val serialVersionUID: Long = 1903180955913210312
     }
 }
 

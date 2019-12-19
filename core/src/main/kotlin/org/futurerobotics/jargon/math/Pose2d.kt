@@ -3,6 +3,7 @@
 package org.futurerobotics.jargon.math
 
 import org.futurerobotics.jargon.linalg.*
+import java.io.Serializable
 
 /**
  * Represents a 2d pose, i.e., both position ([vec]) and [heading] angle.
@@ -20,7 +21,7 @@ import org.futurerobotics.jargon.linalg.*
  * @property heading the heading (orientation) of this Pose
  * @see Vector2d
  */
-data class Pose2d(@JvmField val vec: Vector2d, @JvmField val heading: Double) : java.io.Serializable {
+data class Pose2d(@JvmField val vec: Vector2d, @JvmField val heading: Double) : Serializable {
 
     /** Constructs a pose from [x] and [y] position components, and [heading] */
     constructor(x: Double, y: Double, heading: Double) : this(Vector2d(x, y), heading)

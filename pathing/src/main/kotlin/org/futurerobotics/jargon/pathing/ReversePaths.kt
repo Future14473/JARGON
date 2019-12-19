@@ -36,10 +36,6 @@ private class ReverseCurve(curve: Curve) : ReverseGeneric<Curve, CurvePoint>(cur
         override val tanAngleDeriv: Double
             get() = -point.tanAngleDeriv
     }
-
-    companion object {
-        private const val serialVersionUID: Long = -8380484370027657370
-    }
 }
 
 private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path), Path {
@@ -53,10 +49,6 @@ private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path), P
             get() = -point.tanAngleDeriv
         override val headingDeriv: Double
             get() = -point.headingDeriv
-    }
-
-    companion object {
-        private const val serialVersionUID: Long = -9173494841041408460
     }
 }
 

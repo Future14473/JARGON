@@ -3,9 +3,10 @@ package org.futurerobotics.jargon.util
 import java.io.Serializable
 
 /**
- * A list that only has one [value] repeated [size] times. Create using [repeatedList]
+ * A list that only has one [value] repeated [size] times. Create using [repeatedList].
  */
-private class RepeatedList<T>(override val size: Int, private val value: T) : AbstractList<T>(), Serializable {
+private class RepeatedList<T>(override val size: Int, private val value: T) : AbstractList<T>(), Serializable,
+                                                                              RandomAccess {
 
     override fun contains(element: T): Boolean = element == value
 
@@ -20,10 +21,10 @@ private class RepeatedList<T>(override val size: Int, private val value: T) : Ab
 
     override fun isEmpty(): Boolean = false
 
-    override fun lastIndexOf(element: T): Int = if (element == value) size - 1 else -1
+    override fun lastIndexOf(element: T): Int = if (element == value) lastIndex else -1
 
     override fun subList(fromIndex: Int, toIndex: Int): List<T> {
-        if (fromIndex < 0 || toIndex > size) throw IndexOutOfBoundsException("fromIndex: $fromIndex, toIndex: $toIndex, size: $size")
+        if (fromIndex < 0 || toIndex > lastIndex) throw IndexOutOfBoundsException("fromIndex: $fromIndex, toIndex: $toIndex, size: $size")
         require(fromIndex <= toIndex) { "fromIndex: $fromIndex > toIndex: $toIndex" }
         return repeatedList(toIndex - fromIndex, value)
     }

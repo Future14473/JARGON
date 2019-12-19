@@ -4,7 +4,6 @@ import org.futurerobotics.jargon.math.LinearMotionState
 import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.ValueMotionState
 import org.futurerobotics.jargon.math.Vector2d
-import java.io.Serializable
 
 /**
  * Represents a math function, with first, second, and third derivatives.
@@ -80,16 +79,11 @@ fun VectorFunction.motionState(t: Double): MotionState<Vector2d> =
  * @property x the x component function
  * @property y the y component function
  */
-open class ComponentVectorFunction(protected val x: RealFunction, protected val y: RealFunction) : VectorFunction,
-                                                                                                   Serializable {
+open class ComponentVectorFunction(protected val x: RealFunction, protected val y: RealFunction) : VectorFunction {
 
     override fun vec(t: Double): Vector2d = Vector2d(x(t), y(t))
     override fun vecDeriv(t: Double): Vector2d = Vector2d(x.deriv(t), y.deriv(t))
     override fun vecSecondDeriv(t: Double): Vector2d = Vector2d(x.secondDeriv(t), y.secondDeriv(t))
     override fun vecThirdDeriv(t: Double): Vector2d = Vector2d(x.thirdDeriv(t), y.thirdDeriv(t))
     override fun toString(): String = "ComponentVecFunc(x: $x, y: $y)"
-
-    companion object {
-        private const val serialVersionUID: Long = -347968637717556096
-    }
 }

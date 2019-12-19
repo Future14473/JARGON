@@ -2,7 +2,6 @@ package org.futurerobotics.jargon.math.function
 
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.MotionState
-import java.io.Serializable
 
 /**
  * A Quintic Polynomial function, specified by coefficients,
@@ -16,7 +15,7 @@ class QuinticPolynomial(
     @JvmField val d: Double,
     @JvmField val e: Double,
     @JvmField val f: Double
-) : RealFunction, Serializable {
+) : RealFunction {
 
     constructor(vec: DoubleArray) : this(vec[0], vec[1], vec[2], vec[3], vec[4], vec[5])
 
@@ -31,7 +30,6 @@ class QuinticPolynomial(
     override fun toString(): String = "QuinticPoly(%.4ft^5+%.4ft^4+%.4ft^3+%.4ft^2+%.4ft+%.4f)".format(a, b, c, d, e, f)
 
     companion object {
-        private const val serialVersionUID: Long = 6276660574389428855
         private val fromControlPoints = Mat(
             -1, 5, -10, 10, -5, 1 to
                     5, -20, 30, -20, 5, 0 to

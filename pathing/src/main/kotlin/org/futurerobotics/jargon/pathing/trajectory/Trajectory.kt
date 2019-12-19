@@ -6,7 +6,6 @@ import org.futurerobotics.jargon.pathing.PathPoint
 import org.futurerobotics.jargon.profile.ForwardMotionProfile
 import org.futurerobotics.jargon.profile.MotionProfiled
 import org.futurerobotics.jargon.util.Stepper
-import java.io.Serializable
 import kotlin.math.pow
 
 /**
@@ -17,8 +16,7 @@ import kotlin.math.pow
  * @see generateTrajectory
  */
 class Trajectory(private val path: Path, private val profile: ForwardMotionProfile) :
-    MotionProfiled<MotionState<Pose2d>>,
-    Serializable {
+    MotionProfiled<MotionState<Pose2d>> {
 
     init {
         require(path.length epsEq profile.length) {
@@ -74,9 +72,5 @@ class Trajectory(private val path: Path, private val profile: ForwardMotionProfi
             poseDeriv * state.deriv,
             poseSecondDeriv * state.deriv.pow(2) + poseDeriv * state.secondDeriv
         )
-    }
-
-    companion object {
-        private const val serialVersionUID: Long = 5481952978810220011
     }
 }

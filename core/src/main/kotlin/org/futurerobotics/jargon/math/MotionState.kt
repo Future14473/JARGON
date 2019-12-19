@@ -1,7 +1,5 @@
 package org.futurerobotics.jargon.math
 
-import java.io.Serializable
-
 /**
  * Represents just the motion of some quantity of type [T], meaning [vel]ocity and [accel]eration.
  * @see MotionState
@@ -62,7 +60,7 @@ interface MotionState<T : Any> {
 /** An simple implementation of [MotionOnly] that holds values in fields */
 open class ValueMotionOnly<T : Any>(
     final override val vel: T, final override val accel: T
-) : MotionOnly<T>, Serializable {
+) : MotionOnly<T> {
 
     override fun equals(other: Any?): Boolean = when {
         this === other -> true
@@ -71,16 +69,12 @@ open class ValueMotionOnly<T : Any>(
     }
 
     override fun hashCode(): Int = 31 * vel.hashCode() + accel.hashCode()
-
-    companion object {
-        private const val serialVersionUID: Long = 2320972993764450935
-    }
 }
 
 /** An simple implementation of [MotionState] that holds values in fields */
 open class ValueMotionState<T : Any>(
     final override val value: T, final override val deriv: T, final override val secondDeriv: T
-) : MotionState<T>, Serializable {
+) : MotionState<T> {
 
     override fun equals(other: Any?): Boolean = when {
         this === other -> true
@@ -92,8 +86,6 @@ open class ValueMotionState<T : Any>(
     override fun toString(): String = "ValueMotionState(s=$value, v=$deriv, a=$secondDeriv)"
 
     companion object {
-        private const val serialVersionUID: Long = 8517629014322200560
-
         /** Creates a [ValueMotionState] with all s,v,a values equal to [value] */
         @JvmStatic
         fun <T : Any> ofAll(value: T): ValueMotionState<T> =

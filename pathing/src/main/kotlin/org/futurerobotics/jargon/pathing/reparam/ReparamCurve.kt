@@ -62,8 +62,4 @@ class ReparamCurve(internal val func: VectorFunction, internal val mapping: Repa
 
         internal fun motionState() = ValueMotionState(p, v, a)
     }
-
-    companion object {
-        private const val serialVersionUID: Long = 6498795086341258477
-    }
 }

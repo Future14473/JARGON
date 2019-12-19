@@ -21,10 +21,6 @@ class Line(private val startPos: Vector2d, endPos: Vector2d) : Curve {
         override val tanAngleDeriv: Double get() = 0.0
         override val tanAngleSecondDeriv: Double get() = 0.0
     }
-
-    companion object {
-        private const val serialVersionUID: Long = 8675802911613244747
-    }
 }
 
 /**
@@ -50,9 +46,5 @@ class PointTurn(private val point: Vector2d, private val startHeading: Double, p
         override val tanAngle: Double get() = theHeading
         override val tanAngleDeriv: Double get() = turnAngle
         override val tanAngleSecondDeriv: Double get() = 0.0
-    }
-
-    companion object {
-        private const val serialVersionUID: Long = -5248410607320510785
     }
 }

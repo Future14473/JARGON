@@ -17,7 +17,7 @@ class DoubleProgression private constructor(
     val last: Double,
     val step: Double,
     val segments: Int
-) : Iterable<Double>, java.io.Serializable {
+) : Iterable<Double> {
 
     /**
      *  If this progression is empty or not
@@ -37,6 +37,7 @@ class DoubleProgression private constructor(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
+        val a = 2..3
         if (other !is DoubleProgression) return false
 
         if (first != other.first) return false
@@ -56,7 +57,6 @@ class DoubleProgression private constructor(
     }
 
     companion object {
-        private const val serialVersionUID: Long = -2319222987250823882
         /**
          * Creates a [DoubleProgression] from a closed range and given step.
          * All values must be finite, and step must not be 0

@@ -6,7 +6,6 @@ package org.futurerobotics.jargon.pathing
 import org.futurerobotics.jargon.math.function.VectorFunction
 import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
-import java.io.Serializable
 
 /**
  * Represents a curve or path, with the given [Point]. This generic intermediary is to solve the generics problem
@@ -14,7 +13,7 @@ import java.io.Serializable
  *
  * GenericCurve<? extends CurvePoint> or GenericCurve<out CurvePoint> is the superclass of both [Curve] and [Path]
  */
-interface GenericPath<out Point : CurvePoint> : Steppable<Point>, Serializable {
+interface GenericPath<out Point : CurvePoint> : Steppable<Point> {
 
     /**
      * The total (arc) length of this curve/path, and the maximum `s` value the functions

@@ -13,10 +13,6 @@ class ConstantHeading(heading: Double) : HeadingProvider {
 
     private val output = ValueMotionState(angleNorm(heading), 0.0, 0.0)
     override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> = output
-
-    companion object {
-        private const val serialVersionUID: Long = 6008569752536122191
-    }
 }
 
 /**
@@ -32,10 +28,6 @@ class LinearlyInterpolatedHeading(fromHeading: Double, toHeading: Double) : Head
         val dcl = turnHeading / point.length
         return ValueMotionState(angleNorm(fromHeading + s * dcl), dcl, 0.0)
     }
-
-    companion object {
-        private const val serialVersionUID: Long = -7150310678618833605
-    }
 }
 
 /** A [HeadingProvider] that interpolates using a [QuinticPolynomial] along the curve from `fromHeading` to `toHeading`.
@@ -47,10 +39,6 @@ class PolyInterpolatedHeading(fromHeading: MotionState<Double>, toHeading: Motio
 
     private val spline = QuinticPolynomial.fromDerivatives(fromHeading, toHeading)
     override fun getHeading(point: CurvePoint, s: Double): MotionState<Double> = spline.motionState(s / point.length)
-
-    companion object {
-        private const val serialVersionUID: Long = 207160958359032108
-    }
 }
 
 /** A [HeadingProvider] that has the heading equal to the curve's tangent angle, plus [offset]. */
@@ -65,10 +53,7 @@ open class TangentHeading
             point.tanAngleSecondDeriv
         )
 
-    companion object : TangentHeading(0.0) {
-
-        private const val serialVersionUID: Long = 5331301765766845360
-    }
+    companion object : TangentHeading(0.0)
 }
 
 /**
@@ -89,11 +74,6 @@ constructor(fromOffset: Double, toOffset: Double) : HeadingProvider {
             point.tanAngleSecondDeriv
         )
     }
-
-    companion object {
-
-        private const val serialVersionUID: Long = 2345984578934978
-    }
 }
 
 /**
@@ -112,10 +92,6 @@ class PolyInterpolatedTangentHeading(fromOffset: MotionState<Double>, toOffset: 
             point.tanAngleSecondDeriv + state.secondDeriv
         )
     }
-
-    companion object {
-        private const val serialVersionUID: Long = -4119579837615657805
-    }
 }
 
 /**
@@ -131,9 +107,5 @@ class FunctionHeading(private val function: RealFunction) : HeadingProvider {
             function.deriv(t),
             function.secondDeriv(t)
         )
-    }
-
-    companion object {
-        private const val serialVersionUID: Long = -9087053844463217786
     }
 }

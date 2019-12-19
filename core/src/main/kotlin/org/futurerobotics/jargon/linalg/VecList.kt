@@ -5,7 +5,7 @@ package org.futurerobotics.jargon.linalg
 /**
  * Returns this [Vec] as a list. Changes in the vector will be reflected in this list.
  */
-fun Vec.asList(): List<Double> = object : AbstractList<Double>(), java.io.Serializable {
+fun Vec.asList(): List<Double> = object : AbstractList<Double>(), RandomAccess {
     override val size: Int
         get() = dimension
 
@@ -15,7 +15,7 @@ fun Vec.asList(): List<Double> = object : AbstractList<Double>(), java.io.Serial
 /**
  * Returns this [Vec] as a mutable list. Changes in the list will be reflected in the vector, and vice-versa.
  */
-fun Vec.asMutableList(): MutableList<Double> = object : AbstractMutableList<Double>(), java.io.Serializable {
+fun Vec.asMutableList(): MutableList<Double> = object : AbstractMutableList<Double>(), RandomAccess {
     override val size: Int get() = dimension
 
     override fun get(index: Int): Double = this@asMutableList[index]

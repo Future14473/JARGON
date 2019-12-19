@@ -1,6 +1,5 @@
 package org.futurerobotics.jargon.math
 
-import java.io.Serializable
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -11,7 +10,7 @@ class LinearMotionOnly
 @JvmOverloads constructor(
     vel: Double,
     accel: Double = 0.0
-) : MotionOnly<Double>, Serializable {
+) : MotionOnly<Double> {
 
     private val _vel = vel
     override val vel: Double get() = _vel
@@ -40,10 +39,6 @@ class LinearMotionOnly
     /** Subtracts component-wise. */
     operator fun minus(other: LinearMotionOnly): LinearMotionOnly =
         LinearMotionOnly(vel - other.vel, accel - other.accel)
-
-    companion object {
-        private const val serialVersionUID: Long = 2975183939284281640
-    }
 }
 
 /**
@@ -54,7 +49,7 @@ class LinearMotionState
     value: Double,
     deriv: Double,
     secondDeriv: Double = 0.0
-) : MotionState<Double>, Serializable {
+) : MotionState<Double> {
 
     private val _value = value
     override val value: Double get() = _value
@@ -100,8 +95,4 @@ class LinearMotionState
     /** Subtracts component-wise. */
     operator fun minus(other: LinearMotionState): LinearMotionState =
         LinearMotionState(value - other.value, deriv - other.deriv, secondDeriv - other.secondDeriv)
-
-    companion object {
-        private const val serialVersionUID: Long = 6199743470386206427
-    }
 }

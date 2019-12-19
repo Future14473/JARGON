@@ -2,6 +2,7 @@
 
 package org.futurerobotics.jargon.math
 
+import java.io.Serializable
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -15,7 +16,7 @@ import kotlin.random.Random
  * Some calculations use cross products ([cross],[crossz]), in which it is calculated with interpreting vectors as 3d
  * vectors with a z component of 0, and only a portion of the result (that is not zero) is returned.
  */
-data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : java.io.Serializable {
+data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : Serializable {
 
     /**@see Vector2d */
     constructor(x: Int, y: Int) : this(x.toDouble(), y.toDouble())

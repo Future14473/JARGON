@@ -5,14 +5,12 @@ import org.futurerobotics.jargon.math.avg
 import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.isSortedBy
 import org.futurerobotics.jargon.util.replaceIf
-import java.io.Serializable
 import kotlin.math.pow
 
 /**
  * A [ForwardMotionProfile] composed of interpolated segments with constant acceleration, for one-dimensional motion.
  */
-class SegmentsForwardMotionProfile private constructor(private val segments: List<Segment>) : ForwardMotionProfile,
-                                                                                              Serializable {
+class SegmentsForwardMotionProfile private constructor(private val segments: List<Segment>) : ForwardMotionProfile{
 
     override val duration: Double = segments.last().t
     override val length: Double = segments.last().state.value
@@ -59,20 +57,15 @@ class SegmentsForwardMotionProfile private constructor(private val segments: Lis
     }
 
     /** A pre-calculated representation of the endpoints of segments. */
-    private class Segment(val state: LinearMotionState, val t: Double) : Serializable {
+    private class Segment(val state: LinearMotionState, val t: Double) {
 
         val x get() = state.value
         fun stateAtTime(t: Double) = state.afterTime(t - this.t)
         fun stateAtDist(x: Double) = state.atDistance(x)
         fun timeAtDist(x: Double) = t + state.timeElapsedAtDistance(x)
-
-        companion object {
-            private const val serialVersionUID: Long = 2348723486724367
-        }
     }
 
     companion object {
-        private const val serialVersionUID: Long = -982347652334563
 
         /**
          * Constructs a [SegmentsForwardMotionProfile] from a pair of points with associated velocities.
