@@ -8,7 +8,7 @@ import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.asUnmodifiableSet
 import org.futurerobotics.jargon.util.uncheckedCast
 
-private sealed class ReverseGeneric<Path : GenericPath<Point>, Point : CurvePoint>
+private abstract class ReverseGeneric<Path : GenericPath<Point>, Point : CurvePoint>
 constructor(internal val path: Path) : GenericPath<Point> {
 
     final override val length: Double get() = path.length
