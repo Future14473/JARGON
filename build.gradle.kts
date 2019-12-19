@@ -109,9 +109,9 @@ fun Project.configurePublish() {
 
     publishing {
         publications {
-            create<MavenPublication>("publish") {
+            create<MavenPublication>("snapshot") {
                 from(components["java"])
-                artifact(dokkaJar)
+//                artifact(dokkaJar) //no dokka
                 artifact(sourcesJar)
                 versionMapping {
                     usage("java-api") {
