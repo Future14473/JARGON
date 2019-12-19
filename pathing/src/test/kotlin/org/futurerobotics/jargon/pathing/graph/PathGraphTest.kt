@@ -48,11 +48,11 @@ internal class PathGraphTest {
         graph.defaultInterpolator = LinearInterpolator
         repeat(size + 1) { x ->
             repeat(size + 1) { y ->
-                val node = graph.addNode(x.toDouble(), y.toDouble()).name("$x,$y").setTurnAroundWeight(0)
+                val node = graph.addNode(x.toDouble(), y.toDouble()).name("$x,$y").setTurnAroundWeight(1)
                 if (x != 0) node.splineTo(graph.getNode("${x - 1},$y"))
-                    .setWeights(random.nextInt(-1000, 1000))
+                    .setWeights(random.nextInt(0, 10000))
                 if (y != 0) node.splineTo(graph.getNode("$x,${y - 1}"))
-                    .setWeights(random.nextInt(-1000, 1000))
+                    .setWeights(random.nextInt(0, 10000))
             }
         }
         val path = graph.getPath("0,0", "$size,$size", curveGenParams = CurveGenParams(1.3))

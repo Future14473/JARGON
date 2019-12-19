@@ -1,5 +1,6 @@
 package org.futurerobotics.jargon.pathing.graph
 
+import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.angleNorm
 import org.futurerobotics.jargon.pathing.*
@@ -70,6 +71,9 @@ class PathGraph
     /** Creates a node with at the given ([x], [y]) location */
     fun addNode(x: Double, y: Double): Node = addNode(Vector2d(x, y))
 
+    /** Creates a node at the given [pose], with the constraint that it must face the given pose's heading. */
+    fun addNode(pose: Pose2d): Node = addNode(pose.vec).setNodeConstraint(WaypointConstraint(heading = pose.heading))
+
     /** Removes a node and all it's connected edges from this graph. */
     fun removeNode(node: Node) {
         node.edgesInternal.forEach {
@@ -102,9 +106,8 @@ class PathGraph
         start: String, end: String,
         startFacing: Facing = Facing.Any, endFacing: Facing = startFacing,
         curveGenParams: CurveGenParams = CurveGenParams.DEFAULT
-
     ): Path = getPathOrNull(start, end, startFacing, endFacing, curveGenParams)
-            ?: throw IllegalArgumentException("No path exists between ($start) and ($end).")
+        ?: throw IllegalArgumentException("No path exists between ($start) and ($end).")
 
     /**
      * Attempts to create a path between the node named [start] and the node name [end], using the given
@@ -231,8 +234,6 @@ class PathGraph
                 val nextVisIndex = nextNodeIndex.replaceIf(backwards) { it + numNodes }
                 if (visited[nextVisIndex]) return@forEach
 
-                if (edge.isDirectional && backwards != edge.isReversed) return@forEach //need turnaround.
-
                 val weight = edge.weight.also {
                     if (it == Int.MAX_VALUE) return@forEach
                 }
@@ -248,9 +249,12 @@ class PathGraph
             }
             //also expand direction.
             val reverseVisIndex = nodeIndex.replaceIf(!backwards) { it + numNodes }
-            if (!visited[reverseVisIndex]) {
-                visited[reverseVisIndex] = true
-                val nextDist = (dist.toLong() + nodesInternal.getValue(nodeIndex).turnAroundWeight).also {
+            if (!visited[reverseVisIndex]) kotlin.run {
+                val weight = nodesInternal.getValue(nodeIndex).turnAroundWeight.also {
+                    if (it == Int.MAX_VALUE) return@run
+                }
+
+                val nextDist = (dist.toLong() + weight).also {
                     if (it !in Int.MIN_VALUE until Int.MAX_VALUE) throw ArithmeticException("Integer overflow")
                 }.toInt()
                 if (nextDist < distances[reverseVisIndex]) {
@@ -299,6 +303,14 @@ class PathGraph
         /** Sets the weight assigned when the bot needs to go from forward to reverse at this node. */
         var turnAroundWeight: Int
 
+        /** The constraints applied at this node. */
+        var nodeConstraint: WaypointConstraint
+
+        @JvmDefault
+        fun setNodeConstraint(constraint: WaypointConstraint): Return = builder {
+            this.nodeConstraint = constraint
+        }
+
         /** Builder method to set [name] */
         @JvmDefault
         fun name(name: String): Return = builder {
@@ -325,6 +337,9 @@ class PathGraph
          * [FreeEdge].
          */
         fun splineTo(x: Double, y: Double): FreeEdge
+
+        /** Connects this node to a new node with the given [pose], then returns the resulting [FreeEdge]. */
+        fun splineTo(pose: Pose2d): FreeEdge
 
         /** Connects this node to the given [waypoint], with its constraints, then returns the resulting [FreeEdge]. */
         fun splineTo(waypoint: Waypoint): FreeEdge
@@ -389,6 +404,7 @@ class PathGraph
             }
 
         override var turnAroundWeight: Int = DEFAULT_TURNAROUND_WEIGHT
+        override var nodeConstraint: WaypointConstraint = WaypointConstraint.NONE
 
         override fun splineTo(node: Node): FreeEdge = FreeEdge(this, node, defaultInterpolator)
         override fun splineTo(name: String): FreeEdge = splineTo(getNode(name))
@@ -396,6 +412,9 @@ class PathGraph
         override fun splineTo(x: Double, y: Double): FreeEdge = splineTo(Vector2d(x, y))
         override fun splineTo(waypoint: Waypoint): FreeEdge =
             splineTo(waypoint.position).addOutConstraint(waypoint.constraint)
+
+        override fun splineTo(pose: Pose2d): FreeEdge =
+            splineTo(pose.vec).setNodeConstraint(WaypointConstraint(heading = pose.heading))
 
         override fun lineTo(node: Node): CurveEdge =
             CurveEdge(this, node, Line(location, node.location), defaultInterpolator)
@@ -477,15 +496,21 @@ class PathGraph
             reverse.addInConstraint(constraint.reverseDirection())
         }
 
-        internal val inWaypoint: Waypoint get() = Waypoint(fromNode.location, inConstraint)
-        internal val outWaypoint: Waypoint get() = Waypoint(toNode.location, outConstraint)
+        internal val inWaypoint: Waypoint
+            get() = Waypoint(
+                fromNode.location,
+                fromNode.nodeConstraint.mergeFrom(inConstraint)
+            )
+        internal val outWaypoint: Waypoint
+            get() = Waypoint(
+                toNode.location,
+                toNode.nodeConstraint.mergeFrom(outConstraint)
+            )
 
         /** The corresponding reverse edge. */
         lateinit var reverse: Self
             protected set
         internal var isReversed: Boolean = false
-
-        internal val isDirectional get() = inConstraint.heading != null || outConstraint.heading != null
 
         /**
          * Sets up forward and reverse edges, and adds self to nodes.
@@ -555,6 +580,11 @@ class PathGraph
         ) : this(toNode, fromNode, toNode, curve, interpolator) {
             setup(CurveEdge(toNode, toNode, fromNode, curve.reversed(), interpolator))
         }
+
+        init {
+            addInConstraint(Waypoint.fromCurvePoint(curve.startPoint()).constraint)
+            addOutConstraint(Waypoint.fromCurvePoint(curve.endPoint()).constraint)
+        }
     }
 
     /**
@@ -574,6 +604,11 @@ class PathGraph
             path: Path
         ) : this(toNode, fromNode, toNode, path) {
             setup(PathEdge(toNode, toNode, fromNode, path.reversed()))
+        }
+
+        init {
+            addInConstraint(Waypoint.fromCurvePoint(path.startPoint()).constraint)
+            addOutConstraint(Waypoint.fromCurvePoint(path.endPoint()).constraint)
         }
     }
 
