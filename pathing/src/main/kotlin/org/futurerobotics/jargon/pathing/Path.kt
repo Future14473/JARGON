@@ -25,11 +25,9 @@ interface GenericPath<out Point : CurvePoint> : Steppable<Point> {
     fun pointAt(s: Double): Point
 
     /** Gets a stepper that steps through points along the path. */
-    @JvmDefault
     override fun stepper(): Stepper<Point> = Stepper { pointAt(it) }
 
     /** A set of points that it is required for the bot to stop at. */
-    @JvmDefault
     val stopPoints: Set<Double>
         get() = emptySet()
 
@@ -38,7 +36,6 @@ interface GenericPath<out Point : CurvePoint> : Steppable<Point> {
      *
      * This should include [stopPoints].
      */
-    @JvmDefault
     val importantPoints: Set<Double>
         get() = stopPoints
 }

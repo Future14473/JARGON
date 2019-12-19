@@ -305,20 +305,16 @@ class PathGraph
 
         /** The constraints applied at this node. */
         var nodeConstraint: WaypointConstraint
-
-        @JvmDefault
         fun setNodeConstraint(constraint: WaypointConstraint): Return = builder {
             this.nodeConstraint = constraint
         }
 
         /** Builder method to set [name] */
-        @JvmDefault
         fun name(name: String): Return = builder {
             this.name = name
         }
 
         /** Builder method to set [setTurnAroundWeight] */
-        @JvmDefault
         fun setTurnAroundWeight(weight: Int): Return = builder {
             this.turnAroundWeight = weight
         }

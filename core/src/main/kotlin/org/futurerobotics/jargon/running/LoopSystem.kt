@@ -9,7 +9,6 @@ package org.futurerobotics.jargon.running
 interface LoopSystem {
 
     /** Performs any initialization before loop start. */
-    @JvmDefault
     fun start() {
     }
 
@@ -21,7 +20,6 @@ interface LoopSystem {
     fun loop(loopTimeInNanos: Long = 0L): Boolean
 
     /** Run when loop is stopped or interrupted. */
-    @JvmDefault
     fun stop() {
     }
 }

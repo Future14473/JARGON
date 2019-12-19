@@ -17,7 +17,6 @@ interface ReparamMapping : Steppable<Double> {
     fun tOfS(s: Double): Double
 
     /** Returns a stepper for [tOfS] */
-    @JvmDefault
     override fun stepper(): Stepper<Double> = Stepper(::tOfS)
 }
 

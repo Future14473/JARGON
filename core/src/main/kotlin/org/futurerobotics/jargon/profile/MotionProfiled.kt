@@ -16,7 +16,6 @@ interface MotionProfiled<out State : Any> : Steppable<State> {
     fun atTime(time: Double): State
 
     /** Gets a [Stepper] that steps along time, returning the [State] at that time. */
-    @JvmDefault
     override fun stepper(): Stepper<State> = Stepper(::atTime)
 }
 

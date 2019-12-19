@@ -1,4 +1,3 @@
-
 package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*

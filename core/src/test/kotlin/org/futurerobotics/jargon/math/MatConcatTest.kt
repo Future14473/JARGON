@@ -26,7 +26,8 @@ class MatConcatTest {
                      5, 6), Mat(2, 3).T to
                               Mat(2, 3 to
                                8, 7 to
-                                12, 14), Mat(3, 4, 5).T //@formatter:on
+                                12, 14
+                              ), Mat(3, 4, 5).T //@formatter:on
         )
         expectThat(test).isEqualTo(expect)
     }

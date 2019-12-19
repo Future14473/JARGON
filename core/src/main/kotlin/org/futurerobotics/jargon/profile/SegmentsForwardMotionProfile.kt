@@ -10,7 +10,7 @@ import kotlin.math.pow
 /**
  * A [ForwardMotionProfile] composed of interpolated segments with constant acceleration, for one-dimensional motion.
  */
-class SegmentsForwardMotionProfile private constructor(private val segments: List<Segment>) : ForwardMotionProfile{
+class SegmentsForwardMotionProfile private constructor(private val segments: List<Segment>) : ForwardMotionProfile {
 
     override val duration: Double = segments.last().t
     override val length: Double = segments.last().state.value

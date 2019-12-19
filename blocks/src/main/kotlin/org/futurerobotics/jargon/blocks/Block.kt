@@ -283,11 +283,9 @@ abstract class Block(val processing: Processing) {
     interface Context : SystemValues {
 
         /** Gets the current value of an [input] to this block. */
-        @JvmDefault
         operator fun <T> get(input: Input<T>): T = input.get
 
         /** Sets the [value] of an [output] to this block. */
-        @JvmDefault
         operator fun <T> set(output: Output<T>, value: T) {
             output.set = value
         }
@@ -316,7 +314,6 @@ abstract class Block(val processing: Processing) {
     interface ExtendedContext : Context {
 
         /** Gets the [output] of _another_ block directly, bypassing connections. Use with caution. */
-        @JvmDefault
         operator fun <T> get(output: Output<T>): T = output.get
 
         /** Gets the output of _another_ block directly, bypassing connections. Use with caution. */
@@ -384,7 +381,6 @@ interface SystemValues {
      *
      * Usually used in [Processing.OUT_FIRST].
      */
-    @JvmDefault
     val isFirstTime: Boolean
         get() = loopNumber == 0
 }

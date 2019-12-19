@@ -52,7 +52,6 @@ class ComponentPath(internal val curve: Curve, private val heading: HeadingProvi
         override val headingDeriv: Double get() = headingVal.deriv
         override val headingSecondDeriv: Double get() = headingVal.secondDeriv
     }
-
 }
 
 /** Convenience extension function for creating a [ComponentPath] with this curve and a [HeadingProvider] */

@@ -14,11 +14,9 @@ interface MotionOnly<T : Any> {
     val accel: T
 
     /** @return v */
-    @JvmDefault
     operator fun component1(): T = vel
 
     /** @return a */
-    @JvmDefault
     operator fun component2(): T = accel
 }
 
@@ -38,21 +36,17 @@ interface MotionState<T : Any> {
     val secondDeriv: T
 
     /** @return s */
-    @JvmDefault
     operator fun component1(): T = value
 
     /** @return v */
-    @JvmDefault
     operator fun component2(): T = deriv
 
     /** @return a */
-    @JvmDefault
     operator fun component3(): T = secondDeriv
 
     /**
      * Creates a [MotionOnly] with same v and a as this [MotionState]
      */
-    @JvmDefault
     fun toMotionOnly(): ValueMotionOnly<T> =
         ValueMotionOnly(deriv, secondDeriv)
 }

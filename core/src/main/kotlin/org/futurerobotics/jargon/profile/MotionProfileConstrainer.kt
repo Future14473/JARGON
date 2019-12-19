@@ -26,7 +26,6 @@ interface MotionProfileConstrainer : Steppable<PointConstraint> {
     /**
      * Gets a list of required points that must be considered in the motion profile.
      */
-    @JvmDefault
     val requiredPoints: Set<Double>
         get() = emptySet()
 }

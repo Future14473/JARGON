@@ -51,14 +51,12 @@ interface VectorFunction {
     fun vecThirdDeriv(t: Double): Vector2d
 
     /** The function's curvature at [t] */
-    @JvmDefault
     fun curvature(t: Double): Double {
         val v = vecDeriv(t)
         return (v cross vecSecondDeriv(t)) / v.lengthPow(3.0)
     }
 
     /** The function's [curvature]'s derivative w/ respect to t, at [t] */
-    @JvmDefault
     fun curvatureDeriv(t: Double): Double {
         val v = vecDeriv(t)
         val a = vecSecondDeriv(t)
