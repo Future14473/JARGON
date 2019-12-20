@@ -1,32 +1,26 @@
 package org.futurerobotics.jargon.math
 
 /**
- * Represents just the motion of some quantity of type [T], meaning [vel]ocity and [accel]eration.
+ * Generic representation of just the motion of some quantity of type [T], meaning [deriv]ocity and [secondDeriv]eration.
  * @see MotionState
- * @see ValueMotionOnly
+ * @see MotionOnly
  * @see LinearMotionOnly
  */
-interface MotionOnly<T : Any> {
+interface AnyMotionOnly<T : Any> {
 
     /** The velocity of this [MotionOnly] */
-    val vel: T
+    val deriv: T
     /** The acceleration of this [MotionOnly] */
-    val accel: T
-
-    /** @return v */
-    operator fun component1(): T = vel
-
-    /** @return a */
-    operator fun component2(): T = accel
+    val secondDeriv: T
 }
 
 /**
- * Represents the motion state of some quantity of type [T], meaning [value], [deriv], and [secondDeriv].
- * @see ValueMotionState
+ * Generic representation of the motion state of some quantity of type [T], meaning [value], [deriv], and [secondDeriv].
+ * @see MotionState
  * @see MotionOnly
  * @see LinearMotionState
  */
-interface MotionState<T : Any> {
+interface AnyMotionState<T : Any> {
 
     /** The value of this [MotionState] */
     val value: T
@@ -34,71 +28,35 @@ interface MotionState<T : Any> {
     val deriv: T
     /** The acceleration of this [MotionState] */
     val secondDeriv: T
-
-    /** @return s */
-    operator fun component1(): T = value
-
-    /** @return v */
-    operator fun component2(): T = deriv
-
-    /** @return a */
-    operator fun component3(): T = secondDeriv
-
-    /**
-     * Creates a [MotionOnly] with same v and a as this [MotionState]
-     */
-    fun toMotionOnly(): ValueMotionOnly<T> =
-        ValueMotionOnly(deriv, secondDeriv)
 }
 
-/** An simple implementation of [MotionOnly] that holds values in fields */
-open class ValueMotionOnly<T : Any>(
-    final override val vel: T, final override val accel: T
-) : MotionOnly<T> {
+/**
+ * Represents just the motion of some quantity of type [T], meaning [deriv]ocity and [secondDeriv]eration.
+ * @see MotionState
+ * @see MotionOnly
+ * @see LinearMotionOnly
+ */
+data class MotionOnly<T : Any>(
+    override val deriv: T, override val secondDeriv: T
+) : AnyMotionOnly<T>
 
-    override fun equals(other: Any?): Boolean = when {
-        this === other -> true
-        other !is ValueMotionState<*> -> false
-        else -> vel == other.deriv && accel == other.secondDeriv
-    }
+/**
+ * Representation of the motion state of some quantity of type [T], meaning [value], [deriv], and [secondDeriv].
+ * @see MotionState
+ * @see MotionOnly
+ * @see LinearMotionState
+ */
+data class MotionState<T : Any>(
+    override val value: T, override val deriv: T, override val secondDeriv: T
+) : AnyMotionState<T> {
 
-    override fun hashCode(): Int = 31 * vel.hashCode() + accel.hashCode()
-}
-
-/** An simple implementation of [MotionState] that holds values in fields */
-open class ValueMotionState<T : Any>(
-    final override val value: T, final override val deriv: T, final override val secondDeriv: T
-) : MotionState<T> {
-
-    override fun equals(other: Any?): Boolean = when {
-        this === other -> true
-        other !is ValueMotionState<*> -> false
-        else -> value == other.value && deriv == other.deriv && secondDeriv == other.secondDeriv
-    }
-
-    override fun hashCode(): Int = 31 * super.hashCode() + value.hashCode()
-    override fun toString(): String = "ValueMotionState(s=$value, v=$deriv, a=$secondDeriv)"
+    /** Creates a [MotionOnly] with same [deriv] and [secondDeriv] as this [MotionState]. */
+    fun toMotionOnly(): MotionOnly<T> = MotionOnly(deriv, secondDeriv)
 
     companion object {
-        /** Creates a [ValueMotionState] with all s,v,a values equal to [value] */
+        /** Creates a [MotionState] with all values equal to the given [value] */
         @JvmStatic
-        fun <T : Any> ofAll(value: T): ValueMotionState<T> =
-            ValueMotionState(value, value, value)
+        fun <T : Any> ofAll(value: T): MotionState<T> =
+            MotionState(value, value, value)
     }
 }
-
-/** Extracts a vector [MotionState] from this pose [MotionState]. */
-fun MotionState<Pose2d>.vec(): MotionState<Vector2d> =
-    ValueMotionState(value.vec, deriv.vec, secondDeriv.vec)
-
-/** Extracts a heading [MotionState] from this pose [MotionState]. */
-fun MotionState<Pose2d>.heading(): LinearMotionState =
-    LinearMotionState(value.heading, deriv.heading, secondDeriv.heading)
-
-/** Extracts a x [MotionState] from this pose [MotionState]. */
-fun MotionState<Pose2d>.x(): LinearMotionState =
-    LinearMotionState(value.x, deriv.x, secondDeriv.x)
-
-/** Extracts the y [MotionState] from this pose [MotionState]. */
-fun MotionState<Pose2d>.y(): LinearMotionState =
-    LinearMotionState(value.y, deriv.y, secondDeriv.y)

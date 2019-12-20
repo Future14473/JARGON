@@ -11,10 +11,17 @@ import kotlin.math.abs
  * @param a The lower bound of this interval.
  * @param b The upper bound of this interval. Can be [Double.POSITIVE_INFINITY]
  */
-class Interval private constructor(val a: Double, val b: Double) {
+class Interval(val a: Double, val b: Double) {
+
+    constructor(range: ClosedFloatingPointRange<Double>) : this(range.start, range.endInclusive)
+
+    init {
+        require(!a.isNaN()) { "a is NaN" }
+        require(!b.isNaN()) { "b is NaN" }
+    }
 
     /** If this interval is empty (contains no values) */
-    fun isEmpty(): Boolean = a.isNaN() || b.isNaN() || a > b
+    fun isEmpty(): Boolean = a > b
 
     /** If this interval is not empty. */
     fun isNotEmpty(): Boolean = !isEmpty()
@@ -47,13 +54,6 @@ class Interval private constructor(val a: Double, val b: Double) {
     /** @return if [v] is contained in the interval. */
     operator fun contains(v: Double): Boolean = v in a..b //includes empty case
 
-    /** @return if [v] is contained in this interval, with leniency at the endpoints. */
-    infix fun epsContains(v: Double): Boolean = !isEmpty() && v in (a - EPSILON)..(b + EPSILON)
-
-    /** @return if this interval epsilon equals the other via endpoints */
-    infix fun epsEq(other: Interval): Boolean =
-        this.isEmpty() && other.isEmpty() || a epsEq other.a && b epsEq other.b
-
     /** @return the intersection of this interval with another. */
     infix fun intersect(other: Interval): Interval {
         if (this.isEmpty() || other.isEmpty() || other.a > b || a > other.b) return EMPTY
@@ -73,10 +73,10 @@ class Interval private constructor(val a: Double, val b: Double) {
     override fun equals(other: Any?): Boolean = when {
         this === other -> true
         other !is Interval -> false
-        else -> a == other.a && b == other.b
+        else -> (isEmpty() && other.isEmpty()) || (a == other.a && b == other.b)
     }
 
-    override fun hashCode(): Int = 31 * a.hashCode() + b.hashCode()
+    override fun hashCode(): Int = if (isEmpty()) -1 else 31 * a.hashCode() + b.hashCode()
 
     override fun toString(): String = when {
         isEmpty() -> "Interval [Empty]"
@@ -86,27 +86,10 @@ class Interval private constructor(val a: Double, val b: Double) {
     companion object {
         /** An empty interval */
         @JvmField
-        val EMPTY: Interval = Interval(Double.NaN, Double.NaN)
+        val EMPTY: Interval = Interval(0.0, -1.0)
         /** An interval spanning all real numbers. */
         @JvmField
         val REAL: Interval = Interval(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)
-
-        /**
-         * Returns a interval by endpoints [a] and [b].
-         */
-        @JvmStatic
-        fun of(a: Double, b: Double): Interval {
-            require(!a.isNaN()) { "a is NaN" }
-            require(!b.isNaN()) { "b is NaN" }
-            if (b < a) return EMPTY
-            return Interval(a, b)
-        }
-
-        /**
-         * Returns a interval by a given [range].
-         */
-        @JvmStatic
-        fun of(range: ClosedFloatingPointRange<Double>): Interval = of(range.start, range.endInclusive)
 
         /**
          * Returns an interval by endpoints [a] and [b].
@@ -114,11 +97,7 @@ class Interval private constructor(val a: Double, val b: Double) {
          * Will swap endpoints if b < a.
          */
         @JvmStatic
-        fun ofRegular(a: Double, b: Double): Interval {
-            require(!a.isNaN()) { "a is NaN" }
-            require(!b.isNaN()) { "b is NaN" }
-            return if (b > a) Interval(a, b) else Interval(b, a)
-        }
+        fun ofRegular(a: Double, b: Double): Interval = if (b > a) Interval(a, b) else Interval(b, a)
 
         /**
          * Returns an interval using a [center] and a [radius].
@@ -128,9 +107,6 @@ class Interval private constructor(val a: Double, val b: Double) {
         @JvmOverloads
         @JvmStatic
         fun symmetric(radius: Double, center: Double = 0.0): Interval {
-            require(!radius.isNaN()) { "radius is NaN" }
-            require(!center.isNaN()) { "center is NaN" }
-            if (radius < 0) return EMPTY
             if (radius == Double.POSITIVE_INFINITY) return REAL
             return Interval(center - radius, center + radius)
         }
@@ -148,9 +124,8 @@ class Interval private constructor(val a: Double, val b: Double) {
 
 /**
  * Constructs an [Interval] from [this] to [b].
- * @see Interval.of
  */
-infix fun Double.intervalTo(b: Double): Interval = Interval.of(this, b)
+infix fun Double.intervalTo(b: Double): Interval = Interval(this, b)
 
 /**
  * Constructs an regular [Interval] from [this] to [b].
@@ -159,19 +134,13 @@ infix fun Double.intervalTo(b: Double): Interval = Interval.of(this, b)
 infix fun Double.regularIntervalTo(b: Double): Interval = Interval.ofRegular(this, b)
 
 /**
- * @return if [this] is contained in this interval, with leniency at the endpoints.
- * @see Interval.epsContains
- */
-infix fun Double.epsIn(i: Interval): Boolean = i.epsContains(this)
-
-/**
  * Ensures that this value lies in the specified [Interval] i.
  * Will return [Double.NaN] if the interval is empty.
  */
-infix fun Double.coerceIn(i: Interval): Double =
+fun Double.coerceIn(i: Interval): Double =
     if (i.isEmpty()) throw IllegalArgumentException("Cannot coerce to empty interval") else coerceIn(i.a, i.b)
 
 /**
  * Returns this Double range as an interval.
  */
-fun ClosedFloatingPointRange<Double>.asInterval(): Interval = Interval.of(this)
+fun ClosedFloatingPointRange<Double>.asInterval(): Interval = Interval(this)

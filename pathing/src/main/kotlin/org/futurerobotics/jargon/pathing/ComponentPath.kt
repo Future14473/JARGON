@@ -3,7 +3,7 @@
 
 package org.futurerobotics.jargon.pathing
 
-import org.futurerobotics.jargon.math.MotionState
+import org.futurerobotics.jargon.math.LinearMotionState
 import org.futurerobotics.jargon.util.Stepper
 
 /**
@@ -16,7 +16,7 @@ interface HeadingProvider {
      * Gets a heading's derivatives at the point [s] units along the curve, using info provided by
      * the [CurvePoint] [point]
      */
-    fun getHeading(point: CurvePoint, s: Double): MotionState<Double>
+    fun getHeading(point: CurvePoint, s: Double): LinearMotionState
 }
 
 /**
@@ -30,10 +30,7 @@ class ComponentPath(internal val curve: Curve, private val heading: HeadingProvi
 
     override fun pointAt(s: Double): PathPoint {
         val point = curve.pointAt(s)
-        return Point(
-            point,
-            heading.getHeading(point, s)
-        )
+        return Point(point, heading.getHeading(point, s))
     }
 
     override fun stepper(): Stepper<PathPoint> {
@@ -45,12 +42,12 @@ class ComponentPath(internal val curve: Curve, private val heading: HeadingProvi
     }
 
     internal class Point(
-        internal val curvePoint: CurvePoint, private val headingVal: MotionState<Double>
+        internal val curvePoint: CurvePoint, heading: LinearMotionState
     ) : PathPoint, CurvePoint by curvePoint {
 
-        override val heading: Double get() = headingVal.value
-        override val headingDeriv: Double get() = headingVal.deriv
-        override val headingSecondDeriv: Double get() = headingVal.secondDeriv
+        override val heading: Double = heading.value
+        override val headingDeriv: Double = heading.deriv
+        override val headingSecondDeriv: Double = heading.secondDeriv
     }
 }
 

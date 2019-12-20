@@ -34,11 +34,11 @@ fun Path.backwards(): Path = headingRotated(PI)
  */
 tailrec fun Path.headingRotated(angle: Double): Path {
     require(angle.isFinite()) { "Angle ($angle) must be finite" }
-    val angle = angleNorm(angle)
+    val normAngle = angleNorm(angle)
     return when {
-        this is HeadingRotatedPath -> headingRotated(this.angle + angle)
-        angle epsEq 0.0 -> this
-        else -> HeadingRotatedPath(this, angle)
+        this is HeadingRotatedPath -> path.headingRotated(this.angle + normAngle)
+        normAngle epsEq 0.0 -> this
+        else -> HeadingRotatedPath(this, normAngle)
     }
 }
 

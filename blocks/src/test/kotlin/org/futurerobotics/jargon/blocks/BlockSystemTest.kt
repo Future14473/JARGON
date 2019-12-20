@@ -48,7 +48,7 @@ internal class BlockSystemTest {
 
         expectThat(monitor) {
             repeat(4) { i ->
-                system.start()
+                system.init()
                 system.loop()
                 get { value }.describedAs("restart #$i")
                     .isEqualTo("H0[C0[B0[A, E0-, null]], G0[C0[B0[A, E0-, null]], F0[B1[A, E0-, null], D0-]]]")
@@ -75,7 +75,7 @@ internal class BlockSystemTest {
                 c.fromAll(this, d.output(0))
                 d.fromAll(this, a.output(0))
             }
-            system.start()
+            system.init()
             system.loop(0)
         }.failed()
     }

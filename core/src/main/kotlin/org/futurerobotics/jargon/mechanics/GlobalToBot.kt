@@ -34,7 +34,7 @@ object GlobalToBot {
                     v.vec.rotated(-globalHeading + PI / 2) * -v.heading,
             a.heading
         )
-        return ValueMotionOnly(rv, ra)
+        return MotionOnly(rv, ra)
     }
 
     /**
@@ -52,7 +52,7 @@ object GlobalToBot {
                     v.vec.rotated(-globalHeading + PI / 2) * -v.heading,
             a.heading
         )
-        return ValueMotionState(rs, rv, ra)
+        return MotionState(rs, rv, ra)
     }
 
     /**
@@ -64,12 +64,11 @@ object GlobalToBot {
         botPoseDelta: Pose2d,
         currentGlobalPose: Pose2d
     ): Pose2d {
-        val (v, dTheta) = botPoseDelta
-        val (x, y) = v
+        val (x, y, dTheta) = botPoseDelta
         val sinc = sinc(dTheta)
         val cosc = cosc(dTheta)
         val relativeDiff = Vector2d(sinc * x - cosc * y, cosc * x + sinc * y)
         val dPose = Pose2d(relativeDiff.rotated(currentGlobalPose.heading), dTheta)
-        return (currentGlobalPose + dPose).normalizeAngle()
+        return (currentGlobalPose + dPose).angleNormalized()
     }
 }

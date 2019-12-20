@@ -6,12 +6,11 @@ import strikt.api.expectThat
 import strikt.assertions.all
 import strikt.assertions.isEqualTo
 import kotlin.random.Random
-
 @UseExperimental(ExperimentalCoroutinesApi::class)
 internal class TickerTest {
 
     @Test
-    fun itTicks() = runBlocking<Unit> {
+    fun itTicks() = runBlocking {
         val ticker = ManualTicker()
         launch {
             repeat(5) {

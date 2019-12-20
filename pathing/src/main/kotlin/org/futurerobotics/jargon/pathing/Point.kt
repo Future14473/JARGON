@@ -67,8 +67,8 @@ inline val CurvePoint.curvatureDeriv: Double
     get() = tanAngleSecondDeriv
 
 /** Gets a position motion state for this [CurvePoint]. */
-fun CurvePoint.positionMotionState(): ValueMotionState<Vector2d> =
-    ValueMotionState(position, positionDeriv, positionSecondDeriv)
+fun CurvePoint.positionMotionState(): MotionState<Vector2d> =
+    MotionState(position, positionDeriv, positionSecondDeriv)
 
 /** Gets a tanAngle motion state for this [CurvePoint]. */
 fun CurvePoint.tanAngleMotionState(): LinearMotionState =
@@ -124,4 +124,4 @@ fun PathPoint.headingMotionState(): LinearMotionState =
 
 /** Gets a pose motion state for this [PathPoint]. */
 fun PathPoint.poseMotionState(): MotionState<Pose2d> =
-    ValueMotionState(pose, poseDeriv, poseSecondDeriv)
+    MotionState(pose, poseDeriv, poseSecondDeriv)

@@ -2,8 +2,6 @@ package org.futurerobotics.jargon.math.function
 
 import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.nextVector2d
-import kotlin.random.Random
 
 /** Represents a Quintic Spline, defined by two quintic polynomials for the x and y components. */
 class QuinticSpline(x: QuinticPolynomial, y: QuinticPolynomial) : ComponentVectorFunction(x, y) {
@@ -52,21 +50,6 @@ class QuinticSpline(x: QuinticPolynomial, y: QuinticPolynomial) : ComponentVecto
             start: MotionState<Vector2d>, end: MotionState<Vector2d>
         ): QuinticSpline = fromDerivatives(
             start.value, start.deriv, start.secondDeriv, end.value, end.deriv, end.secondDeriv
-        )
-
-        /**
-         * Generates a spline from random derivatives. Mainly used for testing.
-         * @param random the [Random] to use
-         * @param range the range of the derivative/position vector values
-         */
-        @JvmStatic
-        fun random(random: Random, range: Double = 1.0): QuinticSpline = fromDerivatives(
-            random.nextVector2d(range),
-            random.nextVector2d(range),
-            random.nextVector2d(range),
-            random.nextVector2d(range),
-            random.nextVector2d(range),
-            random.nextVector2d(range)
         )
     }
 }

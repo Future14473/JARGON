@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.pathing.reparam
 
-import org.futurerobotics.jargon.math.ValueMotionState
+import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.function.VectorFunction
 import org.futurerobotics.jargon.math.ifNan
@@ -60,6 +60,6 @@ class ReparamCurve(internal val func: VectorFunction, internal val mapping: Repa
                     .also { _tanAngleSecondDeriv = it }
             }
 
-        internal fun motionState() = ValueMotionState(p, v, a)
+        internal fun motionState() = MotionState(p, v, a)
     }
 }

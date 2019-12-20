@@ -31,6 +31,7 @@ fun SuspendRunnable.asBlocking(): Runnable = Runnable {
  * Creates a [SuspendRunnable] that runs the given [action].
  */
 @Suppress("FunctionName")
-inline fun SuspendRunnable(crossinline action: suspend () -> Unit): SuspendRunnable = object : SuspendRunnable {
+inline fun SuspendRunnable(crossinline action: suspend () -> Unit): SuspendRunnable = object :
+    SuspendRunnable {
     override suspend fun runSuspend() = action()
 }

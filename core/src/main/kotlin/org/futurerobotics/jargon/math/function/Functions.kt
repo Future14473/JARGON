@@ -2,11 +2,10 @@ package org.futurerobotics.jargon.math.function
 
 import org.futurerobotics.jargon.math.LinearMotionState
 import org.futurerobotics.jargon.math.MotionState
-import org.futurerobotics.jargon.math.ValueMotionState
 import org.futurerobotics.jargon.math.Vector2d
 
 /**
- * Represents a math function, with first, second, and third derivatives.
+ * Represents a real valued function, with first, second, and third derivatives.
  */
 interface RealFunction {
 
@@ -32,22 +31,22 @@ operator fun RealFunction.invoke(t: Double): Double = value(t)
 fun RealFunction.motionState(t: Double): LinearMotionState = LinearMotionState(value(t), deriv(t), secondDeriv(t))
 
 /**
- *  Represents a vector-valued function with first, second, and third derivatives.
+ * Represents a vector-valued function with first, second, and third derivatives.
  *
- *  Includes curvature (with default implementations) too.
+ * Includes curvature (with default implementations) too.
  */
 interface VectorFunction {
 
-    /** The function's vector output at [t] */
+    /** The function's vector value at [t]. */
     fun vec(t: Double): Vector2d
 
-    /** The function's vector derivative at [t] */
+    /** The function's vector derivative at [t]. */
     fun vecDeriv(t: Double): Vector2d
 
-    /** The function's second derivative at [t] */
+    /** The function's second derivative at [t]. */
     fun vecSecondDeriv(t: Double): Vector2d
 
-    /** The function's third derivative at [t] */
+    /** The function's third derivative at [t]. */
     fun vecThirdDeriv(t: Double): Vector2d
 
     /** The function's curvature at [t] */
@@ -65,17 +64,18 @@ interface VectorFunction {
     }
 }
 
-/**
- * Gets a [LinearMotionState] for the value and first and second derivatives at [t].
- */
+/** [VectorFunction.vec] */
+operator fun VectorFunction.invoke(t: Double): Vector2d = vec(t)
+
+/** Gets a [MotionState] for the value and first and second derivatives at [t]. */
 fun VectorFunction.motionState(t: Double): MotionState<Vector2d> =
-    ValueMotionState(vec(t), vecDeriv(t), vecSecondDeriv(t))
+    MotionState(vec(t), vecDeriv(t), vecSecondDeriv(t))
 
 /**
  * A vector function defined by separate [x] and [y] component functions.
  *
- * @property x the x component function
- * @property y the y component function
+ * @property x the x function
+ * @property y the y function
  */
 open class ComponentVectorFunction(protected val x: RealFunction, protected val y: RealFunction) : VectorFunction {
 

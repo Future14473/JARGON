@@ -1,8 +1,5 @@
 package org.futurerobotics.jargon.running
 
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import org.futurerobotics.jargon.running.Clock.Default
 import kotlin.math.roundToLong
 
 /**
@@ -10,10 +7,8 @@ import kotlin.math.roundToLong
  *
  * It both keeps track of elapsed time per cycle, and possibly enforces a cycle to be run at a certain speed.
  *
- * Note that although only one method will be called at a time, due to coroutines this should ideally also be thread
- * safe.
- *
- * Every control system has exactly one of these.
+ * If using in kotlin, see `coroutine-support` package for a version of this that uses coroutines instead
+ * of thread blocking instead.
  */
 interface FrequencyRegulator {
 
@@ -44,43 +39,19 @@ interface FrequencyRegulator {
     fun stop()
 }
 
-/**
- * A [FrequencyRegulator] that instead supports sync using a suspend function, namely [syncSuspend].
- *
- * The sync function then defaults to use [runBlocking].
- */
-interface SuspendFrequencyRegulator : FrequencyRegulator {
-
-    /**
-     * Gets the amount of nanoseconds needed to delay so that the time between the last call to [start] is
-     * controlled to this [FrequencyRegulator]'s liking, for the next loop after the call to [start].
-     */
-    suspend fun syncSuspend()
-
-    override fun sync(): Unit = runBlocking {
-        syncSuspend()
-    }
-}
-
 private const val million = 1_000_000
 
 /**
  * A [FrequencyRegulator] which has a sync based delaying a number of nanoseconds, using [getDelayNanos].
  */
-abstract class DelayFrequencyRegulator : SuspendFrequencyRegulator {
+abstract class DelayFrequencyRegulator : FrequencyRegulator {
 
     /**
-     * Gets the amount of delay needed, in nanoseconds. Called upon [sync].
+     * Gets the amount of delay needed, in milliseconds.
      */
-    abstract fun getDelayNanos(): Long
+    abstract fun getDelayMillis(): Long
 
-    private fun getDelayMillis() = (getDelayNanos() + (million / 2)) / million
-
-    final override suspend fun syncSuspend() {
-        delay(getDelayMillis())
-    }
-
-    final override fun sync() {
+    override fun sync() {
         Thread.sleep(getDelayMillis())
     }
 }
@@ -88,16 +59,13 @@ abstract class DelayFrequencyRegulator : SuspendFrequencyRegulator {
 /**
  * A [FrequencyRegulator] that runs its cycle as fast as possible; timing using the given [clock].
  */
-open class UnregulatedRegulator(private val clock: Clock = Default) : SuspendFrequencyRegulator {
+open class UnregulatedRegulator(private val clock: Clock = Clock.DEFAULT) : FrequencyRegulator {
 
     @Volatile
     private var lastNanos = clock.nanoTime()
 
     override fun start() {
         lastNanos = clock.nanoTime()
-    }
-
-    override suspend fun syncSuspend() {
     }
 
     override fun sync() {
@@ -119,7 +87,7 @@ open class UnregulatedRegulator(private val clock: Clock = Default) : SuspendFre
  *
  * With the current implementation there is no limit to how much "catching up" might occur.
  */
-class MaxSpeedRegulator(period: Double, private val clock: Clock = Default) : DelayFrequencyRegulator() {
+class MaxSpeedRegulator(period: Double, private val clock: Clock = Clock.DEFAULT) : DelayFrequencyRegulator() {
 
     private val periodNanos = (period * 1e9).roundToLong()
 
@@ -132,7 +100,7 @@ class MaxSpeedRegulator(period: Double, private val clock: Clock = Default) : De
 
     private var elapsed = -1L
 
-    override fun getDelayNanos(): Long {
+    override fun getDelayMillis(): Long {
         val nanos = clock.nanoTime()
         elapsed = nanos - lastNanos
         return if (elapsed >= periodNanos) {
@@ -140,7 +108,7 @@ class MaxSpeedRegulator(period: Double, private val clock: Clock = Default) : De
             0L
         } else {
             lastNanos += periodNanos
-            (periodNanos - elapsed).also {
+            ((periodNanos - elapsed) / 1_000_000).also {
                 elapsed = periodNanos
             }
         }

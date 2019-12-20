@@ -196,14 +196,14 @@ interface MotorBotVelInteraction {
      * @see botAccelFromMotorAccel
      * @see botVelFromMotorVel
      */
-    val motorAccelFromBotAccel: Mat
+    val motorAccelFromBotAccel: Mat get() = motorVelFromBotVel
     /**
      * Transforms motor angular acceleration into a bot acceleration vector (see [Pose2d.toVec]), with least squares
      * error.
      * @see motorAccelFromBotAccel
      * @see motorVelFromBotVel
      */
-    val botAccelFromMotorAccel: Mat
+    val botAccelFromMotorAccel: Mat get() = botVelFromMotorVel
 
     // wheel <-> motor
     /**

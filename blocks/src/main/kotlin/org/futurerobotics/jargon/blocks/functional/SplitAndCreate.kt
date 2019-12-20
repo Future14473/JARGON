@@ -53,7 +53,7 @@ class CreateMotionState<T : Any> : Block(LAZY) {
     val output: Output<MotionState<T>> = newOutput()
 
     override fun Context.process() {
-        output.set = ValueMotionState(value.get, vel.get, accel.get)
+        output.set = MotionState(value.get, vel.get, accel.get)
     }
 
     /** [value] */
@@ -80,8 +80,8 @@ class SplitMotionOnly<T : Any> : Block(LAZY) {
 
     override fun Context.process() {
         val input = input.get
-        vel.set = input.vel
-        accel.set = input.accel
+        vel.set = input.deriv
+        accel.set = input.secondDeriv
     }
 
     /** [vel] */
@@ -107,7 +107,7 @@ class CreateMotionOnly<T : Any> : Block(LAZY) {
     override fun Context.process() {
         val vel = vel.get
         val accel = accel.get
-        output.set = ValueMotionOnly(vel, accel)
+        output.set = MotionOnly(vel, accel)
     }
 
     /** [vel] */

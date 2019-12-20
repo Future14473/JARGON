@@ -1,7 +1,6 @@
 package org.futurerobotics.jargon.pathing.graph
 
 import org.futurerobotics.jargon.math.MotionState
-import org.futurerobotics.jargon.math.ValueMotionState
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.angleNorm
 import org.futurerobotics.jargon.pathing.ComponentPath
@@ -105,7 +104,7 @@ constructor(
      * null pointer exception.
      */
     fun toMotionState(): MotionState<Vector2d> = constraint.run {
-        ValueMotionState(position, Vector2d.polar(derivMagnitude!!, direction!!), secondDeriv!!)
+        MotionState(position, Vector2d.polar(derivMagnitude!!, direction!!), secondDeriv!!)
     }
 
     companion object {

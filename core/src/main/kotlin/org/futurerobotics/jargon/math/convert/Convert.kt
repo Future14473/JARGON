@@ -57,7 +57,6 @@ const val rev: Double = revolutions
 const val degrees: Double = revolutions / 360
 const val deg: Double = degrees
 //Force
-
 const val newtons: Double = kg * m / s
 const val N: Double = newtons
 const val poundsForce: Double = 4.44822

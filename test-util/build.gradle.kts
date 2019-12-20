@@ -16,5 +16,4 @@ dependencies {
     api(project(":core"))
     api(xchart)
     api(strikt)
-    implementation(coroutines)
 }

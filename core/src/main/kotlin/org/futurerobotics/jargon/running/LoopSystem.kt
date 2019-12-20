@@ -1,15 +1,15 @@
 package org.futurerobotics.jargon.running
 
 /**
- * Represents something that can be run as a loop, using [start], then [loop] which is called repeatedly, and finally
+ * Represents something that can be run as a loop, using [init], then [loop] which is called repeatedly, and finally
  * [stop].
  *
- * This can later be run using a [LoopSystemRunner]/[SuspendLoopSystemRunner].
+ * This can later be run using a [LoopSystemRunner].
  */
-interface LoopSystem {
+interface LoopSystem : InitStoppable {
 
     /** Performs any initialization before loop start. */
-    fun start() {
+    override fun init() {
     }
 
     /**
@@ -20,7 +20,7 @@ interface LoopSystem {
     fun loop(loopTimeInNanos: Long = 0L): Boolean
 
     /** Run when loop is stopped or interrupted. */
-    fun stop() {
+    override fun stop() {
     }
 }
 
@@ -36,17 +36,17 @@ class CompositeLoopSystem : LoopSystem {
     }
 
     constructor(vararg systems: LoopSystem) {
-        this.systems = systems.toList()
+        this.systems = systems.asList()
     }
 
-    override fun start() {
-        systems.forEach { it.start() }
+    override fun init() {
+        systems.forEach { it.init() }
     }
 
     override fun loop(loopTimeInNanos: Long): Boolean {
         var shouldShutdown = false
         systems.forEach {
-            shouldShutdown = it.loop(loopTimeInNanos) or shouldShutdown
+            shouldShutdown = it.loop(loopTimeInNanos) || shouldShutdown
         }
         return shouldShutdown
     }

@@ -5,7 +5,8 @@ package org.futurerobotics.jargon.util
  * must be specified as to where to "step" to.
  *
  * _This is distinguished from a mapping function in that it is used to apply a heuristic that values between
- * steps are close together in some way_, for example when traversing a path.
+ * steps are close together_, for example when traversing interpolated segments. Usually this should
+ * be traversed linearly or close to linearly.
  *
  * This can be used, for example, to avoid doing binary search on every iteration when traversing over values, while
  * also not wasting memory on intermediary lists.

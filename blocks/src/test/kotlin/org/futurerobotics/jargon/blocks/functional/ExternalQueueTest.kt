@@ -14,7 +14,7 @@ internal class ExternalQueueTest {
         val system = buildBlockSystem {
             monitor = queue.output.monitor()
         }
-        system.start()
+        system.init()
         queue.addAll(items)
         val output = ArrayList<Any>()
         while (true) {

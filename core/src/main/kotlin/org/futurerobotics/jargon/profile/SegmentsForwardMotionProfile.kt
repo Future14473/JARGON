@@ -13,7 +13,7 @@ import kotlin.math.pow
 class SegmentsForwardMotionProfile private constructor(private val segments: List<Segment>) : ForwardMotionProfile {
 
     override val duration: Double = segments.last().t
-    override val length: Double = segments.last().state.value
+    override val distance: Double = segments.last().state.value
     override fun atTime(time: Double): LinearMotionState {
         var i = segments.binarySearchBy(time) { it.t }
         if (i >= 0) return segments[i].state
@@ -21,9 +21,9 @@ class SegmentsForwardMotionProfile private constructor(private val segments: Lis
         return segments[i].stateAtTime(time)
     }
 
-    override fun atLength(length: Double): LinearMotionState = segmentByDistance(length).stateAtDist(length)
+    override fun atDistance(distance: Double): LinearMotionState = segmentByDistance(distance).stateAtDist(distance)
 
-    override fun timeAtLength(length: Double): Double = segmentByDistance(length).timeAtDist(length)
+    override fun timeAtDistance(distance: Double): Double = segmentByDistance(distance).timeAtDist(distance)
 
     private fun segmentByDistance(
         distance: Double
@@ -59,7 +59,7 @@ class SegmentsForwardMotionProfile private constructor(private val segments: Lis
     /** A pre-calculated representation of the endpoints of segments. */
     private class Segment(val state: LinearMotionState, val t: Double) {
 
-        val x get() = state.value
+        val x get() = state.s
         fun stateAtTime(t: Double) = state.afterTime(t - this.t)
         fun stateAtDist(x: Double) = state.atDistance(x)
         fun timeAtDist(x: Double) = t + state.timeElapsedAtDistance(x)

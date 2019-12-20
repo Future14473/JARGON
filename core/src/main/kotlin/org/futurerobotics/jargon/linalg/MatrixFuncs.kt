@@ -9,37 +9,25 @@ import org.hipparchus.linear.*
 import java.text.DecimalFormat
 import kotlin.math.*
 
-/**
- * Solves for x in Ax=b, with a = this matrix, and b = the given [vec].
- */
+/** Solves for x in `Ax=b`, with a = this matrix, and b = the given [vec]. */
 fun Mat.solve(vec: Vec): Vec = getSolver().solve(vec)
 
-/**
- * Solves for X in AX = B, with a = this matrix, and B = the given [mat].
- */
+/** Solves for X in `AX = B`, with a = this matrix, and B = the given [mat]. */
 fun Mat.solve(mat: Mat): Mat = getSolver().solve(mat)
 
-/**
- * Gets a general [DecompositionSolver] for the given matrix.
- */
+/** Gets a general [DecompositionSolver] for the given matrix. */
 fun Mat.getSolver(): DecompositionSolver = when {
     isSquare -> LUDecomposition(this).solver
     else -> QRDecomposition(this).solver
 }
 
-/**
- * Finds the inverse of this matrix.
- */
+/** Finds the inverse of this matrix. */
 fun Mat.inv(): Mat = MatrixUtils.inverse(this)
 
-/**
- * Finds the pseudo inverse of this matrix.
- */
+/** Finds the pseudo-inverse of this matrix. */
 fun Mat.pinv(): Mat = SingularValueDecomposition(this).solver.inverse
 
-/**
- * Sets this vector to the given [vec].
- */
+/** Sets this vector to the given [vec]. */
 infix fun Vec.setTo(vec: Vec) {
     require(size == vec.size) { "Dimension mismatch" }
     repeat(size) {
@@ -47,9 +35,7 @@ infix fun Vec.setTo(vec: Vec) {
     }
 }
 
-/**
- * Sets this matrix to the given [mat]
- */
+/** Sets this matrix to the given [mat]. */
 infix fun Mat.setTo(mat: Mat) {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
     repeat(rows) { r ->
@@ -59,9 +45,7 @@ infix fun Mat.setTo(mat: Mat) {
     }
 }
 
-/**
- * Checks if all elements of this matrix match the other [mat], with a tolerance of [epsilon]
- */
+/** Checks if all elements of this matrix match the other [mat], with a tolerance of [epsilon]. */
 fun Mat.epsEq(mat: Mat, epsilon: Double): Boolean {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
     repeat(rows) { r ->
@@ -72,9 +56,7 @@ fun Mat.epsEq(mat: Mat, epsilon: Double): Boolean {
     return true
 }
 
-/**
- * Checks if all elements of this matrix match the other [vec], with a tolerance of [epsilon]
- */
+/** Checks if all elements of this matrix match the other [vec], with a tolerance of [epsilon]. */
 fun Vec.epsEq(vec: Vec, epsilon: Double): Boolean {
     require(size == vec.size) { "Dimension mismatch" }
     repeat(size) { i ->
@@ -83,9 +65,7 @@ fun Vec.epsEq(vec: Vec, epsilon: Double): Boolean {
     return true
 }
 
-/**
- * Returns true if this matrix is square, and symmetric with a tolerance of [epsilon].
- */
+/** Returns true if this matrix is square and symmetric with a tolerance of [epsilon]. */
 fun Mat.isSymmetric(epsilon: Double = EPSILON): Boolean {
     if (!isSquare) return false
     for (r in 0 until rows) {
@@ -96,9 +76,7 @@ fun Mat.isSymmetric(epsilon: Double = EPSILON): Boolean {
     return true
 }
 
-/**
- * Adds this matrix with the other [mat], in place.
- */
+/** Adds this matrix with the other [mat], in place. */
 infix fun Mat.addI(mat: Mat): Mat = apply {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
     repeat(rows) { r ->
@@ -108,9 +86,7 @@ infix fun Mat.addI(mat: Mat): Mat = apply {
     }
 }
 
-/**
- * Subtracts this matrix with the other [mat], in place.
- */
+/** Subtracts this matrix with the other [mat], in place. */
 infix fun Mat.subI(mat: Mat): Mat = apply {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
     repeat(rows) { r ->
@@ -120,9 +96,7 @@ infix fun Mat.subI(mat: Mat): Mat = apply {
     }
 }
 
-/**
- * Multiplies this matrix with the given [scalar], in place.
- */
+/** Multiplies this matrix with the given [scalar], in place. */
 infix fun Mat.multI(scalar: Double): Mat = apply {
     repeat(rows) { r ->
         repeat(cols) { c ->
@@ -166,24 +140,16 @@ infix fun Vec.multI(scalar: Double): Vec = apply { mapToSelf { it * scalar } }
  */
 infix fun Vec.divI(scalar: Double): Vec = apply { mapToSelf { it / scalar } }
 
-/**
- * Converts this vector to a column matrix
- */
+/** Converts this vector to a column matrix. */
 fun Vec.toColumnMat(): Mat = createMat(Array(size) { doubleArrayOf(this[it]) }, false)
 
-/**
- * Converts this vector to a row matrix
- */
+/** Converts this vector to a row matrix. */
 fun Vec.toRowMatrix(): Mat = createMat(arrayOf(toArray()), false)
 
-/**
- * Maps each element of this vector to its.
- */
+/** Maps each element of this vector to its sign. */
 fun sign(vec: Vec): Vec = vec.map { sign(it) }
 
-/**
- * Gets the maximum magnitude entry in this matrix
- */
+/** Gets the maximum magnitude entry in this matrix. */
 fun Mat.normMax(): Double = walkInOptimizedOrder(object : RealMatrixPreservingVisitor {
     private var m = 0.0
     override fun visit(row: Int, column: Int, value: Double) {
@@ -195,9 +161,7 @@ fun Mat.normMax(): Double = walkInOptimizedOrder(object : RealMatrixPreservingVi
     }
 })
 
-/**
- * Returns a copy of this matrix if [copyMat] is true, else returns this.
- */
+/** Returns a copy of this matrix if [copyMat] is true, else returns this. */
 fun Mat.copyIf(copyMat: Boolean): Mat = if (copyMat) copy() else this
 
 /**
@@ -262,8 +226,7 @@ fun expm(mat: Mat): Mat {
 fun Mat.getQuad(splitIndex: Int, row: Int, col: Int): Mat {
     require(isSquare) { "Matrix must be square" }
     val size = rows
-    require(splitIndex < size)
-    { "Split index must be less than size" }
+    require(splitIndex < size) { "Split index must be less than size" }
     require(row in 0..1) { "row index must be 0 or 1, got $row" }
     require(col in 0..1) { "col index mst be 0 or 1, got $col" }
     val rows =
@@ -278,7 +241,7 @@ fun Mat.getQuad(splitIndex: Int, row: Int, col: Int): Mat {
 }
 
 /**
- * Formats this matrix in a human readable format
+ * Formats this matrix in a more human readable format.
  */
 fun Mat.formatReadable(): String = buildString {
     repeat(rows) { r ->
@@ -292,5 +255,5 @@ fun Mat.formatReadable(): String = buildString {
     }
 }
 
-private val decimalFormat = DecimalFormat(" 0.0000;-#")
+private val decimalFormat = DecimalFormat(" 00.0000;-#")
 private fun Double.format(): String = "%-8s".format(decimalFormat.format(this))

@@ -81,7 +81,7 @@ class MotionProfileGraphs(
                 lineWidth = 1f
             }
         }
-        val profileSpeeds = xs.map { profile.atLength(it).deriv }
+        val profileSpeeds = xs.map { profile.atDistance(it).v }
         chart.addSeries("Final Profile", xs, profileSpeeds).apply {
             marker = None()
             lineWidth = 1f

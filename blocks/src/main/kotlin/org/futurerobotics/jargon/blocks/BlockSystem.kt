@@ -37,7 +37,7 @@ class BlockSystem(arrangement: BlockArrangement) : BlockRunner(arrangement),
             .groupByTo(HashMap()) { it.javaClass }
     }
 
-    override fun start(): Unit = super.init()
+    override fun init(): Unit = super<BlockRunner>.init()
 
     override fun loop(loopTimeInNanos: Long): Boolean {
         _systemValues.loopTimeInNanos = loopTimeInNanos
@@ -50,7 +50,6 @@ class BlockSystem(arrangement: BlockArrangement) : BlockRunner(arrangement),
         } == true
     }
 
-    @Suppress("RedundantOverride") //trust me, it's not redundant
     override fun stop(): Unit = super<BlockRunner>.stop()
 }
 

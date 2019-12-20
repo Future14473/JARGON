@@ -145,7 +145,7 @@ abstract class Block(val processing: Processing) {
          *
          * 'null' if reflection fails.
          */
-        val typeName: String? get() = type?.toString()
+        val typeName: String? get() = type.toString()
         /**
          * The type of this input, found via reflection, rendered as a java type.
          *
@@ -236,14 +236,14 @@ abstract class Block(val processing: Processing) {
          *
          * Blocks that do nothing more than process their inputs directly into output without storing information
          * should have this kind of processing.
-         * @see [Processing]
+         * @see Processing
          */
         LAZY,
         /**
          * A block with [ALWAYS] processing will always be [process]ed every loop.
          *
          * Blocks that require that it receives information every single loop should have this kind of processing.
-         * @see [Processing]
+         * @see Processing
          */
         ALWAYS,
         /**
@@ -255,7 +255,7 @@ abstract class Block(val processing: Processing) {
          * At least one block in a loop of blocks must be [OUT_FIRST]; For example a block that directly
          * interacts with hardware or external sources to be this kind of processing since measurements (outputs) are
          * usually taken _before_ signal (inputs)
-         * @see [Processing]
+         * @see Processing
          */
         OUT_FIRST;
         //There is no OUT_FIRST_LAZY since that causes problems and is rarely needed.

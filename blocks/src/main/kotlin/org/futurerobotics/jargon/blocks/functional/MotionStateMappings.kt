@@ -6,8 +6,6 @@ import org.futurerobotics.jargon.blocks.functional.MapMotionOnly.Companion.with
 import org.futurerobotics.jargon.blocks.functional.MapMotionState.Companion.with
 import org.futurerobotics.jargon.math.MotionOnly
 import org.futurerobotics.jargon.math.MotionState
-import org.futurerobotics.jargon.math.ValueMotionOnly
-import org.futurerobotics.jargon.math.ValueMotionState
 
 /**
  * A block that is inputted [MotionOnly]; and pipes it by "shifting" the velocity and acceleration
@@ -19,13 +17,11 @@ class MotionOnlyToVelocityState<T : Any>(private val zero: T) : PipeBlock<Motion
 
     override fun Context.pipe(
         input: MotionOnly<T>
-    ): MotionState<T> = object : MotionState<T> {
-        override val value: T
-            get() = input.vel
-        override val deriv: T
-            get() = input.accel
-        override val secondDeriv: T = zero
-    }
+    ): MotionState<T> = MotionState(
+        input.deriv,
+        input.secondDeriv,
+        zero
+    )
 }
 
 /**
@@ -37,12 +33,11 @@ abstract class MapMotionState<T : Any, R : Any> : PipeBlock<MotionState<T>, Moti
 
     override fun Context.pipe(
         input: MotionState<T>
-    ): MotionState<R> =
-        ValueMotionState(
-            map(input.value),
-            map(input.deriv),
-            map(input.secondDeriv)
-        )
+    ): MotionState<R> = MotionState(
+        map(input.value),
+        map(input.deriv),
+        map(input.secondDeriv)
+    )
 
     /** Maps the [value] into a new value; run on all components of a [MotionState]. */
     protected abstract fun map(value: T): R
@@ -66,7 +61,7 @@ abstract class MapMotionOnly<T : Any, R : Any> : PipeBlock<MotionOnly<T>, Motion
     override fun Context.pipe(
         input: MotionOnly<T>
     ): MotionOnly<R> =
-        ValueMotionOnly(map(input.vel), map(input.accel))
+        MotionOnly(map(input.deriv), map(input.secondDeriv))
 
     /** Maps the [value] into a new value; run on all components of a [MotionOnly]. */
     protected abstract fun map(value: T): R

@@ -1,10 +1,10 @@
 package org.futurerobotics.jargon.hardware
 
 /**
- * Represents a servo. Links directly to hardware.
+ * Represents a servo. Can link directly to hardware.
  */
 interface Servo {
 
-    /** Gets/sets the position of this servo, ***in radians***. */
+    /** Sets the position of this servo, **in radians** */
     var position: Double
 }

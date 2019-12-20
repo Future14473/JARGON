@@ -19,7 +19,7 @@ import org.futurerobotics.jargon.util.zipForEachIndexed
  * @param moi the moment of inertia of the bot
  * @param centerOfGravity the center of gravity of the bot relative to the center _position_. default <0, 0>.
  */
-open class FixedWheelDriveModel
+class FixedWheelDriveModel
 @JvmOverloads constructor(
     val mass: Double,
     val moi: Double,

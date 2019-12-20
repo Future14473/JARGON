@@ -7,8 +7,8 @@ import org.futurerobotics.jargon.util.uncheckedCast
 /**
  * A point for a [PointCurve]/[PointPath] at the given [pose].
  *
- * @see [PointCurve]
- * @see [PointPath]
+ * @see PointCurve
+ * @see PointPath
  */
 class SinglePathPoint(override val pose: Pose2d) : PathPoint {
 

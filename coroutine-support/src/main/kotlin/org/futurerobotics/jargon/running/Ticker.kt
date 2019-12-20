@@ -86,7 +86,9 @@ interface TickerListener {
  */
 abstract class BaseTicker : Ticker {
 
-    private val tick = AtomicReference<Tick>(Tick(0, CompletableDeferred()))
+    private val tick = AtomicReference<Tick>(
+        Tick(0, CompletableDeferred())
+    )
 
     /** Ticks once. */
     protected open fun tick() {
@@ -109,7 +111,8 @@ abstract class BaseTicker : Ticker {
         fun isTickPassed(num: Int): Boolean = num - tickNum < 0
     }
 
-    private inner class TickerListenerImpl(override var maximumTicksBehind: Int) : TickerListener {
+    private inner class TickerListenerImpl(override var maximumTicksBehind: Int) :
+        TickerListener {
 
         private val curPassedTick = AtomicInteger(tick.value.tickNum - 1)
 
@@ -184,7 +187,8 @@ class ManualTicker : BaseTicker() {
  *
  * @see TickerListeningRegulator
  */
-class FrequencyRegulatedTicker(private val regulator: SuspendFrequencyRegulator) : BaseTicker(), SuspendRunnable {
+class FrequencyRegulatedTicker(private val regulator: SuspendFrequencyRegulator) : BaseTicker(),
+                                                                                   SuspendRunnable {
 
     private val system = object : LoopSystem {
         override fun loop(loopTimeInNanos: Long): Boolean {
@@ -206,7 +210,7 @@ class FrequencyRegulatedTicker(private val regulator: SuspendFrequencyRegulator)
  */
 class TickerListeningRegulator
 @JvmOverloads constructor(
-    private val listener: TickerListener, private val clock: Clock = Clock.Default
+    private val listener: TickerListener, private val clock: Clock = Clock.DEFAULT
 ) : SuspendFrequencyRegulator {
 
     private var lastNanos = clock.nanoTime()
@@ -235,7 +239,7 @@ class TickerListeningRegulator
 
 /** Convenience extension function for [TickerListeningRegulator]. */
 @JvmOverloads
-fun TickerListener.asFrequencyRegulator(clock: Clock = Clock.Default): TickerListeningRegulator =
+fun TickerListener.asFrequencyRegulator(clock: Clock = Clock.DEFAULT): TickerListeningRegulator =
     TickerListeningRegulator(this, clock)
 
 /**

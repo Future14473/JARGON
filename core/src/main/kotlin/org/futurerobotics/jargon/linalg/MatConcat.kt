@@ -50,7 +50,7 @@ fun concat(arr: Array<out Array<out Mat>>): Mat {
         var currentCol = 0
         arrRow.forEachIndexed { arrColI, it ->
             val curMatCols = colSizes[arrColI]
-            if (it.cols != curMatCols || it.rows != curMatRows) throwNotEven()
+            if (it.cols != curMatCols || it.rows != curMatRows) throw IllegalArgumentException("Even rows/cols not given")
             result[curRow, currentCol] = it
             currentCol += curMatCols
         }
@@ -175,9 +175,9 @@ fun concatDynamic(arr: Array<out Array<out Any>>): Mat {
                     if (colSizes[colI] == 0) colSizes[colI] = it.cols
                     else require(it.cols == colSizes[colI]) { "Col size at ${colI + 1} must match" }
                 }
-                !is Number -> throwInvalidValue()
+                !is Number -> throw IllegalArgumentException("Invalid value given")
                 0, 1 -> Unit
-                else -> throwInvalidValue()
+                else -> throw IllegalArgumentException("Invalid value given")
             }
         }
     }

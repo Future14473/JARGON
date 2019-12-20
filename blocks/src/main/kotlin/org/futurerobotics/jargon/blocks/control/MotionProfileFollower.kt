@@ -2,9 +2,9 @@ package org.futurerobotics.jargon.blocks.control
 
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
-import org.futurerobotics.jargon.profile.MotionProfiled
-import org.futurerobotics.jargon.running.CompletionCallback
+import org.futurerobotics.jargon.profile.TimeProfiled
 import org.futurerobotics.jargon.util.Stepper
+import java.util.concurrent.CompletableFuture
 
 /**
  * Base class for implementing a block that follows a motion profile.
@@ -13,9 +13,9 @@ import org.futurerobotics.jargon.util.Stepper
  * profile.
  *
  * Inputs:
- * - [profileInput]: The [MotionProfiled] object to follow, or null to indicate to idling at the last reference given.
+ * - [profileInput]: The [TimeProfiled] object to follow, or null to indicate to idling at the last reference given.
  *      WILL ONLY BE POLLED upon reaching end of the previous motion profile, or input #2 is pulsed:
- * - [profileWithCallback]: Profiles can also be given with a [CompletionCallback] which will be called
+ * - [profileWithCallback]: Profiles can also be given with a [CompletableFuture] which will be called
  *   when the profile is done being traversed. This will be prioritized over [profileInput]
  * - [stop] to stop following motion profile. When given `true`, will immediately cancel following the
  *      current motion profile and the next profile will be polled, if any. For example, using [Pulse].
@@ -33,9 +33,9 @@ import org.futurerobotics.jargon.util.Stepper
 abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Block(ALWAYS) {
 
     /** The motion profile input. See [MotionProfileFollower]*/
-    val profileInput: Input<MotionProfiled<T>?> = newOptionalInput()
+    val profileInput: Input<TimeProfiled<T>?> = newOptionalInput()
     /** Motion profile input with callbacks. See [MotionProfileFollower] */
-    val profileWithCallback: Input<Pair<MotionProfiled<T>, CompletionCallback>?> = newOptionalInput()
+    val profileWithCallback: Input<Pair<TimeProfiled<T>, CompletableFuture<*>>?> = newOptionalInput()
     /** The stop input. See [MotionProfileFollower] */
     val stop: Input<Boolean?> = newOptionalInput()
     /** The output from the motion profile this [MotionProfileFollower] is at. */
@@ -50,8 +50,8 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
 
     private var outputValue: T = initialOutput
     private var currentTime: Double = 0.0
-    private var currentProfile: MotionProfiled<T>? = null
-    private var currentCallback: CompletionCallback? = null
+    private var currentProfile: TimeProfiled<T>? = null
+    private var currentCallback: CompletableFuture<*>? = null
     private var currentStepper: Stepper<T>? = null //if null; means poll more.
 
     final override fun init() {
@@ -75,7 +75,7 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
         val stop = stop.get == true
         if (stop || stepper === null) {//always poll stop
             currentCallback?.let {
-                if (stop) it.cancel() else it.complete()
+                if (stop) it.cancel(false) else it.complete(null)
             }
             currentCallback = null
             val newProfile = profileWithCallback.get?.let {
@@ -102,7 +102,7 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
     protected open fun Context.processFurther() {}
 
     /**
-     * Gets the next time to use to get the value out of the [MotionProfiled].
+     * Gets the next time to use to get the value out of the [TimeProfiled].
      *
      * @param currentTime along the motion profile.
      * @param lastOutput of the motion profile.

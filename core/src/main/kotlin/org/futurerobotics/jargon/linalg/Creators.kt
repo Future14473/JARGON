@@ -8,7 +8,7 @@ import org.hipparchus.linear.BlockRealMatrix
 import org.hipparchus.linear.MatrixUtils
 import java.util.*
 
-/** Creates a matrix with the given [rows] and [cols], and filling values with the given [init]. */
+/** Creates a matrix with the given [rows] and [cols], filling with values given by [init]. */
 inline fun genMat(rows: Int, cols: Int, init: (r: Int, c: Int) -> Double): Mat = zeroMat(rows, cols).apply {
     repeat(rows) { r ->
         repeat(cols) { c ->
@@ -17,7 +17,7 @@ inline fun genMat(rows: Int, cols: Int, init: (r: Int, c: Int) -> Double): Mat =
     }
 }
 
-/** Creates a [Mat] using a 2d double array. */
+/** Creates a [Mat] from a 2d double array. */
 @JvmOverloads
 fun createMat(data: Array<DoubleArray>, copy: Boolean = true): Mat =
     if (data.size * data[0].size <= 4096)
@@ -38,17 +38,17 @@ fun diagMat(values: DoubleArray): Mat = MatrixUtils.createRealDiagonalMatrix(val
 fun diagMat(values: List<Double>): Mat = MatrixUtils.createRealDiagonalMatrix(values.toDoubleArray())
 
 /** Creates a matrix with the given [values] along the diagonal. */
-@JvmName("diagVararg")
+@JvmName("diagMatVararg")
 fun diagMat(vararg values: Double): Mat = MatrixUtils.createRealDiagonalMatrix(values)
 
-/** Creates a matrix with the given [size], and filling values with the given [init]. */
+/** Creates a vector with the given [size], and filling values given by [init]. */
 inline fun genVec(size: Int, init: (Int) -> Double): Vec = zeroVec(size).apply {
     repeat(size) {
         this[it] = init(it)
     }
 }
 
-/** Creates a vector with the given [values], and copying the array if [copy] is true. */
+/** Creates a vector with the given [values], optionally [copy]ing the array. */
 @JvmOverloads
 fun createVec(values: DoubleArray, copy: Boolean = true): Vec = ArrayRealVector(values, copy)
 
@@ -62,9 +62,7 @@ fun createVec(vararg values: Double): Vec = ArrayRealVector(values, false)
 /** Creates a vector filled with zeros with the given [size]. */
 fun zeroVec(size: Int): Vec = ArrayRealVector(size)
 
-/**
- * Creates a vector full of Gaussian random samples with the given [size], and using the given [random]
- */
+/** Creates a vector full of gaussian random samples with the given [size], using the given [random]. */
 @JvmOverloads
 fun normRandVec(size: Int, random: Random = Random()): Vec = zeroVec(size).apply {
     repeat(size) {
@@ -72,9 +70,7 @@ fun normRandVec(size: Int, random: Random = Random()): Vec = zeroVec(size).apply
     }
 }
 
-/**
- * Creates a vector full of Gaussian random samples with the given [size], and using the given [random]
- */
+/** Creates a matrix full of gaussian random samples with the given [size], using the given [random]. */
 @JvmOverloads
 fun normRandMat(rows: Int, cols: Int, random: Random = Random()): Mat = zeroMat(rows, cols).apply {
     repeat(rows) { r ->
@@ -84,16 +80,14 @@ fun normRandMat(rows: Int, cols: Int, random: Random = Random()): Mat = zeroMat(
     }
 }
 
-/** Creates a vector using the given [values]. Used for vector literals. */
+/** Creates a vector using the given number [values]. Used for vector literals. */
 @Suppress("FunctionName")
 @JvmSynthetic
-fun Vec(vararg values: Number): Vec {
-    val doubles = DoubleArray(values.size) { values[it].toDouble() }
-    return ArrayRealVector(doubles, false)
-}
+fun Vec(vararg values: Number): Vec =
+    ArrayRealVector(DoubleArray(values.size) { values[it].toDouble() }, false)
 
 /**
- * Creates a matrix using the given number values, as a matrix literals.
+ * Creates a matrix using the given number values, used for matrix literals.
  *
  * Number values should be separated by commas, and rows separated using the
  * infix function [to].

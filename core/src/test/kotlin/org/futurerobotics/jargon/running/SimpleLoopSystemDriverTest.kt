@@ -12,7 +12,7 @@ private class RunTimes(var times: Int) : LoopSystem {
     var number = 0
 
     var finalNumber = 0
-    override fun start() {
+    override fun init() {
         number = 0
     }
 

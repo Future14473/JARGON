@@ -23,7 +23,7 @@ inline fun <T> T.replaceIf(condition: Boolean, alternate: (T) -> T): T {
     return if (condition) alternate(this) else this
 }
 
-/** Casts this to type [T] unchecked, but with type inference too. Use with caution. */
+/** Casts this to type [T] unchecked, with type inference. Use with caution. */
 @Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
 inline fun <T> Any?.uncheckedCast(): T = this as T
 
@@ -33,7 +33,7 @@ inline fun <T> Any?.uncheckedCast(): T = this as T
  * Intended for use in builders that return self.
  */
 @UseExperimental(ExperimentalContracts::class)
-inline fun <S> Any?.builder(block: () -> Unit): S {
+inline fun <S> Any.builder(block: () -> Unit): S {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }

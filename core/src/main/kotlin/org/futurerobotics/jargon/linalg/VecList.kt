@@ -1,5 +1,3 @@
-@file:JvmName("VecList")
-
 package org.futurerobotics.jargon.linalg
 
 /**

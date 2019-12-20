@@ -7,58 +7,45 @@ import org.futurerobotics.jargon.util.Stepper
 /**
  * Represents the constraints used to generate a dynamic [ForwardMotionProfile], using [generateDynamicProfile].
  *
+ * This operates by returning constraints on velocity and acceleration at specific points along a path, given
+ * by some notion of distance.
  *
- * Distance values along a _profiled path_ can be length or angle, or something else.
- *
- * This operates by returns constraints on velocity and acceleration (w/ respect to time) at specific points along
- *  the profiled path.
  * @see PointConstraint
  */
 interface MotionProfileConstrainer : Steppable<PointConstraint> {
 
     /**
-     * Returns a [Stepper] that steps on distances along a profiled object and returns a [PointConstraint]
+     * Returns a [Stepper] that steps on distances along a profiled path, and returns a [PointConstraint]
      * representing the constraints at that point.
-     * @see [MotionProfileConstrainer]
+     * @see MotionProfileConstrainer
      */
     override fun stepper(): Stepper<PointConstraint>
 
     /**
-     * Gets a list of required points that must be considered in the motion profile.
+     * Gets a set of required points that must be considered in the motion profile.
      */
     val requiredPoints: Set<Double>
         get() = emptySet()
 }
 
 /**
- * Represents the motion profile constraints at a specific point.
+ * Represents the motion profile constraints at a specific point along a profiled path.
  *
- * This includes maximum velocity, and an [Interval] of allowable accelerations going along
- * a _profiled object_.
- * @see [MotionProfileConstrainer]
+ * This includes maximum velocity, and an [Interval] of allowable accelerations at this point.
+ *
+ * @see MotionProfileConstrainer
  */
 interface PointConstraint {
 
-    /** The maximum velocity at this point on the profile */
+    /** The maximum allowed velocity at this point on the profiled path. */
     val maxVelocity: Double
 
     /**
-     * A [Interval] of allowable accelerations at this point on the profile, both positive and negative, given
-     * the [currentVelocity].
-     * */
+     * A [Interval] of allowable accelerations at this point on the profile, given the [currentVelocity].
+     *
+     * This may be called multiple times with different [currentVelocity]s.
+     */
     fun accelRange(currentVelocity: Double): Interval
-}
-
-/**
- * A quick way to create a [PointConstraint], using the given [maxVelocity] value and [accelRange] function
- */
-@Suppress("FunctionName")
-inline fun PointConstraint(
-    crossinline maxVelocity: () -> Double,
-    crossinline accelRange: (currentVelocity: Double) -> Interval
-): PointConstraint = object : PointConstraint {
-    override val maxVelocity: Double = maxVelocity()
-    override fun accelRange(currentVelocity: Double): Interval = accelRange(currentVelocity)
 }
 
 /**

@@ -29,11 +29,7 @@ internal inline fun <reified T> varargEndToArr(
                 setElement(curRow, curCol, it)
                 curCol++
             }
-            else -> throwInvalidValue()
+            else -> throw IllegalArgumentException("Invalid value given")
         }
     }
 }
-
-internal fun throwInvalidValue(): Nothing = throw IllegalArgumentException("Invalid value given")
-
-internal fun throwNotEven(): Nothing = throw IllegalArgumentException("Even rows/cols not given")

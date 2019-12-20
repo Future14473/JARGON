@@ -6,16 +6,17 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
+import kotlin.math.min
 
 /** Fills an array using the given [generator], given indexes. */
-inline fun <T> Array<T>.fillWith(generator: (Int) -> T) {
+inline fun <T> Array<T>.fillWith(generator: (index: Int) -> T) {
     repeat(size) {
         this[it] = generator(it)
     }
 }
 
 /** Fills a mutable list using the given [generator], given indexes. */
-inline fun <T> MutableList<T>.fillWith(generator: (Int) -> T) {
+inline fun <T> MutableList<T>.fillWith(generator: (index: Int) -> T) {
     val iterator = listIterator()
     var index = 0
     while (iterator.hasNext()) {
@@ -33,8 +34,9 @@ fun <T> Array<T>.asMutableList(): MutableList<T> = asList() as MutableList<T>
  * Creates a mutable list with a fixed [size], filling using [init].
  */
 inline fun <reified T> fixedSizeMutableList(size: Int, init: (Int) -> T): MutableList<T> {
-    @Suppress("UNCHECKED_CAST")
-    return (arrayOfNulls<T>(size).apply { fillWith(init) } as Array<T>).asMutableList()
+    val arr = arrayOfNulls<T>(size)
+    arr.fillWith(init)
+    return arr.uncheckedCast<Array<T>>().asMutableList()
 }
 
 /**
@@ -169,7 +171,7 @@ inline fun <T, V, R> Iterable<T>.zipIndexed(
 ): List<R> {
     val first = iterator()
     val second = other.iterator()
-    val list = ArrayList<R>(minOf(collectionSizeOrDefault(10), other.collectionSizeOrDefault(10)))
+    val list = ArrayList<R>(min(collectionSizeOrDefault(10), other.collectionSizeOrDefault(10)))
     var i = 0
     while (first.hasNext() && second.hasNext()) {
         if (i < 0) throw ArithmeticException("Index overflow")

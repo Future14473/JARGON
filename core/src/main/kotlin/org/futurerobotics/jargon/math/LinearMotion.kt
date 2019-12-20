@@ -4,24 +4,27 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 /**
- * An implementation for [MotionOnly] with double values, also containing some useful physics calculations.
+ * An [MotionOnly] with double values for velocity ([v]) and acceleration ([a]),
+ * also containing some useful calculations for one-dimensional motion.
+ *
+ * @property v velocity
+ * @property a acceleration
  */
+@Suppress("OVERRIDE_BY_INLINE")
 class LinearMotionOnly
 @JvmOverloads constructor(
-    vel: Double,
-    accel: Double = 0.0
-) : MotionOnly<Double> {
+    @JvmField val v: Double,
+    @JvmField val a: Double = 0.0
+) : AnyMotionOnly<Double> {
 
-    private val _vel = vel
-    override val vel: Double get() = _vel
-    private val _accel = accel
-    override val accel: Double get() = _accel
+    override val deriv: Double inline get() = v
+    override val secondDeriv: Double inline get() = a
 
     /**
      * Returns the new motion after time [t], assuming constant acceleration.
      */
     fun afterTime(t: Double): LinearMotionOnly =
-        LinearMotionOnly(vel + accel * t, accel)
+        LinearMotionOnly(v + a * t, a)
 
     /**
      * Returns the new state after moving a displacement of [s] relative to the current motion, assuming constant
@@ -30,37 +33,40 @@ class LinearMotionOnly
      * This may return a velocity of NaN if this state will never reach a displacement of [s].
      */
     fun afterForwardDist(s: Double): LinearMotionOnly =
-        LinearMotionOnly(sqrt(vel.pow(2) + 2 * accel * s), accel)
+        LinearMotionOnly(sqrt(v.pow(2) + 2 * a * s), a)
 
     /** Adds component-wise. */
     operator fun plus(other: LinearMotionOnly): LinearMotionOnly =
-        LinearMotionOnly(vel + other.vel, accel + other.accel)
+        LinearMotionOnly(v + other.v, a + other.a)
 
     /** Subtracts component-wise. */
     operator fun minus(other: LinearMotionOnly): LinearMotionOnly =
-        LinearMotionOnly(vel - other.vel, accel - other.accel)
+        LinearMotionOnly(v - other.v, a - other.a)
 }
 
 /**
- * An implementation for [MotionState] with double values, also containing some useful calculations.
+ * [MotionState] with double values for value([s]), velocity ([v]), and acceleration ([a]),
+ * also containing some useful calculations for one-dimensional motion.
+ *
+ * @property s value
+ * @property v velocity
+ * @property a acceleration
  */
+@Suppress("OVERRIDE_BY_INLINE")
 class LinearMotionState
 @JvmOverloads constructor(
-    value: Double,
-    deriv: Double,
-    secondDeriv: Double = 0.0
-) : MotionState<Double> {
+    @JvmField val s: Double,
+    @JvmField val v: Double,
+    @JvmField val a: Double = 0.0
+) : AnyMotionState<Double> {
 
-    private val _value = value
-    override val value: Double get() = _value
-    private val _deriv = deriv
-    override val deriv: Double get() = _deriv
-    private val _secondDeriv = secondDeriv
-    override val secondDeriv: Double get() = _secondDeriv
+    override val value: Double inline get() = s
+    override val deriv: Double inline get() = v
+    override val secondDeriv: Double inline get() = a
 
     /** Returns the new state after time [t], assuming constant acceleration. */
     fun afterTime(t: Double): LinearMotionState =
-        LinearMotionState(value + deriv * t + secondDeriv * t.pow(2) / 2, deriv + secondDeriv * t, secondDeriv)
+        LinearMotionState(s + v * t + a * t.pow(2) / 2, v + a * t, a)
 
     /**
      * Returns the new state after moving a displacement of [s] relative to the current motion, assuming constant
@@ -68,8 +74,8 @@ class LinearMotionState
      *
      * This may return a velocity of NaN if this state will never reach a displacement of [s].
      */
-    fun afterForwardDist(s: Double): LinearMotionState =
-        LinearMotionState(value + s, sqrt(deriv.pow(2) + 2 * secondDeriv * s), secondDeriv)
+    fun afterForwardDistance(s: Double): LinearMotionState =
+        LinearMotionState(this.s + s, sqrt(v.pow(2) + 2 * a * s), a)
 
     /**
      * Returns the new state when this state reaches a position of [s], assuming constant acceleration,
@@ -78,21 +84,21 @@ class LinearMotionState
      * This may return a velocity of NaN if this state will never reach a position of [s].
      */
     fun atDistance(s: Double): LinearMotionState =
-        LinearMotionState(s, sqrt(deriv.pow(2) + 2 * secondDeriv * (s - value)), secondDeriv)
+        LinearMotionState(s, sqrt(v.pow(2) + 2 * a * (s - this.s)), a)
 
     /**
      * Returns the time elapsed to get to the specified [s] distance, favoring the solution in the direction
      * of velocity. This may return NaN if it will never reach that distance.
      */
     fun timeElapsedAtDistance(s: Double): Double =
-        if (secondDeriv epsEq 0.0) (s - value) / deriv else
-            (-deriv + sqrt(deriv.pow(2) + 2 * secondDeriv * (s - value))) / secondDeriv
+        if (a epsEq 0.0) (s - this.s) / v else
+            (-v + sqrt(v.pow(2) + 2 * a * (s - this.s))) / a
 
     /** Adds component-wise. */
     operator fun plus(other: LinearMotionState): LinearMotionState =
-        LinearMotionState(value + other.value, deriv + other.deriv, secondDeriv + other.secondDeriv)
+        LinearMotionState(s + other.s, v + other.v, a + other.a)
 
     /** Subtracts component-wise. */
     operator fun minus(other: LinearMotionState): LinearMotionState =
-        LinearMotionState(value - other.value, deriv - other.deriv, secondDeriv - other.secondDeriv)
+        LinearMotionState(s - other.s, v - other.v, a - other.a)
 }

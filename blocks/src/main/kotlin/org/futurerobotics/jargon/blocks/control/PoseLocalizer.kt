@@ -61,7 +61,7 @@ abstract class DeltaBasedLocalizer(initialPose: Pose2d) : PrincipalOutputBlock<P
  * [MotorToBotVel])
  *
  * The [currentPose] can also be overridden using input.
- * @see [BotDeltaLocalizer]
+ * @see BotDeltaLocalizer
  */
 class BotVelLocalizer(initialPose: Pose2d = Pose2d.ZERO) : DeltaBasedLocalizer(initialPose) {
 

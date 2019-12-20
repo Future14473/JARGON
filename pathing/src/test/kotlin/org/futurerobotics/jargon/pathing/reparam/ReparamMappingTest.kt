@@ -2,7 +2,7 @@ package org.futurerobotics.jargon.pathing.reparam
 
 import org.futurerobotics.jargon.Debug
 import org.futurerobotics.jargon.math.DoubleProgression
-import org.futurerobotics.jargon.math.function.QuinticSpline
+import org.futurerobotics.jargon.math.randomQuinticSpline
 import org.futurerobotics.jargon.util.mapAllPairs
 import org.futurerobotics.jargon.util.stepToAll
 import org.junit.Assert
@@ -34,7 +34,7 @@ internal class ReparamMappingTest(private val mapping: SamplesReparamMapping, pr
         @Parameterized.Parameters
         fun getMappings(): List<Array<Any>> {
             val mappings = List(15) {
-                QuinticSpline.random(random, range)
+                randomQuinticSpline(random, range)
             }.flatMap {
                 listOf(
                     it.reparamByIntegration(),

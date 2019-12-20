@@ -60,44 +60,24 @@ inline operator fun Mat.unaryMinus(): Mat = this * -1.0
 inline operator fun Vec.unaryMinus(): Vec = this * -1.0
 
 // +=, -=
+@PublishedApi
+internal inline fun go(block: () -> Unit): Unit = block()
 
-inline operator fun Mat.plusAssign(mat: Mat) {
-    this addI mat
-}
+inline operator fun Mat.plusAssign(mat: Mat): Unit = go { this addI mat }
+inline operator fun Mat.minusAssign(mat: Mat): Unit = go { this subI mat }
+inline operator fun Mat.timesAssign(scalar: Double): Unit = go { this multI scalar }
+inline operator fun Mat.divAssign(scalar: Double): Unit = go { this divI scalar }
 
-inline operator fun Mat.minusAssign(mat: Mat) {
-    this subI mat
-}
-
-inline operator fun Mat.timesAssign(scalar: Double) {
-    this multI scalar
-}
-
-inline operator fun Mat.divAssign(scalar: Double) {
-    this divI scalar
-}
-
-inline operator fun Vec.plusAssign(mat: Vec) {
-    this addI mat
-}
-
-inline operator fun Vec.minusAssign(mat: Vec) {
-    this subI mat
-}
-
-inline operator fun Vec.timesAssign(scalar: Double) {
-    this multI scalar
-}
-
-inline operator fun Vec.divAssign(scalar: Double) {
-    this divI scalar
-}
+inline operator fun Vec.plusAssign(mat: Vec): Unit = go { this addI mat }
+inline operator fun Vec.minusAssign(mat: Vec): Unit = go { this subI mat }
+inline operator fun Vec.timesAssign(scalar: Double): Unit = go { this multI scalar }
+inline operator fun Vec.divAssign(scalar: Double): Unit = go { this divI scalar }
 
 //other
 infix fun Vec.emul(other: Vec): Vec = ebeMultiply(other)
 
 inline val Mat.T: Mat get() = transpose()
-val Vec.T: Mat get() = toRowMatrix()
+inline val Vec.T: Mat get() = toRowMatrix()
 
 inline val Mat.cols: Int get() = columnDimension
 inline val Mat.rows: Int get() = rowDimension

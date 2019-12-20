@@ -18,7 +18,7 @@ internal class BotVelLocalizerTest {
         //    |
         // y<-+
         val (system, velocity, position) = getSystem(Pose2d(1.0, 0.0, 0.0))
-        system.start()
+        system.init()
         velocity.value = Pose2d(0.0, 1.0, 1.0)//1 radian per second CCW, 1 unit per second, forward
         expectThat(position) {
             val random = Random("unit circle walk".hashCode())
@@ -37,7 +37,7 @@ internal class BotVelLocalizerTest {
         val random = Random("random lines".hashCode())
         val (system, velocity, position) = getSystem(Pose2d.ZERO)
         var expectedPose = Pose2d.ZERO
-        system.start()
+        system.init()
         repeat(200) {
             val timeNanos = random.nextLong(0, 1_000_000_000)
             val time = timeNanos / 1e9

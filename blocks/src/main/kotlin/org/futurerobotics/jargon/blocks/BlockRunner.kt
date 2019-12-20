@@ -70,7 +70,7 @@ abstract class BlockRunner(arrangement: BlockArrangement) {
         fun get(): Any? = runner.getOutput(index)
     }
 
-    /** A wrapper around a [block] that runs it. @see [InFirstRunner], [OutFirstRunner] */
+    /** A wrapper around a [block] that runs it. @see InFirstRunner, [OutFirstRunner] */
     private abstract inner class Runner(@JvmField val block: Block) {
 
         /** An array of [Runner]s, where the values given to the blocks will be polled from. */

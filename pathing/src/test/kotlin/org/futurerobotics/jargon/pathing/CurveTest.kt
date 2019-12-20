@@ -2,8 +2,8 @@ package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.Debug
 import org.futurerobotics.jargon.math.DoubleProgression
-import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.nextVector2d
+import org.futurerobotics.jargon.math.randomQuinticSpline
 import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
 import org.futurerobotics.jargon.util.mapAllPairs
 import org.futurerobotics.jargon.util.stepToAll
@@ -36,7 +36,7 @@ internal class CurveTest(private val curve: Curve, private val allS: List<Double
         @Parameterized.Parameters
         fun getParams(): List<Array<Any>> {
             val curves = MutableList(5) {
-                QuinticSpline.random(random, range)
+                randomQuinticSpline(random, range)
             }.flatMapTo(ArrayList<Curve>()) {
                 listOf(
                     it.reparamByIntegration(),

@@ -7,7 +7,6 @@ import org.futurerobotics.jargon.blocks.control.FeedForwardWrapper.Companion.wit
 import org.futurerobotics.jargon.blocks.functional.SplitMotionState
 import org.futurerobotics.jargon.math.MotionOnly
 import org.futurerobotics.jargon.math.MotionState
-import org.futurerobotics.jargon.math.ValueMotionOnly
 
 /**
  * A [Controller] that wraps another [non feed-forward controller][nonFFController], and creates a feed-forward
@@ -44,7 +43,7 @@ abstract class FeedForwardWrapper<T : Any>(private val nonFFController: Controll
         nonFFController.run { reference from refS; state from stateInput }
 
         signal.subInput from generate {
-            ValueMotionOnly(
+            MotionOnly(
                 refV.get + nonFFSignal.get,
                 refA.get
             )

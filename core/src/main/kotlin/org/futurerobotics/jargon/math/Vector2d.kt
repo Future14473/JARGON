@@ -73,7 +73,7 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : Serializ
      *  <0,0,[z]>`, as a 2d vector, ignoring the resulting z-component of 0.
      *
      *  This is mainly used to chain 3d - cross products while still only using 2d vectors.
-     *  @see [cross]
+     *  @see cross
      */
     infix fun crossz(z: Double): Vector2d = Vector2d(y * z, -x * z)
 
@@ -94,7 +94,7 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : Serializ
 
     /**
      * If this vector equals [other] with a leniency of [EPSILON].
-     * @see [epsEq]
+     * @see epsEq
      */
     infix fun epsEq(other: Vector2d): Boolean = x epsEq other.x && y epsEq other.y
 

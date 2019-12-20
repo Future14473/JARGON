@@ -5,7 +5,9 @@ import org.futurerobotics.jargon.math.MotionState
 
 /**
  * A Quintic Polynomial function, specified by coefficients,
- * in the form [a]t^5+[b]t^4+[c]t^3+[d]t^2+[e]t+[f]
+ * in the form:
+ *
+ * [a]t^5+[b]t^4+[c]t^3+[d]t^2+[e]t+[f]
  */
 @Suppress("KDocMissingDocumentation")
 class QuinticPolynomial(
@@ -47,6 +49,15 @@ class QuinticPolynomial(
             return QuinticPolynomial(fromControlPoints * vec)
         }
 
+        private val fromDerivatives = Mat(
+            -6, -3, -0.5, 6, -3, 0.5 to
+                    15, 8, 1.5, -15, 7, -1 to
+                    -10, -6, -1.5, 10, -4, 0.5 to
+                    0, 0, 0.5, 0, 0, 0 to
+                    0, 1, 0, 0, 0, 0 to
+                    1, 0, 0, 0, 0, 0
+        )
+
         /** Creates a Quintic polynomial defined by the value and first and second derivatives of endpoints. */
         @Suppress("UnnecessaryVariable")
         @JvmStatic
@@ -61,15 +72,6 @@ class QuinticPolynomial(
             val vec = doubleArrayOf(start, startDeriv, startSecondDeriv, end, endDeriv, endSecondDeriv)
             return QuinticPolynomial(fromDerivatives * vec)
         }
-
-        private val fromDerivatives = Mat(
-            -6, -3, -0.5, 6, -3, 0.5 to
-                    15, 8, 1.5, -15, 7, -1 to
-                    -10, -6, -1.5, 10, -4, 0.5 to
-                    0, 0, 0.5, 0, 0, 0 to
-                    0, 1, 0, 0, 0, 0 to
-                    1, 0, 0, 0, 0, 0
-        )
 
         /**
          * Creates a Quintic polynomial defined by start and endpoint [MotionState]s.

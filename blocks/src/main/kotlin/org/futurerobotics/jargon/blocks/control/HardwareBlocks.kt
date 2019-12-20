@@ -94,10 +94,10 @@ class GyroBlock @JvmOverloads constructor(
     override fun init() {
         offset =
             if (initialHeading.isNaN()) 0.0
-            else angleNorm(initialHeading - gyro.currentAngle)
+            else angleNorm(initialHeading - gyro.angle)
     }
 
-    override fun Context.getOutput(): Double = gyro.currentAngle + offset
+    override fun Context.getOutput(): Double = gyro.angle + offset
 }
 
 /**
