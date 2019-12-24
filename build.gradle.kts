@@ -3,13 +3,11 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val hipparchusVersion by extra("1.5")
-val striktVersion by extra("0.22.2")
-val xchartVersion by extra("3.5.4")
+val striktVersion by extra("0.23.2")
+val xchartVersion by extra("3.6.0")
 val junitVersion by extra("4.12")
 val junit5Version by extra("5.5.2")
-val coroutinesVersion by extra("1.3.2")
-
-val dokka by extra("org.jetbrains.dokka")
+val coroutinesVersion by extra("1.3.3")
 
 val hipparchus by extra<(String) -> String> { { "org.hipparchus:hipparchus-$it:$hipparchusVersion" } }
 
@@ -23,7 +21,7 @@ val junit5vintage by extra("org.junit.vintage:junit-vintage-engine:$junit5Versio
 val strikt by extra("io.strikt:strikt-core:$striktVersion")
 
 buildscript {
-    val kotlinVersion by extra("1.3.50")
+    val kotlinVersion by extra("1.3.61")
     val atomicfuVersion by extra("0.14.1")
     repositories {
         mavenCentral()
@@ -40,8 +38,8 @@ repositories {
 }
 
 plugins {
-    kotlin("jvm") version "1.3.50"
-    id("org.jetbrains.dokka") version "0.9.18"
+    kotlin("jvm")
+    id("org.jetbrains.dokka") version "0.10.0"
     `maven-publish`
 }
 subprojects {
