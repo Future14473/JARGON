@@ -3,6 +3,7 @@
 plugins {
     kotlin("jvm")
 }
+apply(plugin = "kotlinx-atomicfu")
 
 dependencies {
     api(project(":core"))

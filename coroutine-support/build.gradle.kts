@@ -6,6 +6,7 @@ val coroutinesVersion: String by ext
 plugins {
     kotlin("jvm")
 }
+apply(plugin = "kotlinx-atomicfu")
 
 dependencies {
     api(project(":core"))

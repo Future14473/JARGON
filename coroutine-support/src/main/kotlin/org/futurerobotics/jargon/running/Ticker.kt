@@ -1,11 +1,11 @@
 package org.futurerobotics.jargon.running
 
+import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.getAndUpdate
+import kotlinx.atomicfu.updateAndGet
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
-import org.futurerobotics.jargon.util.value
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 
 /**
  * A ticker is a utility to help multiple (possibly concurrent) systems stay in sync to the same "tick".
@@ -86,9 +86,7 @@ interface TickerListener {
  */
 abstract class BaseTicker : Ticker {
 
-    private val tick = AtomicReference<Tick>(
-        Tick(0, CompletableDeferred())
-    )
+    private val tick = atomic(Tick(0, CompletableDeferred()))
 
     /** Ticks once. */
     protected open fun tick() {
@@ -114,7 +112,7 @@ abstract class BaseTicker : Ticker {
     private inner class TickerListenerImpl(override var maximumTicksBehind: Int) :
         TickerListener {
 
-        private val curPassedTick = AtomicInteger(tick.value.tickNum - 1)
+        private val curPassedTick = atomic(tick.value.tickNum - 1)
 
         override fun reset() {
             curPassedTick.value = tick.value.tickNum - 1
@@ -164,9 +162,9 @@ abstract class BaseTicker : Ticker {
             }
         }
 
-        override fun isNextTickPassed(): Boolean = tick.value.isTickPassed(curPassedTick.get())
+        override fun isNextTickPassed(): Boolean = tick.value.isTickPassed(curPassedTick.value)
 
-        override fun isNextTicksPassed(ticks: Int): Boolean = tick.value.isTickPassed(curPassedTick.get() + ticks - 1)
+        override fun isNextTicksPassed(ticks: Int): Boolean = tick.value.isTickPassed(curPassedTick.value + ticks - 1)
     }
 }
 
