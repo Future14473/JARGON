@@ -8,9 +8,11 @@ import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import org.futurerobotics.jargon.profile.PointConstraint
 import org.futurerobotics.jargon.profile.generateDynamicProfile
 import org.futurerobotics.jargon.util.Stepper
+import org.futurerobotics.jargon.util.asUnmodifiableSet
+import kotlin.math.min
 
 /**
- * A collection of [VelConstraint]s, [AccelConstraint]s, and (flattened) [MultipleConstraint] used to construct
+ * A collection of [VelocityConstraint]s, [AccelerationConstraint]s, and (flattened) [MultipleConstraint] used to construct
  * a [TrajectoryConstrainer] when paired with a Path for dynamic motion profile generation.
  *
  * This class is here because it can be reused when creating trajectories; however since the path may change
@@ -20,42 +22,49 @@ import org.futurerobotics.jargon.util.Stepper
  * If there are no VelocityConstraints or AccelConstraints, Fallback constraints will be used that have a flat maximum
  * of a 100,000 so that the algorithm doesn't die. This is usually not ideal, so put at least one constraint.
  */
-class MotionConstraintSet(
-    velConstraints: Iterable<VelConstraint>, accelConstraints: Iterable<AccelConstraint>,
-    multipleConstraints: Iterable<MultipleConstraint> = emptyList()
-) {
+class MotionConstraintSet
+private constructor(
+    allConstraints: Set<SingleConstraint>
+) : Set<SingleConstraint> by allConstraints {
 
     /** This set's velocity constraints */
-    val velConstraints: List<VelConstraint> =
-        (velConstraints + multipleConstraints.flatMap { it.velConstraints })
-            .removeRedundant()
+    val velocityConstraints: Set<VelocityConstraint> =
+        allConstraints.filterIsInstanceTo(hashSetOf<VelocityConstraint>()).asUnmodifiableSet()
 
     /** This set's acceleration constraints */
-    val accelConstraints: List<AccelConstraint> =
-        (accelConstraints + multipleConstraints.flatMap { it.accelConstraints })
-            .removeRedundant()
+    val accelerationConstraints: Set<AccelerationConstraint> =
+        allConstraints.filterIsInstanceTo(hashSetOf<AccelerationConstraint>()).asUnmodifiableSet()
 
-    constructor(constraints: Iterable<MotionConstraint>) : this(
-        constraints.filterIsInstance<VelConstraint>(),
-        constraints.filterIsInstance<AccelConstraint>(),
-        constraints.filterIsInstance<MultipleConstraint>()
+    constructor(constraints: Collection<MotionConstraint>) : this(
+        sequence<SingleConstraint> {
+            constraints.forEach {
+                when (it) {
+                    is SingleConstraint -> yield(it)
+                    is MultipleConstraint -> {
+                        yieldAll(it.velocityConstraints)
+                        yieldAll(it.accelerationConstraints)
+                    }
+                }
+            }
+        }.toList().removeRedundantToSet()
     )
 
-    constructor(vararg constraints: MotionConstraint) : this(constraints.asIterable())
+    constructor(vararg constraints: MotionConstraint) : this(constraints.asList())
 
     /**
      * Generates a trajectory using the current constraints, the given [path], and motion profile generation [params].
      */
-    fun generateTrajectory(
-        path: Path, params: MotionProfileGenParams
-    ): Trajectory = generateTrajectory(path, this, params)
+    fun generateTrajectory(path: Path, params: MotionProfileGenParams): Trajectory =
+        generateTrajectory(path, this, params)
 
-    private fun <T : SingleConstraint> Iterable<T>.removeRedundant(): List<T> {
-        val newConstraints = toMutableList()
-        forEach { cur ->
-            newConstraints.removeIf { it !== cur && cur.otherIsRedundant(it) }
+    companion object {
+        private fun List<SingleConstraint>.removeRedundantToSet(): Set<SingleConstraint> {
+            val set = toHashSet()
+            this.forEach { cur ->
+                set.removeIf { cur !== it && cur.otherIsRedundant(it) }
+            }
+            return set
         }
-        return newConstraints
     }
 }
 
@@ -70,20 +79,20 @@ class TrajectoryConstrainer(
     private val path: Path, motionConstraintSet: MotionConstraintSet
 ) : MotionProfileConstrainer {
 
-    private val velConstraints = motionConstraintSet.velConstraints
-    private val accelConstrains = motionConstraintSet.accelConstraints
+    private val velConstraints = motionConstraintSet.velocityConstraints
+    private val accelConstrains = motionConstraintSet.accelerationConstraints
 
-    override val requiredPoints: Set<Double>
-        get() = path.importantPoints
+    override val requiredPoints: Set<Double> get() = path.requiredPoints
 
     private fun getMaxVel(point: PathPoint): Double =
-        velConstraints.map { it.maxVelocity(point) }.min() ?: Double.MAX_VALUE
+        velConstraints.fold(Double.MAX_VALUE) { acc, it ->
+            min(acc, it.maxVelocity(point))
+        }
 
     private fun getMaxAccel(point: PathPoint, curVelocity: Double): Interval =
-        if (accelConstrains.isEmpty()) Interval.REAL else
-            accelConstrains.map {
-                it.accelRange(point, curVelocity)
-            }.fold(Interval.REAL, Interval::intersect)
+        accelConstrains.fold(Interval.REAL) { acc, it ->
+            acc.intersect(it.accelRange(point, curVelocity))
+        }
 
     override fun stepper(): Stepper<PointConstraint> {
         val pathStepper = path.stepper()

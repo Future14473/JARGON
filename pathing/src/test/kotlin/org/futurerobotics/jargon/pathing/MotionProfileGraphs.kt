@@ -73,7 +73,7 @@ class MotionProfileGraphs(
             legendPosition = Styler.LegendPosition.OutsideS
             legendLayout = Styler.LegendLayout.Horizontal
         }
-        constraints.velConstraints.forEach { velConst ->
+        constraints.velocityConstraints.forEach { velConst ->
             val constraintVelocities = points.map(velConst::maxVelocity)
             val name = velConst.toString()
             chart.addSeries(name, xs, constraintVelocities).apply {
@@ -121,12 +121,12 @@ class MotionProfileGraphs(
         private const val yMax = 5.5
         private val constantConstraints = mutableListOf(
             MotionConstraintSet(
-                MaxVelConstraint(5.0),
-                MaxPathAngularVelConstraint(1.5),
-                MaxCentripetalAccelConstraint(0.9),
-                MaxTangentAccelConstraint(0.9),
-                MaxTotalAccelConstraint(1.0),
-                MaxAngularAccelConstraint(0.3)
+                MaxTangentVelocity(5.0),
+                MaxPathAngularVelocity(1.5),
+                MaxCentripetalAccel(0.9),
+                MaxTangentAcceleration(0.9),
+                MaxTotalAcceleration(1.0),
+                MaxAngularAcceleration(0.3)
             )
         ).also {
             it += List(2) {
@@ -135,20 +135,20 @@ class MotionProfileGraphs(
         }
 
         private fun randomConstraints(): MotionConstraintSet = MotionConstraintSet(
-            MaxVelConstraint(random.nextDouble(3.0, 5.0)),
-            MaxPathAngularVelConstraint(
+            MaxTangentVelocity(random.nextDouble(3.0, 5.0)),
+            MaxPathAngularVelocity(
                 random.nextDouble(0.3, 3.0)
             ),
-            MaxCentripetalAccelConstraint(
+            MaxCentripetalAccel(
                 random.nextDouble(1.0, 3.0)
             ),
-            MaxTangentAccelConstraint(
+            MaxTangentAcceleration(
                 random.nextDouble(1.0, 3.0)
             ),
-            MaxTotalAccelConstraint(
+            MaxTotalAcceleration(
                 random.nextDouble(1.0, 3.0)
             ),
-            MaxAngularAccelConstraint(
+            MaxAngularAcceleration(
                 random.nextDouble(0.5, 2.0)
             )
         )

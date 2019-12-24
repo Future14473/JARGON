@@ -61,20 +61,19 @@ constructor(paths: List<Path>) : GenericPath<Point> {
         this.startLengths = startLengths.toDoubleArray()
     }
 
-    override val importantPoints: Set<Double> = hashSetOf<Double>().let {
+    override val requiredPoints: Set<Double> = hashSetOf<Double>().let {
         it += stopPoints
         for (i in 1 until startLengths.size - 1) {
             it += startLengths[i]
         }
         it.asUnmodifiableSet()
     }
-    private inline val maxInd get() = paths.size - 1
 
     /** Gets a [Point] for a point [s] units along this path. */
     override fun pointAt(s: Double): Point {
         val i = startLengths.binarySearch(s)
             .replaceIf({ it < 0 }) { -it - 2 }
-            .coerceIn(0, maxInd)
+            .coerceIn(0, paths.lastIndex)
         return paths[i].pointAt(s - startLengths[i])
     }
 
@@ -86,9 +85,9 @@ constructor(paths: List<Path>) : GenericPath<Point> {
             if (i == -1) {
                 i = startLengths.binarySearch(s)
                     .replaceIf({ it < 0 }) { -it - 2 }
-                    .coerceIn(0, maxInd)
+                    .coerceIn(0, paths.lastIndex)
             } else {
-                while (i < maxInd && s >= startLengths[i + 1]) i++
+                while (i < paths.lastIndex && s >= startLengths[i + 1]) i++
 
                 while (i > 0 && s < startLengths[i]) i--
             }
@@ -143,7 +142,7 @@ private class MultiplePath(paths: List<Path>) : MultipleGeneric<Path, PathPoint>
  * This must be at least continuous on position, and if not continuous on velocity, a point stop will be added.
  */
 fun multipleCurve(curves: List<Curve>): Curve = when (curves.size) {
-    0 -> throw IllegalArgumentException("Must contain at least 1 curve")
+    0 -> throw IllegalArgumentException("Must be given at least 1 curve to multipleCurve")
     1 -> curves[0]
     else -> MultipleCurve(curves)
 }
@@ -151,7 +150,7 @@ fun multipleCurve(curves: List<Curve>): Curve = when (curves.size) {
 /**
  * Creates a new [Curve] which contains the given [curves] chained end on end.
  *
- * This must be at least continuous on position. If direction is not continuous, a point-stop will be added.
+ * This must be at least continuous on position, and if not continuous on velocity, a point stop will be added.
  */
 fun multipleCurve(vararg curves: Curve): Curve = MultipleCurve(curves.asList())
 
@@ -162,7 +161,7 @@ fun multipleCurve(vararg curves: Curve): Curve = MultipleCurve(curves.asList())
  * point-stop will be added. If heading is not continuous, a [PointTurn] will be added.
  */
 fun multiplePath(paths: List<Path>): Path = when (paths.size) {
-    0 -> throw IllegalArgumentException("Must contain at least 1 path")
+    0 -> throw IllegalArgumentException("Must be given at least 1 path to multiplePath")
     1 -> paths[0]
     else -> MultiplePath(paths)
 }
@@ -170,7 +169,7 @@ fun multiplePath(paths: List<Path>): Path = when (paths.size) {
 /**
  * Creates a new [Path] which contains the given [paths] chained end on end.
  *
- * This must be at least continuous on position and heading, and if not continuous on velocity, a point stop will be
- * added.
+ * This must be at least continuous on position and heading. If direction or heading velocity is not continuous, a
+ * point-stop will be added. If heading is not continuous, a [PointTurn] will be added.
  */
 fun multiplePath(vararg paths: Path): Path = MultiplePath(paths.asList())

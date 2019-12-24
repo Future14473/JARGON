@@ -59,12 +59,12 @@ class TrajectoryTest(private val trajectory: Trajectory) {
         private const val maxError = 0.01
         private val random = Random(234828)
         private val constraints = MotionConstraintSet(
-            MaxVelConstraint(2.0),
-            MaxPathAngularVelConstraint(1.5),
-            MaxCentripetalAccelConstraint(0.9),
-            MaxTangentAccelConstraint(0.9),
-            MaxTotalAccelConstraint(1.0),
-            MaxAngularAccelConstraint(1.0)
+            MaxTangentVelocity(2.0),
+            MaxPathAngularVelocity(1.5),
+            MaxCentripetalAccel(0.9),
+            MaxTangentAcceleration(0.9),
+            MaxTotalAcceleration(1.0),
+            MaxAngularAcceleration(1.0)
         )
 
         @JvmStatic

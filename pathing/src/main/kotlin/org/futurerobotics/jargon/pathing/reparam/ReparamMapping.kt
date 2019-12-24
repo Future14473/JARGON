@@ -6,14 +6,16 @@ import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.replaceIf
 
 /**
- * Represents a mapping of s values (arc length) to t value (parameter on a parametric func).
+ * Represents a mapping of 's' (arc length) values to 't' (parameter on a parametric function) values.
+ *
+ * @see ReparamCurve
  */
 interface ReparamMapping : Steppable<Double> {
 
-    /** The total length of this mapping; i.e., the last sample's `s` value. */
+    /** The total length of this mapping (the maximum s value) */
     val length: Double
 
-    /** Returns the t on the original parametric function associated with [s] units along the curve. */
+    /** Returns the parametric function value 't' associated with [s] units along the curve. */
     fun tOfS(s: Double): Double
 
     /** Returns a stepper for [tOfS] */

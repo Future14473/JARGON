@@ -25,6 +25,6 @@ interface HeadingInterpolator {
     ): HeadingProvider
 }
 
-/** Convenience extension function for creating a [ComponentPath] with this curve and a [HeadingInterpolator] */
+/** Convenience extension function for creating a [CurveHeadingPath] with this curve and a [HeadingInterpolator] */
 fun Curve.addHeading(interpolator: HeadingInterpolator, startHeading: Double, endHeading: Double): Path =
     addHeading(interpolator.getHeadingProvider(this, startHeading, endHeading))

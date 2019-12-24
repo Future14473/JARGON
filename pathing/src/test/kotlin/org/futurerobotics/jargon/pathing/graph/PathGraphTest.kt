@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.pathing.graph
 
 import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.pathing.PointPath
+import org.futurerobotics.jargon.pathing.SinglePointPath
 import org.futurerobotics.jargon.pathing.graphPathWithHeading
 import org.futurerobotics.jargon.pathing.multiplePath
 import org.futurerobotics.jargon.saveGraph
@@ -72,6 +72,6 @@ internal class PathGraphTest {
         val graph = PathGraph()
         graph.addNode(Vector2d.ZERO).name("Hey")
         val path = graph.getPath("Hey", "Hey")
-        expectThat(path).isA<PointPath>()
+        expectThat(path).isA<SinglePointPath>()
     }
 }

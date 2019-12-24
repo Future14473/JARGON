@@ -3,7 +3,7 @@ package org.futurerobotics.jargon.pathing.graph
 import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.angleNorm
-import org.futurerobotics.jargon.pathing.ComponentPath
+import org.futurerobotics.jargon.pathing.CurveHeadingPath
 import org.futurerobotics.jargon.pathing.CurvePoint
 import org.futurerobotics.jargon.pathing.PathPoint
 import org.futurerobotics.jargon.pathing.reparam.ReparamCurve
@@ -134,7 +134,7 @@ constructor(
         fun fromCurvePoint(point: CurvePoint): Waypoint {
             var curvePoint = point
             val heading = (curvePoint as? PathPoint)?.heading
-            if (curvePoint is ComponentPath.Point)
+            if (curvePoint is CurveHeadingPath.Point)
                 curvePoint = curvePoint.curvePoint
             if (curvePoint is ReparamCurve.Point)
                 return fromMotionState(curvePoint.motionState(), heading)

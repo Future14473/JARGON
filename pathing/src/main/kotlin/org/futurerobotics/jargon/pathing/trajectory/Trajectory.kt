@@ -7,19 +7,20 @@ import org.futurerobotics.jargon.math.epsEq
 import org.futurerobotics.jargon.pathing.Path
 import org.futurerobotics.jargon.pathing.PathPoint
 import org.futurerobotics.jargon.profile.ForwardMotionProfile
+import org.futurerobotics.jargon.profile.TimeDistanceProfiled
 import org.futurerobotics.jargon.profile.TimeProfiled
 import org.futurerobotics.jargon.util.Stepper
 import kotlin.math.pow
 
 /**
- * Represents a trajectory; that is a Path paired with time/velocity info (a [ForwardMotionProfile]).
+ * Represents a trajectory; i.e. a [Path] paired with time/velocity info (a [ForwardMotionProfile]).
  *
  * This links to the rest of the world through implementing the [TimeProfiled] interface.
  *
  * @see generateTrajectory
  */
 class Trajectory(private val path: Path, private val profile: ForwardMotionProfile) :
-    TimeProfiled<MotionState<Pose2d>> {
+    TimeDistanceProfiled<MotionState<Pose2d>> {
 
     init {
         require(path.length epsEq profile.distance) {
@@ -40,12 +41,9 @@ class Trajectory(private val path: Path, private val profile: ForwardMotionProfi
      * The total length of this trajectory; i.e, the original path's length
      * @see Path
      */
-    val distance: Double get() = path.length
+    override val distance: Double get() = path.length
 
-    /**
-     * Gets the time along the profile at a given [distance].
-     */
-    fun timeAtDistance(distance: Double): Double = profile.timeAtDistance(distance)
+    override fun timeAtDistance(distance: Double): Double = profile.timeAtDistance(distance)
 
     /**
      * Gets the [MotionState] of Poses after the specified [time] traversing this trajectory.
@@ -56,11 +54,17 @@ class Trajectory(private val path: Path, private val profile: ForwardMotionProfi
         return getState(state, point)
     }
 
+    override fun atDistance(distance: Double): MotionState<Pose2d> {
+        val state = profile.atDistance(distance)
+        val point = path.pointAt(state.s)
+        return getState(state, point)
+    }
+
     override fun stepper(): Stepper<MotionState<Pose2d>> {
         val pathStepper = path.stepper()
         val profileStepper = profile.stepper()
-        return Stepper {
-            val state = profileStepper.stepTo(it)
+        return Stepper { t ->
+            val state = profileStepper.stepTo(t)
             val point = pathStepper.stepTo(state.s)
             getState(state, point)
         }

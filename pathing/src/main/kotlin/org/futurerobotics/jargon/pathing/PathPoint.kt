@@ -21,7 +21,7 @@ import org.futurerobotics.jargon.math.*
 interface CurvePoint {
 
     /** The length of the curve/path that this came from */
-    val length: Double
+    val originalLength: Double
     /** The position of this point, in the global coordinate frame. */
     val position: Vector2d
     /**

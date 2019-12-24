@@ -14,7 +14,7 @@ class PointPathOk {
     @RepeatedTest(5)
     fun itsOk() {
         val point = Pose2d(Vector2d.random(random, 3.0), random.nextDouble())
-        val path = PointPath(point)
+        val path = SinglePointPath(point)
         val constraints = MotionConstraintSet()
         val trajectory = constraints.generateTrajectory(path, MotionProfileGenParams.DEFAULT)
         expectThat(trajectory) {

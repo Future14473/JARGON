@@ -8,10 +8,11 @@ import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
 
 /**
- * Represents a curve or path, with the given [Point]. This generic intermediary is to solve the generics problem
- * so that you are can have a type that is either a [Path] or a [Curve]
+ * Common superclass of [Curve] and [Path], outputting a given [Point] type.
  *
- * GenericCurve<? extends CurvePoint> or GenericCurve<out CurvePoint> is the superclass of both [Curve] and [Path]
+ * This allows for some unification between [Curve] and [Path].
+ *
+ * GenericCurve<*>/GenericCurve<?> is the superclass of both [Curve] and [Path].
  */
 interface GenericPath<out Point : CurvePoint> : Steppable<Point> {
 
@@ -25,7 +26,7 @@ interface GenericPath<out Point : CurvePoint> : Steppable<Point> {
     fun pointAt(s: Double): Point
 
     /** Gets a stepper that steps through points along the path. */
-    override fun stepper(): Stepper<Point> = Stepper { pointAt(it) }
+    override fun stepper(): Stepper<Point> = Stepper(::pointAt)
 
     /** A set of points that it is required for the bot to stop at. */
     val stopPoints: Set<Double>
@@ -36,7 +37,7 @@ interface GenericPath<out Point : CurvePoint> : Steppable<Point> {
      *
      * This should include [stopPoints].
      */
-    val importantPoints: Set<Double>
+    val requiredPoints: Set<Double>
         get() = stopPoints
 }
 
@@ -71,7 +72,7 @@ interface Curve : GenericPath<CurvePoint>
  *
  * All data about points along the curve is contained within a [PathPoint] via [pointAt] (position, derivatives, etc)
  *
- * This can be obtained by attaching a [HeadingProvider] to an arbitrary [Curve] via [ComponentPath] or equivalently via
+ * This can be obtained by attaching a [HeadingProvider] to an arbitrary [Curve] via [CurveHeadingPath] or equivalently via
  * [addHeading]
  *
  * @see PathPoint
@@ -80,10 +81,10 @@ interface Curve : GenericPath<CurvePoint>
 interface Path : GenericPath<PathPoint>
 
 /**
- * Returns this path as a [Curve] instead.
+ * Returns this [GenericPath] as a [Curve].
  */
 fun GenericPath<*>.asCurve(): Curve = when (this) {
     is Curve -> this
-    is ComponentPath -> curve
+    is CurveHeadingPath -> curve
     else -> object : Curve, GenericPath<CurvePoint> by this {}
 }

@@ -52,6 +52,4 @@ object IntegrationReparamer {
 fun VectorFunction.reparamByIntegration(
     numSamples: Int = IntegrationReparamer.defaultNumSamples,
     stepsPerSample: Int = IntegrationReparamer.defaultStepsPerSample
-): ReparamCurve = reparam(
-    this, numSamples, stepsPerSample
-)
+): ReparamCurve = IntegrationReparamer.reparam(this, numSamples, stepsPerSample)

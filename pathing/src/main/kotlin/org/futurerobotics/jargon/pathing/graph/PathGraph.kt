@@ -126,7 +126,7 @@ class PathGraph
             startFacing,
             endFacing
         )?.ifEmpty {
-            return listOf(PointPath(startNode.location))
+            return listOf(SinglePointPath(startNode.location))
         } ?: return null
         return createPaths(edges, curveGenParams)
     }

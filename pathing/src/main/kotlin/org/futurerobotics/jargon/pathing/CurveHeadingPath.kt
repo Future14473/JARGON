@@ -7,8 +7,8 @@ import org.futurerobotics.jargon.math.LinearMotionState
 import org.futurerobotics.jargon.util.Stepper
 
 /**
- * Provides heading info to complete a [Curve] into a [Path]
- * @see ComponentPath
+ * Provides heading to a [Curve] to get a [Path].
+ * @see CurveHeadingPath
  */
 interface HeadingProvider {
 
@@ -20,13 +20,13 @@ interface HeadingProvider {
 }
 
 /**
- * A path that combines a [Curve] with a [HeadingProvider], to create a Path.
+ * A path that combines a [Curve] with a [HeadingProvider], to create a [Path].
  */
-class ComponentPath(internal val curve: Curve, private val heading: HeadingProvider) : Path {
+class CurveHeadingPath(internal val curve: Curve, private val heading: HeadingProvider) : Path {
 
     override val length: Double get() = curve.length
     override val stopPoints: Set<Double> get() = curve.stopPoints
-    override val importantPoints: Set<Double> get() = curve.importantPoints
+    override val requiredPoints: Set<Double> get() = curve.requiredPoints
 
     override fun pointAt(s: Double): PathPoint {
         val point = curve.pointAt(s)
@@ -51,5 +51,5 @@ class ComponentPath(internal val curve: Curve, private val heading: HeadingProvi
     }
 }
 
-/** Convenience extension function for creating a [ComponentPath] with this curve and a [HeadingProvider] */
-fun Curve.addHeading(heading: HeadingProvider): ComponentPath = ComponentPath(this, heading)
+/** Convenience extension function for creating a [CurveHeadingPath] with this curve and a [HeadingProvider] */
+fun Curve.addHeading(heading: HeadingProvider): CurveHeadingPath = CurveHeadingPath(this, heading)
