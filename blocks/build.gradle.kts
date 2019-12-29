@@ -7,6 +7,7 @@ apply(plugin = "kotlinx-atomicfu")
 
 dependencies {
     api(project(":core"))
+    api(project(":state-space"))
     compile(kotlin("reflect"))
 }
 
