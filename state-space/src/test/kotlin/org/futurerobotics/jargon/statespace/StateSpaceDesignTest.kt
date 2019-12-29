@@ -8,6 +8,7 @@ import java.util.*
 class StateSpaceDesignTest {
 
 
+    @UseExperimental(ExperimentalStateSpace::class)
     @Test
     fun `sanity check`() {
 

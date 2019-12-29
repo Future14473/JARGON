@@ -23,7 +23,7 @@ interface StateModifier {
     fun augmentReference(r: Vec): Vec
 
     /**
-     * De-augments the state; this is what the outside poll will see.
+     * De-augments the state; this is what the outside world will see.
      */
     fun deAugmentState(xAug: Vec): Vec
 }

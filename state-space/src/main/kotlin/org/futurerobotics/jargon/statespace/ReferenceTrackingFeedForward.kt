@@ -13,17 +13,16 @@ import org.futurerobotics.jargon.linalg.*
 abstract class VaryingReferenceTrackingFeedForward : FeedForward {
 
     final override fun getFeedForward(matrices: DiscreteStateSpaceMatrices, r: Vec, r1: Vec?): Vec {
-        val Kff = getKff(matrices, r, r1)
         return if (r1 != null) {
+            val Kff = getKff(matrices, r, r1)
             Kff(r1 - matrices.A * r)
-        } else zeroVec(Kff.rows)
+        } else zeroVec(matrices.numInputs)
     }
 
     /**
-     * Gets the current `Kff` matrix, given the current [matrices], reference [r], and next reference [r1] if
-     * known.
+     * Gets the current `Kff` matrix, given the current [matrices], reference [r], and next reference [r1].
      */
-    abstract fun getKff(matrices: DiscreteStateSpaceMatrices, r: Vec, r1: Vec?): Mat
+    abstract fun getKff(matrices: DiscreteStateSpaceMatrices, r: Vec, r1: Vec): Mat
 }
 
 /**
@@ -35,7 +34,7 @@ class ReferenceTrackingFeedForward(Kff: Mat, copyMat: Boolean = true) : VaryingR
     override val includeInObserver: Boolean
         get() = true
 
-    override fun getKff(matrices: DiscreteStateSpaceMatrices, r: Vec, r1: Vec?): Mat = Kff
+    override fun getKff(matrices: DiscreteStateSpaceMatrices, r: Vec, r1: Vec): Mat = Kff
 }
 
 /**
@@ -44,16 +43,10 @@ class ReferenceTrackingFeedForward(Kff: Mat, copyMat: Boolean = true) : VaryingR
  * @see plantInversion
  * @see ReferenceTrackingFeedForward
  */
-class RepeatedPlantInversion(private val qrCost: QRCost? = null) : FeedForward {
+class RepeatedPlantInversion(private val qrCost: QRCost? = null) : VaryingReferenceTrackingFeedForward() {
 
     override val includeInObserver: Boolean
         get() = true
 
-    override fun getFeedForward(matrices: DiscreteStateSpaceMatrices, r: Vec, r1: Vec?): Vec =
-        if (r1 == null) {
-            zeroVec(matrices.numInputs)
-        } else {
-            val Kff = plantInversion(matrices.B, qrCost)
-            Kff(r1 - matrices.A * r)
-        }
+    override fun getKff(matrices: DiscreteStateSpaceMatrices, r: Vec, r1: Vec): Mat = plantInversion(matrices, qrCost)
 }

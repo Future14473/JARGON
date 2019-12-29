@@ -7,6 +7,8 @@ import org.futurerobotics.jargon.linalg.*
  */
 class SignalLimiter(private val lower: Double, private val upper: Double) : SignalModifier {
 
+    constructor(range: ClosedFloatingPointRange<Double>) : this(range.start, range.endInclusive)
+
     init {
         require(upper >= lower) { "Upper ($upper) must be >= lower ($lower)" }
     }

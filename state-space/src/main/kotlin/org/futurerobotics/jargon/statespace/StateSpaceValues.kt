@@ -61,6 +61,8 @@ ${C.formatReadable()}
  * x_dot = Ax + Bu
  * y = Cx
  * ```
+ *
+ * D matrix is currently not supported.
  */
 class ContinuousStateSpaceMatrices(
     A: Mat, B: Mat, C: Mat
@@ -73,8 +75,7 @@ class ContinuousStateSpaceMatrices(
      * Discretizes a given [cost] in the context of these state space matrices, using zero-order hold over a
      * given [period].
      */
-    fun discretizeQRCost(cost: QRCost, period: Double): QRCost =
-        discretizeQRCost(this, cost, period)
+    fun discretizeQRCost(cost: QRCost, period: Double): QRCost = discretizeQRCost(this, cost, period)
 }
 
 /**

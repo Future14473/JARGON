@@ -3,12 +3,12 @@ package org.futurerobotics.jargon.statespace
 import org.futurerobotics.jargon.linalg.*
 
 /**
- * Provides [DiscreteStateSpaceMatrices] for a system to use. This may (or may not) vary over time/input (be
- * linearized/time variant).
+ * Provides [DiscreteStateSpaceMatrices] for a system to use. This may (or may not) vary over time/input
+ * (can be linearized or time variant).
  *
  * This should include any augmentations.
  *
- * @see ConstantStateSpaceMatricesProvider
+ * @see ConstantStateSpaceMatrices
  */
 interface StateSpaceMatricesProvider {
 
@@ -32,8 +32,7 @@ interface StateSpaceMatricesProvider {
 /**
  * A [StateSpaceMatricesProvider] that always returns the given [matrices]
  */
-class ConstantStateSpaceMatricesProvider(private val matrices: DiscreteStateSpaceMatrices) :
-    StateSpaceMatricesProvider {
+class ConstantStateSpaceMatrices(private val matrices: DiscreteStateSpaceMatrices) : StateSpaceMatricesProvider {
 
     override val numStates: Int get() = matrices.numStates
     override val numInputs: Int get() = matrices.numInputs

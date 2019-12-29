@@ -13,6 +13,8 @@ interface FeedForward {
     /**
      * If this feed forward is to be included in the signal that all other parts of the system
      * sees. If false, this will _only_ be added to the output the external world sees.
+     *
+     * Basically, if this feed-forward includes modeled dynamics; else is a un-modeled correction.
      */
     val includeInObserver: Boolean
 

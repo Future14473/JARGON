@@ -3,10 +3,10 @@ package org.futurerobotics.jargon.statespace
 import org.futurerobotics.jargon.linalg.*
 
 /**
- * Represents a feed forward. This may _adjust_ additional signals that will be added to the controller's signal.
+ * This may _adjust_ additional signals before it becomes the actual signal.
  *
- * Note that the references this get may first be modified by [StateModifier], if they are added to a
- * [StateSpaceRunnerBuilder] _before_ this element is added.
+ * This will be applied AFTER [FeedForward]s; but if this [SignalModifier] does not [includeInObserver]
+ * it will not see feed-forwards [includeInObserver].
  */
 interface SignalModifier {
 
@@ -17,10 +17,7 @@ interface SignalModifier {
     val includeInObserver: Boolean
 
     /**
-     * Given the current [matrices], current reference [r], and expected next reference [r1] (if known, else `null`),
-     * and signal [u], gets an adjusted signal.
-     *
-     * This will include all [StateModifier]s!!
+     * Given the current [matrices], current state [x], current signal (with appropriate feed-forwards).
      */
     fun modifySignal(matrices: DiscreteStateSpaceMatrices, x: Vec, u: Vec, y: Vec): Vec
 }

@@ -15,11 +15,11 @@ private val DECOMPOSITION = LUDecomposer(1e-11)
 /**
  * A Linear Kalman Filter for a [StateSpaceObserver].
  *
- * @param varyingNoiseCovariance the [VaryingNoiseCovariance]
+ * @param noiseCovarianceProvider the [NoiseCovarianceProvider]
  * @param initialCovariance the initial process covariance
  */
 class LinearKalmanFilter(
-    private val varyingNoiseCovariance: VaryingNoiseCovariance,
+    private val noiseCovarianceProvider: NoiseCovarianceProvider,
     private val initialCovariance: Mat
 ) : StateSpaceObserver {
 
@@ -41,7 +41,7 @@ class LinearKalmanFilter(
             y: Vec,
             timeInNanos: Long
         ) {
-            noise = varyingNoiseCovariance.getNoise(matrices, x, u, y, timeInNanos)
+            noise = noiseCovarianceProvider.getNoiseCovariance(matrices, x, u, y, timeInNanos)
             this.y = y
             evolution = LinearEvolution(matrices.A, matrices.B, u, noise.Q, matrices.C)
             time = timeInNanos / 1e9

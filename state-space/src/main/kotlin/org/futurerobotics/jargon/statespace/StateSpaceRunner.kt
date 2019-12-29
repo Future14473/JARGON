@@ -9,7 +9,10 @@ import org.futurerobotics.jargon.util.builder
  * This can be created using a [StateSpaceRunnerBuilder]
  *
  * This operates the controller, observer, and any feed-forward/decorators.
+ *
+ * This is experimental as this api is subject to change.
  */
+@ExperimentalStateSpace
 class StateSpaceRunner internal constructor(
     private val controller: StateSpaceController,
     private val observer: StateSpaceObserver,
@@ -18,24 +21,11 @@ class StateSpaceRunner internal constructor(
     private val signalModifiers: List<SignalModifier>
 ) {
 
-    private val decorators = pipings.filterIsInstance<StatePiping.StateModify>().map { it.modifier }
-
-    private fun augmentInitialState(initialState: Vec, reset: Boolean): Vec {
-        val prevXAug = if (reset) null else observer.currentState
-        return decorators.fold(initialState) { x, d ->
-            d.augmentInitialState(x, prevXAug)
-        }
-    }
-
-    private fun deAugmentState(augState: Vec): Vec {
-        return decorators.fold(augState) { xAug, d ->
-            d.deAugmentState(xAug)
-        }
-    }
+    private val stateModifiers = pipings.mapNotNull { (it as? StatePiping.StateModify)?.modifier }
 
     private var lastMatrices: DiscreteStateSpaceMatrices? = null
 
-    /** The period of discretization, in seconds. */
+    /** The period which this run, in seconds. */
     val period: Double get() = matricesProvider.period
 
     /** The signal, including all feed-forwards. */
@@ -43,7 +33,7 @@ class StateSpaceRunner internal constructor(
         private set
 
     /**
-     * The signal, only including [FeedForward] in which [FeedForward.includeInObserver] is true.
+     * The signal, only including [FeedForward]s in which [FeedForward.includeInObserver] is true.
      * This is what is used by the system.
      */
     var observerSignal: Vec = zeroVec(matricesProvider.numInputs)
@@ -56,13 +46,24 @@ class StateSpaceRunner internal constructor(
      *
      * @throws IllegalStateException on _get_ if reset has never been called yet.
      *
-     * @see allCurrentStates
+     * @see currentStateModified
      */
     var currentState: Vec
         get() = deAugmentState(observer.currentState)
         set(value) {
             observer.currentState = augmentInitialState(value, false)
         }
+
+    private fun deAugmentState(xAug: Vec): Vec = stateModifiers.fold(xAug) { curX, d ->
+        d.deAugmentState(curX)
+    }
+
+    private fun augmentInitialState(xRaw: Vec, reset: Boolean): Vec {
+        val prevXAug = if (reset) null else observer.currentState
+        return stateModifiers.fold(xRaw) { curX, d ->
+            d.augmentInitialState(curX, prevXAug)
+        }
+    }
 
     /**
      * Gets the current estimated state _including any augmentations_,
@@ -73,7 +74,7 @@ class StateSpaceRunner internal constructor(
      *
      * @see currentState
      */
-    var allCurrentStates: Vec
+    var currentStateModified: Vec
         get() = observer.currentState
         set(value) {
             observer.currentState = value
@@ -97,14 +98,15 @@ class StateSpaceRunner internal constructor(
      */
     fun update(y: Vec, r: Vec, r1: Vec?, timeInNanos: Long) {
 
-        val lastState = observer.currentState
+        val xPrev = observer.currentState
+        val uPrev = observerSignal
 
         val lastMatrices = lastMatrices
-            ?: matricesProvider.getMatrices(lastState, observerSignal, timeInNanos)
+            ?: matricesProvider.getMatrices(xPrev, uPrev, timeInNanos)
 
-        val x = observer.update(lastMatrices, observerSignal, y, timeInNanos)
+        val x = observer.update(lastMatrices, uPrev, y, timeInNanos)
 
-        val matrices = matricesProvider.getMatrices(x, observerSignal, timeInNanos)
+        val matrices = matricesProvider.getMatrices(x, uPrev, timeInNanos)
         this.lastMatrices = matrices
 
         val uffExt = zeroVec(matrices.numInputs)
@@ -118,8 +120,8 @@ class StateSpaceRunner internal constructor(
                 is StatePiping.StateModify -> {
                     val modifier = piping.modifier
                     curR = modifier.augmentReference(curR)
-                    curR1?.let { theR1 ->
-                        curR1 = modifier.augmentReference(theR1)
+                    curR1?.let {
+                        curR1 = modifier.augmentReference(it)
                     }
                 }
                 is StatePiping.FF -> {
@@ -133,12 +135,21 @@ class StateSpaceRunner internal constructor(
             }
         }
 
-        val rawU = controller.getSignal(matrices, x, curR, timeInNanos)
-        val u = signalModifiers.fold(rawU) { curU, m ->
-            m.modifySignal(matrices, x, curU, y)
+        val rawUInc = controller.getSignal(matrices, x, curR, timeInNanos) + uffInc
+        val uInc = signalModifiers.fold(rawUInc) { curU, m ->
+            if (m.includeInObserver)
+                m.modifySignal(matrices, x, curU, y)
+            else curU
         }
-        observerSignal = u + uffInc
-        signal = observerSignal + uffExt
+        observerSignal = uInc
+
+        val rawUExt = uInc + uffExt
+        val uExt = signalModifiers.fold(rawUExt) { curU, m ->
+            if (!m.includeInObserver)
+                m.modifySignal(matrices, x, curU, y)
+            else curU
+        }
+        signal = uExt
     }
 }
 
@@ -156,6 +167,7 @@ class StateSpaceRunner internal constructor(
  * - [StateModifier]
  * - [FeedForward]
  */
+@ExperimentalStateSpace
 class StateSpaceRunnerBuilder {
 
     private var controller: StateSpaceController? = null
@@ -171,7 +183,7 @@ class StateSpaceRunnerBuilder {
 
     /** Sets the matrices to the given [matrices]. */
     fun setMatrices(matrices: DiscreteStateSpaceMatrices): StateSpaceRunnerBuilder = builder {
-        this.matricesProvider = ConstantStateSpaceMatricesProvider(matrices)
+        this.matricesProvider = ConstantStateSpaceMatrices(matrices)
     }
 
     /** Sets the [controller] */

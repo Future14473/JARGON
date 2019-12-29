@@ -5,13 +5,13 @@ import org.futurerobotics.jargon.linalg.*
 /**
  * Provides [NoiseCovariance] for a [LinearKalmanFilter].
  */
-interface VaryingNoiseCovariance {
+interface NoiseCovarianceProvider {
 
     /**
      * Gets the current [NoiseCovariance] matrices for processing and measurement given
      * [matrices], predicted state [x], past signal [u], measurement [y], and current time [timeInNanos].
      */
-    fun getNoise(
+    fun getNoiseCovariance(
         matrices: StateSpaceMatrices,
         x: Vec,
         u: Vec,
@@ -21,10 +21,17 @@ interface VaryingNoiseCovariance {
 }
 
 /**
- * A [VaryingNoiseCovariance] that always returns the given [noiseCovariance].
+ * A [NoiseCovarianceProvider] that always returns the given [noiseCovariance].
  */
-class ConstantNoiseCovariance(private val noiseCovariance: NoiseCovariance) : VaryingNoiseCovariance {
+@ExperimentalStateSpace
+class ConstantNoiseCovariance(private val noiseCovariance: NoiseCovariance) : NoiseCovarianceProvider {
 
-    override fun getNoise(matrices: StateSpaceMatrices, x: Vec, u: Vec, y: Vec, timeInNanos: Long): NoiseCovariance =
+    override fun getNoiseCovariance(
+        matrices: StateSpaceMatrices,
+        x: Vec,
+        u: Vec,
+        y: Vec,
+        timeInNanos: Long
+    ): NoiseCovariance =
         noiseCovariance
 }

@@ -35,63 +35,6 @@ import org.hipparchus.linear.*
 import org.hipparchus.util.FastMath
 import java.util.*
 
-/**
- * Given a matrix A, it computes a complex eigen decomposition A = VDV^{T}.
- *
- * It ensures that eigen values in the diagonal of D are in ascending order by magnitude.
- *
- * Except where said is modified, this is copied from [OrderedComplexEigenDecomposition] and converted to kotlin
- * using J2K
- */
-class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDecomposition(matrix) {
-
-    init {
-
-        val D = this.d
-        val V = this.v
-
-        val eigenValues = PriorityQueue(compareBy<Complex> { it.abs() })
-        //MODIFIED: use new comparator, and use priority queue to deal with multiple of the same eigenvalue
-
-        for (ij in 0 until matrix.rowDimension) {
-            eigenValues.add(D.getEntry(ij, ij))
-        }
-
-        // ordering
-        for (ij in 0 until matrix.rowDimension - 1) {
-            val eigValue = eigenValues.poll()!!
-            var currentIndex = ij
-            // searching the current index
-            while (currentIndex < matrix.rowDimension) {
-                val compCurrent = D.getEntry(currentIndex, currentIndex)
-                if (eigValue == compCurrent) {
-                    break
-                }
-                currentIndex++
-            }
-
-            if (ij == currentIndex) {
-                continue
-            }
-
-            // exchanging D
-            val previousValue = D.getEntry(ij, ij)
-            D.setEntry(ij, ij, eigValue)
-            D.setEntry(currentIndex, currentIndex, previousValue)
-
-            // exchanging V
-            val previousColumnV = V.getColumn(ij)
-            V.setColumn(ij, V.getColumn(currentIndex))
-            V.setColumn(currentIndex, previousColumnV)
-        }
-
-//        checkDefinition(matrix)
-    }
-
-    /** {@inheritDoc}  */
-    override fun getVT(): FieldMatrix<Complex> = v.transpose()
-}
-
 /**Note that this is experimental and not yet fully supported since the developer
  * doesn't want to do too much math.
  *
@@ -113,7 +56,8 @@ class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDe
  * Except where said is modified, this is copied from [RiccatiEquationSolverImpl] and converted to kotlin using J2K.
  * Unused methods were removed.
  */
-class DiscreteRicattiEquationSolverImpl(
+@ExperimentalStateSpace
+class DiscreteRiccatiEquationSolverImpl(
     A: RealMatrix, B: RealMatrix,
     Q: RealMatrix, R: RealMatrix
 ) : RiccatiEquationSolver {
@@ -229,4 +173,62 @@ class DiscreteRicattiEquationSolverImpl(
         }
         return toRet
     }
+}
+
+/**
+ * Given a matrix A, it computes a complex eigen decomposition A = VDV^{T}.
+ *
+ * It ensures that eigen values in the diagonal of D are in ascending order by magnitude.
+ *
+ * Except where said is modified, this is copied from [OrderedComplexEigenDecomposition] and converted to kotlin
+ * using J2K
+ */
+@ExperimentalStateSpace
+class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDecomposition(matrix) {
+
+    init {
+
+        val D = this.d
+        val V = this.v
+
+        val eigenValues = PriorityQueue(compareBy<Complex> { it.abs() })
+        //MODIFIED: use new comparator, and use priority queue to deal with multiple of the same eigenvalue
+
+        for (ij in 0 until matrix.rowDimension) {
+            eigenValues.add(D.getEntry(ij, ij))
+        }
+
+        // ordering
+        for (ij in 0 until matrix.rowDimension - 1) {
+            val eigValue = eigenValues.poll()!!
+            var currentIndex = ij
+            // searching the current index
+            while (currentIndex < matrix.rowDimension) {
+                val compCurrent = D.getEntry(currentIndex, currentIndex)
+                if (eigValue == compCurrent) {
+                    break
+                }
+                currentIndex++
+            }
+
+            if (ij == currentIndex) {
+                continue
+            }
+
+            // exchanging D
+            val previousValue = D.getEntry(ij, ij)
+            D.setEntry(ij, ij, eigValue)
+            D.setEntry(currentIndex, currentIndex, previousValue)
+
+            // exchanging V
+            val previousColumnV = V.getColumn(ij)
+            V.setColumn(ij, V.getColumn(currentIndex))
+            V.setColumn(currentIndex, previousColumnV)
+        }
+
+//        checkDefinition(matrix)
+    }
+
+    /** {@inheritDoc}  */
+    override fun getVT(): FieldMatrix<Complex> = v.transpose()
 }

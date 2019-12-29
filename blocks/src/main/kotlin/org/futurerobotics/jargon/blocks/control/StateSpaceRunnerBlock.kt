@@ -5,6 +5,7 @@ import org.futurerobotics.jargon.blocks.IllegalBlockConfigurationException
 import org.futurerobotics.jargon.blocks.ReadOnlyBlockArrangement
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.MotionState
+import org.futurerobotics.jargon.statespace.ExperimentalStateSpace
 import org.futurerobotics.jargon.statespace.StateSpaceRunner
 
 /**
@@ -17,6 +18,7 @@ import org.futurerobotics.jargon.statespace.StateSpaceRunner
  * The former provides reference tracking (if an appropriate [FeedForwardWrapper] is given) in discrete time,
  * while the latter approximates it from continuous time.
  */
+@ExperimentalStateSpace
 class StateSpaceRunnerBlock(private val runner: StateSpaceRunner, var initialState: Vec?) :
     Block(Processing.ALWAYS) {
 

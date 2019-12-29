@@ -1,3 +1,4 @@
+@file:JvmName("StateSpaceCalculations")
 @file:Suppress("LocalVariableName")
 
 package org.futurerobotics.jargon.statespace
@@ -35,8 +36,9 @@ fun plantInversion(matrices: DiscreteStateSpaceMatrices, cost: QRCost? = null): 
 /**
  * Calculates the steady-state kalman-filter error covariance matrix.
  */
+@ExperimentalStateSpace
 fun steadyStateKalmanFilterCovariance(A: Mat, B: Mat, C: Mat, Q: Mat, R: Mat): Mat {
-    val prior = DiscreteRicattiEquationSolverImpl(A, B, Q, R).p
+    val prior = DiscreteRiccatiEquationSolverImpl(A, B, Q, R).p
     val S = C * prior * C.T + R
     val K = prior * C.T * S.inv()
     return (idenMat(A.cols) - K * C) * prior
@@ -56,11 +58,13 @@ fun continuousLQR(matrices: ContinuousStateSpaceMatrices, qrCost: QRCost): Mat =
 /**
  * Solves the discrete LQR K gain (experimental).
  */
-fun discreteLQR(A: Mat, B: Mat, Q: Mat, R: Mat): Mat = DiscreteRicattiEquationSolverImpl(A, B, Q, R).k
+@ExperimentalStateSpace
+fun discreteLQR(A: Mat, B: Mat, Q: Mat, R: Mat): Mat = DiscreteRiccatiEquationSolverImpl(A, B, Q, R).k
 
 /**
  * Solves the discrete LQR K gain (experimental).
  */
+@ExperimentalStateSpace
 fun discreteLQR(matrices: DiscreteStateSpaceMatrices, qrCost: QRCost): Mat =
     discreteLQR(matrices.A, matrices.B, qrCost.Q, qrCost.R)
 
