@@ -37,10 +37,10 @@ internal class ReparamMappingTest(private val mapping: SamplesReparamMapping, pr
                 randomQuinticSpline(random, range)
             }.flatMap {
                 listOf(
-                    it.reparamByIntegration(),
-                    it.reparamByIntegration(),
-                    it.reparamByIntegration(10, 100),
-                    it.reparamByIntegration()
+                    it.reparameterizeToCurve(),
+                    it.reparameterizeToCurve(),
+                    it.reparameterizeToCurve(IntegrationReparameterizer(10, 100)),
+                    it.reparameterizeToCurve()
                 )
             }.map { it.mapping }
             val progressions = List(5) {

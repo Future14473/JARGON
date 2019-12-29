@@ -28,7 +28,7 @@ interface ReparamMapping : Steppable<Double> {
  * See factory methods.
  */
 class SamplesReparamMapping
-private constructor(
+internal constructor(
     private val sSamples: DoubleArray, private val tSamples: DoubleArray
 ) : ReparamMapping {
 

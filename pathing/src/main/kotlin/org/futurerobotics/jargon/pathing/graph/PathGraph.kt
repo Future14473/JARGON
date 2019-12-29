@@ -2,14 +2,12 @@ package org.futurerobotics.jargon.pathing.graph
 
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.angleNorm
 import org.futurerobotics.jargon.pathing.*
 import org.futurerobotics.jargon.pathing.graph.PathGraph.Edge
 import org.futurerobotics.jargon.pathing.graph.PathGraph.Node
 import org.futurerobotics.jargon.util.*
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.math.PI
 
 /**
  * Represents a graph paths, using [Node]s (at specific points) connected with [Edge]s (paths between
@@ -18,23 +16,21 @@ import kotlin.math.PI
  * Then, this will use good ol' dijkstra's algorithm to find a path between to nodes, and use that to generate paths.
  *
  * Nodes can also be given names for later retrieval. Nodes can be named directly using an edge, and it will
- * name the "ending" node. This is useful in builder usage patterns.
+ * name the "ending" node where it was created. This is useful in builder usage patterns.
  *
  * Edges have a 'forward/backward' direction depending on the order they were connected from. Edges can optionally
- * have incoming and outgoing [WaypointConstraint]s, forward/backward weights, and edges that represent curves only must
- * be supplied with a [HeadingInterpolator] (or else a [defaultInterpolator] will be used). If a path requires
- * the bot to go from forward to backward (a point_turn will be required), then the [Node.setTurnAroundWeight] is added
- * to the cost.
+ * have incoming and outgoing [WaypointConstraint]s, forward/backward weights. Edges that represent curves can be
+ * be supplied with a [HeadingInterpolator] (or else a [defaultInterpolator] will be used).
  *
  * By default, when traversing an edge backwards, the heading will stay the same. This is the only option for now
  *
- * This is so in the end you can say "Get me from point 'A' to 'B' and it figures out a path for you.
+ * In the end you can say "Get me from point 'A' to 'B' and it figures out a path for you.
  *
- * @property defaultInterpolator The default heading interpolator to use for curves. The default is [TangentInterpolator].
+ * @property defaultInterpolator The default heading interpolator to use for curves. The default is [LinearOffsetInterpolator].
  */
 class PathGraph
 @JvmOverloads constructor(
-    var defaultInterpolator: HeadingInterpolator = TangentInterpolator
+    var defaultInterpolator: HeadingInterpolator = LinearOffsetInterpolator
 ) {
 
     private var index = 0
@@ -53,13 +49,13 @@ class PathGraph
     fun getNode(name: String): Node =
         getNodeOrNull(name) ?: throw IllegalArgumentException("Node with name $name does not exist.")
 
-    /** Gets a node with [this] name, or throws [IllegalArgumentException] if it does not exist. */
+    /** Gets a node with `this` name, or throws [IllegalArgumentException] if it does not exist. */
     @get:JvmName("getNodeWithReceiver")
     @get:JvmSynthetic
     val String.node: Node
         get() = getNode(this)
 
-    /** Gets a node with [this] name, or `null` if it does not exist. */
+    /** Gets a node with `this` name, or `null` if it does not exist. */
     @get:JvmName("getNodeOrNullWithReceiver")
     @get:JvmSynthetic
     val String.nodeOrNull: Node?
@@ -72,7 +68,7 @@ class PathGraph
     fun addNode(x: Double, y: Double): Node = addNode(Vector2d(x, y))
 
     /** Creates a node at the given [pose], with the constraint that it must face the given pose's heading. */
-    fun addNode(pose: Pose2d): Node = addNode(pose.vec).setNodeConstraint(WaypointConstraint(heading = pose.heading))
+    fun addNode(pose: Pose2d): Node = addNode(pose.vec).addConstraint(WaypointConstraint(heading = pose.heading))
 
     /** Removes a node and all it's connected edges from this graph. */
     fun removeNode(node: Node) {
@@ -91,40 +87,28 @@ class PathGraph
      * [curveGenParams], or `null` if not possible.
      */
     @JvmOverloads
-    fun getPathOrNull(
-        start: String, end: String,
-        startFacing: Facing = Facing.Any, endFacing: Facing = startFacing,
-        curveGenParams: CurveGenParams = CurveGenParams.DEFAULT
-    ): Path? = getPaths(start, end, startFacing, endFacing, curveGenParams)?.let { multiplePath(it) }
+    fun getPathOrNull(start: String, end: String, curveGenParams: CurveGenParams = CurveGenParams.DEFAULT): Path? =
+        getPaths(start, end, curveGenParams)?.let { multiplePath(it) }
 
     /**
      * Attempts to create a path between the nodes name [start] and [end], using the given
      * [curveGenParams], or throws an exception if not possible.
      */
     @JvmOverloads
-    fun getPath(
-        start: String, end: String,
-        startFacing: Facing = Facing.Any, endFacing: Facing = startFacing,
-        curveGenParams: CurveGenParams = CurveGenParams.DEFAULT
-    ): Path = getPathOrNull(start, end, startFacing, endFacing, curveGenParams)
-        ?: throw IllegalArgumentException("No path exists between ($start) and ($end).")
+    fun getPath(start: String, end: String, curveGenParams: CurveGenParams = CurveGenParams.DEFAULT): Path =
+        getPathOrNull(start, end, curveGenParams)
+            ?: throw IllegalArgumentException("No path exists between ($start) and ($end).")
 
     /**
      * Attempts to create a path between the node named [start] and the node name [end], using the given
      * [curveGenParams], or `null` if not possible.
      */
     @JvmOverloads
-    fun getPaths(
-        start: String, end: String,
-        startFacing: Facing = Facing.Any, endFacing: Facing = startFacing,
-        curveGenParams: CurveGenParams = CurveGenParams.DEFAULT
-    ): List<Path>? {
+    fun getPaths(start: String, end: String, curveGenParams: CurveGenParams = CurveGenParams.DEFAULT): List<Path>? {
         val startNode = getNode(start)
         val edges = dijkstras(
             startNode.index,
-            getNode(end).index,
-            startFacing,
-            endFacing
+            getNode(end).index
         )?.ifEmpty {
             return listOf(SinglePointPath(startNode.location))
         } ?: return null
@@ -138,30 +122,29 @@ class PathGraph
     inline operator fun String.invoke(config: Node.() -> Unit = {}): Node = getNode(this).apply(config)
 
     //rather ad-hoc...
-    private fun createPaths(edges: List<EdgeTraversal>, curveGenParams: CurveGenParams): List<Path> {
+    private fun createPaths(edges: List<Edge<*>>, curveGenParams: CurveGenParams): List<Path> {
         //in waypoints have priority.
         val waypoints = ArrayList<Waypoint>(edges.size)
-        waypoints += edges.first().inner.inWaypoint
+        waypoints += edges.first().inWaypoint
 
         edges.zipWithNextTo(waypoints) { edge1, edge2 ->
-            edge1.inner.outWaypoint.mergeFrom(edge2.inner.inConstraint)
+            edge1.outWaypoint.copy().apply { mergeFrom(edge2.inConstraint) }
         }
-        waypoints += edges.last().inner.outWaypoint
+        waypoints += edges.last().outWaypoint
 
         //create paths/curves.
         val curSplineWaypoints = arrayListOf(waypoints[0])
         val genericPaths = ArrayList<GenericPath<*>>(edges.size)
 
         edges.forEachIndexed { i, edge ->
-            val inner = edge.inner
-            if (inner !is FreeEdge) {
+            if (edge !is FreeEdge) {
                 //Only FreeEdges get curves, so turn any queued splines into curves.
                 if (curSplineWaypoints.size > 1)
                     genericPaths += heuristicSplineCurves(curSplineWaypoints, curveGenParams)
                 curSplineWaypoints.clear()
                 //is either curve or path edge
-                genericPaths += inner.path
-                    ?: throw NotImplementedError("Edge type ${inner.javaClass} is not implemented")
+                genericPaths += edge.path
+                    ?: throw NotImplementedError("Edge type ${edge.javaClass} is not implemented")
             }
 
 
@@ -176,17 +159,13 @@ class PathGraph
             else {
                 val curve = genPath as Curve
                 val edge = edges[i]
-                val interpolator = (edge.inner as EdgeWithHeading).interpolator
+                val interpolator = (edge as EdgeWithHeading).interpolator
 
                 val startHeading = waypoints[i].constraint.let { (direction, heading) ->
-                    heading ?: (direction ?: curve.startPoint().tanAngle).replaceIf(edge.isBackwards) {
-                        angleNorm(it + PI)
-                    }
+                    heading ?: (direction ?: curve.startPoint().tanAngle)
                 }
                 val endHeading = waypoints[i + 1].constraint.let { (direction, heading) ->
-                    heading ?: (direction ?: curve.endPoint().tanAngle).replaceIf(edge.isBackwards) {
-                        angleNorm(it + PI)
-                    }
+                    heading ?: (direction ?: curve.endPoint().tanAngle)
                 }
 
                 curve.addHeading(interpolator, startHeading, endHeading)
@@ -194,45 +173,33 @@ class PathGraph
         }
     }
 
-    /** Edge including _backwards heading_ of traversal. */
-    private class EdgeTraversal(val inner: Edge<*>, val isBackwards: Boolean)
-
-    private fun dijkstras(start: Int, end: Int, startFacing: Facing, endFacing: Facing): List<EdgeTraversal>? {
+    private fun dijkstras(start: Int, end: Int): List<Edge<*>>? {
         if (start == end) return emptyList()
-        val numNodes = nodesInternal.size
+        reassignIndices()
 
-        data class MarkedNode(val nodeIndex: Int, val distance: Int, val backwards: Boolean) {
-
-            val visIndex get() = nodeIndex.replaceIf(backwards) { it + numNodes }
-        }
+        data class MarkedNode(val nodeIndex: Int, val distance: Int)
 
         var found = false
 
-        val distances = IntArray(nodesInternal.size * 2) { Int.MAX_VALUE }
-        val visited = BooleanArray(nodesInternal.size * 2)
-        val from = arrayOfNulls<EdgeTraversal>(nodesInternal.size)
+        val distances = IntArray(nodesInternal.size) { Int.MAX_VALUE }
+        val visited = BooleanArray(nodesInternal.size)
+        val from = arrayOfNulls<Edge<*>>(nodesInternal.size)
 
         val queue = PriorityQueue<MarkedNode>(compareBy { it.distance })
-        if (startFacing !== Facing.Backward)
-            queue += MarkedNode(start, 0, false)
-        if (startFacing !== Facing.Forward)
-            queue += MarkedNode(start, 0, true)
+        queue += MarkedNode(start, 0)
         while (queue.isNotEmpty()) {
-            val next = queue.remove()
-            val (nodeIndex, dist, backwards) = next
-            val visIndex = next.visIndex
-            if (visited[visIndex]) continue
-            visited[visIndex] = true
-            if (nodeIndex == end && if (backwards) endFacing !== Facing.Forward else endFacing !== Facing.Backward) { //found?
+            val (index, dist) = queue.remove()
+            if (visited[index]) continue
+            visited[index] = true
+            if (index == end) { //found?
                 found = true
                 break
             }
             //expand
-            nodesInternal[nodeIndex]!!.edgesInternal.forEach { edge ->
-                assert(edge.fromNode.index == nodeIndex)
-                val nextNodeIndex = edge.toNode.index
-                val nextVisIndex = nextNodeIndex.replaceIf(backwards) { it + numNodes }
-                if (visited[nextVisIndex]) return@forEach
+            nodesInternal[index]!!.edgesInternal.forEach { edge ->
+                assert(edge.fromNode.index == index)
+                val nextIndex = edge.toNode.index
+                if (visited[nextIndex]) return@forEach
 
                 val weight = edge.weight.also {
                     if (it == Int.MAX_VALUE) return@forEach
@@ -241,58 +208,34 @@ class PathGraph
                 val nextDist = (dist.toLong() + weight).also {
                     if (it !in Int.MIN_VALUE until Int.MAX_VALUE) throw ArithmeticException("Integer overflow")
                 }.toInt()
-                if (nextDist < distances[nextVisIndex]) {
-                    from[nextNodeIndex] = EdgeTraversal(edge, backwards)
-                    distances[nextVisIndex] = nextDist
-                    queue += MarkedNode(nextNodeIndex, nextDist, backwards)
-                }
-            }
-            //also expand direction.
-            val reverseVisIndex = nodeIndex.replaceIf(!backwards) { it + numNodes }
-            if (!visited[reverseVisIndex]) kotlin.run {
-                val weight = nodesInternal.getValue(nodeIndex).turnAroundWeight.also {
-                    if (it == Int.MAX_VALUE) return@run
-                }
-
-                val nextDist = (dist.toLong() + weight).also {
-                    if (it !in Int.MIN_VALUE until Int.MAX_VALUE) throw ArithmeticException("Integer overflow")
-                }.toInt()
-                if (nextDist < distances[reverseVisIndex]) {
-                    distances[reverseVisIndex] = nextDist
-                    queue += MarkedNode(nodeIndex, nextDist, !backwards)
+                if (nextDist < distances[nextIndex]) {
+                    from[nextIndex] = edge
+                    distances[nextIndex] = nextDist
+                    queue += MarkedNode(nextIndex, nextDist)
                 }
             }
         }
         if (!found) return null
 
         var cur = end
-        val list = mutableListOf<EdgeTraversal>()
+        val list = mutableListOf<Edge<*>>()
         while (cur != start) {
             val edge = from[cur]!!
             list += edge
-            cur = edge.inner.fromNode.index
+            cur = edge.fromNode.index
         }
         list.reverse()
         return list
     }
 
-    /**
-     * Indicates forward or backward direction at a specific node.
-     *
-     * When backward, heading will be flipped.
-     */
-    enum class Facing {
-
-        /** Forward direction */
-        Forward,
-        /** Backward direction */
-        Backward,
-        /** Indicates allowing both [Forward] and [Backward] directions. */
-        Any
+    private fun reassignIndices() {
+        nodesInternal.entries.mapIndexed { index, (_, entry) -> index to entry }
+            .also { nodesInternal.clear() }
+            .forEach { nodesInternal += it }
     }
 
     /** Represents a node or the end of an edge where you can continue adding edges. */
-    interface NodeContinuation<Return> {
+    interface NodeContinuation<Self : Any> {
 
         /**
          * The name of this node, or `null` if none. Must be unique, and can only be set once.
@@ -304,20 +247,16 @@ class PathGraph
         var turnAroundWeight: Int
 
         /** The constraints applied at this node. */
-        var nodeConstraint: WaypointConstraint
-        fun setNodeConstraint(constraint: WaypointConstraint): Return = builder {
-            this.nodeConstraint = constraint
-        }
+        val nodeConstraint: WaypointConstraint
+
+        /** Builder method to set [nodeConstraint]. */
+        fun addConstraint(constraint: WaypointConstraint): Self
 
         /** Builder method to set [name] */
-        fun name(name: String): Return = builder {
-            this.name = name
-        }
+        fun name(name: String): Self
 
         /** Builder method to set [setTurnAroundWeight] */
-        fun setTurnAroundWeight(weight: Int): Return = builder {
-            this.turnAroundWeight = weight
-        }
+        fun setTurnAroundWeight(weight: Int): Self
 
         /** Connects this node to the given [node], then returns the resulting [FreeEdge]. */
         fun splineTo(node: Node): FreeEdge
@@ -384,7 +323,6 @@ class PathGraph
         }
 
         internal val edgesInternal = hashSetOf<Edge<*>>()
-
         /** All the edges that start from this node. */
         val edges: Set<Edge<*>> = edgesInternal.asUnmodifiableSet()
 
@@ -400,7 +338,7 @@ class PathGraph
             }
 
         override var turnAroundWeight: Int = DEFAULT_TURNAROUND_WEIGHT
-        override var nodeConstraint: WaypointConstraint = WaypointConstraint.NONE
+        override val nodeConstraint: WaypointConstraint = WaypointConstraint()
 
         override fun splineTo(node: Node): FreeEdge = FreeEdge(this, node, defaultInterpolator)
         override fun splineTo(name: String): FreeEdge = splineTo(getNode(name))
@@ -410,7 +348,7 @@ class PathGraph
             splineTo(waypoint.position).addOutConstraint(waypoint.constraint)
 
         override fun splineTo(pose: Pose2d): FreeEdge =
-            splineTo(pose.vec).setNodeConstraint(WaypointConstraint(heading = pose.heading))
+            splineTo(pose.vec).addConstraint(WaypointConstraint(heading = pose.heading))
 
         override fun lineTo(node: Node): CurveEdge =
             CurveEdge(this, node, Line(location, node.location), defaultInterpolator)
@@ -430,6 +368,21 @@ class PathGraph
 
         /** Runs the given [config] on this [Node], then returns this. */
         inline operator fun invoke(config: Node.() -> Unit): Node = apply(config)
+
+        /** Builder method to set [nodeConstraint]. */
+        override fun addConstraint(constraint: WaypointConstraint): Node = builder {
+            nodeConstraint.mergeFrom(constraint)
+        }
+
+        /** Builder method to set [name] */
+        override fun name(name: String): Node = builder {
+            this.name = name
+        }
+
+        /** Builder method to set [setTurnAroundWeight] */
+        override fun setTurnAroundWeight(weight: Int): Node = builder {
+            this.turnAroundWeight = weight
+        }
     }
 
     /**
@@ -463,21 +416,19 @@ class PathGraph
         }
 
         /** The constraint applied on the [fromNode], when incoming this edge. */
-        var inConstraint: WaypointConstraint = WaypointConstraint.NONE
-            private set
+        val inConstraint: WaypointConstraint = WaypointConstraint()
 
         /** The constraint applied on the [toNode], when outgoing this edge. */
-        var outConstraint: WaypointConstraint = WaypointConstraint.NONE
-            private set
+        var outConstraint: WaypointConstraint = WaypointConstraint()
 
         /** Adds additional constraints to the [inConstraint]. */
         fun addInConstraint(constraint: WaypointConstraint): Self = builder {
-            inConstraint = inConstraint.mergeFrom(constraint)
+            inConstraint.mergeFrom(constraint)
         }
 
         /** Adds additional constraints to the [outConstraint]. */
         fun addOutConstraint(constraint: WaypointConstraint): Self = builder {
-            outConstraint = outConstraint.mergeFrom(constraint)
+            outConstraint.mergeFrom(constraint)
         }
 
         /** Adds additional constraints to both [inConstraint] and the [reverse]'s [outConstraint]. */
@@ -523,6 +474,18 @@ class PathGraph
 
         /** Runs the given [config] on this [Edge], then returns this. */
         inline operator fun invoke(config: Self.() -> Unit): Self = this.uncheckedCast<Self>().apply(config)
+
+        override fun addConstraint(constraint: WaypointConstraint): Self = builder {
+            nodeConstraint.mergeFrom(constraint)
+        }
+
+        override fun name(name: String): Self = builder {
+            this.name = name
+        }
+
+        override fun setTurnAroundWeight(weight: Int): Self = builder {
+            this.turnAroundWeight = weight
+        }
     }
 
     /**

@@ -6,14 +6,13 @@ import org.futurerobotics.jargon.math.DoubleProgression
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.randomVectorDerivatives
-import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
+import org.futurerobotics.jargon.pathing.reparam.reparameterizeToCurve
 import org.futurerobotics.jargon.pathing.trajectory.*
 import org.futurerobotics.jargon.profile.ForwardMotionProfile
 import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import org.futurerobotics.jargon.profile.generateDynamicProfile
 import org.futurerobotics.jargon.saveGraph
 import org.futurerobotics.jargon.util.stepToAll
-import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import org.junit.jupiter.api.Tag
@@ -91,7 +90,7 @@ class MotionProfileGraphs(
 
     @Test
     fun `Generate path graph`() {
-        Assume.assumeTrue(profileNumber == 0)
+        if (profileNumber != 0) return
         val pathChart: XYChart = with(XYChartBuilder()) {
             title("Path")
             xAxisTitle("x")
@@ -157,7 +156,7 @@ class MotionProfileGraphs(
             val segs = List(5) {
                 randomVectorDerivatives(random, range)
             }.zipWithNext { a, b ->
-                QuinticSpline.fromDerivatives(a, b).reparamByIntegration()
+                QuinticSpline.fromDerivatives(a, b).reparameterizeToCurve()
             }
             multipleCurve(segs).addHeading(TangentHeading)
         }.let {

@@ -7,6 +7,7 @@ import org.futurerobotics.jargon.pathing.CurveHeadingPath
 import org.futurerobotics.jargon.pathing.CurvePoint
 import org.futurerobotics.jargon.pathing.PathPoint
 import org.futurerobotics.jargon.pathing.reparam.ReparamCurve
+import org.futurerobotics.jargon.util.builder
 import kotlin.math.PI
 
 /**
@@ -16,44 +17,36 @@ import kotlin.math.PI
 data class WaypointConstraint
 @JvmOverloads constructor(
     /** The optionally known direction (angle) at this point on the curve. Equal to the angle of the deriv. */
-    val direction: Double? = null,
+    var direction: Double? = null,
     /** The optionally known heading at this point. If not known, tangent angle (direction) will be used. */
-    val heading: Double? = null,
+    var heading: Double? = null,
     /** The optionally known magnitude of the derivative. A larger value makes a less sharp turn around this waypoint. */
-    val derivMagnitude: Double? = null,
+    var derivMagnitude: Double? = null,
     /** The possibly not yet known position second deriv. You probably won't be changing this manually. */
-    val secondDeriv: Vector2d? = null
+    var secondDeriv: Vector2d? = null
 ) {
 
     /**
      * Returns a [WaypointConstraint] but is reversed in [direction] only.
      */
     fun reverseDirection(): WaypointConstraint = WaypointConstraint(
-        this@WaypointConstraint.direction?.let { angleNorm(it + PI) },
+        direction?.let { angleNorm(it + PI) },
         heading, derivMagnitude, secondDeriv
-
     )
 
     /**
-     * Returns a new [WaypointConstraint] with unknown values possibly filled from the [other] constraint.
+     * Returns a new [WaypointConstraint] with unknown values filled from the [other] constraint.
      */
-    fun mergeFrom(other: WaypointConstraint): WaypointConstraint = WaypointConstraint(
-        direction ?: other.direction,
-        heading ?: other.heading,
-        derivMagnitude ?: other.derivMagnitude,
-        secondDeriv ?: other.secondDeriv
-    )
-
-    companion object {
-
-        /** A [WaypointConstraint] defining NO constraints. */
-        @JvmField
-        val NONE: WaypointConstraint = WaypointConstraint(null, null, null, null)
+    fun mergeFrom(other: WaypointConstraint): WaypointConstraint = builder {
+        direction = direction ?: other.direction
+        heading = heading ?: other.heading
+        derivMagnitude = derivMagnitude ?: other.derivMagnitude
+        secondDeriv = secondDeriv ?: other.secondDeriv
     }
 }
 
 /**
- * Represents a waypoint along a path, with a known [position], but also with [WaypointConstraint]s.
+ * Represents a waypoint along a path, with a known [position], and some [WaypointConstraint].
  * @see heuristicSplineCurves
  */
 data class Waypoint
@@ -97,7 +90,9 @@ constructor(
     )
 
     /** Returns a new waypoint with unknown constraints possibly filled in from the given [other] constraint. */
-    fun mergeFrom(other: WaypointConstraint): Waypoint = Waypoint(position, constraint.mergeFrom(other))
+    fun mergeFrom(other: WaypointConstraint) {
+        constraint.mergeFrom(other)
+    }
 
     /**
      * Converts this waypoint to a [MotionState] of [Vector2d]. If any component is null, may throw
@@ -127,8 +122,8 @@ constructor(
         /**
          * Creates a waypoint from a curve [point]: position, direction are filled,
          *
-         * heading is filled if known, and if the point is from a [ReparamCurve], the underlying function's derivatives
-         * are used.
+         * Heading is filled if the point is a [PathPoint], and if the point is from a [ReparamCurve], the underlying
+         * function's derivatives are used.
          */
         @JvmStatic
         fun fromCurvePoint(point: CurvePoint): Waypoint {

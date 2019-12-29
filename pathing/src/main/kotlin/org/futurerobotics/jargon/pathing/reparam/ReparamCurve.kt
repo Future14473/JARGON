@@ -18,6 +18,9 @@ import org.futurerobotics.jargon.util.replaceIf
  */
 class ReparamCurve(internal val func: VectorFunction, internal val mapping: ReparamMapping) : Curve {
 
+    constructor(function: VectorFunction, reparameterizer: Reparameterizer) :
+            this(function, reparameterizer.reparameterize(function))
+
     override val length: Double get() = mapping.length
 
     override fun pointAt(s: Double): CurvePoint = Point(mapping.tOfS(s))

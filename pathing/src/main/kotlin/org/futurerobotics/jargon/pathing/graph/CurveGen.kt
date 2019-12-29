@@ -1,12 +1,14 @@
+@file:JvmName("CurveGen")
+
 package org.futurerobotics.jargon.pathing.graph
 
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.angleNorm
 import org.futurerobotics.jargon.math.function.QuinticSpline
-import org.futurerobotics.jargon.math.function.VectorFunction
 import org.futurerobotics.jargon.math.times
 import org.futurerobotics.jargon.pathing.Curve
-import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
+import org.futurerobotics.jargon.pathing.reparam.Reparameterizer
+import org.futurerobotics.jargon.pathing.reparam.reparameterizeToCurve
 import kotlin.math.min
 
 /**
@@ -22,7 +24,7 @@ data class CurveGenParams @JvmOverloads constructor(
     /**
      * The reparameterizer used to convert splines into curves.
      */
-    val reparameterizer: (VectorFunction) -> Curve = { it.reparamByIntegration() }
+    val reparameterizer: Reparameterizer = Reparameterizer.DEFAULT
 ) {
 
     init {
@@ -42,11 +44,10 @@ data class CurveGenParams @JvmOverloads constructor(
  * [curveGenParams] provides additional options.
  */
 fun heuristicSplineCurves(waypoints: List<Waypoint>, curveGenParams: CurveGenParams): List<Curve> {
-    return resolveWaypoints(waypoints, curveGenParams)
-        .asSequence()
+    return resolveWaypoints(waypoints, curveGenParams).asSequence()
         .map { it.toMotionState() }
         .zipWithNext { a, b -> QuinticSpline.fromDerivatives(a, b) }
-        .map { curveGenParams.reparameterizer(it) }
+        .map { it.reparameterizeToCurve(curveGenParams.reparameterizer) }
         .toList()
 }
 

@@ -9,7 +9,7 @@ import org.futurerobotics.jargon.math.randomVectorDerivatives
 import org.futurerobotics.jargon.pathing.TangentHeading
 import org.futurerobotics.jargon.pathing.addHeading
 import org.futurerobotics.jargon.pathing.multiplePath
-import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
+import org.futurerobotics.jargon.pathing.reparam.reparameterizeToCurve
 import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import org.futurerobotics.jargon.reportError
 import org.junit.Assert
@@ -77,7 +77,7 @@ class TrajectoryTest(private val trajectory: Trajectory) {
                 )
             }.take(6).zipWithNext { a, b ->
                 QuinticSpline.fromDerivatives(a, b)
-                    .reparamByIntegration()
+                    .reparameterizeToCurve()
                     .addHeading(TangentHeading)
             }.let {
                 multiplePath(it.toList())

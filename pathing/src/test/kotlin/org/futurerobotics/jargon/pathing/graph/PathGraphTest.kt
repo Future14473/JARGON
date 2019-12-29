@@ -16,7 +16,8 @@ internal class PathGraphTest {
     fun direct() {
         val graph = PathGraph().apply {
             addNode(0.0, 0.0).name("Start")
-                .splineTo(-2.0, 4.0).name("A")
+                .splineTo(-2.0, 4.0)
+                .name("A")
 
             addNode(3.0, 3.0).name("B")
             getNode("A").splineTo("B")

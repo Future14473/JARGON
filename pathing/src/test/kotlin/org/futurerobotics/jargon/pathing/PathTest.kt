@@ -5,7 +5,8 @@ import org.futurerobotics.jargon.math.DoubleProgression
 import org.futurerobotics.jargon.math.TAU
 import org.futurerobotics.jargon.math.nextVector2d
 import org.futurerobotics.jargon.math.randomQuinticSpline
-import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
+import org.futurerobotics.jargon.pathing.reparam.IntegrationReparameterizer
+import org.futurerobotics.jargon.pathing.reparam.reparameterizeToCurve
 import org.futurerobotics.jargon.util.mapAllPairs
 import org.futurerobotics.jargon.util.stepToAll
 import org.junit.Assert
@@ -40,10 +41,10 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
                 randomQuinticSpline(random, range)
             }.flatMap {
                 listOf(
-                    it.reparamByIntegration(),
-                    it.reparamByIntegration(),
-                    it.reparamByIntegration(10, 100),
-                    it.reparamByIntegration()
+                    it.reparameterizeToCurve(),
+                    it.reparameterizeToCurve(),
+                    it.reparameterizeToCurve(IntegrationReparameterizer(10, 100)),
+                    it.reparameterizeToCurve()
                 )
             }.let {
                 it + List(2) {
