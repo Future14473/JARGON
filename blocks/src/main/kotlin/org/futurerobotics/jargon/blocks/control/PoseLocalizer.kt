@@ -7,7 +7,7 @@ import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.ifNan
 import org.futurerobotics.jargon.mechanics.GlobalToBot
-import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
+import org.futurerobotics.jargon.mechanics.MotorBotInteraction
 
 /**
  * A [PoseLocalizer] represents a block with some method of tracking the [globalPose].
@@ -109,13 +109,13 @@ class BotDeltaAndGyroLocalizer(initialPose: Pose2d = Pose2d.ZERO) : BotDeltaLoca
  */
 class EncoderOnlyLocalizer(
     builder: BlockArrangementBuilder,
-    interaction: MotorBotVelInteraction
+    interaction: MotorBotInteraction
 ) : PoseLocalizer {
 
     /** Constructor for [EncoderOnlyLocalizer] that also connects now. */
     constructor(
         builder: BlockArrangementBuilder,
-        interaction: MotorBotVelInteraction,
+        interaction: MotorBotInteraction,
         motors: MotorsBlock
     ) : this(builder, interaction) {
         builder.connect(motorPositions, motors.motorPositions)
@@ -146,12 +146,12 @@ class EncoderOnlyLocalizer(
  * _THE_ heading. This might cause problems if your gyro starts to drift.
  */
 class EncoderAndStrictGyroLocalizer(
-    builder: BlockArrangementBuilder, interaction: MotorBotVelInteraction
+    builder: BlockArrangementBuilder, interaction: MotorBotInteraction
 ) : PoseLocalizer {
 
     constructor(
         builder: BlockArrangementBuilder,
-        interaction: MotorBotVelInteraction,
+        interaction: MotorBotInteraction,
         motors: MotorsBlock,
         gyroBlock: GyroBlock
     ) : this(builder, interaction) {

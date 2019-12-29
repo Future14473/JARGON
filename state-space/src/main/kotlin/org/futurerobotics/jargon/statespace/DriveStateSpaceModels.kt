@@ -2,7 +2,7 @@ package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.mechanics.BotVelocityModel
-import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
+import org.futurerobotics.jargon.mechanics.MotorBotInteraction
 import org.futurerobotics.jargon.mechanics.MotorVelocityModel
 
 /**
@@ -27,7 +27,7 @@ object DriveStateSpaceModels {
     @JvmStatic
     fun poseVelocityController(
         botVelocityModel: BotVelocityModel,
-        interaction: MotorBotVelInteraction
+        interaction: MotorBotInteraction
     ): ContinuousStateSpaceMatrices {
         val a = botVelocityModel.botAccelFromBotVel.copy()
         val b = botVelocityModel.botAccelFromVolts.copy()

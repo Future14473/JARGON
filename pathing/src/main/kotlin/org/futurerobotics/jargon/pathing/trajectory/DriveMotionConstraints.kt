@@ -3,9 +3,10 @@ package org.futurerobotics.jargon.pathing.trajectory
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Interval
 import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
+import org.futurerobotics.jargon.mechanics.MotorBotInteraction
 import org.futurerobotics.jargon.mechanics.MotorModel
 import org.futurerobotics.jargon.mechanics.MotorVelocityModel
+import org.futurerobotics.jargon.mechanics.MotorWheelInteraction
 import org.futurerobotics.jargon.pathing.PathPoint
 import kotlin.math.*
 
@@ -102,22 +103,20 @@ fun accelRangeFromBotAccelTransform(
     return res
 }
 
-private fun Vec.wheelToMotorVel(interaction: MotorBotVelInteraction): Vec =
+private fun Vec.wheelToMotorVel(interaction: MotorWheelInteraction): Vec =
     interaction.motorVelFromWheelVel * this
 
-private fun Double.wheelToMotorVel(interaction: MotorBotVelInteraction): Vec =
-    interaction.motorVelFromWheelVel * genVec(interaction.numMotors) { this }
 
 /** A [VelocityConstraint] that limit's each motor's angular velocity. */
 open class MaxMotorSpeed protected constructor(
-    private val interaction: MotorBotVelInteraction,
+    private val interaction: MotorBotInteraction,
     private val maxes: Vec
 ) : VelocityConstraint {
 
-    constructor(motorVelModel: MotorBotVelInteraction, maxes: List<Double>) :
+    constructor(motorVelModel: MotorBotInteraction, maxes: List<Double>) :
             this(motorVelModel, maxes.toVec())
 
-    constructor(motorVelModel: MotorBotVelInteraction, max: Double) :
+    constructor(motorVelModel: MotorBotInteraction, max: Double) :
             this(motorVelModel, genVec(motorVelModel.numMotors) { max })
 
     override fun maxVelocity(point: PathPoint): Double =
@@ -126,26 +125,31 @@ open class MaxMotorSpeed protected constructor(
 
 /** A constraint that limit's each wheel's tangential speed. */
 open class MaxWheelTangentialSpeed protected constructor(
-    interaction: MotorBotVelInteraction,
+    interaction: MotorBotInteraction,
+    wheelInteraction: MotorWheelInteraction,
     maxes: Vec
-) : MaxMotorSpeed(interaction, maxes.wheelToMotorVel(interaction)) {
+) : MaxMotorSpeed(interaction, maxes.wheelToMotorVel(wheelInteraction)) {
 
-    constructor(interaction: MotorBotVelInteraction, maxes: List<Double>) :
-            this(interaction, maxes.toVec())
+    constructor(
+        interaction: MotorBotInteraction,
+        wheelInteraction: MotorWheelInteraction, maxes: List<Double>
+    ) : this(interaction, wheelInteraction, maxes.toVec())
 
-    constructor(interaction: MotorBotVelInteraction, max: Double) :
-            this(interaction, genVec(interaction.numMotors) { max })
+    constructor(
+        interaction: MotorBotInteraction,
+        wheelInteraction: MotorWheelInteraction, max: Double
+    ) : this(interaction, wheelInteraction, genVec(interaction.numMotors) { max })
 }
 
 /** A constraint that limit's each motor's speed. */
 open class MaxMotorAcceleration protected constructor(
-    private val interaction: MotorBotVelInteraction,
+    private val interaction: MotorBotInteraction,
     private val maxes: Vec
 ) : AccelerationConstraint {
 
-    constructor(interaction: MotorBotVelInteraction, maxes: List<Double>) : this(interaction, maxes.toVec())
+    constructor(interaction: MotorBotInteraction, maxes: List<Double>) : this(interaction, maxes.toVec())
 
-    constructor(interaction: MotorBotVelInteraction, max: Double) :
+    constructor(interaction: MotorBotInteraction, max: Double) :
             this(interaction, genVec(interaction.numMotors) { max })
 
     override fun accelRange(point: PathPoint, curVelocity: Double): Interval =
@@ -156,15 +160,16 @@ open class MaxMotorAcceleration protected constructor(
  * A constraint that limit's each wheel's tangential acceleration (output acceleration).
  */
 open class MaxWheelTangentialAcceleration protected constructor(
-    interaction: MotorBotVelInteraction,
+    interaction: MotorBotInteraction,
+    motorWheelInteraction: MotorWheelInteraction,
     maxes: Vec
-) : MaxMotorAcceleration(interaction, maxes.wheelToMotorVel(interaction)) {
+) : MaxMotorAcceleration(interaction, maxes.wheelToMotorVel(motorWheelInteraction)) {
 
-    constructor(interaction: MotorBotVelInteraction, maxes: List<Double>) :
-            this(interaction, maxes.toVec().wheelToMotorVel(interaction))
+    constructor(interaction: MotorBotInteraction, motorWheelInteraction: MotorWheelInteraction, maxes: List<Double>) :
+            this(interaction, motorWheelInteraction, maxes.toVec())
 
-    constructor(interaction: MotorBotVelInteraction, max: Double) :
-            this(interaction, max.wheelToMotorVel(interaction))
+    constructor(interaction: MotorBotInteraction, motorWheelInteraction: MotorWheelInteraction, max: Double) :
+            this(interaction, motorWheelInteraction, genVec(motorWheelInteraction.numMotors) { max })
 }
 
 /**
@@ -173,15 +178,15 @@ open class MaxWheelTangentialAcceleration protected constructor(
  * A lot of fun math going around.
  */
 class MaxMotorVoltage private constructor(
-    private val interaction: MotorBotVelInteraction,
+    private val interaction: MotorBotInteraction,
     private val motorVelModel: MotorVelocityModel,
     private val maxes: Vec
 ) : AccelerationConstraint {
 
-    constructor(interaction: MotorBotVelInteraction, motorVelModel: MotorVelocityModel, maxes: List<Double>) :
+    constructor(interaction: MotorBotInteraction, motorVelModel: MotorVelocityModel, maxes: List<Double>) :
             this(interaction, motorVelModel, maxes.toVec())
 
-    constructor(interaction: MotorBotVelInteraction, motorVelModel: MotorVelocityModel, max: Double) :
+    constructor(interaction: MotorBotInteraction, motorVelModel: MotorVelocityModel, max: Double) :
             this(interaction, motorVelModel, genVec(interaction.numMotors) { max })
 
     init {
@@ -213,21 +218,21 @@ class MaxMotorVoltage private constructor(
  */
 class MaxMotorTorque private constructor(
     motorModels: List<MotorModel>,
-    private val interaction: MotorBotVelInteraction,
+    private val interaction: MotorBotInteraction,
     private val motorVelModel: MotorVelocityModel,
     private val maxes: Vec
 ) : AccelerationConstraint {
 
     constructor(
         motorModels: List<MotorModel>,
-        interaction: MotorBotVelInteraction,
+        interaction: MotorBotInteraction,
         motorVelModel: MotorVelocityModel,
         maxes: List<Double>
     ) : this(motorModels, interaction, motorVelModel, maxes.toVec())
 
     constructor(
         motorModels: List<MotorModel>,
-        interaction: MotorBotVelInteraction,
+        interaction: MotorBotInteraction,
         motorVelModel: MotorVelocityModel,
         max: Double
     ) : this(motorModels, interaction, motorVelModel, genVec(interaction.numMotors) { max })

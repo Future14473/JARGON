@@ -7,7 +7,7 @@ import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.MotionOnly
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.angleNorm
-import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
+import org.futurerobotics.jargon.mechanics.MotorBotInteraction
 
 /**
  * A [PipeBlock] that takes in motor _positions_, calculates the difference, and then estimate _bot_ pose delta using
@@ -15,7 +15,7 @@ import org.futurerobotics.jargon.mechanics.MotorBotVelInteraction
  *
  * Maybe pass through a filter first.
  */
-class MotorToBotDelta(private val interaction: MotorBotVelInteraction) : PipeBlock<Vec, Pose2d>(Processing.ALWAYS) {
+class MotorToBotDelta(private val interaction: MotorBotInteraction) : PipeBlock<Vec, Pose2d>(Processing.ALWAYS) {
 
     /** Motor positions input. */
     val motorPositions: Input<Vec> get() = super.input
@@ -44,7 +44,7 @@ class MotorToBotDelta(private val interaction: MotorBotVelInteraction) : PipeBlo
  *
  * This will produce the same values if the values the gyro produces is offset by a constant value.
  */
-class MotorAndGyroToBotDelta(private val interaction: MotorBotVelInteraction) : Block(Processing.ALWAYS) {
+class MotorAndGyroToBotDelta(private val interaction: MotorBotInteraction) : Block(Processing.ALWAYS) {
 
     /** Motor positions input. */
     val motorPositions: Input<Vec> = newInput()
@@ -82,7 +82,7 @@ class MotorAndGyroToBotDelta(private val interaction: MotorBotVelInteraction) : 
  *
  * Maybe pass through a filter first.
  */
-class MotorToBotVel(private val interaction: MotorBotVelInteraction) : PipeBlock<Vec, Pose2d>(Processing.LAZY) {
+class MotorToBotVel(private val interaction: MotorBotInteraction) : PipeBlock<Vec, Pose2d>(Processing.LAZY) {
 
     override fun Context.pipe(input: Vec): Pose2d =
         Pose2d(interaction.botVelFromMotorVel * input)
@@ -91,7 +91,7 @@ class MotorToBotVel(private val interaction: MotorBotVelInteraction) : PipeBlock
 /**
  * A [PipeBlock] that converts bot velocities (pose) into wheel velocities (vec), using the given [interaction]
  */
-class BotToMotorVel(private val interaction: MotorBotVelInteraction) : PipeBlock<Pose2d, Vec>() {
+class BotToMotorVel(private val interaction: MotorBotInteraction) : PipeBlock<Pose2d, Vec>() {
 
     override fun Context.pipe(input: Pose2d): Vec = interaction.motorVelFromBotVel * input.toVec()
 }
@@ -100,7 +100,7 @@ class BotToMotorVel(private val interaction: MotorBotVelInteraction) : PipeBlock
  * A [PipeBlock] that converts bot pose [MotionOnly]  into wheel velocities (vec) [MotionOnly], using the given
  * [interaction].
  */
-class BotToMotorMotion(private val interaction: MotorBotVelInteraction) : MapMotionOnly<Pose2d, Vec>() {
+class BotToMotorMotion(private val interaction: MotorBotInteraction) : MapMotionOnly<Pose2d, Vec>() {
 
     override fun map(value: Pose2d): Vec = interaction.motorVelFromBotVel * value.toVec()
 }

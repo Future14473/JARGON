@@ -98,7 +98,7 @@ interface MotorVelocityModel {
  * for the motor's velocities.
  *
  * This is a tightly coupled model and there is no easy way to account for some types of friction unless at the motor
- * level, and so almost all cases we suggest using [MotorVelocityModel] and bridging with [MotorBotVelInteraction]
+ * level, and so almost all cases we suggest using [MotorVelocityModel] and bridging with [MotorBotInteraction]
  * instead.
  *
  * Models should be _continuous_.
@@ -176,7 +176,7 @@ interface BotVelocityModel {
 /**
  * Represents the transforming of motor velocities/accelerations into bot velocities/accelerations, and vice versa.
  */
-interface MotorBotVelInteraction {
+interface MotorBotInteraction {
 
     /** The number of motors/wheels. */
     val numMotors: Int
@@ -204,7 +204,17 @@ interface MotorBotVelInteraction {
      * @see motorVelFromBotVel
      */
     val botAccelFromMotorAccel: Mat get() = botVelFromMotorVel
+}
 
+/**
+ * Represents the interaction between wheel velocities and motor velocities.
+ */
+interface MotorWheelInteraction {
+
+    /**
+     * The number of motors/wheels.
+     */
+    val numMotors: Int
     // wheel <-> motor
     /**
      * Transforms motor velocities into wheel (tangential) velocities
@@ -215,4 +225,15 @@ interface MotorBotVelInteraction {
      * Transforms a wheel (tangential) velocities into motor velocities
      */
     val motorVelFromWheelVel: Mat
+}
+
+/**
+ * Represents a collection of transmission models.
+ */
+interface TransmissionsModel {
+
+    /**
+     * Gets a list of transmission models.
+     */
+    val transmissions: List<TransmissionModel>
 }

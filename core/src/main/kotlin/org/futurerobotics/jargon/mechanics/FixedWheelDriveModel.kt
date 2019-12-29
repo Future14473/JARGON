@@ -3,10 +3,11 @@ package org.futurerobotics.jargon.mechanics
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.convert.*
+import org.futurerobotics.jargon.util.asUnmodifiableList
 import org.futurerobotics.jargon.util.zipForEachIndexed
 
 /**
- * An implementation of all of [MotorVelocityModel], [BotVelocityModel], and [MotorBotVelInteraction]
+ * An implementation of all of [MotorVelocityModel], [BotVelocityModel], and [MotorBotInteraction]
  * that represents a body that uses ([WheelModel])s and bot mass and moment of inertia.
  *
  * **More importantly**, This model relies on an assumption tha the wheels have perfect traction and are perfectly
@@ -26,7 +27,7 @@ class FixedWheelDriveModel
     wheelsAboutCenter: List<WheelModel>,
     override val isHolonomic: Boolean,
     centerOfGravity: Vector2d = Vector2d.ZERO
-) : MotorVelocityModel, BotVelocityModel, MotorBotVelInteraction {
+) : MotorVelocityModel, BotVelocityModel, MotorBotInteraction, MotorWheelInteraction, TransmissionsModel {
 
     init {
         require(wheelsAboutCenter.isNotEmpty()) { "Drive model needs to have at least one wheel" }
@@ -37,11 +38,7 @@ class FixedWheelDriveModel
     private val wheels: List<WheelModel> = wheelsAboutCenter.map { (l, t) ->
         WheelModel(l.copy(locationAboutCenter = l.locationAboutCenter - centerOfGravity), t)
     }
-    /**
-     * The transmission models that this uses.
-     */
-    // todo: think about this
-    val transmissions: List<TransmissionModel> = wheels.map { it.transmission }
+    override val transmissions: List<TransmissionModel> = wheels.map { it.transmission }.asUnmodifiableList()
     //private
     private val wheelBotDynamicsMatrix: Mat = kotlin.run {
         val velPerOmega = wheels.map { it.wheelPosition.tangentVelPerBotVel }
