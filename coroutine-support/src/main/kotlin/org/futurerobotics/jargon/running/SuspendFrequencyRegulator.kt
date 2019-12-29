@@ -1,26 +1,22 @@
 package org.futurerobotics.jargon.running
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 
 /**
  * A [FrequencyRegulator] that instead supports sync using a suspend function, namely [syncSuspend].
  *
- * The sync function then defaults to use [runBlocking].
+ * The [sync] function should use runblocking.
  */
 interface SuspendFrequencyRegulator : FrequencyRegulator {
 
     /**
-     * Gets the amount of nanoseconds needed to delay so that the time between the last call to [start] is
-     * controlled to this [FrequencyRegulator]'s liking, for the next loop after the call to [start].
+     * Like [sync], but suspends instead of blocking.
      */
     suspend fun syncSuspend()
-
-    override fun sync(): Unit = runBlocking {
-        syncSuspend()
-    }
 }
-
-private const val million = 1_000_000
 
 /**
  * A [SuspendFrequencyRegulator] which has a sync based delaying a number of milliseconds, using [getDelayMillis].
@@ -30,23 +26,23 @@ abstract class DelaySuspendFrequencyRegulator : DelayFrequencyRegulator(), Suspe
     override suspend fun syncSuspend() {
         delay(getDelayMillis())
     }
-
-    override fun sync(): Unit = super<SuspendFrequencyRegulator>.sync()
 }
 
 private fun DelayFrequencyRegulator.delaySuspendRegulatorFromNonSuspend(): DelaySuspendFrequencyRegulator =
     this as? DelaySuspendFrequencyRegulator
         ?: object : DelaySuspendFrequencyRegulator(), FrequencyRegulator by this {
-            override fun getDelayMillis(): Long = this@delaySuspendRegulatorFromNonSuspend.getDelayMillis()
-            override fun sync() = this@delaySuspendRegulatorFromNonSuspend.sync()
+            override fun getDelayMillis() = this@delaySuspendRegulatorFromNonSuspend.getDelayMillis()
+            override fun sync() = super.sync()
         }
 
 private fun FrequencyRegulator.asSuspendFrequencyRegulator(): SuspendFrequencyRegulator =
     this as? SuspendFrequencyRegulator
         ?: (this as? DelayFrequencyRegulator)?.delaySuspendRegulatorFromNonSuspend()
         ?: object : SuspendFrequencyRegulator, FrequencyRegulator by this {
-            override suspend fun syncSuspend() = withContext(Dispatchers.IO) { sync() }
-            override fun sync() = this@asSuspendFrequencyRegulator.sync()
+            @Suppress("BlockingMethodInNonBlockingContext")
+            override suspend fun syncSuspend() = withContext(Dispatchers.IO) {
+                sync()
+            }
         }
 
 /**
@@ -58,14 +54,14 @@ private fun FrequencyRegulator.asSuspendFrequencyRegulator(): SuspendFrequencyRe
  */
 class SuspendLoopSystemRunner(
     private val system: LoopSystem, regulator: FrequencyRegulator
-) : SuspendRunnable {
+) : SuspendFunction<Unit> {
 
     private val regulator = regulator.asSuspendFrequencyRegulator()
     /**
      * Runs the system.
      * @see LoopSystemRunner
      */
-    override suspend fun runSuspend() {
+    override suspend fun invoke() {
         try {
             system.init()
             regulator.start()

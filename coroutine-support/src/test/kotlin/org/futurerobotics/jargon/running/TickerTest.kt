@@ -11,7 +11,7 @@ internal class TickerTest {
 
     @Test
     fun itTicks() = runBlocking {
-        val ticker = ManualTicker()
+        val ticker = BaseTicker()
         launch {
             repeat(5) {
                 println("ticking $it")
@@ -28,7 +28,7 @@ internal class TickerTest {
 
     @Test
     fun allTicks() = runBlocking<Unit> {
-        val ticker = ManualTicker()
+        val ticker = BaseTicker()
         val random = Random("Ticks work".hashCode())
         val times = 5
 

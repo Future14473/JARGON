@@ -15,14 +15,20 @@ import kotlinx.coroutines.yield
  * of up to a configurable number of "missed" ticks: if calls to wait for ticks run slower than the ticks,
  * it will not wait for the following tick but immediately continue.
  *
- * All methods are be thread-safe.
+ * All methods are thread-safe.
  *
- * @see ManualTicker
+ * @see BaseTicker
  */
 interface Ticker {
 
     /** Creates a new [TickerListener]. See [Ticker] doc. */
     fun listener(maximumTicksBehind: Int = Int.MAX_VALUE): TickerListener
+
+    /** Ticks once. */
+    fun tick()
+
+    /** Ticks the given number of [times]. */
+    fun tickTimes(times: Int)
 }
 
 /**
@@ -82,19 +88,17 @@ interface TickerListener {
 }
 
 /**
- * Base implementation of [Ticker], where ticks can be made via the [tick] or [tickTimes] function.
+ * Base implementation of [Ticker].
  */
-abstract class BaseTicker : Ticker {
+open class BaseTicker : Ticker {
 
     private val tick = atomic(Tick(0, CompletableDeferred()))
 
-    /** Ticks once. */
-    protected open fun tick() {
+    override fun tick() {
         tickTimes(1)
     }
 
-    /** Ticks a number of [times]. */
-    protected open fun tickTimes(times: Int) {
+    override fun tickTimes(times: Int) {
         val deferred = CompletableDeferred<Nothing?>()
         tick.getAndUpdate {
             //replace with next number, atomically.
@@ -169,24 +173,14 @@ abstract class BaseTicker : Ticker {
 }
 
 /**
- * A ticker in which [tick]s can be done manually.
- */
-class ManualTicker : BaseTicker() {
-
-    public override fun tick(): Unit = super.tick()
-
-    public override fun tickTimes(times: Int): Unit = super.tickTimes(times)
-}
-
-/**
  * A ticker that uses a [SuspendFrequencyRegulator] to run ticks.
  *
- * Some coroutine needs to [runSuspend] this in order to work.
+ * Some coroutine needs to [invoke] this in order to work.
  *
  * @see TickerListeningRegulator
  */
-class FrequencyRegulatedTicker(private val regulator: SuspendFrequencyRegulator) : BaseTicker(),
-                                                                                   SuspendRunnable {
+class FrequencyRegulatedTicker(private val regulator: FrequencyRegulator) : BaseTicker(),
+                                                                            SuspendFunction<Unit> {
 
     private val system = object : LoopSystem {
         override fun loop(loopTimeInNanos: Long): Boolean {
@@ -195,8 +189,8 @@ class FrequencyRegulatedTicker(private val regulator: SuspendFrequencyRegulator)
         }
     }
 
-    override suspend fun runSuspend() {
-        SuspendLoopSystemRunner(system, regulator).runSuspend()
+    override suspend fun invoke() {
+        SuspendLoopSystemRunner(system, regulator).invoke()
     }
 }
 
