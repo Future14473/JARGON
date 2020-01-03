@@ -39,7 +39,7 @@ repositories {
 
 plugins {
     kotlin("jvm") version "1.3.61"
-    id("org.jetbrains.dokka") version "0.10.0"
+//    id("org.jetbrains.dokka") version "0.10.0"
     `maven-publish`
 }
 subprojects {
@@ -75,7 +75,7 @@ fun Project.configureKotlin() {
     }
 }
 
-//workaround issues with apply from kts
+//workaround for issues with apply from kts
 fun Project.configureTests() {
     dependencies {
         testImplementation(junit5)
@@ -94,21 +94,25 @@ fun Project.configureTests() {
 
 fun Project.configurePublish() {
     apply(plugin = "org.gradle.maven-publish")
+/*
     apply(plugin = "org.jetbrains.dokka")
 
     tasks.dokka {
         outputFormat = "html"
         outputDirectory = "$buildDir/javadoc"
     }
+ */
     val sourcesJar by tasks.creating(Jar::class) {
         from(sourceSets.main.get().allSource)
         archiveClassifier.set("sources")
     }
+    /*
     val dokkaJar by tasks.creating(Jar::class) {
         group = JavaBasePlugin.DOCUMENTATION_GROUP
         archiveClassifier.set("javadoc")
         from(tasks.dokka)
     }
+    */
 
     publishing {
         publications {
