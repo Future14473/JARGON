@@ -10,63 +10,64 @@ import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.asUnmodifiableSet
 import org.futurerobotics.jargon.util.replaceIf
 import org.futurerobotics.jargon.util.uncheckedCast
-import kotlin.math.roundToInt
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashSet
 
 private sealed class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>
 constructor(paths: List<Path>) : GenericPath<Point> {
 
     private val paths: List<Path>
     private val startLengths: DoubleArray
+
     final override val length: Double
     final override val stopPoints: Set<Double>
+    final override val requiredPoints: Set<Double>
 
     init {
         require(paths.isNotEmpty()) { "MultiplePath needs at least one path segment" }
-        val flatPaths = ArrayList<Path>(paths.size)
-        paths.forEach {
-            if (it is MultipleGeneric<*, *>) flatPaths += it.paths.uncheckedCast<List<Path>>()
-            else flatPaths += it
+        val flatPaths = paths.flatMap {
+            if (it is MultipleGeneric<*, *>)
+                it.paths.uncheckedCast<List<Path>>()
+            else Collections.singleton(it)
+        }
+        val realPaths = ArrayList<Path>()
+
+        val capacity = flatPaths.size * 2
+        var prevPath: Path? = null
+        val startLengths = ArrayList<Double>(capacity)
+        val stopPoints = HashSet<Double>(capacity)
+        val requiredPoints = HashSet<Double>(capacity)
+        var curLen = 0.0
+
+        fun addPath(path: Path) {
+            realPaths += path
+            startLengths += curLen
+            stopPoints += path.stopPoints.asSequence().map { it + curLen }
+            requiredPoints += path.requiredPoints.asSequence().map { it + curLen }
+            curLen += path.length
+            requiredPoints += curLen
+            prevPath = path
         }
 
-        val stops = hashSetOf<Double>()
-        val initialCapacity = (flatPaths.size * 1.05).roundToInt()
-        val startLengths = ArrayList<Double>(initialCapacity)
-        val realPaths = ArrayList<Path>(initialCapacity)
-
-        var curLen = 0.0
-        var prevPath: Path? = null
         flatPaths.forEach { curPath ->
             prevPath?.let { prevPath ->
                 when (val action = checkCont(prevPath, curPath)) {
                     is PathAction.AddPointTurn -> {
                         val turn = action.getTurn().uncheckedCast<Path>()
-                        realPaths += turn
-                        startLengths += curLen
-                        stops += turn.stopPoints.map { it + curLen }
-                        curLen += turn.length
+                        addPath(turn)
                     }
-                    PathAction.Stop -> stops += curLen
+                    PathAction.Stop -> stopPoints += curLen
                 }
             }
-            //dup code... any way around this?
-            realPaths += curPath
-            startLengths += curLen
-            stops += curPath.stopPoints.map { it + curLen }
-            curLen += curPath.length
-            prevPath = curPath
+            addPath(curPath)
         }
-        length = curLen
-        this.paths = realPaths
-        this.stopPoints = stops.asUnmodifiableSet()
-        this.startLengths = startLengths.toDoubleArray()
-    }
 
-    override val requiredPoints: Set<Double> = hashSetOf<Double>().let {
-        it += stopPoints
-        for (i in 1 until startLengths.size - 1) {
-            it += startLengths[i]
-        }
-        it.asUnmodifiableSet()
+        this.paths = realPaths
+        this.startLengths = startLengths.toDoubleArray()
+        this.length = curLen
+        this.stopPoints = stopPoints.asUnmodifiableSet()
+        this.requiredPoints = requiredPoints.asUnmodifiableSet()
     }
 
     /** Gets a [Point] for a point [s] units along this path. */
