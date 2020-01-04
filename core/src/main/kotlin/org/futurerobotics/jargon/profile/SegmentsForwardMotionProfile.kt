@@ -78,6 +78,7 @@ class SegmentsForwardMotionProfile private constructor(private val segments: Lis
          */
         @JvmStatic
         fun fromPointVelPairs(pairs: List<Pair<Double, Double>>): SegmentsForwardMotionProfile {
+            require(pairs.isNotEmpty()) { "Must have at least one point" }
             require(pairs.all { it.first.isFinite() && it.second.isFinite() }) { "All x and v should be finite" }
             require(pairs.isSortedBy { it.first }) { "Motion must be progressing forward; x's must progress forward" }
             require(pairs.all { it.second >= 0 }) { "Motion must be progressing forward; All velocities must be >= 0" }

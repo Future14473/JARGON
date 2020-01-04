@@ -1,8 +1,8 @@
 package org.futurerobotics.jargon.profile
 
 import org.futurerobotics.jargon.util.Stepper
-import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.Future
 
 /**
@@ -18,49 +18,69 @@ import java.util.concurrent.Future
  */
 class TimeProfiledWithCallbacks<out T : Any, P : TimeProfiled<T>>(private val profiled: P) : TimeProfiled<T> {
 
-    private val callbacks = TreeSet<TimeFuture>()
+    private val callbacks = ConcurrentSkipListSet<TimeCallback>()
 
-    private class TimeFuture(val time: Double, val future: CompletableFuture<Nothing?>) : Comparable<TimeFuture> {
-        override fun compareTo(other: TimeFuture) = time.compareTo(other.time)
+    private class TimeCallback(val time: Double, val callback: Runnable) : Comparable<TimeCallback> {
+        override fun compareTo(other: TimeCallback) = time.compareTo(other.time)
     }
 
     /**
-     * Adds a [Future] that will be complete when traversed pass the given [time].
+     * Adds a [callback] that will run when traversed pass the given [time].
+     *
+     * The callback should be a short, thread-safe, and not throw exceptions, as it is called when the profiled
+     * is traversed.
      */
-    fun addCallback(time: ProfileTimeIndicator<P>): Future<*> = addCallback(time.getTime(profiled))
+    fun addCallback(time: ProfileTimeIndicator<P>, callback: Runnable) = addCallback(time.getTime(profiled), callback)
 
     /**
-     * Adds a [Future] that will be complete when traversed pass the given [time].
+     * Adds a [callback] that will run when traversed pass the given [time].
+     *
+     * The callback should be a short, thread-safe, and not throw exceptions, as it is called when the profiled
+     * is traversed.
      */
-    fun addCallback(time: Double): Future<*> {
+    fun addCallback(time: Double, callback: Runnable) {
         require(time.isFinite()) { "Time ($time) must be finite" }
-        val future = CompletableFuture<Nothing?>()
-        callbacks += TimeFuture(
-            time,
-            future
-        )
-        return future
+        callbacks += TimeCallback(time, callback)
     }
+
+    /**
+     * Returns a future that will complete when traversed pass the given [time].
+     *
+     * If running on android, __this can only be used with android API level 24+__.
+     */
+    fun addFuture(time: Double): CompletableFuture<*> = CompletableFuture<Nothing?>().also {
+        addCallback(time, Runnable { it.complete(null) })
+    }
+
+    /**
+     * Returns a future that will complete when traversed pass the given [time].
+     *
+     * If running on android, __this can only be used with android API level 24+__.
+     */
+    fun addFuture(time: ProfileTimeIndicator<P>): CompletableFuture<*> = addFuture(time.getTime(profiled))
 
     override val duration: Double
         get() = profiled.duration
 
     override fun atTime(time: Double): T {
-        runFutures(time)
+        runCallbacks(time)
         return profiled.atTime(time)
     }
 
     override fun stepper(): Stepper<T> {
         val stepper = profiled.stepper()
         return Stepper { t ->
-            runFutures(t)
+            runCallbacks(t)
             stepper.stepTo(t)
         }
     }
 
-    private fun runFutures(time: Double) {
-        while (callbacks.isNotEmpty() && callbacks.first().time <= time)
-            callbacks.pollFirst()!!.future.complete(null)
+    private tailrec fun runCallbacks(time: Double) {
+        val callback = callbacks.pollFirst() ?: return
+        if (callback.time <= time) {
+            callback.callback.run()
+            runCallbacks(time)
+        }
     }
 }
 

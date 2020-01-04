@@ -27,6 +27,11 @@ fun Double.epsEq(other: Double, epsilon: Double): Boolean = abs(this - other) < 
  */
 inline fun Double.ifNan(alternate: () -> Double): Double = if (isNaN()) alternate() else this
 
+/**
+ * Returns [this] if [isFinite], else the value given by [alternate]
+ */
+inline fun Double.ifNonFinite(alternate: () -> Double): Double = if (!isFinite()) alternate() else this
+
 /** Returns the average of [a] and [b] */
 fun avg(a: Double, b: Double): Double = (a + b) / 2
 

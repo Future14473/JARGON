@@ -16,11 +16,10 @@ import kotlin.math.ceil
 class DoubleProgression private constructor(
     val first: Double,
     val last: Double,
-    step: Double,
+    val step: Double,
     val segments: Int
 ) : Iterable<Double> {
 
-    val step: Double = step.ifNan { 0.0 }
     /**
      * If this progression is empty or not
      */
@@ -80,9 +79,13 @@ class DoubleProgression private constructor(
         fun fromNumSegments(start: Double, endInclusive: Double, segments: Int): DoubleProgression {
             require(start.isFinite()) { "start ($start) should be finite" }
             require(endInclusive.isFinite()) { "endInclusive ($endInclusive) should be finite" }
-            require(start != endInclusive) { "first and last cannot be same value" }
-            require(segments >= 0) { "Number of segments must be > 0, got $segments instead" }
-            return DoubleProgression(start, endInclusive, (endInclusive - start) / segments, segments)
+            require(segments >= 0) { "Number of segments ($segments) must be >= 0" }
+            return DoubleProgression(
+                start,
+                endInclusive,
+                ((endInclusive - start) / segments).ifNonFinite { 0.0 },
+                segments
+            )
         }
     }
 }

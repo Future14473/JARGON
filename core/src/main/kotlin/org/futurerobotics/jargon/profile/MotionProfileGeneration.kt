@@ -1,4 +1,4 @@
-@file:JvmName("GenerateMotionProfile")
+@file:JvmName("MotionProfileGeneration")
 @file:Suppress("ExplicitThis")
 
 package org.futurerobotics.jargon.profile
@@ -15,8 +15,6 @@ import kotlin.math.*
 /**
  * Calculates an approximately optimal [ForwardMotionProfile], given a [MotionProfileConstrainer] and
  * [MotionProfileGenParams].
- *
- * If the total distance is 0.0, a [PointMotionProfile] will be used.
  *
  * This uses a modified version of the algorithm described in section 3.2 of:
  *  [http://www2.informatik.uni-freiburg.de/~lau/students/Sprunk2008.pdf].
@@ -38,18 +36,8 @@ fun generateDynamicProfile(
     params: MotionProfileGenParams
 ): ForwardMotionProfile = params.run {
     require(totalDistance >= 0) { "distance ($totalDistance) must be >= 0" }
-    if (totalDistance == 0.0) return PointMotionProfile(
-        0.0,
-        min(
-            params.targetStartVel,
-            constrainer.stepper().stepTo(0.0).maxVelocity
-        )
-    )
 
-    require(maxSegmentSize <= totalDistance) {
-        "segmentSize ($maxSegmentSize) must be <= dist ($totalDistance)"
-    }
-    val segments = ceil(totalDistance / this.maxSegmentSize).toInt()
+    val segments = ceil(totalDistance / maxSegmentSize).toInt()
     val points: List<Double> = DoubleProgression.fromNumSegments(0.0, totalDistance, segments)
         .toSortedSet()
         .also { it.addAll(constrainer.requiredPoints) }
@@ -81,7 +69,6 @@ fun generateDynamicProfile(
 }
 
 private const val MAX_VEL = 10000.0
-private const val EXTENDING_SEARCH_INITIAL_STEP_RATIO = 2
 
 private fun accelerationPass(
     maxVels: MutableList<Double>,
@@ -133,7 +120,7 @@ private fun throwBadAccelAtZeroVel(x1: Double, x2: Double, reversed: Boolean): N
  * @param targetStartVel the target start velocity of the profile. May actually be lower if constraints are not
  * satisfied.
  * @param targetEndVel the target end vel. May actually be lower if constraints demand it.
- * @param maxSegmentSize the maximum segment size allowed when the object is divided.
+ * @param maxSegmentSize the maximum segment size allowed when the distance is divided.
  * @param maxVelSearchTolerance the tolerance used when binary searching the maximum velocity due to _acceleration_
  *      constraints. Note that we made an effort to avoid binary search as much possible and the algorithm is
  *      heuristically optimized.

@@ -4,7 +4,6 @@ import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
 import org.futurerobotics.jargon.profile.TimeProfiled
 import org.futurerobotics.jargon.util.Stepper
-import java.util.concurrent.CompletableFuture
 
 /**
  * Base class for implementing a block that follows a motion profile.
@@ -15,8 +14,6 @@ import java.util.concurrent.CompletableFuture
  * Inputs:
  * - [profileInput]: The [TimeProfiled] object to follow, or null to indicate to idling at the last reference given.
  *      WILL ONLY BE POLLED upon reaching end of the previous motion profile, or input #2 is pulsed:
- * - [profileWithCallback]: Profiles can also be given with a [CompletableFuture] which will be called
- *   when the profile is done being traversed. This will be prioritized over [profileInput]
  * - [stop] to stop following motion profile. When given `true`, will immediately cancel following the
  *      current motion profile and the next profile will be polled, if any. For example, using [Pulse].
  * Subclasses may specify other inputs, starting with #3.
@@ -34,8 +31,6 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
 
     /** The motion profile input. See [MotionProfileFollower]*/
     val profileInput: Input<TimeProfiled<T>?> = newOptionalInput()
-    /** Motion profile input with callbacks. See [MotionProfileFollower] */
-    val profileWithCallback: Input<Pair<TimeProfiled<T>, CompletableFuture<*>>?> = newOptionalInput()
     /** The stop input. See [MotionProfileFollower] */
     val stop: Input<Boolean?> = newOptionalInput()
     /** The output from the motion profile this [MotionProfileFollower] is at. */
@@ -51,14 +46,12 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
     private var outputValue: T = initialOutput
     private var currentTime: Double = 0.0
     private var currentProfile: TimeProfiled<T>? = null
-    private var currentCallback: CompletableFuture<*>? = null
     private var currentStepper: Stepper<T>? = null //if null; means poll more.
 
     final override fun init() {
         outputValue = initialOutput
         currentTime = 0.0
         currentProfile = null
-        currentCallback = null
         currentStepper = null
     }
 
@@ -74,17 +67,10 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
         var stepper = currentStepper
         val stop = stop.get == true
         if (stop || stepper === null) {//always poll stop
-            currentCallback?.let {
-                if (stop) it.cancel(false) else it.complete(null)
-            }
-            currentCallback = null
-            val newProfile = profileWithCallback.get?.let {
-                currentCallback = it.second
-                it.first
-            } ?: profileInput.get ?: return
+            val newProfile = profileInput.get ?: return
+            currentProfile = newProfile
             currentTime = 0.0
             stepper = newProfile.stepper()
-            currentProfile = newProfile
             currentStepper = stepper
         } else {
             currentTime = getNextTime(currentTime, outputValue)
