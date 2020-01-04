@@ -1,46 +1,99 @@
 package org.futurerobotics.jargon.pathing
 
-import org.futurerobotics.jargon.math.Derivatives
-import org.futurerobotics.jargon.math.ValueDerivatives
+import org.futurerobotics.jargon.math.LinearMotionState
+import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.angleNorm
-import org.futurerobotics.jargon.math.function.MathFunction
+import org.futurerobotics.jargon.math.function.QuinticPolynomial
+import org.futurerobotics.jargon.math.function.RealFunction
+import org.futurerobotics.jargon.math.function.invoke
+import org.futurerobotics.jargon.math.function.motionState
 
-/** A [HeadingProvider] that maintains a constant heading of [angle] */
-class ConstantHeading(angle: Double) : HeadingProvider {
+/** A [HeadingProvider] that maintains a constant `heading`. */
+class ConstantHeading(heading: Double) : HeadingProvider {
 
-    private val angle = angleNorm(angle)
-    private val derivatives = ValueDerivatives(angle, 0.0, 0.0)
-    override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = derivatives
+    private val output = LinearMotionState(angleNorm(heading), 0.0, 0.0)
+    override fun getHeading(point: CurvePoint, s: Double): LinearMotionState = output
 }
 
-/** A [HeadingProvider] that interpolates linearly among two angles, starting at [fromAngle] and turning [turnAngle] */
-class LinearInterpolatedHeading(private val fromAngle: Double, private val turnAngle: Double) :
+/**
+ * A [HeadingProvider] that interpolates linearly along the curve from `fromHeading` to `toHeading`.
+ * @see PolyInterpolatedHeading
+ */
+class LinearlyInterpolatedHeading(fromHeading: Double, toHeading: Double) : HeadingProvider {
+
+    private val fromHeading = angleNorm(fromHeading)
+    private val turnHeading = angleNorm(toHeading - fromHeading)
+
+    override fun getHeading(point: CurvePoint, s: Double): LinearMotionState {
+        val dcl = turnHeading / point.originalLength
+        return LinearMotionState(angleNorm(fromHeading + s * dcl), dcl, 0.0)
+    }
+}
+
+/** A [HeadingProvider] that interpolates using a [QuinticPolynomial] along the curve from `fromHeading` to `toHeading`.
+ *
+ * This allows for smooth interpolation between curves.
+ * @see LinearlyInterpolatedHeading
+ */
+class PolyInterpolatedHeading(fromHeading: MotionState<Double>, toHeading: MotionState<Double>) :
     HeadingProvider {
 
-    override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> {
-        val dcl = turnAngle / point.length
-        return ValueDerivatives(angleNorm(fromAngle + s * dcl), dcl, 0.0)
+    private val spline = QuinticPolynomial.fromDerivatives(fromHeading, toHeading)
+    override fun getHeading(point: CurvePoint, s: Double): LinearMotionState =
+        spline.motionState(s / point.originalLength)
+}
+
+/** A [HeadingProvider] that has the heading equal to the curve's tangent angle, plus an optional [offset]. */
+open class TangentHeading
+@JvmOverloads constructor(offset: Double = 0.0) : HeadingProvider {
+
+    private val offset = angleNorm(offset)
+    final override fun getHeading(point: CurvePoint, s: Double): LinearMotionState =
+        LinearMotionState(
+            angleNorm(point.tanAngle + offset),
+            point.tanAngleDeriv,
+            point.tanAngleSecondDeriv
+        )
+
+    companion object : TangentHeading(0.0)
+}
+
+/**
+ * A [HeadingProvider] that is like [TangentHeading], but the offset is linearly interpolated from `fromOffset` to
+ * `toOffset`.
+ */
+open class LinearlyInterpolatedTangentHeading
+constructor(fromOffset: Double, toOffset: Double) : HeadingProvider {
+
+    private val fromOffset = angleNorm(fromOffset)
+    private val turnOffset = angleNorm(toOffset - this.fromOffset)
+
+    override fun getHeading(point: CurvePoint, s: Double): LinearMotionState {
+        val dcl = turnOffset / point.originalLength
+        return LinearMotionState(
+            angleNorm(point.tanAngle + fromOffset + s * dcl),
+            dcl + point.tanAngle,
+            point.tanAngleSecondDeriv
+        )
     }
 }
 
-/** The singleton [HeadingProvider] that has the heading equal to the curve's tangent angle. Use for non-holonomic drives. */
-object TangentHeading : HeadingProvider {
+/**
+ * A [HeadingProvider] that is like [TangentHeading], but the offset is polynomial interpolated from `fromOffset` to
+ * `toOffset`.
+ */
+class PolyInterpolatedTangentHeading(fromOffset: MotionState<Double>, toOffset: MotionState<Double>) :
+    HeadingProvider {
 
-    override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = object : Derivatives<Double> {
-        override val value: Double get() = point.tanAngle
-        override val deriv: Double get() = point.tanAngleDeriv
-        override val secondDeriv: Double get() = point.tanAngleSecondDeriv
-    }
-}
+    private val spline = QuinticPolynomial.fromDerivatives(fromOffset, toOffset)
 
-/** A [HeadingProvider] that has the heading equal to the curve's tangent angle plus [angleOffset]. */
-class OffsetTangentHeading(angleOffset: Double) : HeadingProvider {
-
-    private val angleOffset = angleNorm(angleOffset)
-    override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = object : Derivatives<Double> {
-        override val value: Double get() = point.tanAngle + angleOffset
-        override val deriv: Double get() = point.tanAngleDeriv
-        override val secondDeriv: Double get() = point.tanAngleSecondDeriv
+    override fun getHeading(point: CurvePoint, s: Double): LinearMotionState {
+        val state = spline.motionState(s / point.originalLength)
+        return LinearMotionState(
+            angleNorm(point.tanAngle + state.s),
+            point.tanAngleDeriv + state.v,
+            point.tanAngleSecondDeriv + state.a
+        )
     }
 }
 
@@ -48,15 +101,14 @@ class OffsetTangentHeading(angleOffset: Double) : HeadingProvider {
  * A [HeadingProvider] that uses an arbitrary function on the domain [0, 1] corresponding to progress along a curve
  * to provide heading.
  */
-class FunctionHeading(private val function: MathFunction) : HeadingProvider {
+class FunctionHeading(private val function: RealFunction) : HeadingProvider {
 
-    override fun getHeading(point: CurvePoint, s: Double): Derivatives<Double> = object : Derivatives<Double> {
-        private val t = s / point.length
-        override val value: Double
-            get() = angleNorm(function(s / point.length))
-        override val deriv: Double
-            get() = function.deriv(t)
-        override val secondDeriv: Double
-            get() = function.secondDeriv(t)
+    override fun getHeading(point: CurvePoint, s: Double): LinearMotionState {
+        val t = s / point.originalLength
+        return LinearMotionState(
+            angleNorm(function(t)),
+            function.deriv(t),
+            function.secondDeriv(t)
+        )
     }
 }

@@ -1,4 +1,5 @@
-@file:Suppress("NOTHING_TO_INLINE")
+@file:JvmMultifileClass
+@file:JvmName("Paths")
 
 package org.futurerobotics.jargon.pathing
 
@@ -7,12 +8,13 @@ import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
 
 /**
- * Represents a curve or path, with the given [Point]. This generic intermediary is to solve the generics problem
- * so that you are can have a type that is either a [Path] or a [Curve]
+ * Common superclass of [Curve] and [Path], outputting a given [Point] type.
  *
- * GenericCurve<? extends CurvePoint> or GenericCurve<out CurvePoint> is the superclass of both [Curve] and [Path]
+ * This allows for some unification between [Curve] and [Path].
+ *
+ * GenericCurve<*>/GenericCurve<?> is the superclass of both [Curve] and [Path].
  */
-interface GenericPath<out Point : CurvePoint> : Steppable<Double, Point> {
+interface GenericPath<out Point : CurvePoint> : Steppable<Point> {
 
     /**
      * The total (arc) length of this curve/path, and the maximum `s` value the functions
@@ -20,17 +22,34 @@ interface GenericPath<out Point : CurvePoint> : Steppable<Double, Point> {
      */
     val length: Double
 
-    /**
-     * Returns a Point containing info about the point [s] units along this path.
-     */
+    /** Returns a Point containing info about the point [s] units along this path. */
     fun pointAt(s: Double): Point
 
+    /** Gets a stepper that steps through points along the path. */
+    override fun stepper(): Stepper<Point> = Stepper(::pointAt)
+
+    /** A set of points that it is required for the bot to stop at. */
+    val stopPoints: Set<Double>
+        get() = emptySet()
+
     /**
-     * Gets a stepper that steps through points along the path, returning a Point containing info about that point.
+     * A set of points that the trajectory generation algorithm must consider.
+     *
+     * This should include [stopPoints].
      */
-    override fun stepper(): Stepper<Double, Point> =
-        Stepper { pointAt(it) }
+    val requiredPoints: Set<Double>
+        get() = stopPoints
 }
+
+/**
+ * Gets the first point of this Curve/Path.
+ */
+fun <Point : CurvePoint> GenericPath<Point>.startPoint(): Point = pointAt(0.0)
+
+/**
+ * Gets the last point of this Curve/Path.
+ */
+fun <Point : CurvePoint> GenericPath<Point>.endPoint(): Point = pointAt(length)
 
 /**
  * Represents a parametric curve. ***parameterized by arc length***, without heading. This is essentially a [Path] but
@@ -53,31 +72,19 @@ interface Curve : GenericPath<CurvePoint>
  *
  * All data about points along the curve is contained within a [PathPoint] via [pointAt] (position, derivatives, etc)
  *
- * This can be obtained by attaching a [HeadingProvider] to an arbitrary [Curve] via [ComponentPath] or equivalently via
+ * This can be obtained by attaching a [HeadingProvider] to an arbitrary [Curve] via [CurveHeadingPath] or equivalently via
  * [addHeading]
  *
  * @see PathPoint
  * @see Curve
  */
-interface Path : GenericPath<PathPoint> {
-
-    /**
-     * @return true if this is a point turn; i.e. position does not change but heading does.
-     * If so, length will have to be 1.0, and all position-related info should return 0 or Vector.ZERO
-     */
-    val isPointTurn: Boolean get() = false
-}
+interface Path : GenericPath<PathPoint>
 
 /**
- * Returns this path as a [Curve] instead.
+ * Returns this [GenericPath] as a [Curve].
  */
 fun GenericPath<*>.asCurve(): Curve = when (this) {
     is Curve -> this
-    is ComponentPath -> this.curve
+    is CurveHeadingPath -> curve
     else -> object : Curve, GenericPath<CurvePoint> by this {}
 }
-//fun test() {
-//    val path: Path? = null
-//    val curve: Curve? = path //path is-A Curve!!! YES
-//}
-

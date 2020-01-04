@@ -113,4 +113,6 @@ gradle-app.setting
 # gradle/wrapper/gradle-wrapper.properties
 
 */graphs/
+tmp/
 .idea/git_toolbox_prj.xml
+.idea/jarRepositories.xml

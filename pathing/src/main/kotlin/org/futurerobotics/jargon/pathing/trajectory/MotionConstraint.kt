@@ -4,103 +4,113 @@ import org.futurerobotics.jargon.math.Interval
 import org.futurerobotics.jargon.pathing.PathPoint
 
 /**
- * Common superclass of all Motion Constraints, used in a [MotionConstraintSet] for dynamic motion profile generation.
+ * Common interface of all motion constraints, used in a [MotionConstraintSet] for dynamic motion profile generation.
+ *
  * This includes:
- * - [VelocityConstraint], a constraint on velocities at points on a path,
- * - [AccelConstraint], a constraint on acceleration at a point given current velocity,
+ * - [VelocityConstraint], a constraint on the maximum velocity at given points along a path
+ * - [AccelerationConstraint], a constraint on the allowed accelerations at points along a path
  * - [MultipleConstraint], a combination of one or more of the above.
+ *
+ * Interfaces of [MotionConstraint] that are not one of the above will be ignored.
  */
-sealed class MotionConstraint
+interface MotionConstraint
 
 /**
- * Common superclass of both VelocityConstraint and AccelConstraint, but not MultipleConstraint.
+ * Common interface of both [VelocityConstraint] and [AccelerationConstraint], but not MultipleConstraint.
  */
-sealed class SingleConstraint : MotionConstraint() {
+interface SingleConstraint : MotionConstraint {
 
     /**
-     * Compares this constraint to another constraint; and returns true if it is known that this constraint is always
+     * Compares this constraint to another constraint, and if it is known that this constraint is always
      * more or equally restrictive compared to [other] constraint (other constraint is redundant).
      *
-     * If not known, return false.
+     * If not known or not same class, return false.
      */
-    open fun otherIsRedundant(other: MotionConstraint): Boolean = false
+    fun otherIsRedundant(other: SingleConstraint): Boolean = false
 }
 
 /**
- * Represents a constraint on velocity (in arc length) for any point on a path, given the data provided in [PathPoint].
+ * A constraint on the maximum _tangential_ velocity for points on a path.
+ *
+ * @see MotionConstraint
+ * @see SingleConstraint
+ * @see PathPoint
  */
-abstract class VelocityConstraint : SingleConstraint() {
+interface VelocityConstraint : SingleConstraint {
 
     /**
-     * Returns the maximum possible velocity given by this constraint, given the current path [point] info.
+     * Returns the maximum allowed velocity given by this constraint at the given [point].
      * Maximum velocity must be >= 0.
      */
-    abstract fun maxVelocity(point: PathPoint): Double
+    fun maxVelocity(point: PathPoint): Double
 }
 
 /**
- * Represents a constraint on acceleration (in arc length) for any point along a path, give the data provided in [PathPoint] and
- * the current velocity (of arc length) along this path.
+ * A constraint on the range of allowable _tangential_ accelerations for points on a path.
+ *
+ * @see MotionConstraint
+ * @see SingleConstraint
+ * @see PathPoint
+ * @see Interval
  */
-abstract class AccelConstraint : SingleConstraint() {
+interface AccelerationConstraint : SingleConstraint {
 
     /**
-     * Returns an [Interval] of position accelerations (both positive and negative) given by this constraint,
-     * given the current path [point] info and [curVelocity].
+     * Returns an [Interval] of allowable accelerations (both positive and negative) at the given [point],
+     * also given the [curVelocity] at that point.
      *
-     * It is assumed (in profile generation) that if the velocity is slower, this constraint is somewhat more lenient
-     * and/or has values closer to 0
+     * It is assumed that if the [curVelocity] is lower, this constraint is more lenient, or contains values closer
+     * to 0.
+     *
+     * This _may_ be called multiple times with the same [point] but different [curVelocity].
      */
-    abstract fun maxAccelRange(point: PathPoint, curVelocity: Double): Interval
+    fun accelRange(point: PathPoint, curVelocity: Double): Interval
 }
 //
 //interface JerkConstraint {
 //   Algorithm does not yet support this, and theoretically it would be slow.
-//   Instead, possible non-dynamic profiles or CONSTANT jerk constraint used instead.
+//   Instead, non-dynamic profiles or CONSTANT jerk constraint used instead; in the future?
 //}
 /**
- * Represents a constraint that needs to be represented by both one or more of [VelocityConstraint] and [AccelConstraint] together.
+ * Represents a constraint that needs to be represented by both one or more of [VelocityConstraint] and [AccelerationConstraint] together.
  */
-abstract class MultipleConstraint : MotionConstraint() {
+interface MultipleConstraint : MotionConstraint {
 
     /** The [VelocityConstraint] components of this multiple constraint */
-    abstract val velocityConstraints: Collection<VelocityConstraint>
-    /** Th [AccelConstraint] components of this multiple constraint */
-    abstract val accelConstraints: Collection<AccelConstraint>
+    val velocityConstraints: Collection<VelocityConstraint>
+    /** The [AccelerationConstraint] components of this multiple constraint */
+    val accelerationConstraints: Collection<AccelerationConstraint>
 }
 
 /**
- * A base implementation of a [VelocityConstraint] based upon some positive max value, where if the maximum value is lower, it
- * implies more restrictive constraint.
+ * A constraint that is based off of some [max] value.
  *
- * @property max the maximum value of something
+ * A lower max value implies a more restrictive constraint (see [SingleConstraint.otherIsRedundant]).
+ *
+ * @property max the maximum allowed value of something.
  */
-abstract class MaxBasedVelocityConstraint(protected val max: Double) : VelocityConstraint() {
+abstract class MaxBasedConstraint(@JvmField protected val max: Double) : SingleConstraint {
 
     init {
         require(max > 0) { "Max value $max gives impossible constraint" }
     }
 
-    override fun otherIsRedundant(other: MotionConstraint): Boolean =
-        other is MaxBasedVelocityConstraint && this.javaClass == other.javaClass && this.max <= other.max
+    override fun otherIsRedundant(other: SingleConstraint): Boolean {
+        if (other !is MaxBasedConstraint) return false
 
-    override fun toString(): String = "${(javaClass.simpleName ?: "anonymous AccelConstraint")}(max=$max)"
-}
+        var commonSupertype: Class<*> = this.javaClass
+        while (!commonSupertype.isAssignableFrom(other.javaClass))
+            commonSupertype = commonSupertype.superclass
 
-/**
- * A base implementation of a [AccelConstraint] based upon some maximum value, where if the maximum value is lower, it
- * implies more restrictive constraint.
- *
- * @property max the maximum value of something
- */
-abstract class MaxBasedAccelConstraint(protected val max: Double) : AccelConstraint() {
-
-    init {
-        require(max > 0) { "Max value $max gives impossible constraint" }
+        return commonSupertype != MaxBasedConstraint::class.java && max <= other.max
     }
 
-    override fun otherIsRedundant(other: MotionConstraint): Boolean =
-        other is MaxBasedAccelConstraint && this.javaClass == other.javaClass && this.max <= other.max
-
-    override fun toString(): String = "${(javaClass.simpleName ?: "anonymous AccelConstraint")}(max=$max)"
+    override fun toString(): String {
+        val name = javaClass.simpleName ?: when (this) {
+            is VelocityConstraint -> "anonymous VelConstraint"
+            is AccelerationConstraint -> "anonymous AccelConstraint"
+            else -> "anonymous SingleConstraint"
+        }
+        return "$name(max=$max)"
+    }
 }

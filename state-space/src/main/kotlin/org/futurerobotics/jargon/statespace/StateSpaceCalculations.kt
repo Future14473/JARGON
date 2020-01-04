@@ -1,6 +1,3 @@
-/**
- * Generic state space calculation utils.
- */
 @file:JvmName("StateSpaceCalculations")
 @file:Suppress("LocalVariableName")
 
@@ -8,7 +5,7 @@ package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
 import org.hipparchus.linear.RiccatiEquationSolverImpl
-
+import kotlin.math.roundToLong
 
 /**
  * Computes the K_ff matrix for plant-inversion feed forward.
@@ -17,58 +14,94 @@ import org.hipparchus.linear.RiccatiEquationSolverImpl
  *
  * u_ff = (K_ff)(r_(k+1)-A*r).
  */
-fun plantInversionKFF(stateSpaceModel: DiscreteLinSSModel, cost: QRCost? = null): Mat {
-    val B = stateSpaceModel.B
+@JvmOverloads
+fun plantInversion(B: Mat, cost: QRCost? = null): Mat {
     if (cost == null) return B.pinv()
-    require(cost applicableTo stateSpaceModel)
-    val (Q, R) = cost
+    val Q = cost.Q
+    val R = cost.R
     return (B.T * Q * B + R).inv() * B.T * Q
 }
 
 /**
- * Calculates the stead state kalman filter error.
+ * Computes the K_ff matrix for plant-inversion feed forward.
+ *
+ * If costMatrices given is `null`, returns B.pinv()
+ *
+ * u_ff = (K_ff)(r_(k+1)-A*r).
  */
-fun steadyStateKalmanErrorCov(model: DiscreteLinSSModel, Q: Mat, R: Mat): Mat {
-    val (A, B, C) = model
-    return steadyStateKalmanErrorCov(A, B, C, Q, R)
-}
+@JvmOverloads
+fun plantInversion(matrices: DiscreteStateSpaceMatrices, cost: QRCost? = null): Mat =
+    plantInversion(matrices.B, cost)
 
 /**
- * Calculates the stead state kalman filter error.
+ * Calculates the steady-state kalman-filter error covariance matrix.
  */
-fun steadyStateKalmanErrorCov(A: Mat, B: Mat, C: Mat, Q: Mat, R: Mat): Mat {
-    val prior = DiscreteRicattiEquationSolverImpl(A, B, Q, R).p
+@ExperimentalStateSpace
+fun steadyStateKalmanFilterCovariance(A: Mat, B: Mat, C: Mat, Q: Mat, R: Mat): Mat {
+    val prior = DiscreteRiccatiEquationSolverImpl(A, B, Q, R).p
     val S = C * prior * C.T + R
     val K = prior * C.T * S.inv()
-    return (eye(A.cols) - K * C) * prior
+    return (idenMat(A.cols) - K * C) * prior
 }
 
-
 /**
- * Solves the continuous LQR K gain
- */
-fun continuousLQR(model: LinearStateSpaceModel, cost: QRCost): Mat = continuousLQR(model.A, model.B, cost.Q, cost.R)
-
-/**
- * Solves the discrete LQR K gain
+ * Solves the continuous LQR K gain.
  */
 fun continuousLQR(A: Mat, B: Mat, Q: Mat, R: Mat): Mat = RiccatiEquationSolverImpl(A, B, Q, R).k
 
 /**
- * Solves the discrete LQR K gain
+ * Solves the continuous LQR K gain.
  */
-fun discreteLQR(model: DiscreteLinSSModel, cost: QRCost): Mat = discreteLQR(model.A, model.B, cost.Q, cost.R)
+fun continuousLQR(matrices: ContinuousStateSpaceMatrices, qrCost: QRCost): Mat =
+    continuousLQR(matrices.A, matrices.B, qrCost.Q, qrCost.R)
 
 /**
- * Solves the discrete LQR K gain
+ * Solves the discrete LQR K gain (experimental).
  */
-fun discreteLQR(A: Mat, B: Mat, Q: Mat, R: Mat): Mat = DiscreteRicattiEquationSolverImpl(A, B, Q, R).k
+@ExperimentalStateSpace
+fun discreteLQR(A: Mat, B: Mat, Q: Mat, R: Mat): Mat = DiscreteRiccatiEquationSolverImpl(A, B, Q, R).k
 
 /**
- * Solves the LQR gain, either continuous or discrete based on the model.
+ * Solves the discrete LQR K gain (experimental).
  */
-fun anyLQR(model: LinearStateSpaceModel, cost: QRCost): Mat = when (model) {
-    is ContinuousLinSSModel -> continuousLQR(model, cost)
-    is DiscreteLinSSModel -> discreteLQR(model, cost)
+@ExperimentalStateSpace
+fun discreteLQR(matrices: DiscreteStateSpaceMatrices, qrCost: QRCost): Mat =
+    discreteLQR(matrices.A, matrices.B, qrCost.Q, qrCost.R)
+
+/**
+ * Discretizes the given continuous state-space system given by [matrices],
+ * using zero-order hold over a given [period].
+ */
+fun discretize(matrices: ContinuousStateSpaceMatrices, period: Double): DiscreteStateSpaceMatrices = with(matrices) {
+    val exp = expm(
+        concat2x2dynamic(
+            A, B,
+            0, 0
+        ) * period
+    )
+    val Ad = exp.getQuad(A.rows, 0, 0)
+    val Bd = exp.getQuad(A.rows, 0, 1)
+    return DiscreteStateSpaceMatrices(
+        Ad,
+        Bd,
+        C.copy(),
+        (period * 1e9).roundToLong()
+    )
 }
 
+/**
+ * Discretizes a given [cost] in the context of a continuous state-space representation [matrices], using zero-order
+ * hold over a given [period].
+ */
+fun discretizeQRCost(matrices: ContinuousStateSpaceMatrices, cost: QRCost, period: Double): QRCost = with(matrices) {
+    val Qd = expm(
+        concat2x2dynamic(
+            -A.T, cost.Q,
+            0, A
+        ) * period
+    ).let { m ->
+        m.getQuad(A.rows, 1, 1) * m.getQuad(A.rows, 0, 1)
+    }.let { (it + it.T) / 2.0 }
+    val Rd = cost.R / period
+    return QRCost(Qd, Rd)
+}

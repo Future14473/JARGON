@@ -3,15 +3,16 @@
 package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.DoubleProgression
+import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.randomVectorDerivatives
-import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
+import org.futurerobotics.jargon.pathing.reparam.reparameterizeToCurve
 import org.futurerobotics.jargon.pathing.trajectory.*
-import org.futurerobotics.jargon.profile.MotionProfile
+import org.futurerobotics.jargon.profile.ForwardMotionProfile
+import org.futurerobotics.jargon.profile.MotionProfileGenParams
 import org.futurerobotics.jargon.profile.generateDynamicProfile
 import org.futurerobotics.jargon.saveGraph
 import org.futurerobotics.jargon.util.stepToAll
-import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import org.junit.jupiter.api.Tag
@@ -35,13 +36,13 @@ class MotionProfileGraphs(
 
     private val xs = DoubleProgression.fromNumSegments(0.0, path.length, 1000).toList()
     private var generationTime: Long = 0L
-    private lateinit var profile: MotionProfile
+    private lateinit var profile: ForwardMotionProfile
     @Before
     fun generateAndTimeProfile() {
         generationTime = measureNanoTime {
             val constraints = TrajectoryConstrainer(path, constraints)
             profile = generateDynamicProfile(
-                constraints, path.length, targetStartVel = 0.0, targetEndVel = 0.0, segmentSize = 0.02
+                constraints, path.length, MotionProfileGenParams(maxSegmentSize = 0.02)
             )
         }
     }
@@ -89,7 +90,7 @@ class MotionProfileGraphs(
 
     @Test
     fun `Generate path graph`() {
-        Assume.assumeTrue(profileNumber == 0)
+        if (profileNumber != 0) return
         val pathChart: XYChart = with(XYChartBuilder()) {
             title("Path")
             xAxisTitle("x")
@@ -119,12 +120,12 @@ class MotionProfileGraphs(
         private const val yMax = 5.5
         private val constantConstraints = mutableListOf(
             MotionConstraintSet(
-                MaxVelocityConstraint(5.0),
-                MaxPathAngularVelocityConstraint(1.5),
-                MaxCentripetalAccelConstraint(0.9),
-                MaxTangentAccelConstraint(0.9),
-                MaxTotalAccelConstraint(1.0),
-                MaxAngularAccelConstraint(0.3)
+                MaxTangentVelocity(5.0),
+                MaxPathAngularVelocity(1.5),
+                MaxCentripetalAccel(0.9),
+                MaxTangentAcceleration(0.9),
+                MaxTotalAcceleration(1.0),
+                MaxAngularAcceleration(0.3)
             )
         ).also {
             it += List(2) {
@@ -132,38 +133,37 @@ class MotionProfileGraphs(
             }
         }
 
-        private fun randomConstraints(): MotionConstraintSet {
-            return MotionConstraintSet(
-                MaxVelocityConstraint(random.nextDouble(3.0, 5.0)),
-                MaxPathAngularVelocityConstraint(
-                    random.nextDouble(0.3, 3.0)
-                ),
-                MaxCentripetalAccelConstraint(
-                    random.nextDouble(1.0, 3.0)
-                ),
-                MaxTangentAccelConstraint(
-                    random.nextDouble(1.0, 3.0)
-                ),
-                MaxTotalAccelConstraint(
-                    random.nextDouble(1.0, 3.0)
-                ),
-                MaxAngularAccelConstraint(
-                    random.nextDouble(0.5, 2.0)
-                )
+        private fun randomConstraints(): MotionConstraintSet = MotionConstraintSet(
+            MaxTangentVelocity(random.nextDouble(3.0, 5.0)),
+            MaxPathAngularVelocity(
+                random.nextDouble(0.3, 3.0)
+            ),
+            MaxCentripetalAccel(
+                random.nextDouble(1.0, 3.0)
+            ),
+            MaxTangentAcceleration(
+                random.nextDouble(1.0, 3.0)
+            ),
+            MaxTotalAcceleration(
+                random.nextDouble(1.0, 3.0)
+            ),
+            MaxAngularAcceleration(
+                random.nextDouble(0.5, 2.0)
             )
-        }
+        )
 
-        private val paths: List<Path> = List(10) {
-            var path: Path? = null
-            measureNanoTime {
-                val segs = List(5) {
-                    randomVectorDerivatives(random, range)
-                }.zipWithNext { a, b ->
-                    QuinticSpline.fromDerivatives(a, b).reparamByIntegration().addHeading(TangentHeading)
-                }
-                path = MultiplePath(segs)
-            }.also { println("Path generation took ${it / 1e6} millis") }
-            path!!
+        private val paths: List<Path> = List(5) {
+            val segs = List(5) {
+                randomVectorDerivatives(random, range)
+            }.zipWithNext { a, b ->
+                QuinticSpline.fromDerivatives(a, b).reparameterizeToCurve()
+            }
+            multipleCurve(segs).addHeading(TangentHeading)
+        }.let {
+            it + multipleCurve(
+                Line(Vector2d.ZERO, Vector2d(3, 4)),
+                Line(Vector2d(3, 4), Vector2d(2, -1))
+            ).addHeading(ConstantHeading(0.0))
         }
 
         @JvmStatic

@@ -1,6 +1,5 @@
 package org.futurerobotics.jargon.pathing.reparam
 
-import org.futurerobotics.jargon.GraphUtil
 import org.futurerobotics.jargon.math.*
 import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.function.VectorFunction
@@ -8,15 +7,17 @@ import org.futurerobotics.jargon.reportError
 import org.futurerobotics.jargon.saveGraph
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.jupiter.api.Tag
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
+import org.knowm.xchart.XYChart
+import org.knowm.xchart.XYSeries
+import org.knowm.xchart.style.markers.SeriesMarkers
 import kotlin.math.PI
+import kotlin.math.pow
 import kotlin.random.Random
 
 @RunWith(Parameterized::class)
-@Tag("Inspection")
 internal class ReparamCurveTest(private val func: VectorFunction, private val curve: ReparamCurve) {
 
     @Test
@@ -26,7 +27,7 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
 
     @Test
     fun `reparameterization inspect`() {
-        testValue({ it }, curve::tOfS, 0.001, 0.0)
+        testValue({ it }, { curve.mapping.tOfS(it) }, 0.001, 0.0)
     }
 
     @Test
@@ -42,11 +43,11 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
     @Test
     fun `positionSecondDeriv inspect`() {
         testVector({
-            val deriv = func.vecDeriv(it)
-            val secondDeriv = func.vecSecondDeriv(it)
-            val z = (secondDeriv cross deriv) / deriv.lengthSquared.squared()
-            Vector2d(deriv.y * z, -deriv.x * z)
-        }, { curve.pointAt(it).positionSecondDeriv }, 0.005, 0.001)
+                       val deriv = func.vecDeriv(it)
+                       val secondDeriv = func.vecSecondDeriv(it)
+                       val z = (secondDeriv cross deriv) / deriv.lengthSquared.pow(2)
+                       Vector2d(deriv.y * z, -deriv.x * z)
+                   }, { curve.pointAt(it).positionSecondDeriv }, 0.005, 0.001)
     }
 
     @Test
@@ -69,26 +70,39 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
         )
     }
 
-    private fun testVector(
-        trueValT: (Double) -> Vector2d, testValS: (Double) -> Vector2d, maxError: Double, offset: Double
+    private inline fun testVector(
+        crossinline trueValT: (Double) -> Vector2d,
+        crossinline testValS: (Double) -> Vector2d,
+        maxError: Double,
+        offset: Double
     ) {
         testStep(trueValT, testValS, { this distTo it }, offset, maxError)
     }
 
-    private fun testValue(
-        trueValT: (Double) -> Double, testValS: (Double) -> Double, maxError: Double, offset: Double
+    private inline fun testValue(
+        crossinline trueValT: (Double) -> Double,
+        crossinline testValS: (Double) -> Double,
+        maxError: Double,
+        offset: Double
     ) {
         testStep(trueValT, testValS, { this distTo it }, offset, maxError)
     }
 
-    private fun testAngle(
-        trueValT: (Double) -> Double, testValS: (Double) -> Double, maxError: Double, offset: Double
+    private inline fun testAngle(
+        crossinline trueValT: (Double) -> Double,
+        crossinline testValS: (Double) -> Double,
+        maxError: Double,
+        offset: Double
     ) {
         testStep(trueValT, testValS, { angleNorm(distTo(it)) }, offset, maxError)
     }
 
-    private fun <T> testStep(
-        trueValT: (Double) -> T, testValS: (Double) -> T, getError: T.(T) -> Double, offset: Double, maxError: Double
+    private inline fun <T> testStep(
+        crossinline trueValT: (Double) -> T,
+        crossinline testValS: (Double) -> T,
+        crossinline getError: T.(T) -> Double,
+        offset: Double,
+        maxError: Double
     ) {
         val offsetInt = (steps * offset).toInt()
 
@@ -105,7 +119,7 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
                 s += func.vecDeriv((i + 0.5) / steps).length / steps
             }
         }.let {
-            println(Thread.currentThread().stackTrace[3 + 1].methodName + ":")
+            println(Thread.currentThread().stackTrace[1].methodName + ":")
             println(it.report())
             println()
             assertTrue(it.averageError <= maxError)
@@ -144,10 +158,35 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
                 val p4 = p5 - p5Deriv / 5
                 val p3 = p5SecondDeriv / 20 + 2 * p4 - p5
 
-                GraphUtil.getSplineGraph(30, p0, p1, p2, p3, p4, p5).saveGraph("RandomSpline/$it")
+                val spline = QuinticSpline.fromControlPoints(p0, p1, p2, p3, p4, p5)
+                val xs = mutableListOf<Double>()
+                val ys = mutableListOf<Double>()
+                val toolTips = mutableListOf<String?>()
+                repeat(30 + 1) { i ->
+                    val t = i.toDouble() / 30
+                    val v = spline.vec(t)
+                    xs.add(v.x)
+                    ys.add(v.y)
+                    toolTips.add(null)
+                }
+                val chart = XYChart(600, 400)
+                chart.title = "Quintic Spline"
+                chart.xAxisTitle = "x"
+                chart.yAxisTitle = "y"
+                val splineSeries = chart.addSeries("Spline", xs, ys)!!
+                splineSeries.marker = SeriesMarkers.CROSS
+                splineSeries.toolTips = toolTips.toTypedArray()
+                val px = doubleArrayOf(p0.x, p1.x, p2.x, p3.x, p4.x, p5.x)
+                val py = doubleArrayOf(p0.y, p1.y, p2.y, p3.y, p4.y, p5.y)
+                val points = chart.addSeries("control points", px, py)
+                points.toolTips = "p0,p1,p2,p3,p4,p5".split(',').toTypedArray()
+                points.xySeriesRenderStyle = XYSeries.XYSeriesRenderStyle.Scatter
+                chart.styler.isToolTipsEnabled = true
+                chart.styler.isToolTipsAlwaysVisible = true
+                chart.saveGraph("RandomSpline/$it")
                 val func = QuinticSpline.fromControlPoints(p0, p1, p2, p3, p4, p5)
 
-                list.add(arrayOf(func, func.reparamByIntegration()))
+                list.add(arrayOf(func, func.reparameterizeToCurve()))
             }
             return list
         }

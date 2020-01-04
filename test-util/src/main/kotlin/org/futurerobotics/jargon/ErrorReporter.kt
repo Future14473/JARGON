@@ -8,6 +8,7 @@ import kotlin.math.abs
  * Helps in reporting error metrics.
  */
 class ErrorReporter {
+
     /**
      * The maximum error reported so far.
      */

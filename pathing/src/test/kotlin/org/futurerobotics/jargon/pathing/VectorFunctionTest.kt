@@ -4,6 +4,7 @@ import org.futurerobotics.jargon.Debug
 import org.futurerobotics.jargon.errorTo
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.function.QuinticSpline
+import org.futurerobotics.jargon.math.randomQuinticSpline
 import org.futurerobotics.jargon.reportError
 import org.junit.Assert
 import org.junit.Test
@@ -79,20 +80,13 @@ internal class VectorFunctionTest(private val curve: QuinticSpline) {
 
     private companion object {
 
-        const val steps = 200_000
+        const val steps = 50_000
         const val epsilon = 1e-6
         const val maxError = 0.001
         const val range = 20.0
         private val random = Random(342567)
         @JvmStatic
         @Parameterized.Parameters
-        fun vecs() =
-            List(30) {
-                arrayOf(
-                    QuinticSpline.random(
-                        random, range
-                    )
-                )
-            }
+        fun vecs() = List(30) { arrayOf(randomQuinticSpline(random, range)) }
     }
 }

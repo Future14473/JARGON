@@ -2,7 +2,7 @@
  * The classes in this file are derivatives of similar classes in the Hipparchus project v1.5.
  * They were copied, converted to kotlin, and modified so that they solve the
  * *Discrete* Algebraic Ricatti Equation (approximately).
- * License for the Hipparchus project can be found in "Third Party Licences/Hipparchus"
+ * License (Apache 2.0) for the Hipparchus project can be found in "thirdparty/Hipparchus"
  *
  * The original Hipparchus project files have the following copyright notice:
  *
@@ -35,69 +35,14 @@ import org.hipparchus.linear.*
 import org.hipparchus.util.FastMath
 import java.util.*
 
-/**
- * Given a matrix A, it computes a complex eigen decomposition A = VDV^{T}.
- *
- * It ensures that eigen values in the diagonal of D are in ascending order by magnitude.
- *
- * Except where said is modified, this is copied from [OrderedComplexEigenDecomposition] and converted to kotlin
- * using J2K
- */
-class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDecomposition(matrix) {
-
-    init {
-
-        val D = this.d
-        val V = this.v
-
-        val eigenValues = TreeSet(compareBy<Complex> { it.abs() }) //MODIFIED: use new comparator
-
-        for (ij in 0 until matrix.rowDimension) {
-            eigenValues.add(D.getEntry(ij, ij))
-        }
-
-        // ordering
-        for (ij in 0 until matrix.rowDimension - 1) {
-            val eigValue = eigenValues.pollFirst()
-            var currentIndex = ij
-            // searching the current index
-            while (currentIndex < matrix.rowDimension) {
-                val compCurrent = D.getEntry(currentIndex, currentIndex)
-                if (eigValue == compCurrent) {
-                    break
-                }
-                currentIndex++
-            }
-
-            if (ij == currentIndex) {
-                continue
-            }
-
-            // exchanging D
-            val previousValue = D.getEntry(ij, ij)
-            D.setEntry(ij, ij, eigValue)
-            D.setEntry(currentIndex, currentIndex, previousValue)
-
-            // exchanging V
-            val previousColumnV = V.getColumn(ij)
-            V.setColumn(ij, V.getColumn(currentIndex))
-            V.setColumn(currentIndex, previousColumnV)
-        }
-
-        checkDefinition(matrix)
-    }
-
-    /** {@inheritDoc}  */
-    override fun getVT(): FieldMatrix<Complex> = v.transpose()
-}
-
-
-/**
+/**Note that this is experimental and not yet fully supported since the developer
+ * doesn't want to do too much math.
  *
  * This solver computes the solution to the _DARE_ using the following approach:
  *
- * 1. Compute the Hamiltonian matrix 2. Extract its complex eigen vectors (not
- * the best solution, a better solution would be ordered Schur transformation)
+ * 1. Compute the Symplectic matrix 2. Extract its complex eigen vectors (not
+ * the best solution, a better solution would be ordered Schur transformation).
+ * That is all we have; result is not guaranteed to be stable.
  *
  * A and B should be compatible. B and R must be
  * multiplicative compatible. A and Q must be multiplicative compatible. R and A
@@ -108,10 +53,11 @@ class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDe
  * @param Q state cost matrix
  * @param R control cost matrix
  *
- * Except where said is modified, this is copied from [LenientRiccatiEquationSolverImpl] and converted to kotlin.
+ * Except where said is modified, this is copied from [RiccatiEquationSolverImpl] and converted to kotlin using J2K.
  * Unused methods were removed.
  */
-class DiscreteRicattiEquationSolverImpl(
+@ExperimentalStateSpace
+class DiscreteRiccatiEquationSolverImpl(
     A: RealMatrix, B: RealMatrix,
     Q: RealMatrix, R: RealMatrix
 ) : RiccatiEquationSolver {
@@ -151,18 +97,18 @@ class DiscreteRicattiEquationSolverImpl(
 
         P = computeInitialP(A, B, Q, A_inv, R_inv)
         //formula here changed.
-        val BT = B.T
-        K = (R + BT * P * B).solve(BT * P * A)
+        val BtP = B.T * P
+        K = (R + BtP * B).pinv() * (BtP * A)
     }
 
     /**
      * Compute initial P using a Symplectic matrix and the ordered eigen value (by magnitude)
-     * decomposition.
+     * decomposition. That's it for now.
      *
      * @param A state transition matrix
      * @param B control multipliers matrix
      * @param Q state cost matrix
-     * @param A_inv state cost matrix
+     * @param A_inv inverse of matrix A
      * @param R_inv inverse of matrix R
      * @return initial solution
      */
@@ -170,15 +116,14 @@ class DiscreteRicattiEquationSolverImpl(
         A: RealMatrix, B: RealMatrix,
         Q: RealMatrix, A_inv: RealMatrix, R_inv: RealMatrix
     ): RealMatrix {
-        val BT = B.transpose()
+        val BT = B.T
         val AiT = A_inv.T
         //formula changed for DARE instead
         //use kotlin extensions & func to build the z matrix instead
-        val z = MatConcat.concat2x2(
+        val z = concat2x2(
             A + B * R_inv * BT * AiT * Q, -B * R_inv * BT * AiT,
             -AiT * Q, AiT
         )
-
 
         val eigenDecomposition = OrderedByMagComplexEigenDecomposition(z)
         val u = eigenDecomposition.v
@@ -198,7 +143,6 @@ class DiscreteRicattiEquationSolverImpl(
         val p = u21.multiply(solver.inverse)
 
         return convertToRealMatrix(p, Double.MAX_VALUE)
-
     }
 
     override fun getP(): RealMatrix = P
@@ -229,5 +173,62 @@ class DiscreteRicattiEquationSolverImpl(
         }
         return toRet
     }
+}
 
+/**
+ * Given a matrix A, it computes a complex eigen decomposition A = VDV^{T}.
+ *
+ * It ensures that eigen values in the diagonal of D are in ascending order by magnitude.
+ *
+ * Except where said is modified, this is copied from [OrderedComplexEigenDecomposition] and converted to kotlin
+ * using J2K
+ */
+@ExperimentalStateSpace
+class OrderedByMagComplexEigenDecomposition(matrix: RealMatrix) : ComplexEigenDecomposition(matrix) {
+
+    init {
+
+        val D = this.d
+        val V = this.v
+
+        val eigenValues = PriorityQueue(compareBy<Complex> { it.abs() })
+        //MODIFIED: use new comparator, and use priority queue to deal with multiple of the same eigenvalue
+
+        for (ij in 0 until matrix.rowDimension) {
+            eigenValues.add(D.getEntry(ij, ij))
+        }
+
+        // ordering
+        for (ij in 0 until matrix.rowDimension - 1) {
+            val eigValue = eigenValues.poll()!!
+            var currentIndex = ij
+            // searching the current index
+            while (currentIndex < matrix.rowDimension) {
+                val compCurrent = D.getEntry(currentIndex, currentIndex)
+                if (eigValue == compCurrent) {
+                    break
+                }
+                currentIndex++
+            }
+
+            if (ij == currentIndex) {
+                continue
+            }
+
+            // exchanging D
+            val previousValue = D.getEntry(ij, ij)
+            D.setEntry(ij, ij, eigValue)
+            D.setEntry(currentIndex, currentIndex, previousValue)
+
+            // exchanging V
+            val previousColumnV = V.getColumn(ij)
+            V.setColumn(ij, V.getColumn(currentIndex))
+            V.setColumn(currentIndex, previousColumnV)
+        }
+
+//        checkDefinition(matrix)
+    }
+
+    /** {@inheritDoc}  */
+    override fun getVT(): FieldMatrix<Complex> = v.transpose()
 }

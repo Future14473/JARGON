@@ -1,9 +1,6 @@
 package org.futurerobotics.jargon.mechanics
 
-import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.cosc
-import org.futurerobotics.jargon.math.sinc
+import org.futurerobotics.jargon.math.*
 import kotlin.math.PI
 
 /**
@@ -26,7 +23,7 @@ object GlobalToBot {
         globalError.vecRotated(-globalHeading)
 
     /**
-     * Converts a _expected_ [globalMotion] in poses to bot [globalMotion], given the true [globalHeading]
+     * Converts [globalMotion] in poses to bot [motion], given the true [globalHeading]
      */
     @JvmStatic
     fun motion(globalMotion: MotionOnly<Pose2d>, globalHeading: Double): MotionOnly<Pose2d> {
@@ -37,12 +34,12 @@ object GlobalToBot {
                     v.vec.rotated(-globalHeading + PI / 2) * -v.heading,
             a.heading
         )
-        return ValueMotionOnly(rv, ra)
+        return MotionOnly(rv, ra)
     }
 
     /**
      * Converts a global [reference] PoseMotionState to a bot reference (to where the bot's "current state" is
-     * Pose2d.Zero), given the current [globalPose]
+     * [Pose2d.ZERO], given the current [globalPose]
      */
     @JvmStatic
     fun referenceMotion(reference: MotionState<Pose2d>, globalPose: Pose2d): MotionState<Pose2d> {
@@ -51,11 +48,11 @@ object GlobalToBot {
         val rs = (s - globalPose).vecRotated(-globalHeading)
         val rv = v.vecRotated(-globalHeading)
         val ra = Pose2d(
-            a.vec.rotated(-globalHeading) +
-                    v.vec.rotated(-globalHeading + PI / 2) * -v.heading,
+            a.vec.rotated(-globalHeading) -
+                    v.vec.rotated(-globalHeading + PI / 2) * v.heading,
             a.heading
         )
-        return ValueMotionState(rs, rv, ra)
+        return MotionState(rs, rv, ra)
     }
 
     /**
@@ -67,12 +64,11 @@ object GlobalToBot {
         botPoseDelta: Pose2d,
         currentGlobalPose: Pose2d
     ): Pose2d {
-        val (v, dTheta) = botPoseDelta
-        val (x, y) = v
+        val (x, y, dTheta) = botPoseDelta
         val sinc = sinc(dTheta)
         val cosc = cosc(dTheta)
         val relativeDiff = Vector2d(sinc * x - cosc * y, cosc * x + sinc * y)
         val dPose = Pose2d(relativeDiff.rotated(currentGlobalPose.heading), dTheta)
-        return (currentGlobalPose + dPose).normalizeAngle()
+        return (currentGlobalPose + dPose).angleNormalized()
     }
 }

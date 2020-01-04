@@ -3,10 +3,11 @@ package org.futurerobotics.jargon.pathing
 import org.futurerobotics.jargon.Debug
 import org.futurerobotics.jargon.math.DoubleProgression
 import org.futurerobotics.jargon.math.TAU
-import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.nextVector2d
-import org.futurerobotics.jargon.pathing.reparam.reparamByIntegration
-import org.futurerobotics.jargon.util.allPairs
+import org.futurerobotics.jargon.math.randomQuinticSpline
+import org.futurerobotics.jargon.pathing.reparam.IntegrationReparameterizer
+import org.futurerobotics.jargon.pathing.reparam.reparameterizeToCurve
+import org.futurerobotics.jargon.util.mapAllPairs
 import org.futurerobotics.jargon.util.stepToAll
 import org.junit.Assert
 import org.junit.Test
@@ -23,8 +24,8 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
         val bulkGet = path.stepToAll(allS)
         Assert.assertTrue("Size differs", bulkGet.size == singleGet.size)
 
-        bulkGet.zip(singleGet).forEachIndexed { index, it ->
-            val b = it.first contentEquals it.second
+        bulkGet.zip(singleGet).forEachIndexed { index, (first, second) ->
+            val b = first contentEquals second
             Debug.breakIf(!b)
             if (!b) Assert.fail("Content differs at $index")
         }
@@ -37,13 +38,13 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
         @Parameterized.Parameters
         fun getParams(): List<Array<Any>> {
             val curves = MutableList(2) {
-                QuinticSpline.random(random, range)
+                randomQuinticSpline(random, range)
             }.flatMap {
                 listOf(
-                    it.reparamByIntegration(),
-                    it.reparamByIntegration(),
-                    it.reparamByIntegration(10, 100),
-                    it.reparamByIntegration()
+                    it.reparameterizeToCurve(),
+                    it.reparameterizeToCurve(),
+                    it.reparameterizeToCurve(IntegrationReparameterizer(10, 100)),
+                    it.reparameterizeToCurve()
                 )
             }.let {
                 it + List(2) {
@@ -52,12 +53,11 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
             }
             val headings = MutableList(2) {
                 listOf(
-                    OffsetTangentHeading(random.nextDouble(TAU)),
+                    TangentHeading(random.nextDouble(TAU)),
                     ConstantHeading(random.nextDouble(10_000.0)),
-                    LinearInterpolatedHeading(
-                        random.nextDouble(
-                            -1000.0, 1000.0
-                        ), random.nextDouble(-1000.0, 1000.0)
+                    LinearlyInterpolatedHeading(
+                        random.nextDouble(-1000.0, 1000.0),
+                        random.nextDouble(-1000.0, 1000.0)
                     )
                 )
             }.also { it += listOf(TangentHeading) }.flatten()
@@ -66,11 +66,9 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
                     0.0, random.nextDouble(30.0), random.nextInt(10_000, 80_000)
                 ).toList()
             }
-            val rawPaths = allPairs(curves, headings)
+            val paths = mapAllPairs(curves, headings)
                 .mapTo(ArrayList()) { it.first.addHeading(it.second) }
-            rawPaths.shuffle()
-            val paths = rawPaths.chunked(4) { MultiplePath(it, checkContinuity = false) }
-            return allPairs(paths, progressions).map { arrayOf(it.first, it.second) }
+            return mapAllPairs(paths, progressions).map { arrayOf(it.first, it.second) }
         }
     }
 }

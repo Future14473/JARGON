@@ -10,6 +10,7 @@ package org.futurerobotics.jargon
  */
 @Suppress("ClassName", "NOTHING_TO_INLINE")
 object of {
+
     /** returns [value]. */
     inline infix fun <T> the(value: T): T = value
 }

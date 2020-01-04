@@ -1,63 +1,48 @@
 @file:JvmName("MotionProfileGeneration")
+@file:Suppress("ExplicitThis")
 
 package org.futurerobotics.jargon.profile
 
-import org.futurerobotics.jargon.math.*
+import org.futurerobotics.jargon.math.DoubleProgression
+import org.futurerobotics.jargon.math.EPSILON
+import org.futurerobotics.jargon.math.distTo
+import org.futurerobotics.jargon.math.ifNan
 import org.futurerobotics.jargon.util.extendingDownDoubleSearch
 import org.futurerobotics.jargon.util.mapToSelf
 import org.futurerobotics.jargon.util.stepToAll
-import kotlin.math.ceil
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.sqrt
+import kotlin.math.*
 
-private const val MAX_VEL = 10000.0
-private const val BINARY_SEARCH_INITIAL_STEP_RATIO = 2
 /**
- * Calculates an numerically approximated optimal [MotionProfiled], given [MotionProfileConstrainer].
- *
- * [targetStartVel] and [targetEndVel] specify the target start and end velocities, respectively, however, if this
- * results in a profile not within constraints, the actual start and end velocities may be lower.
- *
- * [segmentSize] specifies the size of the segments used in the profile generation algorithm.
- *
- * [maxVelSearchTolerance] specifies the tolerance in which the maximum velocities due to
- * satisfying acceleration constraints will be searched for, if needed. (heavy heuristic
- * binary search). If constraints are "non demanding", binary search will not happen.
+ * Calculates an approximately optimal [ForwardMotionProfile], given a [MotionProfileConstrainer] and
+ * [MotionProfileGenParams].
  *
  * This uses a modified version of the algorithm described in section 3.2 of:
  *  [http://www2.informatik.uni-freiburg.de/~lau/students/Sprunk2008.pdf].
  *
- *  The differences include: this method only considers the maximum velocity and acceleration at the point at the
- *  start of a segment (or the other endpoint when doing a backwards pass), and uses that
- *  to determine the maximum velocities and acceleration of the entire segment. This changes the formulas used
- *  to determine maximum centripetal acceleration and others. This does introduce some approximation
- *  error, and requires some binary search, but it _greatly_ simplifies calculations,  More importantly, this allows
- *  for a more modular and a wider variety of combination of constraints.
- *  The error introduced is negligible or tiny when segments are sufficiently small, and binary search has shown
- *  to not significantly impact generation times, and can be avoided altogether with "non-demanding" constraints.
+ *  The differences include: this method only considers the maximum velocity and acceleration at the point at one
+ *  endpoint of a segment (or the other endpoint when doing a backwards pass), and uses that to determine the
+ *  maximum velocities and acceleration of the entire segment. This changes the formulas used to determine the
+ *  constraints to use, but makes it much simpler. This does introduce some approximation error, and requires some
+ *  binary search at some point, but it _greatly_ simplifies calculations,  More importantly, this allows for a more
+ *  modular and a wider variety of combination of constraints. The error introduced is negligible or tiny when segments
+ *  are sufficiently small, and binary search has shown to not significantly impact generation times, and can possibly
+ *  be avoided altogether with "non-demanding" constraints.
  *
- *  I will write a paper someday.
+ *  I will write a short paper about this someday.
  */
-@JvmOverloads
 fun generateDynamicProfile(
     constrainer: MotionProfileConstrainer,
-    distance: Double,
-    targetStartVel: Double = 0.0,
-    targetEndVel: Double = 0.0,
-    segmentSize: Double = 0.01,
-    maxVelSearchTolerance: Double = 0.01
-    //may introduce a class if start to have too many parameters
-): MotionProfile {
-    require(distance > 0) { "distance ($distance) must be > 0" }
-    require(targetStartVel >= 0) { "targetStartVel ($targetStartVel) must be >= 0" }
-    require(targetEndVel >= 0) { "targetEndVel ($targetEndVel) must be >= 0" }
-    require(segmentSize > 0) { "segmentSize ($segmentSize) must be > 0" }
-    require(segmentSize <= distance) { "segmentSize ($$segmentSize) must be <= dist ($distance)" }
-    require(maxVelSearchTolerance > 0) { "maxVelSearchTolerance ($maxVelSearchTolerance) must be > 0" }
-    val segments = ceil(distance / segmentSize).toInt()
-    val points = DoubleProgression.fromNumSegments(0.0, distance, segments).toList()
-    val pointConstraints: List<PointConstraint> = constrainer.stepToAll(points)
+    totalDistance: Double,
+    params: MotionProfileGenParams
+): ForwardMotionProfile = params.run {
+    require(totalDistance >= 0) { "distance ($totalDistance) must be >= 0" }
+
+    val segments = ceil(totalDistance / maxSegmentSize).toInt()
+    val points: List<Double> = DoubleProgression.fromNumSegments(0.0, totalDistance, segments)
+        .toSortedSet()
+        .also { it.addAll(constrainer.requiredPoints) }
+        .toList()
+    val pointConstraints = constrainer.stepToAll(points)
     val maxVels = pointConstraints.mapIndexedTo(ArrayList(points.size)) { i, it ->
         it.maxVelocity.also {
             require(it >= 0) { "All maximum velocities given by constrainer should be >= 0, got $it at segment $i" }
@@ -80,8 +65,10 @@ fun generateDynamicProfile(
         true
     )
     val pointVelPairs = points.zip(maxVels)
-    return SegmentsMotionProfile.fromPointVelPairs(pointVelPairs)
+    return SegmentsForwardMotionProfile.fromPointVelPairs(pointVelPairs)
 }
+
+private const val MAX_VEL = 10000.0
 
 private fun accelerationPass(
     maxVels: MutableList<Double>,
@@ -97,32 +84,66 @@ private fun accelerationPass(
         val dx = points[it] distTo points[it + 1] //works for backwards
         var aMax = getAMaxOrNaN(dx, v0, accelGetter, reversed)
         if (aMax.isNaN()) {
-            if (v0 == 0.0) throwBadAccelAt0Vel()
-            //OH NO, ITS BINARY SEARCH!
-            // heuristic search, typically < 10 iterations, and only occurs when necessary,
-            // and typically happens < 1% of the time
+            if (v0 == 0.0) throwBadAccelAtZeroVel(points[it], points[it + 1], reversed)
             val newV0 = extendingDownDoubleSearch(
                 0.0, v0, tolerance, searchingFor = false
             ) { v -> getAMaxOrNaN(dx, v, accelGetter, reversed).isNaN() }
-            aMax = getAMaxOrNaN(dx, newV0, accelGetter, reversed).notNaNOrElse(::throwBadAccelAt0Vel)
+            aMax = getAMaxOrNaN(dx, newV0, accelGetter, reversed)
+                .ifNan { throwBadAccelAtZeroVel(points[it], points[it + 1], reversed) }
             v0 = newV0
-            maxVels[it] = newV0 //is new
+            maxVels[it] = newV0
         }
-        val v1 = sqrt(v0.squared() + 2 * aMax * dx).notNaNOrElse { 0.0 }
+        val v1 = sqrt(v0.pow(2) + 2 * aMax * dx).ifNan { 0.0 }
         val actualV1 = min(v1, maxVels[it + 1])
         maxVels[it + 1] = actualV1
     }
 }
 
-private fun throwBadAccelAt0Vel(): Nothing =
-    throw RuntimeException(
-        "Unsatisfiable constraints: The current constraints's acceleration did not return a non-empty interval" +
-                " even at a given velocity of 0.0."
-    )
-
 private fun getAMaxOrNaN(dx: Double, v: Double, accelGetter: PointConstraint, reversed: Boolean): Double {
-    val aMin = -v.squared() / 2 / dx
+    val aMin = -v.pow(2) / 2 / dx
     val interval = accelGetter.accelRange(v)
     val aMaxMaybe = if (reversed) -interval.a else interval.b
     return if (aMaxMaybe > aMin) aMaxMaybe else Double.NaN
+}
+
+private fun throwBadAccelAtZeroVel(x1: Double, x2: Double, reversed: Boolean): Nothing {
+    val (p1, p2) = if (reversed) x2 to x1 else x1 to x2
+    throw RuntimeException(
+        "On the interval from ($p1 to $p2, reversed = $reversed), constraints did not return a non-empty acceleration" +
+                " range even with a current velocity of 0.0."
+    )
+}
+
+/**
+ * Parameters for [generateDynamicProfile].
+ *
+ * @param targetStartVel the target start velocity of the profile. May actually be lower if constraints are not
+ * satisfied.
+ * @param targetEndVel the target end vel. May actually be lower if constraints demand it.
+ * @param maxSegmentSize the maximum segment size allowed when the distance is divided.
+ * @param maxVelSearchTolerance the tolerance used when binary searching the maximum velocity due to _acceleration_
+ *      constraints. Note that we made an effort to avoid binary search as much possible and the algorithm is
+ *      heuristically optimized.
+ */
+data class MotionProfileGenParams(
+    val targetStartVel: Double = 0.0,
+    val targetEndVel: Double = 0.0,
+    val maxSegmentSize: Double = 0.02,
+    val maxVelSearchTolerance: Double = 0.02
+) {
+
+    init {
+        require(targetStartVel >= 0) { "targetStartVel ($targetStartVel) must be >= 0" }
+        require(targetEndVel >= 0) { "targetEndVel ($targetEndVel) must be >= 0" }
+        require(maxSegmentSize > 0) { "segmentSize ($maxSegmentSize) must be > 0" }
+        require(maxVelSearchTolerance > 0) { "maxVelSearchTolerance ($maxVelSearchTolerance) must be > 0" }
+    }
+
+    companion object {
+        /**
+         * Default [MotionProfileGenParams].
+         */
+        @JvmField
+        val DEFAULT: MotionProfileGenParams = MotionProfileGenParams()
+    }
 }

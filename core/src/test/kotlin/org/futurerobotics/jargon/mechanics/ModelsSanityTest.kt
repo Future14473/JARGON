@@ -1,14 +1,13 @@
 package org.futurerobotics.jargon.mechanics
 
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.math.avg
-import org.futurerobotics.jargon.math.isEpsEqTo
+import org.futurerobotics.jargon.math.*
+import org.futurerobotics.jargon.math.convert.*
 import org.junit.jupiter.api.Test
-import strikt.api.expect
 import strikt.api.expectThat
+import kotlin.math.pow
+import kotlin.math.sqrt
 import kotlin.random.Random
-
 
 internal class ModelsSanityTest {
 
@@ -24,34 +23,15 @@ internal class ModelsSanityTest {
     }
 
     @Test
-    fun `transmission sanity check`() = expect {
-        that(idealUnitTransmission) {
-            get { motorAngVelPerOutputAngVel }.isEpsEqTo(1.0)
-            get { motorTorquePerOutputTorque }.isEpsEqTo(1.0)
-            get { motorVoltsPerOutputTorque }.isEpsEqTo(1.0)
-        }
-        that(halfLossTransmission) {
-            get { motorAngVelPerOutputAngVel }.isEpsEqTo(1.0)
-            get { motorTorquePerOutputTorque }.isEpsEqTo(2.0)
-            get { motorVoltsPerOutputTorque }.isEpsEqTo(2.0)
-        }
-        that(negativeGearedTransmission) {
-            get { motorAngVelPerOutputAngVel }.isEpsEqTo(-2.0)
-            get { motorTorquePerOutputTorque }.isEpsEqTo(-0.5)
-            get { motorVoltsPerOutputTorque }.isEpsEqTo(-0.5)
-        }
-    }
-
-    @Test
     fun `differential works`() {
-        val differential = DriveModels.differential(
+        val differential = FixedWheelDriveModel.differential(
             2.0, 3.0,
-            TransmissionModel.fromTorqueLosses(idealUnitMotor, 2.0, 0.0, 0.5),
+            TransmissionModel.fromTorqueMultiplier(idealUnitMotor, 2.0, 0.0, 0.5),
             5.0, 7.0
         )
         expectThat(differential) {
-            val forward = Pose2d(1.0, 0.0, 0.0).toVector()
-            val turn = Pose2d(0.0, 0.0, 1.0).toVector()
+            val forward = Pose2d(1.0, 0.0, 0.0).toVec()
+            val turn = Pose2d(0.0, 0.0, 1.0).toVec()
             //prime numbers!
             //mass 2.0
             //moi: 3.0
@@ -60,30 +40,67 @@ internal class ModelsSanityTest {
             //gear ratio: 2
             //transmission loss: 1/2
             //motor: unit
-            get { wheelVelFromBotVel * forward } isEpsEqTo vec[1, 1] //at output: [1,1],
-            get { wheelVelFromBotVel * turn } isEpsEqTo vec[-7, 7] //since radius = 7
             //at output: 1, At transmission: 1/5. At motor: 2/5
-            get { voltsFromBotVel * forward } isEpsEqTo vec[.4, .4]
-            get { voltsFromBotVel * turn } isEpsEqTo vec[-7.0 / 5 * 2, 7.0 / 5 * 2]
-            //2N / 2 motors *(wheel radius), 5, transmission loss/2, gear ratio * 2
-            get { voltsFromBotAccel * forward } isEpsEqTo vec[5.0, 5.0]
-            //3 Nm/7m/2 *5/4
-            get { voltsFromBotAccel * turn } isEpsEqTo vec[-3.0 / 7 / 2 * 5, 3.0 / 7 / 2 * 5]
+            get { voltsFromBotVel * forward }.isEpsEqTo(Vec(.4, .4))
+            get { voltsFromBotVel * turn }.isEpsEqTo(Vec(-7.0 / 5 * 2, 7.0 / 5 * 2))
         }
+    }
 
+    @Test
+    fun `inspect single wheel`() {
+        val motor = idealUnitMotor
+        val transmission = TransmissionModel.fromTorqueMultiplier(motor, 2.0, 0.0, 1.0)
+        val loc = Vector2d(1, 1) / sqrt(2.0)
+        val position = WheelPosition(loc, 1.0 zcross loc, 1.0)
+        val wheelModel = WheelModel(position, transmission)
+        val model = FixedWheelDriveModel(1.0, 1.0, listOf(wheelModel), false)
+        model.run {
+            listOf(
+                motorVelFromBotVel,
+                motorAccelFromVolts,
+                voltsFromMotorVel,
+                motorAccelFromMotorVel
+            )
+        }.forEach {
+            println(it.formatReadable())
+        }
+    }
+
+    @Test
+    fun `inspect holonomic`() {
+        val motor = MotorModel.fromMotorData(
+            12 * volts,
+            260 * ozf * `in`,
+            9.2 * A,
+            435 * rev / mins,
+            0.25 * A
+        )
+        val transmission = TransmissionModel.fromTorqueMultiplier(motor, 2.0, 50 * ozf * `in`, 0.9)
+        val mass = 10.8 * lbs
+        val model = FixedWheelDriveModel.mecanumLike(
+            mass,
+            mass / 4 * (18 * `in`).pow(2),
+            transmission,
+            2 * `in`,
+            16 * `in`,
+            14 * `in`
+        )
+
+        model.run {
+            listOf(
+                motorVelFromBotVel,
+                motorAccelFromVolts,
+                voltsFromMotorVel,
+                motorAccelFromMotorVel
+            )
+        }.forEach {
+            println(it.formatReadable())
+        }
     }
 
     companion object {
-        val idealUnitMotor = DcMotorModel.fromCoefficients(1.0, 1.0, 1.0, 0.0)
+        val idealUnitMotor = MotorModel.fromCoefficients(1.0, 1.0, 1.0, 0.0)
 
-        val halfMotor = DcMotorModel.fromCoefficients(2.0, 1.0, 2.0, 0.0)
-
-        val idealUnitTransmission = TransmissionModel.fromTorqueLosses(idealUnitMotor, 1.0)
-
-        val halfLossTransmission = TransmissionModel.fromTorqueLosses(idealUnitMotor, 1.0, 0.0, 0.5)
-
-        val negativeGearedTransmission = TransmissionModel.fromTorqueLosses(idealUnitMotor, -2.0)
-
-
+        val halfMotor = MotorModel.fromCoefficients(2.0, 1.0, 2.0, 0.0)
     }
 }

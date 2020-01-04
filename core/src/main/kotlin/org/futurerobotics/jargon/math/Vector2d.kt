@@ -2,17 +2,21 @@
 
 package org.futurerobotics.jargon.math
 
+import java.io.Serializable
 import kotlin.math.*
 import kotlin.random.Random
 
 /**
- * Represents a 2d vector with values [x] and [y].
+ * Represents a 2d vector in the plane with values [x] and [y].
  *
- * Some calculations use cross products, in which it is calculated with the z component being 0, and a portion of the
- * result.
- * There exists [Vector2d.ZERO] for people who don't like garbage, like me.
+ * The standard is that +y is counterclockwise of +x, and positive angle is counter clockwise.
+ * We recommend using NorthWestUp orientation where forward is +x, and left is +y.
+ * This way math still checks out, and 0 degrees is forward.
+ *
+ * Some calculations use cross products ([cross],[crossz]), in which it is calculated with interpreting vectors as 3d
+ * vectors with a z component of 0, and only a portion of the result (that is not zero) is returned.
  */
-data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
+data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : Serializable {
 
     /**@see Vector2d */
     constructor(x: Int, y: Int) : this(x.toDouble(), y.toDouble())
@@ -56,18 +60,20 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
     /** `|| this - v ||` */
     infix fun distTo(v: Vector2d): Double = hypot(x - v.x, y - v.y)
 
+    infix fun angleTo(v: Vector2d): Double = atan2(v.y - this.y, v.x - this.x)
+
     /** If both components are finite */
     fun isFinite(): Boolean = x.isFinite() && y.isFinite()
 
     /** If any component is NaN */
-    fun isNan(): Boolean = x.isNaN() || y.isNaN()
+    fun isNaN(): Boolean = x.isNaN() || y.isNaN()
 
     /**
      * Returns the cross product of (this interpreted as a 3d vector with a z component of 0), and the 3d vector
      *  <0,0,[z]>`, as a 2d vector, ignoring the resulting z-component of 0.
      *
      *  This is mainly used to chain 3d - cross products while still only using 2d vectors.
-     *  @see [cross]
+     *  @see cross
      */
     infix fun crossz(z: Double): Vector2d = Vector2d(y * z, -x * z)
 
@@ -88,7 +94,7 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
 
     /**
      * If this vector equals [other] with a leniency of [EPSILON].
-     * @see [epsEq]
+     * @see epsEq
      */
     infix fun epsEq(other: Vector2d): Boolean = x epsEq other.x && y epsEq other.y
 
@@ -102,6 +108,7 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) {
     override fun toString(): String = "Vector2d(%.6f, %.6f)".format(x, y)
 
     companion object {
+        private const val serialVersionUID: Long = -6820664735430027415
         /** The zero vector <0, 0> */
         @JvmField
         val ZERO: Vector2d = Vector2d(0, 0)

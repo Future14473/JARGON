@@ -6,31 +6,33 @@ import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.replaceIf
 
 /**
- * Represents a mapping of s values (arc length) to t value (parameter on a parametric func).
+ * Represents a mapping of 's' (arc length) values to 't' (parameter on a parametric function) values.
+ *
+ * @see ReparamCurve
  */
-interface ReparamMapping : Steppable<Double, Double> {
+interface ReparamMapping : Steppable<Double> {
 
-    /** The total length of this mapping; i.e. the last sample's s value. */
+    /** The total length of this mapping (the maximum s value) */
     val length: Double
 
-    /** @return the t on the original parametric function associated with [s] units along the curve. */
+    /** Returns the parametric function value 't' associated with [s] units along the curve. */
     fun tOfS(s: Double): Double
 
-    /**
-     * Returns a stepper for [tOfS]
-     */
-    override fun stepper(): Stepper<Double, Double> = Stepper(this::tOfS)
+    /** Returns a stepper for [tOfS] */
+    override fun stepper(): Stepper<Double> = Stepper(::tOfS)
 }
 
 /**
  * A [ReparamMapping] using linearly interpolated samples of s to t values.
+ *
+ * See factory methods.
  */
 class SamplesReparamMapping
-private constructor(
+internal constructor(
     private val sSamples: DoubleArray, private val tSamples: DoubleArray
 ) : ReparamMapping {
 
-    /** The total length of this mapping; i.e. the last sample's s value. */
+    /** The total length of this mapping; i.e., the last sample's `s` value. */
     override val length: Double get() = sSamples.last()
 
     /** The total number of samples. */
@@ -59,7 +61,6 @@ private constructor(
         }
     }
 
-    /** @return the t on the original parametric function associated with [s] units along the curve. */
     override fun tOfS(s: Double): Double {
         var i = sSamples.binarySearch(s)
         if (i >= 0) return tSamples[i]
@@ -76,7 +77,7 @@ private constructor(
         return tBefore + progress * (tAfter - tBefore)
     }
 
-    override fun stepper(): Stepper<Double, Double> = object : Stepper<Double, Double> {
+    override fun stepper(): Stepper<Double> = object : Stepper<Double> {
         private var i = -1
 
         override fun stepTo(step: Double): Double {
