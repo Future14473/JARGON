@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.mechanics
+package org.futurerobotics.jargon.model
 
 import kotlin.math.sign
 

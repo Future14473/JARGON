@@ -3,10 +3,10 @@ package org.futurerobotics.jargon.pathing.trajectory
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Interval
 import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.mechanics.MotorBotInteraction
-import org.futurerobotics.jargon.mechanics.MotorModel
-import org.futurerobotics.jargon.mechanics.MotorVelocityModel
-import org.futurerobotics.jargon.mechanics.MotorWheelInteraction
+import org.futurerobotics.jargon.model.MotorBotInteraction
+import org.futurerobotics.jargon.model.MotorModel
+import org.futurerobotics.jargon.model.MotorVelocityModel
+import org.futurerobotics.jargon.model.MotorWheelInteraction
 import org.futurerobotics.jargon.pathing.PathPoint
 import kotlin.math.*
 

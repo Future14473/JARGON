@@ -7,7 +7,7 @@ import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.MotionOnly
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.angleNorm
-import org.futurerobotics.jargon.mechanics.MotorBotInteraction
+import org.futurerobotics.jargon.model.MotorBotInteraction
 
 /**
  * A [PipeBlock] that takes in motor _positions_, calculates the difference, and then estimate _bot_ pose delta using

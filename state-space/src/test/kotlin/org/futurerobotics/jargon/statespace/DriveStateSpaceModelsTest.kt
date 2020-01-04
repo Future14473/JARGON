@@ -2,9 +2,9 @@ package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.convert.*
-import org.futurerobotics.jargon.mechanics.FixedWheelDriveModel
-import org.futurerobotics.jargon.mechanics.MotorModel
-import org.futurerobotics.jargon.mechanics.TransmissionModel
+import org.futurerobotics.jargon.model.FixedWheelDriveModel
+import org.futurerobotics.jargon.model.MotorModel
+import org.futurerobotics.jargon.model.TransmissionModel
 import org.futurerobotics.jargon.printlnMe
 import org.junit.jupiter.api.Test
 import kotlin.math.pow

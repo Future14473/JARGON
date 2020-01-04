@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.mechanics
+package org.futurerobotics.jargon.model
 
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Vector2d

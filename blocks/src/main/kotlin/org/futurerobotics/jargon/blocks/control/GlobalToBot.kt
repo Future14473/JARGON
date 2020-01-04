@@ -3,10 +3,10 @@ package org.futurerobotics.jargon.blocks.control
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
 import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
+import org.futurerobotics.jargon.control.GlobalToBot
 import org.futurerobotics.jargon.math.MotionOnly
 import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.mechanics.GlobalToBot
 
 /**
  * Converts the [MotionState] of global pose (interpreted as a **reference**) into

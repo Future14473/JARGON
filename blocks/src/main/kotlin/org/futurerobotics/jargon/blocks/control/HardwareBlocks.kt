@@ -9,7 +9,7 @@ import org.futurerobotics.jargon.hardware.Motor
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.EPSILON
 import org.futurerobotics.jargon.math.angleNorm
-import org.futurerobotics.jargon.mechanics.MotorVelocityModel
+import org.futurerobotics.jargon.model.MotorVelocityModel
 import kotlin.math.sign
 
 /**

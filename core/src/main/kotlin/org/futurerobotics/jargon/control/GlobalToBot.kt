@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.mechanics
+package org.futurerobotics.jargon.control
 
 import org.futurerobotics.jargon.math.*
 import kotlin.math.PI

@@ -3,11 +3,11 @@ package org.futurerobotics.jargon.blocks.control
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.BlockArrangementBuilder
 import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
+import org.futurerobotics.jargon.control.GlobalToBot
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.ifNan
-import org.futurerobotics.jargon.mechanics.GlobalToBot
-import org.futurerobotics.jargon.mechanics.MotorBotInteraction
+import org.futurerobotics.jargon.model.MotorBotInteraction
 
 /**
  * A [PoseLocalizer] represents a block with some method of tracking the [globalPose].

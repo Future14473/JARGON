@@ -1,9 +1,9 @@
 package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.mechanics.BotVelocityModel
-import org.futurerobotics.jargon.mechanics.MotorBotInteraction
-import org.futurerobotics.jargon.mechanics.MotorVelocityModel
+import org.futurerobotics.jargon.model.BotVelocityModel
+import org.futurerobotics.jargon.model.MotorBotInteraction
+import org.futurerobotics.jargon.model.MotorVelocityModel
 
 /**
  * Utilities for creating common initial [ContinuousStateSpaceMatrices]s from [BotVelocityModel]s.
