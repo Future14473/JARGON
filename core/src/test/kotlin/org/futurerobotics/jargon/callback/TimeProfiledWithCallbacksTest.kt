@@ -35,7 +35,7 @@ internal class TimeProfiledWithCallbacksTest {
         var index = 0
         var reqIndex = 0
         callbacks.map {
-            withCallbacks.addCallback(it)
+            withCallbacks.addFuture(it)
         }.onEach {
             val required = reqIndex++
             (it as CompletionStage<*>).toCompletableFuture().thenRun {
@@ -44,12 +44,6 @@ internal class TimeProfiledWithCallbacksTest {
         }
         withCallbacks
             .stepper()
-            .stepToAll(
-                DoubleProgression.fromNumSegments(
-                    0.0,
-                    1.0,
-                    100
-                )
-            )
+            .stepToAll(DoubleProgression.fromNumSegments(0.0, 1.0, 100))
     }
 }
