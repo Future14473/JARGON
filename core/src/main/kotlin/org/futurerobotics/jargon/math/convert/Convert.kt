@@ -1,14 +1,4 @@
-/**
- * Used for easy and fluent conversion/expression of units.
- *
- * Standard units are SI units, and other values represent the same value in SI units.
- *
- * For example, `3 * inches` is 3 inches in SI units, or 0.0762 m.
- *
- * Beware of forces, as 1 pound != 1 pound-force; use `lbf` instead of `lb` where appropriate.
- *
- * However, beware when dimensional analysis; the same does not follow.
- */
+//todo: potential package doc
 @file:JvmName("MathUnits")
 @file:Suppress("KDocMissingDocumentation", "MemberVisibilityCanBePrivate", "unused")
 

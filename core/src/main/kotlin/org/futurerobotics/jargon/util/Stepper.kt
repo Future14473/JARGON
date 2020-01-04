@@ -11,40 +11,40 @@ package org.futurerobotics.jargon.util
  * This can be used, for example, to avoid doing binary search on every iteration when traversing over values, while
  * also not wasting memory on intermediary lists.
  */
-interface Stepper<out R> {
+interface Stepper<out T> {
 
     /**
      * Steps to the given [step], and returns the value.
      *
      * A invalid value of [step] produces undefined behavior.
      */
-    fun stepTo(step: Double): R
+    fun stepTo(step: Double): T
 }
 
 /** Returns a stepper that uses the supplied [step] function for stepping. */
 @Suppress("FunctionName")
-inline fun <R> Stepper(crossinline step: (Double) -> R): Stepper<R> = object : Stepper<R> {
-    override fun stepTo(step: Double): R = step(step)
+inline fun <T> Stepper(crossinline step: (Double) -> T): Stepper<T> = object : Stepper<T> {
+    override fun stepTo(step: Double): T = step(step)
 }
 
 /** Represents something that can be stepped with a [Stepper]. */
-interface Steppable<out R> {
+interface Steppable<out T> {
 
     /** Gets a stepper for this [Steppable]. */
-    fun stepper(): Stepper<R>
+    fun stepper(): Stepper<T>
 }
 
 /** Returns a [Steppable] that uses the given [stepper] function to provide a stepper. */
 @Suppress("FunctionName")
-inline fun <R> Steppable(crossinline stepper: () -> Stepper<R>): Steppable<R> = object : Steppable<R> {
-    override fun stepper(): Stepper<R> = stepper()
+inline fun <T> Steppable(crossinline stepper: () -> Stepper<T>): Steppable<T> = object : Steppable<T> {
+    override fun stepper(): Stepper<T> = stepper()
 }
 
 /** Returns a list corresponding to stepping through all the values in the specified [list]. */
-fun <R> Stepper<R>.stepToAll(list: Iterable<Double>): List<R> = list.map { stepTo(it) }
+fun <T> Stepper<T>.stepToAll(list: Iterable<Double>): List<T> = list.map { stepTo(it) }
 
 /**
  * Returns a list corresponding to stepping through all the values in the specified [list].
  * This assumes that all values in [list] can be stepped through.
  */
-fun <R> Steppable<R>.stepToAll(list: Iterable<Double>): List<R> = stepper().stepToAll(list)
+fun <T> Steppable<T>.stepToAll(list: Iterable<Double>): List<T> = stepper().stepToAll(list)

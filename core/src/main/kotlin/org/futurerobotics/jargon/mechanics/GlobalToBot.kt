@@ -23,7 +23,7 @@ object GlobalToBot {
         globalError.vecRotated(-globalHeading)
 
     /**
-     * Converts a _expected_ [globalMotion] in poses to bot [globalMotion], given the true [globalHeading]
+     * Converts [globalMotion] in poses to bot [motion], given the true [globalHeading]
      */
     @JvmStatic
     fun motion(globalMotion: MotionOnly<Pose2d>, globalHeading: Double): MotionOnly<Pose2d> {
@@ -48,8 +48,8 @@ object GlobalToBot {
         val rs = (s - globalPose).vecRotated(-globalHeading)
         val rv = v.vecRotated(-globalHeading)
         val ra = Pose2d(
-            a.vec.rotated(-globalHeading) +
-                    v.vec.rotated(-globalHeading + PI / 2) * -v.heading,
+            a.vec.rotated(-globalHeading) -
+                    v.vec.rotated(-globalHeading + PI / 2) * v.heading,
             a.heading
         )
         return MotionState(rs, rv, ra)
