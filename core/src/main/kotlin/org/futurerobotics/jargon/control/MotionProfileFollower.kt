@@ -36,27 +36,29 @@ import java.util.concurrent.ConcurrentLinkedQueue
  */
 abstract class MotionProfileFollower<T : Any, P : TimeProfiled<T>> {
 
-    @Volatile
-    private var _output: T? = null
-    /**
-     * Gets the current time traversed along the profile.
-     */
-    protected var currentTime = 0.0
+    /** The current time traversed along the profile. */
+    var currentTime = 0.0
         private set
 
     private val profileQueue = ConcurrentLinkedQueue<P>()
     private var curStepper: Stepper<T>? = null
 
     /** The currently traversed profile. */
-    protected var currentProfile: P? = null
+    var currentProfile: P? = null
         private set
 
+    @Volatile
+    private var _output: T? = null
     /**
      * The current output of this [MotionProfileFollower].
      *
      * May throw exception on get if this has never been [reset].
      */
     val output: T get() = _output ?: error("Output not initialized.")
+    /**
+     * The current output of this [MotionProfileFollower], or null if no output exists.
+     */
+    val outputOrNull: T? get() = _output
 
     /** If this motion profile follower is currently following any profile. */
     val isFollowing: Boolean = currentProfile != null

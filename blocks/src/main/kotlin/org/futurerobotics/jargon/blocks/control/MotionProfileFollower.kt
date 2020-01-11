@@ -2,8 +2,8 @@ package org.futurerobotics.jargon.blocks.control
 
 import org.futurerobotics.jargon.blocks.Block
 import org.futurerobotics.jargon.blocks.Block.Processing.ALWAYS
+import org.futurerobotics.jargon.control.TimeOnlyMotionProfileFollower
 import org.futurerobotics.jargon.profile.TimeProfiled
-import org.futurerobotics.jargon.util.Stepper
 
 /**
  * Base class for implementing a block that follows a motion profile.
@@ -27,10 +27,10 @@ import org.futurerobotics.jargon.util.Stepper
  * @param initialOutput the initial output if the system is idle and no motion profiled has been given
  *              yet.
  */
-abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Block(ALWAYS) {
+abstract class MotionProfileFollower<T : Any, P : TimeProfiled<T>>(private val initialOutput: T) : Block(ALWAYS) {
 
     /** The motion profile input. See [MotionProfileFollower]*/
-    val profileInput: Input<TimeProfiled<T>?> = newOptionalInput()
+    val profileInput: Input<P?> = newInput()
     /** The stop input. See [MotionProfileFollower] */
     val stop: Input<Boolean?> = newOptionalInput()
     /** The output from the motion profile this [MotionProfileFollower] is at. */
@@ -43,57 +43,26 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
     /** If this follower is currently following a motion profile. */
     val isFollowing: Output<Boolean> = newOutput()
 
-    private var outputValue: T = initialOutput
-    private var currentTime: Double = 0.0
-    private var currentProfile: TimeProfiled<T>? = null
-    private var currentStepper: Stepper<T>? = null //if null; means poll more.
+    protected abstract val follower: org.futurerobotics.jargon.control.MotionProfileFollower<T, P>
 
     final override fun init() {
-        outputValue = initialOutput
-        currentTime = 0.0
-        currentProfile = null
-        currentStepper = null
+        follower.reset(initialOutput)
     }
 
     final override fun Context.process() {
-        update()
-        output.set = outputValue
-        progress.set = currentProfile?.let { currentTime / it.duration } ?: 1.0
-        isFollowing.set = currentStepper != null
-        this.processFurther()
-    }
-
-    private fun Context.update() {
-        var stepper = currentStepper
-        val stop = stop.get == true
-        if (stop || stepper === null) {//always poll stop
-            val newProfile = profileInput.get ?: return
-            currentProfile = newProfile
-            currentTime = 0.0
-            stepper = newProfile.stepper()
-            currentStepper = stepper
+        if (stop.get == true) {
+            follower.reset(follower.outputOrNull ?: initialOutput)
         } else {
-            currentTime = getNextTime(currentTime, outputValue)
+            update()
         }
-        val endTime = currentProfile!!.duration
-        if (currentTime >= endTime) {
-            currentTime = endTime
-            currentStepper = null
-            currentProfile = null
-        }
-        outputValue = stepper.stepTo(currentTime)
+        output.set = follower.output
+        val following = follower.isFollowing
+        isFollowing.set = following
+        progress.set = if (following) follower.currentTime / follower.currentProfile!!.duration else 1.0
     }
 
-    /** Performs any additional possible processing. */
-    protected open fun Context.processFurther() {}
-
-    /**
-     * Gets the next time to use to get the value out of the [TimeProfiled].
-     *
-     * @param currentTime along the motion profile.
-     * @param lastOutput of the motion profile.
-     */
-    protected abstract fun Context.getNextTime(currentTime: Double, lastOutput: T): Double
+    /** Updates the [follower]. */
+    protected abstract fun Context.update()
 }
 
 /**
@@ -101,7 +70,13 @@ abstract class MotionProfileFollower<T : Any>(private val initialOutput: T) : Bl
  *
  * @param initialIdleOutput the initial value to be outputted when no motion profile has been ever given.
  */
-class TimeOnlyMotionProfileFollower<T : Any>(initialIdleOutput: T) : MotionProfileFollower<T>(initialIdleOutput) {
+class TimeOnlyMotionProfileFollower<T : Any, P : TimeProfiled<T>>(initialIdleOutput: T) :
+    MotionProfileFollower<T, P>(initialIdleOutput) {
 
-    override fun Context.getNextTime(currentTime: Double, lastOutput: T): Double = currentTime + loopTime
+    override val follower: org.futurerobotics.jargon.control.MotionProfileFollower<T, P> =
+        TimeOnlyMotionProfileFollower()
+
+    override fun Context.update() {
+        (follower as TimeOnlyMotionProfileFollower<*, *>).update(loopTimeInNanos)
+    }
 }

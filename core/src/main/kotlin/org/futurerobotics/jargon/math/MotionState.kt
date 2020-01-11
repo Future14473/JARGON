@@ -6,7 +6,7 @@ package org.futurerobotics.jargon.math
  * @see MotionOnly
  * @see LinearMotionOnly
  */
-interface AnyMotionOnly<T : Any> {
+interface AnyMotionOnly<out T> {
 
     /** The velocity of this [MotionOnly] */
     val deriv: T
@@ -20,7 +20,7 @@ interface AnyMotionOnly<T : Any> {
  * @see MotionOnly
  * @see LinearMotionState
  */
-interface AnyMotionState<T : Any> {
+interface AnyMotionState<out T> {
 
     /** The value of this [MotionState] */
     val value: T
@@ -36,7 +36,7 @@ interface AnyMotionState<T : Any> {
  * @see MotionOnly
  * @see LinearMotionOnly
  */
-data class MotionOnly<T : Any>(
+data class MotionOnly<out T>(
     override val deriv: T, override val secondDeriv: T
 ) : AnyMotionOnly<T>
 
@@ -46,12 +46,18 @@ data class MotionOnly<T : Any>(
  * @see MotionOnly
  * @see LinearMotionState
  */
-data class MotionState<T : Any>(
+data class MotionState<out T>(
     override val value: T, override val deriv: T, override val secondDeriv: T
 ) : AnyMotionState<T> {
 
     /** Creates a [MotionOnly] with same [deriv] and [secondDeriv] as this [MotionState]. */
     fun toMotionOnly(): MotionOnly<T> = MotionOnly(deriv, secondDeriv)
+
+    inline fun <R : Any> map(transform: (T) -> R): MotionState<R> = MotionState(
+        transform(value),
+        transform(deriv),
+        transform(secondDeriv)
+    )
 
     companion object {
         /** Creates a [MotionState] with all values equal to the given [value] */
