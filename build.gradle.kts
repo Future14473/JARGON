@@ -1,8 +1,17 @@
 @file:Suppress("PublicApiImplicitType", "SpellCheckingInspection", "KDocMissingDocumentation")
 
+import com.jfrog.bintray.gradle.BintrayExtension
+import com.jfrog.bintray.gradle.BintrayPlugin
+import com.jfrog.bintray.gradle.tasks.BintrayPublishTask
+import org.jetbrains.dokka.gradle.DokkaPlugin
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.util.*
 
-val hipparchusVersion by extra("1.5")
+//will later be applied to all subprojects
+group = "org.futurerobotics.jargon"
+version = "snapshot1"
+//---
+val hipparchusVersion by extra("1.6")
 val striktVersion by extra("0.23.2")
 val xchartVersion by extra("3.6.0")
 val junitVersion by extra("4.12")
@@ -39,12 +48,13 @@ repositories {
 
 plugins {
     kotlin("jvm") version "1.3.61"
-//    id("org.jetbrains.dokka") version "0.10.0"
+    id("org.jetbrains.dokka") version "0.10.0"
     `maven-publish`
+    id("com.jfrog.bintray") version "1.8.4"
 }
 subprojects {
-    group = "org.futurerobotics.jargon"
-    version = "0.1.0-SNAPSHOT"
+    group = rootProject.group
+    version = rootProject.version
     repositories {
         mavenCentral()
         jcenter()
@@ -75,7 +85,13 @@ fun Project.configureKotlin() {
     }
 }
 
-//workaround for issues with apply from kts
+var <T> Property<T>.v: T?
+    get() = get()
+    set(value) {
+        set(value)
+    }
+
+//Tests
 fun Project.configureTests() {
     dependencies {
         testImplementation(junit5)
@@ -92,50 +108,110 @@ fun Project.configureTests() {
     }
 }
 
+tasks.create("testAll") {
+    group = "verification"
+    dependsOn(
+        subprojects.map { it.tasks.withType<Test>() }
+    )
+}
+//publishing
+val properties = Properties()
+val propertiesFile = file("local.properties")
+if (propertiesFile.exists()) {
+    properties.load(propertiesFile.inputStream())
+}
+val githubURL = "https://github.com/Future14473/JARGON"
+
+val bintrayUser = properties.getProperty("bintray.user") ?: System.getenv("BINTRAY_USER")
+val bintrayKey = properties.getProperty("bintray.key") ?: System.getenv("BINTRAY_KEY")
+
 fun Project.configurePublish() {
-    apply(plugin = "org.gradle.maven-publish")
-/*
-    apply(plugin = "org.jetbrains.dokka")
+    apply<MavenPublishPlugin>()
+    apply<BintrayPlugin>()
+    apply<DokkaPlugin>()
+    val isSnapshot by extra { version.toString().contains(Regex("[a-zA-Z]")) }
 
     tasks.dokka {
         outputFormat = "html"
         outputDirectory = "$buildDir/javadoc"
     }
- */
     val sourcesJar by tasks.creating(Jar::class) {
         from(sourceSets.main.get().allSource)
-        archiveClassifier.set("sources")
+        archiveClassifier.v = "sources"
     }
-    /*
+
     val dokkaJar by tasks.creating(Jar::class) {
         group = JavaBasePlugin.DOCUMENTATION_GROUP
-        archiveClassifier.set("javadoc")
+        archiveClassifier.v = "javadoc"
         from(tasks.dokka)
     }
-    */
 
-    publishing {
-        publications {
-            create<MavenPublication>("snapshot") {
-                from(components["java"])
-//                artifact(dokkaJar) //no dokka
-                artifact(sourcesJar)
-                versionMapping {
-                    usage("java-api") {
-                        fromResolutionOf("runtimeClasspath")
-                    }
-                    usage("java-runtime") {
-                        fromResolutionResult()
-                    }
+    val publicationName = if (isSnapshot) "snapshot" else "release"
+    publishing.publications {
+        create<MavenPublication>(publicationName) {
+            from(components["java"])
+            artifact(sourcesJar)
+            if (!isSnapshot)
+                artifact(dokkaJar)
+            this@configurePublish.configMavenPublication(this)
+        }
+    }
+    var doPublish = true
+//    if(isSnapshot) doPublish = false
+    if (doPublish && (bintrayUser == null || bintrayKey == null)) {
+        logger.warn("Bintray user or key not found")
+        doPublish = false
+    }
+    bintray {
+        this.user = user
+        this.key = key
+        publish = doPublish
+        override = isSnapshot
+        setPublications(publicationName)
+        pkg(delegateClosureOf<BintrayExtension.PackageConfig> {
+            repo = if (isSnapshot) "maven-snapshot" else "maven"
+            name = "JARGON"
+            userOrg = "future14473"
+            setLicenses("MIT")
+            vcsUrl = "https://github.com/Future14473/JARGON"
+            version(delegateClosureOf<BintrayExtension.VersionConfig> {
+                name = project.version.toString()
+                released = Date().toString()
+                if (!isSnapshot) {
+                    vcsTag = "v" + project.version
                 }
+            })
+        })
+    }
+}
+
+fun Project.configMavenPublication(pub: MavenPublication) {
+    pub.versionMapping {
+        usage("java-api") {
+            fromResolutionOf("runtimeClasspath")
+        }
+        usage("java-runtime") {
+            fromResolutionResult()
+        }
+    }
+    val project = this
+    pub.pom {
+        name.v = "JARGON ${project.name.replace("-", " ")}"
+        description.v = project.description
+        url.v = githubURL
+        licenses {
+            license {
+                name.v = "The MIT License"
+                url.v = "http://www.opensource.org/licenses/MIT"
+                distribution.v = "repo"
             }
+        }
+        scm {
+            url.v = githubURL
         }
     }
 }
 
-tasks.create("testAll") {
-    group = "verification"
-    dependsOn(
-        rootProject.subprojects.map { it.tasks.withType<Test>() }
-    )
+tasks.withType(BintrayPublishTask::class.java).all {
+    onlyIf { false }
 }
