@@ -104,9 +104,6 @@ class FixedWheelDriveModel
     override val motorVelFromBotVel: Mat by lazy { motorVelFromComVel * comVelFromBotVel }
     override val botVelFromMotorVel: Mat by lazy { motorVelFromBotVel.pinv() }
 
-    override val motorAccelFromBotAccel: Mat get() = motorVelFromBotVel
-    override val botAccelFromMotorAccel: Mat get() = botVelFromMotorVel
-
     override val motorVelFromWheelVel: Mat by lazy { diagMat(wheels.map { it.motorVelPerOutputVel }) }
     override val wheelVelFromMotorVel: Mat by lazy { diagMat(wheels.map { 1 / it.motorVelPerOutputVel }) }
 

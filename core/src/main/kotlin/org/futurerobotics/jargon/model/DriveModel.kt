@@ -113,7 +113,7 @@ interface BotVelocityModel {
      */
     val isHolonomic: Boolean
 
-    /** The number of wheels on this bot. */
+    /** The number of motors on this bot. */
     val numMotors: Int
     //volts <-> bot
     /**
