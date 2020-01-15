@@ -15,11 +15,11 @@ import org.futurerobotics.jargon.statespace.StateSpaceRunner
  * and provide an initial state on the first cycle.
  *
  * Either [reference] and [nextReference] can be connected, or [referenceMotionState] can be connected.
- * The former provides reference tracking (if an appropriate [FeedForwardWrapper] is given) in discrete time,
+ * The former provides reference tracking (if an appropriate [FeedForwardWrapperBlock] is given) in discrete time,
  * while the latter approximates it from continuous time.
  */
 @ExperimentalStateSpace
-class StateSpaceRunnerBlock(private val runner: StateSpaceRunner, var initialState: Vec?) :
+class StateSpaceRunnerBlock(private val runner: StateSpaceRunner, private val initialState: Vec?) :
     Block(Processing.ALWAYS) {
 
     /** The reference vector input. Either this or [referenceMotionState] must be connected. */

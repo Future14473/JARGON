@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.profile
 
-import org.futurerobotics.jargon.math.LinearMotionState
+import org.futurerobotics.jargon.math.RealMotionState
 import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
 
@@ -29,7 +29,7 @@ interface TimeDistanceProfiled<out State : Any> : TimeProfiled<State> {
     /** The total distance of the profile. */
     val distance: Double
 
-    /** Returns the [LinearMotionState] of this motion profile at the given [distance]. */
+    /** Returns the [RealMotionState] of this motion profile at the given [distance]. */
     fun atDistance(distance: Double): State
 
     /** Gets the time of the profile at a given [distance]. */

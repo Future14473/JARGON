@@ -21,12 +21,12 @@ class BlockSystem(arrangement: BlockArrangement) : BlockRunner(arrangement),
     private val _systemValues = object : SystemValues {
         override var totalTimeInNanos: Long = 0
         override val totalTime: Double get() = totalTimeInNanos / 1e9
-        override var loopTimeInNanos: Long = 0
+        override var elapsedTimeInNanos: Long = 0
             set(value) {
                 totalTimeInNanos += value
                 field = value
             }
-        override val loopTime: Double get() = loopTimeInNanos / 1e9
+        override val elapsedTime: Double get() = elapsedTimeInNanos / 1e9
         override val loopNumber: Int get() = this@BlockSystem.loopNumber
     }
     override val systemValues: SystemValues = _systemValues
@@ -40,7 +40,7 @@ class BlockSystem(arrangement: BlockArrangement) : BlockRunner(arrangement),
     override fun init(): Unit = super<BlockRunner>.init()
 
     override fun loop(loopTimeInNanos: Long): Boolean {
-        _systemValues.loopTimeInNanos = loopTimeInNanos
+        _systemValues.elapsedTimeInNanos = loopTimeInNanos
 
         processOnce()
 

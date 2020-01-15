@@ -3,7 +3,7 @@
 
 package org.futurerobotics.jargon.pathing
 
-import org.futurerobotics.jargon.math.LinearMotionState
+import org.futurerobotics.jargon.math.RealMotionState
 import org.futurerobotics.jargon.util.Stepper
 
 /**
@@ -16,7 +16,7 @@ interface HeadingProvider {
      * Gets a heading's derivatives at the point [s] units along the curve, using info provided by
      * the [CurvePoint] [point]
      */
-    fun getHeading(point: CurvePoint, s: Double): LinearMotionState
+    fun getHeading(point: CurvePoint, s: Double): RealMotionState
 }
 
 /**
@@ -42,7 +42,7 @@ class CurveHeadingPath(internal val curve: Curve, private val heading: HeadingPr
     }
 
     internal class Point(
-        internal val curvePoint: CurvePoint, heading: LinearMotionState
+        internal val curvePoint: CurvePoint, heading: RealMotionState
     ) : PathPoint, CurvePoint by curvePoint {
 
         override val heading: Double = heading.value

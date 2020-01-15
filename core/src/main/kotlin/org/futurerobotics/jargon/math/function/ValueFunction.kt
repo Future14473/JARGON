@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.math.function
 
-import org.futurerobotics.jargon.math.LinearMotionState
 import org.futurerobotics.jargon.math.MotionState
+import org.futurerobotics.jargon.math.RealMotionState
 import org.futurerobotics.jargon.math.Vector2d
 
 /**
@@ -26,9 +26,9 @@ interface RealFunction {
 operator fun RealFunction.invoke(t: Double): Double = value(t)
 
 /**
- * Gets a [LinearMotionState] for the value and first and second derivatives at [t].
+ * Gets a [RealMotionState] for the value and first and second derivatives at [t].
  */
-fun RealFunction.motionState(t: Double): LinearMotionState = LinearMotionState(value(t), deriv(t), secondDeriv(t))
+fun RealFunction.motionState(t: Double): RealMotionState = RealMotionState(value(t), deriv(t), secondDeriv(t))
 
 /**
  * Represents a vector-valued function with first, second, and third derivatives.

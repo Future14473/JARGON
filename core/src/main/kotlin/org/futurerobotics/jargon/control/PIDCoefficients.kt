@@ -1,6 +1,16 @@
-package org.futurerobotics.jargon.blocks.control
+package org.futurerobotics.jargon.control
 
 import org.futurerobotics.jargon.math.Interval
+
+/**
+ * Simple PID coefficients.
+ *
+ * @see [ExtendedPIDCoefficients]
+ * @param p the proportional gain
+ * @param i the integral gain
+ * @param d the derivative gain
+ */
+open class PIDCoefficients(val p: Double, val i: Double, val d: Double)
 
 /**
  * PID coefficients with more options like some regulation on that pesky [i] term.
@@ -13,15 +23,18 @@ import org.futurerobotics.jargon.math.Interval
  * @param integralActivationThreshold The maximum error that the integral term can activate on.
  * @param maxIntegralContribution The maximum contribution to the output the integral term can have.
  */
-open class PidCoefficients @JvmOverloads constructor(
-    val p: Double,
-    val i: Double,
-    val d: Double,
+class ExtendedPIDCoefficients
+@JvmOverloads constructor(
+    p: Double,
+    i: Double,
+    d: Double,
     val errorBounds: Interval = Interval.REAL,
     val outputBounds: Interval = Interval.REAL,
     val integralActivationThreshold: Double = Double.POSITIVE_INFINITY,
     maxIntegralContribution: Double = Double.POSITIVE_INFINITY
-) {
+) : PIDCoefficients(p, i, d) {
+
+    constructor(pidCoefficients: PIDCoefficients) : this(pidCoefficients.p, pidCoefficients.i, pidCoefficients.d)
 
     init {
         require(p >= 0) { "p term ($p) must be >= 0" }
@@ -34,7 +47,16 @@ open class PidCoefficients @JvmOverloads constructor(
     }
 
     /**
-     * The maximum Error sum due to `maxIntegralContribution` (see [PidCoefficients])
+     * The maximum Error sum due to `maxIntegralContribution` (see [PIDCoefficients])
      */
     val maxErrorSum: Double = maxIntegralContribution / i
 }
+
+/**
+ * Converts to [ExtendedPIDCoefficients].
+ */
+fun PIDCoefficients.toExtendedCoefficients(): ExtendedPIDCoefficients = when (this) {
+    is ExtendedPIDCoefficients -> this
+    else -> ExtendedPIDCoefficients(this)
+}
+

@@ -68,7 +68,7 @@ class BotVelLocalizer(initialPose: Pose2d = Pose2d.ZERO) : DeltaBasedLocalizer(i
     /** The velocity input */
     val botVelocity: Input<Pose2d> = newInput()
 
-    override fun Context.getPoseDelta(): Pose2d = botVelocity.get * loopTime.ifNan { 0.0 }
+    override fun Context.getPoseDelta(): Pose2d = botVelocity.get * elapsedTime.ifNan { 0.0 }
 }
 
 /**
@@ -130,48 +130,6 @@ class EncoderOnlyLocalizer(
         with(builder) {
             val deltaGetter = MotorToBotDelta(interaction)
             motorPositions = deltaGetter.motorPositions
-
-            val delta = deltaGetter.botDelta
-            val tracker = BotDeltaLocalizer().apply {
-                botDelta from delta
-            }
-            poseOverride = tracker.poseOverride
-            globalPose = tracker.globalPose
-        }
-    }
-}
-
-/**
- * A [PoseLocalizer] that uses encoders to estimate translational velocities, but uses a gyroscope as
- * _THE_ heading. This might cause problems if your gyro starts to drift.
- */
-class EncoderAndStrictGyroLocalizer(
-    builder: BlockArrangementBuilder, interaction: MotorBotInteraction
-) : PoseLocalizer {
-
-    constructor(
-        builder: BlockArrangementBuilder,
-        interaction: MotorBotInteraction,
-        motors: MotorsBlock,
-        gyroBlock: GyroBlock
-    ) : this(builder, interaction) {
-        builder.connect(motorPositions, motors.motorPositions)
-        builder.connect(headingMeasurement, gyroBlock.headingMeasurement)
-    }
-
-    override val poseOverride: Block.Input<Pose2d?>
-    override val globalPose: Block.Output<Pose2d>
-    /** Motor positions input (from encoders). */
-    val motorPositions: Block.Input<Vec>
-
-    /** Heading measurement input (from gyro). */
-    val headingMeasurement: Block.Input<Double>
-
-    init {
-        with(builder) {
-            val deltaGetter = MotorAndGyroToBotDelta(interaction)
-            motorPositions = deltaGetter.motorPositions
-            headingMeasurement = deltaGetter.headingMeasurement
 
             val delta = deltaGetter.botDelta
             val tracker = BotDeltaLocalizer().apply {

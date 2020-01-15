@@ -21,7 +21,7 @@ internal class DriveStateSpaceModelsTest {
         )
         val transmission = TransmissionModel.ideal(motor, 1.0)
         val mass = 5.0
-        val model = FixedWheelDriveModel.mecanumLike(
+        val model = FixedWheelDriveModel.mecanum(
             mass,
             0.5,
             transmission,
@@ -54,7 +54,7 @@ internal class DriveStateSpaceModelsTest {
         )
         val transmission = TransmissionModel.fromTorqueMultiplier(motor, 2.0, 50 * ozf * `in`, 0.9)
         val mass = 20 * lbs
-        val model = FixedWheelDriveModel.mecanumLike(
+        val model = FixedWheelDriveModel.mecanum(
             mass,
             mass / 12 * (18 * `in`).pow(2),
             transmission,

@@ -155,18 +155,18 @@ class CreatePose : PrincipalOutputBlock<Pose2d>(LAZY) {
 }
 
 /**
- * A block that splits a [MotionState]<[Pose2d]> into 3 [LinearMotionState]s, each representing a component of [Pose2d]
+ * A block that splits a [MotionState]<[Pose2d]> into 3 [RealMotionState]s, each representing a component of [Pose2d]
  */
 class SplitPoseMotionState : Block(LAZY) {
 
     /** The motion state input */
     val input: Input<MotionState<Pose2d>> = newInput()
     /** x MotionState output */
-    val x: Output<LinearMotionState> = newOutput()
+    val x: Output<RealMotionState> = newOutput()
     /** y MotionState output */
-    val y: Output<LinearMotionState> = newOutput()
+    val y: Output<RealMotionState> = newOutput()
     /** heading MotionState output */
-    val heading: Output<LinearMotionState> = newOutput()
+    val heading: Output<RealMotionState> = newOutput()
 
     override fun Context.process() {
         val input = input.get
@@ -176,11 +176,11 @@ class SplitPoseMotionState : Block(LAZY) {
     }
 
     /** [x] */
-    operator fun component1(): Output<LinearMotionState> = x
+    operator fun component1(): Output<RealMotionState> = x
 
     /** [y] */
-    operator fun component2(): Output<LinearMotionState> = y
+    operator fun component2(): Output<RealMotionState> = y
 
     /** [heading] */
-    operator fun component3(): Output<LinearMotionState> = heading
+    operator fun component3(): Output<RealMotionState> = heading
 }

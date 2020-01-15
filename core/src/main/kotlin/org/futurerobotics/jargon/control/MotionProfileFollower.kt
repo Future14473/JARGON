@@ -34,7 +34,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * ```
  * @see TimeOnlyMotionProfileFollower
  */
-abstract class MotionProfileFollower<T : Any, P : TimeProfiled<T>> {
+abstract class MotionProfileFollower<T : Any, P : TimeProfiled<T>>
+@JvmOverloads constructor(initialOutput: T? = null) {
 
     /** The current time traversed along the profile. */
     var currentTime = 0.0
@@ -48,7 +49,7 @@ abstract class MotionProfileFollower<T : Any, P : TimeProfiled<T>> {
         private set
 
     @Volatile
-    private var _output: T? = null
+    private var _output: T? = initialOutput
     /**
      * The current output of this [MotionProfileFollower].
      *

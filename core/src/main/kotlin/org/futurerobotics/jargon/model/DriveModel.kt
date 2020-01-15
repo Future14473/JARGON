@@ -4,13 +4,15 @@ import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 
 /**
- * Represents a drive model that is framed analyzing how motor voltages affects the motor's velocity, with possibly
+ * Represents a model that is framed analyzing how motor voltages affects the motor's velocity, with possibly
  * some interactions between separate motors (applying a voltage to one motor may also move another).
  *
  * Models should be _continuous_.
+ *
+ * @see BotVelocityControllingModel
  */
-interface MotorVelocityModel {
-    // motor <-> motor
+interface MotorVelocityControllingModel {
+
     /**
      * The number of motors in this model.
      */
@@ -18,24 +20,24 @@ interface MotorVelocityModel {
     /**
      * Transforms motor velocities into the voltages needed to keep it at that speed.
      *
-     * This can be due to the motors acting as generators, hence producing a voltage, and/or the
-     * contribution of other frictional forces.
+     * This can be due to the motors acting as generators, hence producing a voltage that needs
+     * to be counterbalanced, and/or the contribution of other frictional forces.
      *
      * Non-diagonal entries may or may not be 0 (there are interactions between motors).
      *
-     * Adding this with voltages obtained from [voltsFromMotorAccel] and [voltsForMotorFriction] gets the modeled
-     * voltage signal.
+     * Adding this with voltages obtained from [voltsFromMotorAccel] and possibly from [MotorFrictionModel] gets the
+     * modeled voltage required.
      */
     val voltsFromMotorVel: Mat
     /**
-     * Transforms motor acceleration into the voltages needed to do so, given no initial velocity.
+     * Transforms motor acceleration into the voltages needed to produce that acceleration, given no initial velocity.
      *
-     * This may factor in possible frictional forces related to friction.
+     * This may factor in possible frictional forces.
      *
      * Non-diagonal entries may or may not be 0 (there are interactions between motors).
      *
-     * Adding this with voltages obtained from [voltsFromMotorVel] and [voltsForMotorFriction] gets the modeled
-     * voltage signal.
+     * Adding this with voltages obtained from [voltsFromMotorVel] and possibly from [MotorFrictionModel] gets the
+     * voltage required.
      * @see motorAccelFromVolts
      */
     val voltsFromMotorAccel: Mat
@@ -46,7 +48,7 @@ interface MotorVelocityModel {
      *
      * Non-diagonal entries may or may not be 0 (there are interactions between motors).
      *
-     * This should be the inverse of [voltsFromMotorAccel].
+     * This should be the (pseudo) inverse of [voltsFromMotorAccel].
      * @see voltsFromMotorAccel
      */
     val motorAccelFromVolts: Mat
@@ -55,14 +57,22 @@ interface MotorVelocityModel {
      * can be caused by the motor acting as a generator hence producing a voltage that slows it down, and/or other
      * frictional forces that are dependent on the bot's velocity.
      *
-     * This should not be used for _constant_ friction that depends only on motor's direction, for that, see
-     * [motorAccelForMotorFriction].
-     *
-     * This should (usually) have ***negative*** diagonal entries.
+     * This should (usually) have **negative** diagonal entries.
      *
      * Non-diagonal entries may or may not be 0 (there are interactions between motors).
      */
     val motorAccelFromMotorVel: Mat
+}
+
+/**
+ * Represents additional modeling of frictional forces based on motor velocity/voltage.
+ */
+interface MotorFrictionModel {
+
+    /**
+     * The number of motors.
+     */
+    val numMotors: Int
     /**
      * Represents the _constant_ components of frictional forces; Transforms a vector of _signs_ of the motor's
      * velocities into how that affects the motor's acceleration.
@@ -94,59 +104,51 @@ interface MotorVelocityModel {
 }
 
 /**
- * Represents a drive model that is framed analyzing how motor voltages affects the bot's velocity, without regard
- * for the motor's velocities.
- *
- * This is a tightly coupled model and there is no easy way to account for some types of friction unless at the motor
- * level, and so almost all cases we suggest using [MotorVelocityModel] and bridging with [MotorBotInteraction]
- * instead.
+ * Represents a drive model that is framed analyzing how motor voltages affects the bot's velocity, ignoring
+ * motor's individual velocities.
  *
  * Models should be _continuous_.
  *
- * @see MotorVelocityModel
+ * For drives with a few number of wheels, [MotorVelocityControllingModel] may be better.
+ *
+ * @see MotorVelocityControllingModel
  */
-interface BotVelocityModel {
+interface BotVelocityControllingModel {
 
-    /**
-     * If this model is the fancy math word that means this can move in any direction AND rotate independently of each
-     * other.
-     */
-    val isHolonomic: Boolean
-
-    /** The number of motors on this bot. */
+    /** The number of motors. */
     val numMotors: Int
-    //volts <-> bot
     /**
-     * Transforms a bot velocity vector (see [Pose2d.toVec]) into the expected motor volts to sustain that speed
+     * Transforms bot pose velocity (see [Pose2d.toVec]) into the expected motor volts to sustain that speed,
      * with no acceleration.
      *
-     * This can be due to motors acting as generators, hence producing a voltage; and/or the contribution of
-     * other frictional forces.
+     * This can be due to motors acting as generators, hence producing a voltage that needs to be counterbalanced;
+     * and/or the contribution of other frictional forces.
      *
-     *  This can then be added with [voltsFromBotVel] to get the actual volts.
+     * This can then be added with [voltsFromBotAccel] to get the actual modeled volts.
      */
     val voltsFromBotVel: Mat
     /**
-     * Transform a bot acceleration vector (see [Pose2d.toVec]) into needed motor volts, assuming no friction and
-     * no initial speed.
+     * Transform bot pose acceleration (see [Pose2d.toVec]) into needed motor volts to produce that acceleration,
+     * from zero initial speed.
      *
-     * This can then be added with [voltsFromBotVel] to get the actual volts.
+     * This can then be added with [voltsFromBotVel] to get the actual modeled volts.
      * @see botAccelFromVolts
      */
     val voltsFromBotAccel: Mat
     /**
-     * Transform motor volts into a bot acceleration vector (see [Pose2d.toVec]), assuming no
+     * Transform motor volts into the expected bot pose acceleration vector (see [Pose2d.toVec]), assuming no
      * friction and no initial speed.
      *
-     * This should be the inverse of [voltsFromBotAccel]
+     * This should be the (pseudo)inverse of [voltsFromBotAccel].
      *
      * @see voltsFromBotAccel
      */
     val botAccelFromVolts: Mat
     /**
-     * Transform the currents bot velocity into the expected bot deceleration.
+     * Transform the currents bot pose velocity into the expected bot pose (de)acceleration.
      *
-     * This can be due to motors acting as generators and hence producing a voltage, or the contribution
+     * This can be due to motors acting as generators and hence producing a voltage that slows them down, or the
+     * contribution
      * of other frictional forces.
      *
      * Should (usually) have ***negative*** diagonal entries.
@@ -180,7 +182,6 @@ interface MotorBotInteraction {
 
     /** The number of motors/wheels. */
     val numMotors: Int
-    //bot <-> motor
     /**
      * Transforms a bot velocity vector (see [Pose2d.toVec]) into motor angular velocities.
      * @see botVelFromMotorVel
@@ -207,6 +208,25 @@ interface MotorBotInteraction {
 }
 
 /**
+ * Includes [botVelFromMotorAndGyroVel], which is used for odometry/localization in combination with gyroscope data.
+ */
+interface MotorBotGyroInteraction {
+
+    /**
+     * The number of motors.
+     */
+    val numMotors: Int
+    /**
+     * Transforms motor angular velocities vector, _plus_ an entry for measured bot angular velocity,
+     * into expected bot velocity.
+     *
+     * This is usually calculated by taking the (pseudo) inverse of a `motor vel from bot vel` matrix plus an
+     * extra [0, 0, 1] row (corresponding to the fact that bot angular velocity equals bot angular velocity).
+     */
+    val botVelFromMotorAndGyroVel: Mat
+}
+
+/**
  * Represents the interaction between wheel velocities and motor velocities.
  */
 interface MotorWheelInteraction {
@@ -215,7 +235,6 @@ interface MotorWheelInteraction {
      * The number of motors/wheels.
      */
     val numMotors: Int
-    // wheel <-> motor
     /**
      * Transforms motor velocities into wheel (tangential) velocities
      */
@@ -225,15 +244,4 @@ interface MotorWheelInteraction {
      * Transforms a wheel (tangential) velocities into motor velocities
      */
     val motorVelFromWheelVel: Mat
-}
-
-/**
- * Represents a collection of transmission models.
- */
-interface TransmissionsModel {
-
-    /**
-     * Gets a list of transmission models.
-     */
-    val transmissions: List<TransmissionModel>
 }

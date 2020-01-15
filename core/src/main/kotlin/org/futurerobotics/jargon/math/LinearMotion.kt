@@ -11,7 +11,7 @@ import kotlin.math.sqrt
  * @property a acceleration
  */
 @Suppress("OVERRIDE_BY_INLINE")
-class LinearMotionOnly
+class RealMotionOnly
 @JvmOverloads constructor(
     @JvmField val v: Double,
     @JvmField val a: Double = 0.0
@@ -23,8 +23,8 @@ class LinearMotionOnly
     /**
      * Returns the new motion after time [t], assuming constant acceleration.
      */
-    fun afterTime(t: Double): LinearMotionOnly =
-        LinearMotionOnly(v + a * t, a)
+    fun afterTime(t: Double): RealMotionOnly =
+        RealMotionOnly(v + a * t, a)
 
     /**
      * Returns the new state after moving a displacement of [s] relative to the current motion, assuming constant
@@ -32,16 +32,16 @@ class LinearMotionOnly
      *
      * This may return a velocity of NaN if this state will never reach a displacement of [s].
      */
-    fun afterForwardDist(s: Double): LinearMotionOnly =
-        LinearMotionOnly(sqrt(v.pow(2) + 2 * a * s), a)
+    fun afterForwardDist(s: Double): RealMotionOnly =
+        RealMotionOnly(sqrt(v.pow(2) + 2 * a * s), a)
 
     /** Adds component-wise. */
-    operator fun plus(other: LinearMotionOnly): LinearMotionOnly =
-        LinearMotionOnly(v + other.v, a + other.a)
+    operator fun plus(other: RealMotionOnly): RealMotionOnly =
+        RealMotionOnly(v + other.v, a + other.a)
 
     /** Subtracts component-wise. */
-    operator fun minus(other: LinearMotionOnly): LinearMotionOnly =
-        LinearMotionOnly(v - other.v, a - other.a)
+    operator fun minus(other: RealMotionOnly): RealMotionOnly =
+        RealMotionOnly(v - other.v, a - other.a)
 }
 
 /**
@@ -53,7 +53,7 @@ class LinearMotionOnly
  * @property a acceleration
  */
 @Suppress("OVERRIDE_BY_INLINE")
-class LinearMotionState
+class RealMotionState
 @JvmOverloads constructor(
     @JvmField val s: Double,
     @JvmField val v: Double,
@@ -65,8 +65,8 @@ class LinearMotionState
     override val secondDeriv: Double inline get() = a
 
     /** Returns the new state after time [t], assuming constant acceleration. */
-    fun afterTime(t: Double): LinearMotionState =
-        LinearMotionState(s + v * t + a * t.pow(2) / 2, v + a * t, a)
+    fun afterTime(t: Double): RealMotionState =
+        RealMotionState(s + v * t + a * t.pow(2) / 2, v + a * t, a)
 
     /**
      * Returns the new state after moving a displacement of [s] relative to the current motion, assuming constant
@@ -74,8 +74,8 @@ class LinearMotionState
      *
      * This may return a velocity of NaN if this state will never reach a displacement of [s].
      */
-    fun afterForwardDistance(s: Double): LinearMotionState =
-        LinearMotionState(this.s + s, sqrt(v.pow(2) + 2 * a * s), a)
+    fun afterForwardDistance(s: Double): RealMotionState =
+        RealMotionState(this.s + s, sqrt(v.pow(2) + 2 * a * s), a)
 
     /**
      * Returns the new state when this state reaches a position of [s], assuming constant acceleration,
@@ -83,8 +83,8 @@ class LinearMotionState
      *
      * This may return a velocity of NaN if this state will never reach a position of [s].
      */
-    fun atDistance(s: Double): LinearMotionState =
-        LinearMotionState(s, sqrt(v.pow(2) + 2 * a * (s - this.s)), a)
+    fun atDistance(s: Double): RealMotionState =
+        RealMotionState(s, sqrt(v.pow(2) + 2 * a * (s - this.s)), a)
 
     /**
      * Returns the time elapsed to get to the specified [s] distance, favoring the solution in the direction
@@ -95,10 +95,10 @@ class LinearMotionState
             (-v + sqrt(v.pow(2) + 2 * a * (s - this.s))) / a
 
     /** Adds component-wise. */
-    operator fun plus(other: LinearMotionState): LinearMotionState =
-        LinearMotionState(s + other.s, v + other.v, a + other.a)
+    operator fun plus(other: RealMotionState): RealMotionState =
+        RealMotionState(s + other.s, v + other.v, a + other.a)
 
     /** Subtracts component-wise. */
-    operator fun minus(other: LinearMotionState): LinearMotionState =
-        LinearMotionState(s - other.s, v - other.v, a - other.a)
+    operator fun minus(other: RealMotionState): RealMotionState =
+        RealMotionState(s - other.s, v - other.v, a - other.a)
 }

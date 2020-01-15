@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.pathing
 
-import org.futurerobotics.jargon.math.LinearMotionState
 import org.futurerobotics.jargon.math.MotionState
+import org.futurerobotics.jargon.math.RealMotionState
 import org.futurerobotics.jargon.math.angleNorm
 import org.futurerobotics.jargon.math.function.QuinticPolynomial
 import org.futurerobotics.jargon.math.function.RealFunction
@@ -11,8 +11,8 @@ import org.futurerobotics.jargon.math.function.motionState
 /** A [HeadingProvider] that maintains a constant `heading`. */
 class ConstantHeading(heading: Double) : HeadingProvider {
 
-    private val output = LinearMotionState(angleNorm(heading), 0.0, 0.0)
-    override fun getHeading(point: CurvePoint, s: Double): LinearMotionState = output
+    private val output = RealMotionState(angleNorm(heading), 0.0, 0.0)
+    override fun getHeading(point: CurvePoint, s: Double): RealMotionState = output
 }
 
 /**
@@ -24,9 +24,9 @@ class LinearlyInterpolatedHeading(fromHeading: Double, toHeading: Double) : Head
     private val fromHeading = angleNorm(fromHeading)
     private val turnHeading = angleNorm(toHeading - fromHeading)
 
-    override fun getHeading(point: CurvePoint, s: Double): LinearMotionState {
+    override fun getHeading(point: CurvePoint, s: Double): RealMotionState {
         val dcl = turnHeading / point.originalLength
-        return LinearMotionState(angleNorm(fromHeading + s * dcl), dcl, 0.0)
+        return RealMotionState(angleNorm(fromHeading + s * dcl), dcl, 0.0)
     }
 }
 
@@ -39,7 +39,7 @@ class PolyInterpolatedHeading(fromHeading: MotionState<Double>, toHeading: Motio
     HeadingProvider {
 
     private val spline = QuinticPolynomial.fromDerivatives(fromHeading, toHeading)
-    override fun getHeading(point: CurvePoint, s: Double): LinearMotionState =
+    override fun getHeading(point: CurvePoint, s: Double): RealMotionState =
         spline.motionState(s / point.originalLength)
 }
 
@@ -48,8 +48,8 @@ open class TangentHeading
 @JvmOverloads constructor(offset: Double = 0.0) : HeadingProvider {
 
     private val offset = angleNorm(offset)
-    final override fun getHeading(point: CurvePoint, s: Double): LinearMotionState =
-        LinearMotionState(
+    final override fun getHeading(point: CurvePoint, s: Double): RealMotionState =
+        RealMotionState(
             angleNorm(point.tanAngle + offset),
             point.tanAngleDeriv,
             point.tanAngleSecondDeriv
@@ -68,9 +68,9 @@ constructor(fromOffset: Double, toOffset: Double) : HeadingProvider {
     private val fromOffset = angleNorm(fromOffset)
     private val turnOffset = angleNorm(toOffset - this.fromOffset)
 
-    override fun getHeading(point: CurvePoint, s: Double): LinearMotionState {
+    override fun getHeading(point: CurvePoint, s: Double): RealMotionState {
         val dcl = turnOffset / point.originalLength
-        return LinearMotionState(
+        return RealMotionState(
             angleNorm(point.tanAngle + fromOffset + s * dcl),
             dcl + point.tanAngle,
             point.tanAngleSecondDeriv
@@ -87,9 +87,9 @@ class PolyInterpolatedTangentHeading(fromOffset: MotionState<Double>, toOffset: 
 
     private val spline = QuinticPolynomial.fromDerivatives(fromOffset, toOffset)
 
-    override fun getHeading(point: CurvePoint, s: Double): LinearMotionState {
+    override fun getHeading(point: CurvePoint, s: Double): RealMotionState {
         val state = spline.motionState(s / point.originalLength)
-        return LinearMotionState(
+        return RealMotionState(
             angleNorm(point.tanAngle + state.s),
             point.tanAngleDeriv + state.v,
             point.tanAngleSecondDeriv + state.a
@@ -103,9 +103,9 @@ class PolyInterpolatedTangentHeading(fromOffset: MotionState<Double>, toOffset: 
  */
 class FunctionHeading(private val function: RealFunction) : HeadingProvider {
 
-    override fun getHeading(point: CurvePoint, s: Double): LinearMotionState {
+    override fun getHeading(point: CurvePoint, s: Double): RealMotionState {
         val t = s / point.originalLength
-        return LinearMotionState(
+        return RealMotionState(
             angleNorm(function(t)),
             function.deriv(t),
             function.secondDeriv(t)

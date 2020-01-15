@@ -7,6 +7,7 @@ import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.MotionOnly
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.angleNorm
+import org.futurerobotics.jargon.math.toPose
 import org.futurerobotics.jargon.model.MotorBotInteraction
 
 /**
@@ -29,7 +30,7 @@ class MotorToBotDelta(private val interaction: MotorBotInteraction) : PipeBlock<
         val pastPositions = pastPositions
         this@MotorToBotDelta.pastPositions = curPositions
         return if (pastPositions == null) Pose2d.ZERO else {
-            Pose2d(interaction.botVelFromMotorVel(curPositions - pastPositions))
+            interaction.botVelFromMotorVel(curPositions - pastPositions).toPose()
         }
     }
 
@@ -66,8 +67,8 @@ class MotorAndGyroToBotDelta(private val interaction: MotorBotInteraction) : Blo
         this@MotorAndGyroToBotDelta.pastAngle = curAngle
 
         botDelta.set = if (pastPositions == null) Pose2d.ZERO else {
-            Pose2d(interaction.botVelFromMotorVel(curPositions - pastPositions)
-                       .also { it[2] = angleNorm(curAngle - pastAngle) })
+            interaction.botVelFromMotorVel(curPositions - pastPositions)
+                .also { it[2] = angleNorm(curAngle - pastAngle) }.toPose()
         }
     }
 
@@ -85,7 +86,7 @@ class MotorAndGyroToBotDelta(private val interaction: MotorBotInteraction) : Blo
 class MotorToBotVel(private val interaction: MotorBotInteraction) : PipeBlock<Vec, Pose2d>(Processing.LAZY) {
 
     override fun Context.pipe(input: Vec): Pose2d =
-        Pose2d(interaction.botVelFromMotorVel * input)
+        (interaction.botVelFromMotorVel * input).toPose()
 }
 
 /**

@@ -22,20 +22,14 @@ import java.io.Serializable
  * @property heading the heading of this pose
  * @see Vector2d
  */
-data class Pose2d(val x: Double, val y: Double, val heading: Double) : Serializable {
+data class Pose2d(
+    @JvmField val x: Double,
+    @JvmField val y: Double,
+    @JvmField val heading: Double
+) : Serializable {
 
     /** Constructs a pose from [vec] and [y] position components, and [heading] */
     constructor(vec: Vector2d, heading: Double) : this(vec.x, vec.y, heading)
-
-    /**
-     * Constructs a pose from a linear algebra [Vec], which should have three values in [x], [y], [heading]
-     * order.
-     *
-     * @see toVec
-     */
-    constructor(values: Vec) : this(values[0], values[1], values[2]) {
-        require(values.size == 3) { "Given vector size (${values.size} != 3" }
-    }
 
     /** Extracts a [Vector2d] component from this pose. */
     val vec: Vector2d get() = Vector2d(x, y)
@@ -80,6 +74,17 @@ data class Pose2d(val x: Double, val y: Double, val heading: Double) : Serializa
         /** Pose with all components equal to zero. */
         @JvmField
         val ZERO: Pose2d = Pose2d(Vector2d.ZERO, 0.0)
+
+        /**
+         * Constructs a pose from values a linear algebra [Vec], which should have three values in [x], [y], [heading]
+         * order.
+         *
+         * @see toVec
+         */
+        fun fromVec(vec: Vec): Pose2d {
+            require(vec.size == 3) { "Given vector size (${vec.size} != 3" }
+            return Pose2d(vec[0], vec[1], vec[2])
+        }
     }
 }
 
@@ -88,6 +93,7 @@ operator fun Double.times(p: Pose2d): Pose2d = p * this
  * Constructs a pose from values a linear algebra [Vec], which should have three values in [x], [y], [heading]
  * order.
  *
+ * @see Pose2d.fromVec
  * @see Pose2d.toVec
  */
-fun Vec.toPose(): Pose2d = Pose2d(this)
+fun Vec.toPose(): Pose2d = Pose2d.fromVec(this)

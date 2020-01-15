@@ -36,7 +36,7 @@ data class WheelPosition(
  * @param transmission the transmission model
  * @param wheelPosition the wheel's location on the bot.
  */
-data class WheelModel(
+data class FixedWheelModel(
     val wheelPosition: WheelPosition,
     val transmission: TransmissionModel
 ) {

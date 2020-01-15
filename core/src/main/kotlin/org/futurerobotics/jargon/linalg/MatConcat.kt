@@ -152,7 +152,7 @@ fun concatDynamic(vararg elements: Any): Mat {
 }
 
 /**
- * Concatenating 4 matrices into a single matrix, where sizes of some matrices can be inferred if there is enough
+ * Concatenating matrices into a single matrix, where sizes of some matrices can be inferred if there is enough
  * information.
  *
  * **Also,** a value of 0 substitutes in a zero matrix, while a value of 1 substitutes an identity

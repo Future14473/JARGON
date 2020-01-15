@@ -1,8 +1,8 @@
 package org.futurerobotics.jargon.pathing.trajectory
 
-import org.futurerobotics.jargon.math.LinearMotionState
 import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.Pose2d
+import org.futurerobotics.jargon.math.RealMotionState
 import org.futurerobotics.jargon.math.epsEq
 import org.futurerobotics.jargon.pathing.Path
 import org.futurerobotics.jargon.pathing.PathPoint
@@ -70,7 +70,7 @@ class Trajectory(private val path: Path, private val profile: ForwardMotionProfi
         }
     }
 
-    private fun getState(state: LinearMotionState, point: PathPoint): MotionState<Pose2d> {
+    private fun getState(state: RealMotionState, point: PathPoint): MotionState<Pose2d> {
         val pose = point.pose
         val poseDeriv = point.poseDeriv
         val poseSecondDeriv = point.poseSecondDeriv

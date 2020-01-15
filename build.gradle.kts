@@ -115,15 +115,10 @@ tasks.create("testAll") {
     )
 }
 //publishing
-val properties = Properties()
-val propertiesFile = file("local.properties")
-if (propertiesFile.exists()) {
-    properties.load(propertiesFile.inputStream())
-}
 val githubURL = "https://github.com/Future14473/JARGON"
 
-val bintrayUser = properties.getProperty("bintray.user") ?: System.getenv("BINTRAY_USER")
-val bintrayKey = properties.getProperty("bintray.key") ?: System.getenv("BINTRAY_KEY")
+val bintrayUser: String? = System.getenv("BINTRAY_USER")
+val bintrayKey: String? = System.getenv("BINTRAY_KEY")
 
 fun Project.configurePublish() {
     apply<MavenPublishPlugin>()
@@ -163,8 +158,8 @@ fun Project.configurePublish() {
         doPublish = false
     }
     bintray {
-        this.user = user
-        this.key = key
+        user = bintrayUser
+        key = bintrayKey
         publish = doPublish
         override = isSnapshot
         setPublications(publicationName)

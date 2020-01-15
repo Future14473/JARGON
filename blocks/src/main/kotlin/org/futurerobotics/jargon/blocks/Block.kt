@@ -366,9 +366,9 @@ abstract class Block(val processing: Processing) {
 interface SystemValues {
 
     /** The time in seconds the last loop has taken to run. */
-    val loopTime: Double
+    val elapsedTime: Double
     /** The time in nanoseconds the last loop has taken to run. */
-    val loopTimeInNanos: Long
+    val elapsedTimeInNanos: Long
     /** The total amount of time in second elapsed since the system has started. */
     val totalTime: Double
     /** The total amount of time in nanoseconds elapsed since the system has started. */

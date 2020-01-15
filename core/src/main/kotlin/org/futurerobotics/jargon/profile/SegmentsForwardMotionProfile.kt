@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.profile
 
-import org.futurerobotics.jargon.math.LinearMotionState
+import org.futurerobotics.jargon.math.RealMotionState
 import org.futurerobotics.jargon.math.avg
 import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.isSortedBy
@@ -14,14 +14,14 @@ class SegmentsForwardMotionProfile private constructor(private val segments: Lis
 
     override val duration: Double = segments.last().t
     override val distance: Double = segments.last().state.value
-    override fun atTime(time: Double): LinearMotionState {
+    override fun atTime(time: Double): RealMotionState {
         var i = segments.binarySearchBy(time) { it.t }
         if (i >= 0) return segments[i].state
         i = (-i - 2).coerceAtLeast(0)
         return segments[i].stateAtTime(time)
     }
 
-    override fun atDistance(distance: Double): LinearMotionState = segmentByDistance(distance).stateAtDist(distance)
+    override fun atDistance(distance: Double): RealMotionState = segmentByDistance(distance).stateAtDist(distance)
 
     override fun timeAtDistance(distance: Double): Double = segmentByDistance(distance).timeAtDist(distance)
 
@@ -35,10 +35,10 @@ class SegmentsForwardMotionProfile private constructor(private val segments: Lis
         return segments[i]
     }
 
-    override fun stepper(): Stepper<LinearMotionState> = object : Stepper<LinearMotionState> {
+    override fun stepper(): Stepper<RealMotionState> = object : Stepper<RealMotionState> {
         private var i = -1
 
-        override fun stepTo(step: Double): LinearMotionState {
+        override fun stepTo(step: Double): RealMotionState {
             //delegate extreme point behavior to the ends.
             if (i == -1) {
                 i = when {
@@ -57,7 +57,7 @@ class SegmentsForwardMotionProfile private constructor(private val segments: Lis
     }
 
     /** A pre-calculated representation of the endpoints of segments. */
-    private class Segment(val state: LinearMotionState, val t: Double) {
+    private class Segment(val state: RealMotionState, val t: Double) {
 
         val x get() = state.s
         fun stateAtTime(t: Double) = state.afterTime(t - this.t)
@@ -87,12 +87,12 @@ class SegmentsForwardMotionProfile private constructor(private val segments: Lis
                 require(!(v1 == 0.0 && v2 == 0.0)) { "Velocity can only be instantaneously 0, got two 0 velocities." }
                 val dx = x2 - x1
                 val a = (v2.pow(2) - v1.pow(2)) / 2 / dx //acceleration given (positive) velocities
-                val seg = Segment(LinearMotionState(x1, v1, a), t)
+                val seg = Segment(RealMotionState(x1, v1, a), t)
                 val dt = dx / avg(v1, v2)
                 t += dt
                 seg
             } + pairs.last().let {
-                Segment(LinearMotionState(it.first, it.second, 0.0), t)
+                Segment(RealMotionState(it.first, it.second, 0.0), t)
             }
             return SegmentsForwardMotionProfile(segs)
         }

@@ -20,6 +20,7 @@ inline fun genMat(rows: Int, cols: Int, init: (r: Int, c: Int) -> Double): Mat =
 /** Creates a [Mat] from a 2d double array. */
 @JvmOverloads
 fun createMat(data: Array<DoubleArray>, copy: Boolean = true): Mat =
+    //extracted MatrixUtils.createRealMatrix impl impl
     if (data.size * data[0].size <= 4096)
         Array2DRowRealMatrix(data, copy)
     else
@@ -80,7 +81,11 @@ fun normRandMat(rows: Int, cols: Int, random: Random = Random()): Mat = zeroMat(
     }
 }
 
-/** Creates a vector using the given number [values]. Used for vector literals. */
+/**
+ * Creates a vector using the given number [values]. Used for vector literals.
+ *
+ * @see createVec
+ */
 @Suppress("FunctionName")
 @JvmSynthetic
 fun Vec(vararg values: Number): Vec =

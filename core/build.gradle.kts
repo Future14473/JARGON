@@ -1,5 +1,7 @@
 @file:Suppress("PublicApiImplicitType", "KDocMissingDocumentation", "SpellCheckingInspection")
 
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 val ext = project.rootProject.extra
 val hipparchus: ((String) -> String) by ext
 
@@ -19,11 +21,13 @@ tasks.named("cleanTest") {
     }
 }
 
-//tasks.withType<KotlinCompile> {
-//    kotlinOptions {
-//        @Suppress("SuspiciousCollectionReassignment")
-//        freeCompilerArgs += listOf(
-//        )
-//    }
-//}
+tasks.withType<KotlinCompile> {
+    kotlinOptions {
+        @Suppress("SuspiciousCollectionReassignment")
+        freeCompilerArgs += listOf(
+            "-Xjvm-default=enable",
+            "-XXLanguage:+InlineClasses"
+        )
+    }
+}
 extra["publish"] = true

@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.blocks.functional
 
 import org.futurerobotics.jargon.blocks.PrincipalOutputBlock
-import org.futurerobotics.jargon.blocks.control.MotionProfileFollower
+import org.futurerobotics.jargon.blocks.control.MotionProfileFollowerBlock
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * A block that is a [queue], where elements are polled from the queue when outputs are requested from this block. If
  * the queue is empty, returns `null`. This queue can be modified externally.
  *
- * This can, for instance, be used queue up motion profiles to feed into a [MotionProfileFollower].
+ * This can, for instance, be used queue up motion profiles to feed into a [MotionProfileFollowerBlock].
  */
 class ExternalQueue<T> private constructor(
     private val clearOnStop: Boolean, private val queue: Queue<T>

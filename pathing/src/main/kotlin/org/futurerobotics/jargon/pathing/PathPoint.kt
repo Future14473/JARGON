@@ -71,8 +71,8 @@ fun CurvePoint.positionMotionState(): MotionState<Vector2d> =
     MotionState(position, positionDeriv, positionSecondDeriv)
 
 /** Gets a tanAngle motion state for this [CurvePoint]. */
-fun CurvePoint.tanAngleMotionState(): LinearMotionState =
-    LinearMotionState(tanAngle, tanAngleDeriv, tanAngleSecondDeriv)
+fun CurvePoint.tanAngleMotionState(): RealMotionState =
+    RealMotionState(tanAngle, tanAngleDeriv, tanAngleSecondDeriv)
 
 /**
  * Holds all needed info about a specific point on a [Path]. This _does_ include heading info.
@@ -119,8 +119,8 @@ interface PathPoint : CurvePoint {
 }
 
 /** Gets a heading motion state for this [PathPoint]. */
-fun PathPoint.headingMotionState(): LinearMotionState =
-    LinearMotionState(heading, headingDeriv, headingSecondDeriv)
+fun PathPoint.headingMotionState(): RealMotionState =
+    RealMotionState(heading, headingDeriv, headingSecondDeriv)
 
 /** Gets a pose motion state for this [PathPoint]. */
 fun PathPoint.poseMotionState(): MotionState<Pose2d> =

@@ -9,7 +9,7 @@ import org.futurerobotics.jargon.hardware.Motor
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.EPSILON
 import org.futurerobotics.jargon.math.angleNorm
-import org.futurerobotics.jargon.model.MotorVelocityModel
+import org.futurerobotics.jargon.model.MotorFrictionModel
 import kotlin.math.sign
 
 /**
@@ -88,9 +88,6 @@ class GyroBlock @JvmOverloads constructor(
     @Volatile
     private var offset: Double = 0.0
 
-    private fun calibrate() {
-    }
-
     override fun init() {
         offset =
             if (initialHeading.isNaN()) 0.0
@@ -104,9 +101,10 @@ class GyroBlock @JvmOverloads constructor(
  * A block that takes in motor voltages and the wheel's current velocities, and adds the (modeled) voltage required to
  * overcome frictional forces.
  *
- * @param motorVelocityModel the model used
+ * @param motorFrictionModel the model used
  */
-class MotorFrictionFF(private val motorVelocityModel: MotorVelocityModel) : PrincipalOutputBlock<Vec>(LAZY) {
+class MotorFrictionFF(private val motorFrictionModel: MotorFrictionModel) :
+    PrincipalOutputBlock<Vec>(LAZY) {
 
     /** The motor voltages input */
     val motorVolts: Input<Vec> = newInput()
@@ -121,6 +119,6 @@ class MotorFrictionFF(private val motorVelocityModel: MotorVelocityModel) : Prin
             val volts = voltages[it]
             if (vel <= EPSILON) sign(volts) else sign(vel)
         }
-        return voltages + motorVelocityModel.voltsForMotorFriction * signs
+        return voltages + motorFrictionModel.voltsForMotorFriction * signs
     }
 }

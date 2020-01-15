@@ -141,7 +141,7 @@ infix fun Vec.multI(scalar: Double): Vec = apply { mapToSelf { it * scalar } }
 infix fun Vec.divI(scalar: Double): Vec = apply { mapToSelf { it / scalar } }
 
 /** Converts this vector to a column matrix. */
-fun Vec.toColumnMat(): Mat = createMat(Array(size) { doubleArrayOf(this[it]) }, false)
+fun Vec.toColumnMatrix(): Mat = createMat(Array(size) { doubleArrayOf(this[it]) }, false)
 
 /** Converts this vector to a row matrix. */
 fun Vec.toRowMatrix(): Mat = createMat(arrayOf(toArray()), false)

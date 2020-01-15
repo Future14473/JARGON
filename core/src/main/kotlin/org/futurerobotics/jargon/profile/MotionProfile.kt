@@ -1,15 +1,15 @@
 package org.futurerobotics.jargon.profile
 
-import org.futurerobotics.jargon.math.LinearMotionState
+import org.futurerobotics.jargon.math.RealMotionState
 
 /**
  * Represents a motion profile: a graph/profile of velocity (and position and acceleration) over time.
  *
- * This is also a [TimeProfiled] with [LinearMotionState]s.
+ * This is also a [TimeProfiled] with [RealMotionState]s.
  *
  * @see TimeProfiled
  */
-interface MotionProfile : TimeProfiled<LinearMotionState>
+interface MotionProfile : TimeProfiled<RealMotionState>
 
 /**
  * A [TimeProfiled] in which the velocity is always non-negative (position is always increasing).
@@ -20,4 +20,4 @@ interface MotionProfile : TimeProfiled<LinearMotionState>
  * @see TimeDistanceProfiled
  * @see MotionProfile
  */
-interface ForwardMotionProfile : MotionProfile, TimeDistanceProfiled<LinearMotionState>
+interface ForwardMotionProfile : MotionProfile, TimeDistanceProfiled<RealMotionState>

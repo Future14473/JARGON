@@ -2,8 +2,6 @@ package org.futurerobotics.jargon.blocks.functional
 
 import org.futurerobotics.jargon.blocks.Block.Processing.LAZY
 import org.futurerobotics.jargon.blocks.PipeBlock
-import org.futurerobotics.jargon.blocks.functional.MapMotionOnly.Companion.with
-import org.futurerobotics.jargon.blocks.functional.MapMotionState.Companion.with
 import org.futurerobotics.jargon.math.MotionOnly
 import org.futurerobotics.jargon.math.MotionState
 
@@ -25,52 +23,25 @@ class MotionOnlyToVelocityState<T : Any>(private val zero: T) : PipeBlock<Motion
 }
 
 /**
- * A [PipeBlock] that maps each component of a [MotionState] through a [map] function.
- *
- * Can be created by subclassing or by using [with] that takes a lambda.
+ * A [PipeBlock] that maps each component of a [MotionState] through a [mapping] function.
  */
-abstract class MapMotionState<T : Any, R : Any> : PipeBlock<MotionState<T>, MotionState<R>>(LAZY) {
+class MapMotionState<T : Any, R : Any>(
+    private val mapping: (T) -> R
+) : PipeBlock<MotionState<T>, MotionState<R>>(LAZY) {
 
     override fun Context.pipe(
         input: MotionState<T>
-    ): MotionState<R> = MotionState(
-        map(input.value),
-        map(input.deriv),
-        map(input.secondDeriv)
-    )
-
-    /** Maps the [value] into a new value; run on all components of a [MotionState]. */
-    protected abstract fun map(value: T): R
-
-    companion object {
-        /** Creates a [MapMotionState] that uses the given [mapping] function. */
-        inline fun <T : Any, R : Any> with(crossinline mapping: (T) -> R): MapMotionState<T, R> =
-            object : MapMotionState<T, R>() {
-                override fun map(value: T): R = mapping(value)
-            }
-    }
+    ): MotionState<R> = input.map(mapping)
 }
 
 /**
- * A [PipeBlock] that maps each component of a [MotionOnly] through a [map] function.
- *
- * Can be created by subclassing or by using function/method [with] that takes a lambda.
+ * A [PipeBlock] that maps each component of a [MotionOnly] through a [mapping] function.
  */
-abstract class MapMotionOnly<T : Any, R : Any> : PipeBlock<MotionOnly<T>, MotionOnly<R>>(LAZY) {
+class MapMotionOnly<T : Any, R : Any>(
+    private val mapping: (T) -> R
+) : PipeBlock<MotionOnly<T>, MotionOnly<R>>(LAZY) {
 
     override fun Context.pipe(
         input: MotionOnly<T>
-    ): MotionOnly<R> =
-        MotionOnly(map(input.deriv), map(input.secondDeriv))
-
-    /** Maps the [value] into a new value; run on all components of a [MotionOnly]. */
-    protected abstract fun map(value: T): R
-
-    companion object {
-        /** Creates a [MapMotionOnly] that uses the given [mapping] function. */
-        inline fun <T : Any, R : Any> with(crossinline mapping: (T) -> R): MapMotionOnly<T, R> =
-            object : MapMotionOnly<T, R>() {
-                override fun map(value: T): R = mapping(value)
-            }
-    }
+    ): MotionOnly<R> = input.map(mapping)
 }

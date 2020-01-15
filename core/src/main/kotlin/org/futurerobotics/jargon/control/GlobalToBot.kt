@@ -56,8 +56,8 @@ object GlobalToBot {
     }
 
     /**
-     * Non-linearly updates the current global pose, given the change in pose from the bot's perspective, [botPoseDelta].
-     * and the current global pose.
+     * Non-linearly updates the current global pose, given the change in pose from the bot's perspective,
+     * [botPoseDelta], and the current global pose.
      */
     @JvmStatic
     fun trackGlobalPose(
