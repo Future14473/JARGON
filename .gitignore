@@ -79,4 +79,3 @@ gradle-app.setting
 tmp/
 .idea/git_toolbox_prj.xml
 .idea/jarRepositories.xml
-local.properties
