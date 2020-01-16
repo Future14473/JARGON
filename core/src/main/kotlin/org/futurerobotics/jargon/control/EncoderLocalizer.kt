@@ -82,7 +82,7 @@ class EncoderGyroLocalizer
 @JvmOverloads constructor(
     private val motorBotGyroInteraction: MotorBotGyroInteraction,
     initialPose: Pose2d = Pose2d.ZERO,
-    val useAbsoluteHeading: Boolean = true
+    private val useAbsoluteHeading: Boolean = true
 ) : BaseEncoderBasedLocalizer(motorBotGyroInteraction.numMotors, initialPose) {
 
     private var lastHeading: Double = 0.0
