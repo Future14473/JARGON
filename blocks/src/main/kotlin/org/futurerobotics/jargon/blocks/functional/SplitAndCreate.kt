@@ -10,7 +10,7 @@ import org.futurerobotics.jargon.math.*
 /**
  * A block that takes a [MotionState] and splits it into its components in order.
  */
-class SplitMotionState<T : Any> : Block(LAZY) {
+class SplitMotionState<T> : Block(LAZY) {
 
     /** The motion state input */
     val input: Input<MotionState<T>> = newInput()
@@ -41,7 +41,7 @@ class SplitMotionState<T : Any> : Block(LAZY) {
 /**
  * A block that takes value, velocity, and acceleration, and combines it into a [MotionState].
  */
-class CreateMotionState<T : Any> : Block(LAZY) {
+class CreateMotionState<T> : Block(LAZY) {
 
     /** The value input */
     val value: Input<T> = newInput()
@@ -69,7 +69,7 @@ class CreateMotionState<T : Any> : Block(LAZY) {
 /**
  * A block that takes a [MotionOnly] and splits it into its components in order.
  */
-class SplitMotionOnly<T : Any> : Block(LAZY) {
+class SplitMotionOnly<T> : Block(LAZY) {
 
     /** The motion only input */
     val input: Input<MotionOnly<T>> = newInput()
@@ -94,7 +94,7 @@ class SplitMotionOnly<T : Any> : Block(LAZY) {
 /**
  * A block that takes velocity and acceleration and combines it into a [MotionOnly]
  */
-class CreateMotionOnly<T : Any> : Block(LAZY) {
+class CreateMotionOnly<T> : Block(LAZY) {
 
     /** The velocity input */
     val vel: Input<T> = newInput()

@@ -6,32 +6,30 @@ import kotlin.math.roundToLong
  * A [FrequencyRegulator] is used in systems to control how often a [LoopSystem] is run.
  *
  * It both keeps track of elapsed time per cycle, and possibly enforces a cycle to be run at a certain speed.
- *
- * If using in kotlin, see `coroutine-support` package for a version of this that uses coroutines instead
- * of thread blocking instead.
  */
 interface FrequencyRegulator {
 
     /**
-     * This is called to indicate the start of a loop.
+     * This is called to indicate the start of timing.
      */
     fun start()
 
     /**
-     * Gets the amount of nanoseconds needed to delay so that the time between the last call to [start]/[sync] is
-     * controlled to this [FrequencyRegulator]'s liking, then restarts the loop.
+     * Gets the amount of nanoseconds needed to delay so that the time between the last call to [start]/[getDelayNanos] is
+     * controlled to this [FrequencyRegulator]'s liking.
      *
-     * After syncing, computes the elapsed nanos to later get in [getElapsedNanos].
+     * Usually [endLoopAndGetElapsedNanos] will be called next.
      */
-    @Throws(InterruptedException::class)
-    fun sync()
+    fun getDelayNanos(): Long
 
     /**
-     * Gets the amount of nanoseconds since the last call to start, _determined right after calling _sync_.
+     * Gets the amount of nanoseconds since the last call to start, and then restarts the loop.
      *
-     * if [sync] has not been called, behaviour is undefined.
+     * This is usually called after [getDelayNanos].
+     *
+     * if [getDelayNanos] has not been called, behaviour is undefined.
      */
-    fun getElapsedNanos(): Long
+    fun endLoopAndGetElapsedNanos(): Long
 
     /**
      * Stops timing.
@@ -39,27 +37,16 @@ interface FrequencyRegulator {
     fun stop()
 }
 
-private const val million = 1_000_000
-
 /**
- * A [FrequencyRegulator] which has a sync based delaying a number of nanoseconds, using [getDelayNanos].
+ * Gets the delay but rounded to milliseconds.
  */
-abstract class DelayFrequencyRegulator : FrequencyRegulator {
-
-    /**
-     * Gets the amount of delay needed, in milliseconds.
-     */
-    abstract fun getDelayMillis(): Long
-
-    override fun sync() {
-        Thread.sleep(getDelayMillis())
-    }
-}
+fun FrequencyRegulator.getDelayMillis(): Long = (getDelayNanos() + 500_000) / 1_000_000
 
 /**
  * A [FrequencyRegulator] that runs its cycle as fast as possible; timing using the given [clock].
  */
-open class UnregulatedRegulator(private val clock: Clock = Clock.DEFAULT) : FrequencyRegulator {
+open class UnregulatedRegulator
+@JvmOverloads constructor(private val clock: Clock = Clock.DEFAULT) : FrequencyRegulator {
 
     @Volatile
     private var lastNanos = clock.nanoTime()
@@ -68,12 +55,11 @@ open class UnregulatedRegulator(private val clock: Clock = Clock.DEFAULT) : Freq
         lastNanos = clock.nanoTime()
     }
 
-    override fun sync() {
-    }
+    override fun getDelayNanos(): Long = 0L
 
-    override fun getElapsedNanos(): Long {
+    override fun endLoopAndGetElapsedNanos(): Long {
         val nanos = clock.nanoTime()
-        return (nanos - lastNanos)
+        return nanos - lastNanos
             .also { lastNanos = nanos }
     }
 
@@ -83,11 +69,11 @@ open class UnregulatedRegulator(private val clock: Clock = Clock.DEFAULT) : Freq
 
 /**
  * A [FrequencyRegulator] that limits its maximum speed to a certain given `period`, and delays if slower. Note that if
- * the block is running slow it will attempt to catch up over the next cycles by sleeping less if possible.
+ * the block is running slow it will attempt to catch up over the next cycles by delaying.
  *
  * With the current implementation there is no limit to how much "catching up" might occur.
  */
-class MaxSpeedRegulator(period: Double, private val clock: Clock = Clock.DEFAULT) : DelayFrequencyRegulator() {
+class MaxSpeedRegulator(period: Double, private val clock: Clock = Clock.DEFAULT) : FrequencyRegulator {
 
     private val periodNanos = (period * 1e9).roundToLong()
 
@@ -100,7 +86,7 @@ class MaxSpeedRegulator(period: Double, private val clock: Clock = Clock.DEFAULT
 
     private var elapsed = -1L
 
-    override fun getDelayMillis(): Long {
+    override fun getDelayNanos(): Long {
         val nanos = clock.nanoTime()
         elapsed = nanos - lastNanos
         return if (elapsed >= periodNanos) {
@@ -108,13 +94,13 @@ class MaxSpeedRegulator(period: Double, private val clock: Clock = Clock.DEFAULT
             0L
         } else {
             lastNanos += periodNanos
-            ((periodNanos - elapsed) / 1_000_000).also {
+            (periodNanos - elapsed).also {
                 elapsed = periodNanos
             }
         }
     }
 
-    override fun getElapsedNanos(): Long =
+    override fun endLoopAndGetElapsedNanos(): Long =
         if (elapsed != -1L) elapsed
         else clock.nanoTime() - lastNanos
 

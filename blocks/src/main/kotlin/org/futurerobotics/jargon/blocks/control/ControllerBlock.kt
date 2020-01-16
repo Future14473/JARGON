@@ -42,7 +42,7 @@ open class BaseControllerBlock<Reference, State, Signal>(
 /**
  * A [ControllerBlock] that wraps around a [FeedForwardWrapper] (see doc there).
  */
-open class FeedForwardWrapperBlock<T : Any>(
+open class FeedForwardWrapperBlock<T>(
     velocityController: SimpleController<T, T, T>,
     plus: (T, T) -> T
 ) : BaseControllerBlock<MotionState<T>, T, MotionOnly<T>>(

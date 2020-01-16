@@ -52,7 +52,7 @@ data class MotionOnly<T>(
     /**
      * Maps all elements of this motion only through the given [transform] function.
      */
-    inline fun <R : Any> map(transform: (T) -> R): MotionOnly<R> = MotionOnly(
+    inline fun <R> map(transform: (T) -> R): MotionOnly<R> = MotionOnly(
         transform(deriv),
         transform(secondDeriv)
     )
@@ -122,7 +122,7 @@ data class MotionState<T>(
     companion object {
         /** Creates a [MotionState] with all values equal to the given [value] */
         @JvmStatic
-        fun <T : Any> ofAll(value: T): MotionState<T> =
+        fun <T> ofAll(value: T): MotionState<T> =
             MotionState(value, value, value)
     }
 }

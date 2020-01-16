@@ -11,7 +11,7 @@ import org.futurerobotics.jargon.profile.TimeProfiled
  *
  * An [update] function needs to be overriden for the specific follower's updating.
  */
-abstract class MotionProfileFollowerBlock<T : Any, P : TimeProfiled<T>>(private val initialOutput: T) : Block(ALWAYS) {
+abstract class MotionProfileFollowerBlock<T, P : TimeProfiled<T>>(private val initialOutput: T) : Block(ALWAYS) {
 
     /** The motion profile input */
     val profileInput: Input<P?> = newInput()
@@ -50,7 +50,7 @@ abstract class MotionProfileFollowerBlock<T : Any, P : TimeProfiled<T>>(private 
 /**
  * A [MotionProfileFollowerBlock] that uses a [TimeOnlyMotionProfileFollower].
  */
-class TimeOnlyMotionProfileFollowerBlock<T : Any, P : TimeProfiled<T>>(initialIdleOutput: T) :
+class TimeOnlyMotionProfileFollowerBlock<T, P : TimeProfiled<T>>(initialIdleOutput: T) :
     MotionProfileFollowerBlock<T, P>(initialIdleOutput) {
 
     override val follower: TimeOnlyMotionProfileFollower<T, P> = TimeOnlyMotionProfileFollower()

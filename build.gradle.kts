@@ -98,9 +98,9 @@ fun Project.configureTests() {
         testImplementation(junit5params)
         testRuntimeOnly(junit5engine)
         testImplementation(strikt)
-        val testUtil = "test-util"
-        if (name != testUtil)
-            testImplementation(project(":$testUtil"))
+        val testUtil = ":core:test-util"
+        if (path != testUtil)
+            testImplementation(project(testUtil))
     }
     tasks.withType<Test> {
         useJUnitPlatform {

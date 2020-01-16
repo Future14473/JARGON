@@ -4,9 +4,11 @@ package org.futurerobotics.jargon.running
  * A [Runnable] that runs a [LoopSystem], using with the given [regulator].
  * This is single threaded.
  *
- * This will run repeatedly until the [LoopSystem] requests stop, or the thread is interrupted (will simply exit).
+ * This will run repeatedly until the [LoopSystem] requests stop, or the thread is interrupted.
  *
  * [LoopSystem.stop] is placed in a `finally` block.
+ *
+ * See module `coroutine-extensions` for a suspend version if you are using coroutines.
  */
 class LoopSystemRunner(
     private val system: LoopSystem, private val regulator: FrequencyRegulator
@@ -25,12 +27,11 @@ class LoopSystemRunner(
             regulator.start()
 
             var elapsedNanos = 0L
-            while (!Thread.interrupted()) {
+            while (true) {
                 if (system.loop(elapsedNanos)) break
-                regulator.sync()
-                elapsedNanos = regulator.getElapsedNanos()
+                Thread.sleep(regulator.getDelayMillis())
+                elapsedNanos = regulator.endLoopAndGetElapsedNanos()
             }
-        } catch (_: InterruptedException) {
         } finally {
             system.stop()
             regulator.stop()

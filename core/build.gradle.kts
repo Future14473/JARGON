@@ -25,8 +25,7 @@ tasks.withType<KotlinCompile> {
     kotlinOptions {
         @Suppress("SuspiciousCollectionReassignment")
         freeCompilerArgs += listOf(
-            "-Xjvm-default=enable",
-            "-XXLanguage:+InlineClasses"
+            "-Xjvm-default=enable"
         )
     }
 }

@@ -5,7 +5,9 @@ import org.futurerobotics.jargon.math.isEpsEqTo
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 
+@ExperimentalStateSpace
 internal class DiscreteRicattiEquationSolverImplTest {
+
     @Test
     fun test1() {
         val (a, b, q, r) = listOf(

@@ -3,20 +3,19 @@ package org.futurerobotics.jargon.profile
 import org.futurerobotics.jargon.util.Stepper
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentSkipListSet
-import java.util.concurrent.Future
 
 /**
- * A wrapper around another [profiled] object that also provides callbacks in [Future]s, via [addCallback].
+ * A wrapper around another [profiled] object that also provides callbacks via [addCallback].
  *
  * The callbacks will be triggered whenever [atTime] or [stepper] is called with a time greater than the
  * callback's time.
  *
- * Callbacks will only be triggered if the time called happens _after_ the callback is added. We would do a
- * builder pattern thing for immutability but this is simpler to use...
+ * Callbacks will only be triggered if the time called happens _after_ the callback is added. So add your callbacks
+ * first.
  *
  * @see ProfileTimeIndicator
  */
-class TimeProfiledWithCallbacks<out T : Any, P : TimeProfiled<T>>(private val profiled: P) : TimeProfiled<T> {
+class TimeProfiledWithCallbacks<out T, out P : TimeProfiled<T>>(private val profiled: P) : TimeProfiled<T> {
 
     private val callbacks = ConcurrentSkipListSet<TimeCallback>()
 
@@ -25,18 +24,24 @@ class TimeProfiledWithCallbacks<out T : Any, P : TimeProfiled<T>>(private val pr
     }
 
     /**
-     * Adds a [callback] that will run when traversed pass the given [time].
+     * Adds a [callback] that will run when traversed pass the given [timeIndicator].
      *
-     * The callback should be a short, thread-safe, and not throw exceptions, as it is called when the profiled
+     * The callback should be short, thread-safe, and not throw exceptions, as it is called when the profiled
      * is traversed.
+     *
+     * For callbacks that may start other long running tasks, you can:
+     * - Use java 8's [CompletableFuture] with [addFuture] (if you are using java 8 only, android api 24+)
+     * - Use kotlin coroutines and the `coroutine-extensions` module, and see `addJob` extension function which
+     *      returns a job, which a coroutine can then join on;
+     * - Add a callback that kick starts another task handled somewhere else.
      */
-    fun addCallback(time: ProfileTimeIndicator<P>, callback: Runnable) = addCallback(time.getTime(profiled), callback)
+    fun addCallback(timeIndicator: ProfileTimeIndicator<P>, callback: Runnable): Unit =
+        addCallback(timeIndicator.getTime(profiled), callback)
 
     /**
-     * Adds a [callback] that will run when traversed pass the given [time].
+     * See other [addCallback] doc.
      *
-     * The callback should be a short, thread-safe, and not throw exceptions, as it is called when the profiled
-     * is traversed.
+     * Adds a callback at the given [time].
      */
     fun addCallback(time: Double, callback: Runnable) {
         require(time.isFinite()) { "Time ($time) must be finite" }
@@ -44,20 +49,24 @@ class TimeProfiledWithCallbacks<out T : Any, P : TimeProfiled<T>>(private val pr
     }
 
     /**
-     * Returns a future that will complete when traversed pass the given [time].
+     * Returns a [CompletableFuture] that will complete when traversed pass the given [time].
      *
-     * If running on android, __this can only be used with android API level 24+__.
+     * This only works if you are using java 8 (android API level 24+).
+     * @see [addCallback]
      */
-    fun addFuture(time: Double): CompletableFuture<*> = CompletableFuture<Nothing?>().also {
-        addCallback(time, Runnable { it.complete(null) })
-    }
+    fun addFuture(time: ProfileTimeIndicator<P>): CompletableFuture<Void?> =
+        addFuture(time.getTime(profiled))
 
     /**
-     * Returns a future that will complete when traversed pass the given [time].
+     * Returns a [CompletableFuture] that will complete when traversed pass the given [time].
      *
-     * If running on android, __this can only be used with android API level 24+__.
+     * This only works if you are using java 8 (android API level 24+).
+     * @see [addCallback]
      */
-    fun addFuture(time: ProfileTimeIndicator<P>): CompletableFuture<*> = addFuture(time.getTime(profiled))
+    fun addFuture(time: Double): CompletableFuture<Void?> =
+        CompletableFuture<Void?>().also {
+            addCallback(time, Runnable { it.complete(null) })
+        }
 
     override val duration: Double
         get() = profiled.duration
@@ -87,5 +96,5 @@ class TimeProfiledWithCallbacks<out T : Any, P : TimeProfiled<T>>(private val pr
 /**
  * Creates a [TimeProfiledWithCallbacks] using [this] profiled.
  */
-fun <T : Any, P : TimeProfiled<T>> P.withCallbacks(): TimeProfiledWithCallbacks<T, P> =
+fun <T, P : TimeProfiled<T>> P.withCallbacks(): TimeProfiledWithCallbacks<T, P> =
     TimeProfiledWithCallbacks(this)

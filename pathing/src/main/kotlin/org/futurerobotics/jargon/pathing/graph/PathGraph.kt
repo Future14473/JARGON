@@ -235,7 +235,7 @@ class PathGraph
     }
 
     /** Represents a node or the end of an edge where you can continue adding edges. */
-    interface NodeContinuation<Self : Any> {
+    interface NodeContinuation<Self> {
 
         /**
          * The name of this node, or `null` if none. Must be unique, and can only be set once.

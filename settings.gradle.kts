@@ -1,6 +1,6 @@
 rootProject.name = "jargon"
-include(":core", ":test-util")
+include(":core", ":core:test-util")
 include(":blocks")
 include(":pathing")
 include(":state-space")
-include(":coroutine-support")
+include(":coroutine-extensions")
