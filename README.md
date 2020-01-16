@@ -1,38 +1,53 @@
 # WELCOME TO JARGON
 
-JARGON stands For **J**ust **A**nother **R**obot **G**uidance **O**peratio**N**,
-a robotics library for creating advanced control systems in FTC. Perhaps one day, beyond just FTC.
+JARGON stands For **J**ARGON: **A** **R**obot **G**uidance **O**peratio**N**,
+a robotics library for creating more advanced control systems with a easy to use and extendable framework.
 
 We hope that this will help inspire people to delve into more advanced mechanisms for control; to squeeze as much
 functionality they can out of a few sensors and actuators. We encourage people to experiment with new ideas, and
-dare to take steps into the more complex
+dare to take steps into the more complex.
 
-Interested in contributing or giving feedback? See the [Contributing guidelines](CONTRIBUTING.md).
+Version 0.1.0 + usage instructions set to release on 1/17/2020.
+Snapshot version available on jcenter now.
 
-#### Planned and existing features includes:
+
+#### Existing features includes:
 - Advanced pathing system
    - Dynamic trajectory generation
-   - (planned) Once setup, all you need to say is "go to the opposite side of the field". No paths, no trajectories, nothing.
+   - Path graphing system: once setup, all you need to say is "go to point B"
+   - 2d geometry framework
+- Flexible control systems framework
    - Customizable and extendable motion profile generation system
-- Literal block-diagram based systems
-   - I swear I didn't know simulink existed before I had this idea.
+   - FrequencyRegulator to control the speed of control loops intelligently
+   - Utilities for math, linear algebra, geometry, physics
+   - Basic controller elements like PID, feed-forward mechanisms, 2d localizers, etc.
 - Model based control systems
-   - Minimal PID fiddling
-   - Based off real life measurements instead of guessing
-- (Experimental) state-space based control systems framework
-   - Inspired by some people at FRC.
-   - Lots of math but it's worth it.
+   - Model your drive systems instead of guessing for more accurate control
+- (Experimental) state-space based control systems
+   - Inspired by some people at FRC. Basically, lots of math to model and create control systems, but it's worth it.
+   - Basic framework providing basic functions and calculations, as well as an (experimental) runner class
+ #### Planned features (by Benjamin Ye) include:
+ - Separate module to integrate FTC SDK directly
+ - Swerve drive support
+ - Easier, declarative-programming based control system design
+    - If you're interested in where this came from, go to the git history and see the "blocks" module that
+     has now been removed  
+ 
+ 
+#### Interested in contributing or giving feedback? See the [Contributing guidelines](CONTRIBUTING.md).
 
 ## JARGON is now open source
-We now wish to share our knowledge with the world, free of charge. Although a officially supported version is not
-released yet, we are now accepting feedback, discussion, and contributions. Feel free to experiment and test with 
-anything. See the [Contributing guidelines](CONTRIBUTING.md) for more details.
-
+We now wish to share our knowledge with the world, free of charge. JARGON will now be accepting feedback, discussion,
+ and contributions. Feel free to experiment and test with anything and see the 
+ [Contributing guidelines](CONTRIBUTING.md) for more details on how to contribute.
+ 
 ## Other info
 ### Principles of design:
 - Intuitive, as well as advanced. Usable both by beginners and advanced users alike.
-- Extensible and customizable. Create your own implementations.
-- Adherence to good programming principles
+- Keep everything well documented.
+- Create with ease of use in mind -- "get to the point"
+- Extensible and customizable. Easy to create your own implementations if you wish.
+- Adherence to good programming principles, like SOLID
 - Abstraction over performance without neglecting performance (another 10 ns is worth it, but not 3s)
 
 ### JARGON is inspired by:
