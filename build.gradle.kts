@@ -9,7 +9,7 @@ import java.util.*
 
 //will later be applied to all subprojects
 group = "org.futurerobotics.jargon"
-version = "snapshot1"
+version = "snapshot-1"
 //---
 val hipparchusVersion by extra("1.6")
 val striktVersion by extra("0.23.2")
@@ -120,11 +120,21 @@ val githubURL = "https://github.com/Future14473/JARGON"
 val bintrayUser: String? = System.getenv("BINTRAY_USER")
 val bintrayKey: String? = System.getenv("BINTRAY_KEY")
 
+val isSnapshot = version.toString().contains(Regex("[a-zA-Z]"))
+
+val publicationName = if (isSnapshot) "snapshot" else "release"
+val doBintray = when {
+//    isSnapshot -> false
+    bintrayUser == null || bintrayKey == null -> {
+        logger.warn("Bintray user or key not found")
+        false
+    }
+    else -> true
+}
+
 fun Project.configurePublish() {
     apply<MavenPublishPlugin>()
-    apply<BintrayPlugin>()
     apply<DokkaPlugin>()
-    val isSnapshot by extra { version.toString().contains(Regex("[a-zA-Z]")) }
 
     tasks.dokka {
         outputFormat = "html"
@@ -141,7 +151,6 @@ fun Project.configurePublish() {
         from(tasks.dokka)
     }
 
-    val publicationName = if (isSnapshot) "snapshot" else "release"
     publishing.publications {
         create<MavenPublication>(publicationName) {
             from(components["java"])
@@ -151,16 +160,16 @@ fun Project.configurePublish() {
             this@configurePublish.configMavenPublication(this)
         }
     }
-    var doPublish = true
-//    if(isSnapshot) doPublish = false
-    if (doPublish && (bintrayUser == null || bintrayKey == null)) {
-        logger.warn("Bintray user or key not found")
-        doPublish = false
-    }
+
+    if (doBintray) configureBintray()
+}
+
+fun Project.configureBintray() {
+    apply<BintrayPlugin>()
     bintray {
         user = bintrayUser
         key = bintrayKey
-        publish = doPublish
+        publish = doBintray
         override = isSnapshot
         setPublications(publicationName)
         pkg(delegateClosureOf<BintrayExtension.PackageConfig> {
