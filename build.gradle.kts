@@ -9,7 +9,7 @@ import java.util.*
 
 //will later be applied to all subprojects
 group = "org.futurerobotics.jargon"
-version = "snapshot-1"
+version = "0.1.0"
 //---
 val hipparchusVersion by extra("1.6")
 val striktVersion by extra("0.23.2")
@@ -150,9 +150,11 @@ fun Project.configurePublish() {
         archiveClassifier.v = "javadoc"
         from(tasks.dokka)
     }
+    val project = this
 
     publishing.publications {
         create<MavenPublication>(publicationName) {
+            artifactId = "jargon-${project.name}"
             from(components["java"])
             artifact(sourcesJar)
             if (!isSnapshot)

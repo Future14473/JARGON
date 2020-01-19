@@ -7,8 +7,22 @@ We hope that this will help inspire people to delve into more advanced mechanism
 functionality they can out of a few sensors and actuators. We encourage people to experiment with new ideas, and
 dare to take steps into the more complex.
 
-Version 0.1.0 + usage instructions set to release on 1/17/2020.
-Snapshot version available on jcenter now.
+Version 0.1.0 has been released!!!
+To play around,
+```groovy
+dependencies {
+    // Core libraries: Robot modeling, motion profiles
+    implementation 'org.futurerobotics.jargon:jargon-core:0.1.0'
+    // pathing system: Paths, curves, graphs
+    implementation 'org.futurerobotics.jargon:jargon-pathing:0.1.0'
+    // experimental state-space system framework
+    implementation 'org.futurerobotics.jargon:jargon-state-space:0.1. 0'
+    // Extensions to integrate kotlin coroutines
+    implementation 'org.futurerobotics.jargon:jargon-coroutine-integration:0.1.0'
+}
+```
+
+TODO, soon: more instructions on how to use. For now you can read documentation.
 
 
 #### Existing features includes:
@@ -26,10 +40,10 @@ Snapshot version available on jcenter now.
 - (Experimental) state-space based control systems
    - Inspired by some people at FRC. Basically, lots of math to model and create control systems, but it's worth it.
    - Basic framework providing basic functions and calculations, as well as an (experimental) runner class
- #### Planned features (by Benjamin Ye) include:
- - Separate module to integrate FTC SDK directly
+ #### Planned features include:
+ - Module to integrate FTC SDK
  - Swerve drive support
- - Easier, declarative-programming based control system design
+ - Declarative-programming based control system design
     - If you're interested in where this came from, go to the git history and see the "blocks" module that
      has now been removed  
  
