@@ -9,7 +9,7 @@ import java.util.*
 
 //will later be applied to all subprojects
 group = "org.futurerobotics.jargon"
-version = "0.1.0"
+version = "0.1.1"
 //---
 val hipparchusVersion by extra("1.6")
 val striktVersion by extra("0.23.2")
