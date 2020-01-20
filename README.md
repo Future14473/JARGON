@@ -12,13 +12,13 @@ To play around,
 ```groovy
 dependencies {
     // Core libraries: Robot modeling, motion profiles
-    implementation 'org.futurerobotics.jargon:jargon-core:0.1.0'
+    implementation 'org.futurerobotics.jargon:jargon-core:0.1.1'
     // pathing system: Paths, curves, graphs
-    implementation 'org.futurerobotics.jargon:jargon-pathing:0.1.0'
+    implementation 'org.futurerobotics.jargon:jargon-pathing:0.1.1'
     // experimental state-space system framework
-    implementation 'org.futurerobotics.jargon:jargon-state-space:0.1.0'
+    implementation 'org.futurerobotics.jargon:jargon-state-space:0.1.1'
     // Extensions to integrate kotlin coroutines
-    implementation 'org.futurerobotics.jargon:jargon-coroutine-integration:0.1.0'
+    implementation 'org.futurerobotics.jargon:jargon-coroutine-integration:0.1.1'
 }
 ```
 
