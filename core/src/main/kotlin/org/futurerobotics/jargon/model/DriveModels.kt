@@ -40,12 +40,14 @@ class KinematicsOnlyDriveModel(
 
     override val numMotors: Int
         get() = wheelsAboutCenter.size
-    override val motorVelFromBotVel: Mat
-        get() = TODO("not implemented")
-    override val botVelFromMotorVel: Mat
-        get() = TODO("not implemented")
-    override val botVelFromMotorAndGyroVel: Mat
-        get() = TODO("not implemented")
+    override val motorVelFromBotVel: Mat =
+        diagMat(wheelsAboutCenter.map { it.motorVelPerOutputVel }) * wheelBotDynamicsMatrix.T
+    override val botVelFromMotorVel: Mat =
+        motorVelFromBotVel.pinv()
+    override val botVelFromMotorAndGyroVel: Mat = kotlin.run {
+        val motorVelAndGyroFromBotVel = concatCol(motorVelFromBotVel, Mat(0, 0, 1))
+        motorVelAndGyroFromBotVel.pinv()
+    }
 }
 
 /**
