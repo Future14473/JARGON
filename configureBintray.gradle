@@ -1,0 +1,20 @@
+//this is applied per subproject.
+apply plugin: "com.jfrog.bintray"
+
+bintray {
+    user = bintrayUser
+    key = bintrayKey
+    publications("release")
+    pkg {
+        repo = "maven"
+        name = "JARGON"
+        userOrg = "future14473"
+        licenses = "MIT"
+        vcsUrl = "https://github.com/Future14473/JARGON"
+        version {
+            name = project.version
+            released = new Date()
+            vcsTag = "v" + project.version
+        }
+    }
+}

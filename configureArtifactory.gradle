@@ -1,0 +1,21 @@
+//this is only applied to the root project.
+
+apply plugin: "com.jfrog.artifactory"
+
+artifactoryPublish.skip = true
+
+artifactory {
+    contextUrl = 'http://oss.jfrog.org'
+    publish {
+        repository {
+            repoKey = 'oss-snapshot-local'
+            username = bintrayUser
+            password = bintrayKey
+        }
+        defaults {
+            publishArtifacts = true
+            publishPom = true
+            publications('snapshot')
+        }
+    }
+}

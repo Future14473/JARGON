@@ -1,15 +1,11 @@
 @file:Suppress("PublicApiImplicitType", "SpellCheckingInspection", "KDocMissingDocumentation")
 
-import com.jfrog.bintray.gradle.BintrayExtension
-import com.jfrog.bintray.gradle.BintrayPlugin
-import com.jfrog.bintray.gradle.tasks.BintrayPublishTask
 import org.jetbrains.dokka.gradle.DokkaPlugin
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.util.*
 
 //will later be applied to all subprojects
 group = "org.futurerobotics.jargon"
-version = "0.1.1"
+version = "0.2.0-SNAPSHOT"
 //---
 val hipparchusVersion by extra("1.6")
 val striktVersion by extra("0.23.2")
@@ -50,8 +46,10 @@ plugins {
     kotlin("jvm") version "1.3.61"
     id("org.jetbrains.dokka") version "0.10.0"
     `maven-publish`
-    id("com.jfrog.bintray") version "1.8.4"
+    id("com.jfrog.bintray") version "1.8.4" apply false
+    id("com.jfrog.artifactory") version "4.13.0" apply false
 }
+
 subprojects {
     group = rootProject.group
     version = rootProject.version
@@ -63,11 +61,7 @@ subprojects {
         configureKotlin()
         configureTests()
     }
-    afterEvaluate {
-        if (extra.has("publish") && extra["publish"] == true) {
-            configurePublish()
-        }
-    }
+
 }
 
 fun Project.configureKotlin() {
@@ -85,12 +79,6 @@ fun Project.configureKotlin() {
     }
 }
 
-var <T> Property<T>.v: T?
-    get() = get()
-    set(value) {
-        set(value)
-    }
-
 //Tests
 fun Project.configureTests() {
     dependencies {
@@ -99,12 +87,11 @@ fun Project.configureTests() {
         testRuntimeOnly(junit5engine)
         testImplementation(strikt)
         val testUtil = ":core:test-util"
-        if (path != testUtil)
+        if (parent == rootProject)
             testImplementation(project(testUtil))
     }
     tasks.withType<Test> {
-        useJUnitPlatform {
-        }
+        useJUnitPlatform()
     }
 }
 
@@ -115,79 +102,66 @@ tasks.create("testAll") {
     )
 }
 //publishing
+
 val githubURL = "https://github.com/Future14473/JARGON"
 
-val bintrayUser: String? = System.getenv("BINTRAY_USER")
-val bintrayKey: String? = System.getenv("BINTRAY_KEY")
+val bintrayUser: String? by extra { System.getenv("BINTRAY_USER") }
+val bintrayKey: String? by extra { System.getenv("BINTRAY_KEY") }
 
+//may change later
 val isSnapshot = version.toString().contains(Regex("[a-zA-Z]"))
 
-val publicationName = if (isSnapshot) "snapshot" else "release"
-val doBintray = when {
-//    isSnapshot -> false
-    bintrayUser == null || bintrayKey == null -> {
-        logger.warn("Bintray user or key not found")
-        false
+val doPublish = !(bintrayUser == null || bintrayKey == null)
+if (!doPublish) {
+    logger.warn("Bintray user or key not found; NOT configuring upload publications")
+} else {
+    if (isSnapshot) {
+        apply(from = rootProject.file("configureArtifactory.gradle"))
     }
-    else -> true
+    subprojects {
+        if (parent != rootProject) return@subprojects
+        apply<MavenPublishPlugin>()
+        afterEvaluate {
+            configurePublish()
+        }
+        //if snapshot, artifactory on root, else bintray
+        if (isSnapshot) {
+            apply(plugin = "com.jfrog.artifactory")
+        } else
+            apply(from = rootProject.file("configureBintray.gradle"))
+    }
 }
 
 fun Project.configurePublish() {
-    apply<MavenPublishPlugin>()
     apply<DokkaPlugin>()
-
     tasks.dokka {
         outputFormat = "html"
         outputDirectory = "$buildDir/javadoc"
     }
-    val sourcesJar by tasks.creating(Jar::class) {
-        from(sourceSets.main.get().allSource)
-        archiveClassifier.v = "sources"
-    }
-
     val dokkaJar by tasks.creating(Jar::class) {
         group = JavaBasePlugin.DOCUMENTATION_GROUP
         archiveClassifier.v = "javadoc"
         from(tasks.dokka)
     }
+
+    val sourcesJar by tasks.creating(Jar::class) {
+        from(sourceSets.main.get().allSource)
+        archiveClassifier.v = "sources"
+    }
+
     val project = this
+    val publicationName = if (isSnapshot) "snapshot" else "release"
 
     publishing.publications {
         create<MavenPublication>(publicationName) {
             artifactId = "jargon-${project.name}"
             from(components["java"])
             artifact(sourcesJar)
-            if (!isSnapshot)
+            if (!isSnapshot) {
                 artifact(dokkaJar)
+            }
             this@configurePublish.configMavenPublication(this)
         }
-    }
-
-    if (doBintray) configureBintray()
-}
-
-fun Project.configureBintray() {
-    apply<BintrayPlugin>()
-    bintray {
-        user = bintrayUser
-        key = bintrayKey
-        publish = doBintray
-        override = isSnapshot
-        setPublications(publicationName)
-        pkg(delegateClosureOf<BintrayExtension.PackageConfig> {
-            repo = if (isSnapshot) "maven-snapshot" else "maven"
-            name = "JARGON"
-            userOrg = "future14473"
-            setLicenses("MIT")
-            vcsUrl = "https://github.com/Future14473/JARGON"
-            version(delegateClosureOf<BintrayExtension.VersionConfig> {
-                name = project.version.toString()
-                released = Date().toString()
-                if (!isSnapshot) {
-                    vcsTag = "v" + project.version
-                }
-            })
-        })
     }
 }
 
@@ -218,6 +192,8 @@ fun Project.configMavenPublication(pub: MavenPublication) {
     }
 }
 
-tasks.withType(BintrayPublishTask::class.java).all {
-    onlyIf { false }
-}
+var <T> Property<T>.v: T?
+    get() = get()
+    set(value) {
+        set(value)
+    }
