@@ -84,11 +84,14 @@ class TimeProfiledWithCallbacks<out T, out P : TimeProfiled<T>>(private val prof
         }
     }
 
-    private tailrec fun runCallbacks(time: Double) {
-        val callback = callbacks.pollFirst() ?: return
-        if (callback.time <= time) {
-            callback.callback.run()
-            runCallbacks(time)
+    private fun runCallbacks(time: Double) {
+        val iterator = callbacks.iterator()
+        while (iterator.hasNext()) {
+            val callback: TimeCallback = iterator.next()
+            if (callback.time <= time) {
+                callback.callback.run()
+                iterator.remove()
+            }
         }
     }
 }

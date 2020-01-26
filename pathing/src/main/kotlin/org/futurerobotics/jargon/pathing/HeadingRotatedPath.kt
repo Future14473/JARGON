@@ -3,6 +3,7 @@
 
 package org.futurerobotics.jargon.pathing
 
+import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.angleNorm
 import org.futurerobotics.jargon.math.epsEq
 import org.futurerobotics.jargon.util.Stepper
@@ -21,6 +22,7 @@ private class HeadingRotatedPath(internal val path: Path, internal val angle: Do
 
     private class Point(point: PathPoint, angle: Double) : PathPoint by point {
         override val heading: Double = angleNorm(point.heading + angle)
+        override val pose: Pose2d = Pose2d(position, heading)
     }
 }
 

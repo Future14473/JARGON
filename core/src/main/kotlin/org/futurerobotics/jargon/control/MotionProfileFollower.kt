@@ -9,10 +9,9 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * Base class for implementing a construct that follows a motion profile.
  *
  * One needs to subclass and define their own update method/mechanism. This is done
- * by calling [needUpdate], and if it returns true, later calling [moveToTime].
+ * by calling [needUpdate], and if it returns true then calling [moveToTime].
  *
- * Only [output] and [queueProfile] can be called from different threads without issues.
- * This may change in the future.
+ * Only [output] and [queueProfile] can be called from different threads from the updating thread.
  *
  * for example:
  *
@@ -34,18 +33,18 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * ```
  * @see TimeOnlyMotionProfileFollower
  */
-abstract class MotionProfileFollower<T, P : TimeProfiled<T>>
+abstract class MotionProfileFollower<T>
 @JvmOverloads constructor(initialOutput: T? = null) {
 
     /** The current time traversed along the profile. */
     var currentTime = 0.0
         private set
 
-    private val profileQueue = ConcurrentLinkedQueue<P>()
-    private var curStepper: Stepper<T>? = null
+    private val profileQueue = ConcurrentLinkedQueue<TimeProfiled<T>>()
+    private var currentStepper: Stepper<T>? = null
 
     /** The currently traversed profile. */
-    var currentProfile: P? = null
+    var currentProfile: TimeProfiled<T>? = null
         private set
 
     @Volatile
@@ -67,7 +66,7 @@ abstract class MotionProfileFollower<T, P : TimeProfiled<T>>
     /**
      * Queues a profile to be followed.
      */
-    fun queueProfile(profile: P) {
+    fun queueProfile(profile: TimeProfiled<T>) {
         profileQueue += profile
     }
 
@@ -77,7 +76,7 @@ abstract class MotionProfileFollower<T, P : TimeProfiled<T>>
      */
     fun reset(initialOutput: T) {
         _output = initialOutput
-        curStepper = null
+        currentStepper = null
         currentProfile = null
         profileQueue.clear()
     }
@@ -90,12 +89,12 @@ abstract class MotionProfileFollower<T, P : TimeProfiled<T>>
      * Note that when a profile is first selected, it automatically moves to time 0.0
      */
     protected fun needUpdate(): Boolean {
-        val stepper = curStepper
+        val stepper = currentStepper
         if (stepper === null) {
             val newProfile = profileQueue.poll() ?: return false
             currentTime = 0.0
             currentProfile = newProfile
-            curStepper = newProfile.stepper()
+            currentStepper = newProfile.stepper()
             moveToTime(0.0)
             return false
         }
@@ -111,10 +110,11 @@ abstract class MotionProfileFollower<T, P : TimeProfiled<T>>
      */
     protected fun moveToTime(time: Double): T {
 
-        val stepper = curStepper ?: error("Not traversing any profile!")
+        val stepper = currentStepper ?: error("Not traversing any profile!")
         val endTime = currentProfile!!.duration
         val realTime = time.replaceIf({ it >= endTime }) {
             currentProfile = null
+            currentStepper = null
             endTime
         }
         currentTime = realTime
@@ -125,7 +125,7 @@ abstract class MotionProfileFollower<T, P : TimeProfiled<T>>
 /**
  * A [MotionProfileFollower] that only traversed based on time.
  */
-class TimeOnlyMotionProfileFollower<T, P : TimeProfiled<T>> : MotionProfileFollower<T, P>() {
+class TimeOnlyMotionProfileFollower<T> : MotionProfileFollower<T>() {
 
     /**
      * Updates traversing along the profile, given the time in [elapsedNanos] since the

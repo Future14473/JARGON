@@ -34,7 +34,7 @@ class FeedForwardWrapper<State>(
         signal = MotionOnly(controllerSignal, controllerSignal)
     }
 
-    private operator fun State.plus(state: State) = plus(state, state)
+    private operator fun State.plus(state: State) = plus(this, state)
     override fun update(
         reference: MotionState<State>,
         currentState: State,

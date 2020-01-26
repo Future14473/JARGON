@@ -58,11 +58,10 @@ data class MotionOnly<T>(
     )
 
     /**
-     * Maps all elements of this motion only through the given [transform] function,
+     * Maps all elements of this motion only through the given [transform] function to double values,
      * returning a [RealMotionOnly].
      */
-    @JvmName("mapToReal")
-    inline fun map(transform: (T) -> Double): RealMotionOnly = RealMotionOnly(
+    inline fun mapToReal(transform: (T) -> Double): RealMotionOnly = RealMotionOnly(
         transform(deriv),
         transform(secondDeriv)
     )
@@ -109,11 +108,10 @@ data class MotionState<T>(
     )
 
     /**
-     * Maps all elements of this motion state through the given [transform] function,
+     * Maps all elements of this motion state through the given [transform] function to double values,
      * returning a [RealMotionState].
      */
-    @JvmName("mapToReal")
-    inline fun map(transform: (T) -> Double): RealMotionState = RealMotionState(
+    inline fun mapToReal(transform: (T) -> Double): RealMotionState = RealMotionState(
         transform(value),
         transform(deriv),
         transform(secondDeriv)
