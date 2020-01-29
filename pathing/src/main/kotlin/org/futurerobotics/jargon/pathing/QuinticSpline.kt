@@ -1,7 +1,58 @@
-package org.futurerobotics.jargon.math.function
+package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.linalg.*
+import org.futurerobotics.jargon.math.ComponentVectorFunction
 import org.futurerobotics.jargon.math.MotionState
+import org.futurerobotics.jargon.math.RealFunction
+import org.futurerobotics.jargon.math.Vector2d
+
+/** Creators for a Quintic Spline, defined by two quintic polynomials for the x and y components. */
+object QuinticSpline {
+
+    /**
+     * Creates a quintic spline using the control points of a Bezier spline.
+     */
+    @JvmStatic
+    fun fromControlPoints(
+        p0: Vector2d, p1: Vector2d, p2: Vector2d, p3: Vector2d, p4: Vector2d, p5: Vector2d
+    ) = ComponentVectorFunction(
+        QuinticPolynomial.fromControlPoints(
+            p0.x, p1.x, p2.x, p3.x, p4.x, p5.x
+        ), QuinticPolynomial.fromControlPoints(
+            p0.y, p1.y, p2.y, p3.y, p4.y, p5.y
+        )
+    )
+
+    /**
+     * Creates a quintic spline given the value, and first and second derivatives of each of the endpoints.
+     */
+    @JvmStatic
+    fun fromDerivatives(
+        start: Vector2d,
+        startDeriv: Vector2d,
+        startSecondDeriv: Vector2d,
+        end: Vector2d,
+        endDeriv: Vector2d,
+        endSecondDeriv: Vector2d
+    ) = ComponentVectorFunction(
+        QuinticPolynomial.fromDerivatives(
+            start.x, startDeriv.x, startSecondDeriv.x, end.x, endDeriv.x, endSecondDeriv.x
+        ), QuinticPolynomial.fromDerivatives(
+            start.y, startDeriv.y, startSecondDeriv.y, end.y, endDeriv.y, endSecondDeriv.y
+        )
+    )
+
+    /**
+     * Creates a quintic spline given the value, and first and second derivatives of each of the
+     * end points.
+     */
+    @JvmStatic
+    fun fromDerivatives(
+        start: MotionState<Vector2d>, end: MotionState<Vector2d>
+    ) = fromDerivatives(
+        start.value, start.deriv, start.secondDeriv, end.value, end.deriv, end.secondDeriv
+    )
+}
 
 /**
  * A Quintic Polynomial function, specified by coefficients,
@@ -32,7 +83,7 @@ class QuinticPolynomial(
     override fun toString(): String = "QuinticPoly(%.4ft^5+%.4ft^4+%.4ft^3+%.4ft^2+%.4ft+%.4f)".format(a, b, c, d, e, f)
 
     companion object {
-        private val fromControlPoints = Mat(
+        private val fromControlPoints = matOf(
             -1, 5, -10, 10, -5, 1 to
                     5, -20, 30, -20, 5, 0 to
                     -10, 30, -30, 10, 0, 0 to
@@ -49,7 +100,7 @@ class QuinticPolynomial(
             return QuinticPolynomial(fromControlPoints * vec)
         }
 
-        private val fromDerivatives = Mat(
+        private val fromDerivatives = matOf(
             -6, -3, -0.5, 6, -3, 0.5 to
                     15, 8, 1.5, -15, 7, -1 to
                     -10, -6, -1.5, 10, -4, 0.5 to
@@ -79,9 +130,10 @@ class QuinticPolynomial(
         @JvmStatic
         fun fromDerivatives(
             start: MotionState<Double>, end: MotionState<Double>
-        ): QuinticPolynomial = fromDerivatives(
-            start.value, start.deriv, start.secondDeriv, end.value, end.deriv, end.secondDeriv
-        )
+        ): QuinticPolynomial =
+            fromDerivatives(
+                start.value, start.deriv, start.secondDeriv, end.value, end.deriv, end.secondDeriv
+            )
     }
 }
 

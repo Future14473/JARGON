@@ -12,7 +12,7 @@ import kotlin.math.sqrt
  */
 private fun getWheelBotDynamicsMatrix(wheelsAboutCenter: List<FixedWheelModel>): Mat {
     val velPerOmega = wheelsAboutCenter.map { it.wheelPosition.tangentVelPerBotVel }
-    return zeroMat(3, wheelsAboutCenter.size).also {
+    return Mat(3, wheelsAboutCenter.size).also {
         wheelsAboutCenter.zipForEachIndexed(velPerOmega) { i, (wheelPosition), c ->
             val (fx, fy) = wheelPosition.orientation
             it[0, i] = fx
@@ -41,11 +41,12 @@ class KinematicsOnlyDriveModel(
     override val numMotors: Int
         get() = wheelsAboutCenter.size
     override val motorVelFromBotVel: Mat =
-        diagMat(wheelsAboutCenter.map { it.motorVelPerOutputVel }) * wheelBotDynamicsMatrix.T
+        diagMatFrom(wheelsAboutCenter.mapToVec { it.motorVelPerOutputVel }) * wheelBotDynamicsMatrix.T
+
     override val botVelFromMotorVel: Mat =
         motorVelFromBotVel.pinv()
     override val botVelFromMotorAndGyroVel: Mat = kotlin.run {
-        val motorVelAndGyroFromBotVel = concatCol(motorVelFromBotVel, Mat(0, 0, 1))
+        val motorVelAndGyroFromBotVel = concatCol(motorVelFromBotVel, matOf(0, 0, 1))
         motorVelAndGyroFromBotVel.pinv()
     }
 }
@@ -97,24 +98,24 @@ class FixedWheelDriveModel
     private val comVelFromBotVel = botVelFromComVel.pinv()
 
     private val comAccelFromWheelForce = kotlin.run {
-        val comAccelFromBotForce = diagMat(1 / mass, 1 / mass, 1 / moi)
+        val comAccelFromBotForce = diagMatOf(1 / mass, 1 / mass, 1 / moi)
         comAccelFromBotForce * wheelBotDynamicsMatrix
     }
 
     private val comAccelFromVolts: Mat = kotlin.run {
-        val wheelForceFromVolts = diagMat(wheelsAboutCom.map { 1 / it.voltsPerOutputForce })
+        val wheelForceFromVolts = diagMatFrom(wheelsAboutCom.mapToVec { 1 / it.voltsPerOutputForce })
         comAccelFromWheelForce * wheelForceFromVolts
     }
 
     private val motorVelFromComVel: Mat = kotlin.run {
         val wheelVelFromComVel = wheelBotDynamicsMatrix.T
-        diagMat(wheelsAboutCom.map { it.motorVelPerOutputVel }) * wheelVelFromComVel
+        diagMatFrom(wheelsAboutCom.mapToVec { it.motorVelPerOutputVel }) * wheelVelFromComVel
     }
 
     override val numMotors: Int get() = wheelsAboutCom.size
     //motor velocity
     //from motor models.
-    override val voltsFromMotorVel: Mat = diagMat(wheelsAboutCom.map { it.transmission.motor.voltsPerAngVel })
+    override val voltsFromMotorVel: Mat = diagMatFrom(wheelsAboutCom.mapToVec { it.transmission.motor.voltsPerAngVel })
     //from com.
     override val motorAccelFromVolts: Mat = motorVelFromComVel * comAccelFromVolts
     override val voltsFromMotorAccel: Mat = motorAccelFromVolts.pinv()
@@ -122,7 +123,7 @@ class FixedWheelDriveModel
     override val motorAccelFromMotorVel: Mat = -motorAccelFromVolts * voltsFromMotorVel
 
     override val motorAccelForMotorFriction: Mat = kotlin.run {
-        val wheelForceForMotorFriction = diagMat(wheelsAboutCom.map { it.forceForFriction })
+        val wheelForceForMotorFriction = diagMatFrom(wheelsAboutCom.mapToVec { it.forceForFriction })
         -motorVelFromComVel * comAccelFromWheelForce * wheelForceForMotorFriction
     }
 
@@ -138,11 +139,11 @@ class FixedWheelDriveModel
     override val voltsFromBotVel: Mat = voltsFromMotorVel * motorVelFromBotVel
     override val botAccelFromBotVel: Mat = -botAccelFromVolts * voltsFromBotVel
 
-    override val motorVelFromWheelVel: Mat = diagMat(wheelsAboutCom.map { it.motorVelPerOutputVel })
-    override val wheelVelFromMotorVel: Mat = diagMat(wheelsAboutCom.map { 1 / it.motorVelPerOutputVel })
+    override val motorVelFromWheelVel: Mat = diagMatFrom(wheelsAboutCom.mapToVec { it.motorVelPerOutputVel })
+    override val wheelVelFromMotorVel: Mat = diagMatFrom(wheelsAboutCom.mapToVec { 1 / it.motorVelPerOutputVel })
 
     override val botVelFromMotorAndGyroVel: Mat = kotlin.run {
-        val motorVelAndGyroFromBotVel = concatCol(motorVelFromBotVel, Mat(0, 0, 1))
+        val motorVelAndGyroFromBotVel = concatCol(motorVelFromBotVel, matOf(0, 0, 1))
         motorVelAndGyroFromBotVel.pinv()
     }
 

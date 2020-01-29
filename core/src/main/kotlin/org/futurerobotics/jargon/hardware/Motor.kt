@@ -6,7 +6,7 @@ package org.futurerobotics.jargon.hardware
 interface Motor {
 
     /**
-     * The max voltage this motor can take.
+     * The max voltage this motor can take. Often 12.
      */
     val maxVoltage: Double
 
@@ -16,20 +16,20 @@ interface Motor {
     var voltage: Double
 
     /**
-     * Gets the motor position **in radians** of this motor, with the same sign direction as [voltage].
+     * Gets the motor position **in radians** of this motor, in the same direction as [voltage].
      */
-    val position: Double
+    val angle: Double
 
     /**
-     * Gets the motor velocity **in radians per second** of this motor, with the same sign direction as [voltage].
+     * Gets the motor velocity **in radians per second** of this motor, in the same direction as [voltage].
      */
     val velocity: Double
 
     /**
-     * Resets the position so that the current position is 0.0. Following [position] values will
+     * Resets the angle measurement so that the current angle is 0.0. Following [angle] values will
      * be relative to the current value.
      */
-    fun resetPosition()
+    fun resetAngle()
 
     /**
      * Performs any necessary configurations on this motor before start.

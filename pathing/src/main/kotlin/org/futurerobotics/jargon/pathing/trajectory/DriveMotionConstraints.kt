@@ -17,7 +17,7 @@ open class MaxMotorSpeed protected constructor(
             this(motorVelModel, maxes.toVec())
 
     constructor(motorVelModel: MotorBotInteraction, max: Double) :
-            this(motorVelModel, genVec(motorVelModel.numMotors) { max })
+            this(motorVelModel, Vec(motorVelModel.numMotors) { max })
 
     override fun maxVelocity(point: PathPoint): Double =
         maxSpeedFromBotVelTransform(point, interaction.motorVelFromBotVel, maxes)
@@ -40,7 +40,7 @@ open class MaxWheelTangentialSpeed protected constructor(
         max: Double,
         interaction: MotorBotInteraction,
         wheelInteraction: MotorWheelInteraction
-    ) : this(interaction, wheelInteraction, genVec(interaction.numMotors) { max })
+    ) : this(interaction, wheelInteraction, Vec(interaction.numMotors) { max })
 }
 
 /** A constraint that limit's each motor's speed. */
@@ -55,7 +55,7 @@ open class MaxMotorAcceleration protected constructor(
     ) : this(interaction, maxes.toVec())
 
     constructor(max: Double, interaction: MotorBotInteraction) :
-            this(interaction, genVec(interaction.numMotors) { max })
+            this(interaction, Vec(interaction.numMotors) { max })
 
     override fun accelRange(point: PathPoint, curVelocity: Double): Interval =
         accelRangeFromBotAccelTransform(point, curVelocity, interaction.motorAccelFromBotAccel, maxes)
@@ -80,7 +80,7 @@ open class MaxWheelTangentialAcceleration protected constructor(
         max: Double,
         interaction: MotorBotInteraction,
         motorWheelInteraction: MotorWheelInteraction
-    ) : this(interaction, motorWheelInteraction, genVec(motorWheelInteraction.numMotors) { max })
+    ) : this(interaction, motorWheelInteraction, Vec(motorWheelInteraction.numMotors) { max })
 }
 
 /**
@@ -113,7 +113,7 @@ class MaxMotorVoltage private constructor(
         interaction: MotorBotInteraction,
         motorVelControllingModel: MotorVelocityControllingModel,
         motorFrictionModel: MotorFrictionModel = ZeroMotorFrictionModel(interaction.numMotors)
-    ) : this(interaction, motorVelControllingModel, motorFrictionModel, genVec(interaction.numMotors) { max })
+    ) : this(interaction, motorVelControllingModel, motorFrictionModel, Vec(interaction.numMotors) { max })
 
     init {
         require(interaction.numMotors == motorVelControllingModel.numMotors) {
@@ -188,7 +188,7 @@ class MaxMotorVoltage private constructor(
 private fun rotationMatrix(angle: Double): Mat {
     val c = cos(angle)
     val s = sin(angle)
-    return zeroMat(3, 3).apply {
+    return Mat(3, 3).apply {
         this[0, 0] = c
         this[0, 1] = -s
         this[1, 0] = s
@@ -200,7 +200,7 @@ private fun rotationMatrix(angle: Double): Mat {
 private fun rotationMatrixDeriv(angle: Double, angleDeriv: Double): Mat {
     val c = cos(angle) * angleDeriv
     val s = sin(angle) * angleDeriv
-    return zeroMat(3, 3).apply {
+    return Mat(3, 3).apply {
         this[0, 0] = -s
         this[0, 1] = -c
         this[1, 0] = c
@@ -256,7 +256,7 @@ fun accelRangeFromBotAccelTransform(
     curVelocity: Double,
     mat: Mat,
     maxes: Vec,
-    addend: Vec = zeroVec(maxes.size)
+    addend: Vec = Vec(maxes.size)
 ): Interval {
     val rot = rotationMatrix(-point.heading)
     val rotDeriv = rotationMatrixDeriv(-point.heading, -point.headingDeriv)

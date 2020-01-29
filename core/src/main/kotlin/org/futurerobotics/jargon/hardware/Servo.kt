@@ -5,6 +5,6 @@ package org.futurerobotics.jargon.hardware
  */
 interface Servo {
 
-    /** Sets the position of this servo, **in radians** */
-    var position: Double
+    /** Sets the angle of this servo, **in radians**, or gets the previously set value */
+    var angle: Double
 }

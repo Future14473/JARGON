@@ -3,7 +3,7 @@
 
 package org.futurerobotics.jargon.pathing
 
-import org.futurerobotics.jargon.math.function.VectorFunction
+import org.futurerobotics.jargon.math.VectorFunction
 import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
 

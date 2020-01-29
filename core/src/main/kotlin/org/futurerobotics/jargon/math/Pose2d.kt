@@ -65,7 +65,7 @@ data class Pose2d(
      *
      * All vectors that directly represent poses should be in this order.
      */
-    fun toVec(): Vec = createVec(x, y, heading)
+    fun toVec(): Vec = vecOf(x, y, heading)
 
     override fun toString(): String = "Pose2d(x: %.4f, y: %.4f, h: %.4f)".format(x, y, heading)
 
@@ -76,7 +76,7 @@ data class Pose2d(
         val ZERO: Pose2d = Pose2d(Vector2d.ZERO, 0.0)
 
         /**
-         * Constructs a pose from values a linear algebra [Vec], which should have three values in [x], [y], [heading]
+         * Constructs a pose from values a linear algebra [vecFrom], which should have three values in [x], [y], [heading]
          * order.
          *
          * @see toVec
@@ -90,7 +90,7 @@ data class Pose2d(
 
 operator fun Double.times(p: Pose2d): Pose2d = p * this
 /**
- * Constructs a pose from values a linear algebra [Vec], which should have three values in [x], [y], [heading]
+ * Constructs a pose from values a linear algebra [vecFrom], which should have three values in [x], [y], [heading]
  * order.
  *
  * @see Pose2d.fromVec

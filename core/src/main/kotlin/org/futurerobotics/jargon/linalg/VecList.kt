@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.linalg
 
 /**
- * Returns this [Vec] as a list. Changes in the vector will be reflected in this list.
+ * Returns this [vecFrom] as a list. Changes in the vector will be reflected in this list.
  */
 fun Vec.asList(): List<Double> = object : AbstractList<Double>(), RandomAccess {
     override val size: Int
@@ -11,7 +11,7 @@ fun Vec.asList(): List<Double> = object : AbstractList<Double>(), RandomAccess {
 }
 
 /**
- * Returns this [Vec] as a mutable list. Changes in the list will be reflected in the vector, and vice-versa.
+ * Returns this [vecFrom] as a mutable list. Changes in the list will be reflected in the vector, and vice-versa.
  */
 fun Vec.asMutableList(): MutableList<Double> = object : AbstractMutableList<Double>(), RandomAccess {
     override val size: Int get() = dimension
@@ -41,8 +41,5 @@ fun Vec.toList(): List<Double> = toMutableList()
  */
 fun Vec.toMutableList(): MutableList<Double> = MutableList(size) { get(it) }
 
-/** Converts this list of doubles to a [Vec]. */
-fun List<Double>.toVec(): Vec = createVec(this)
-
-/** Converts this array of doubles to a [Vec]. */
-fun DoubleArray.toVec(): Vec = createVec(this, true)
+/** Converts this list of doubles to a [vecFrom]. */
+fun List<Double>.toVec(): Vec = vecFrom(toDoubleArray(), false)

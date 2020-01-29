@@ -10,7 +10,6 @@ import kotlin.math.ceil
  * @param first The first value of this progression.
  * @param last The last value of this progression.
  * @param step the step size of this progression.
- * @property step the step size of this progression.
  * @param segments The number of "segments" in this progression, equal to the number of values - 1.
  */
 class DoubleProgression private constructor(

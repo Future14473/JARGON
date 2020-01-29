@@ -2,7 +2,6 @@ package org.futurerobotics.jargon.pathing.reparam
 
 import org.futurerobotics.jargon.math.*
 import org.futurerobotics.jargon.math.function.QuinticSpline
-import org.futurerobotics.jargon.math.function.VectorFunction
 import org.futurerobotics.jargon.reportError
 import org.futurerobotics.jargon.saveGraph
 import org.junit.Assert.assertTrue
@@ -32,19 +31,19 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
 
     @Test
     fun `position inspect`() {
-        testVector({ func.vec(it) }, { curve.pointAt(it).position }, 0.001, 0.0)
+        testVector({ func.value(it) }, { curve.pointAt(it).position }, 0.001, 0.0)
     }
 
     @Test
     fun `positionDeriv inspect`() {
-        testVector({ func.vecDeriv(it).normalized() }, { curve.pointAt(it).positionDeriv }, 0.002, 0.001)
+        testVector({ func.deriv(it).normalized() }, { curve.pointAt(it).positionDeriv }, 0.002, 0.001)
     }
 
     @Test
     fun `positionSecondDeriv inspect`() {
         testVector({
-                       val deriv = func.vecDeriv(it)
-                       val secondDeriv = func.vecSecondDeriv(it)
+                       val deriv = func.deriv(it)
+                       val secondDeriv = func.secondDeriv(it)
                        val z = (secondDeriv cross deriv) / deriv.lengthSquared.pow(2)
                        Vector2d(deriv.y * z, -deriv.x * z)
                    }, { curve.pointAt(it).positionSecondDeriv }, 0.005, 0.001)
@@ -52,7 +51,7 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
 
     @Test
     fun `tanAngle inspect`() {
-        testAngle({ func.vecDeriv(it).angle }, { curve.pointAt(it).tanAngle }, 0.001, 0.0)
+        testAngle({ func.deriv(it).angle }, { curve.pointAt(it).tanAngle }, 0.001, 0.0)
     }
 
     @Test
@@ -63,7 +62,7 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
     @Test
     fun `tanAngleSecondDeriv inspect`() {
         testValue(
-            { func.curvatureDeriv(it) / func.vecDeriv(it).length },
+            { func.curvatureDeriv(it) / func.deriv(it).length },
             { curve.pointAt(it).tanAngleSecondDeriv },
             0.05,
             0.001
@@ -116,7 +115,7 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
                     val err = trueVal.getError(testVal)
                     addError(err) { "$t, true is $trueVal, got $testVal" }
                 }
-                s += func.vecDeriv((i + 0.5) / steps).length / steps
+                s += func.deriv((i + 0.5) / steps).length / steps
             }
         }.let {
             println(Thread.currentThread().stackTrace[1].methodName + ":")

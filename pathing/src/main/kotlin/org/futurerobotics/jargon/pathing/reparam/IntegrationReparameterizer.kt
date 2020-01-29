@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.pathing.reparam
 
-import org.futurerobotics.jargon.math.function.VectorFunction
+import org.futurerobotics.jargon.math.VectorFunction
 
 /**
  * A [Reparameterizer] that uses numerical integration using midpoint Riemann sums.
@@ -26,7 +26,7 @@ class IntegrationReparameterizer(
         repeat(totalSteps) {
             val step = it + 1
             val tMid = (it + 0.5) / totalSteps
-            s += function.vecDeriv(tMid).length / totalSteps
+            s += function.deriv(tMid).length / totalSteps
             if (step % stepsPerSample == 0) {
                 val t = step.toDouble() / totalSteps
                 sSamples[i] = s

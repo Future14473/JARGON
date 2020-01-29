@@ -1,7 +1,6 @@
-package org.futurerobotics.jargon.callback
+package org.futurerobotics.jargon.profile
 
 import org.futurerobotics.jargon.math.DoubleProgression
-import org.futurerobotics.jargon.profile.*
 import org.futurerobotics.jargon.util.stepToAll
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat

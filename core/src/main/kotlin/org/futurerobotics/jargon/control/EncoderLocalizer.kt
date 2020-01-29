@@ -18,7 +18,7 @@ abstract class BaseEncoderBasedLocalizer(protected val numMotors: Int, initialPo
     /**
      * The previously tracked motor positions.
      */
-    protected var pastPositions: Vec = zeroVec(numMotors)
+    protected var pastPositions: Vec = Vec(numMotors)
 
     /**
      * Resets this localizer:

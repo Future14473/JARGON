@@ -1,12 +1,6 @@
 package org.futurerobotics.jargon.pathing
 
-import org.futurerobotics.jargon.math.MotionState
-import org.futurerobotics.jargon.math.RealMotionState
-import org.futurerobotics.jargon.math.angleNorm
-import org.futurerobotics.jargon.math.function.QuinticPolynomial
-import org.futurerobotics.jargon.math.function.RealFunction
-import org.futurerobotics.jargon.math.function.invoke
-import org.futurerobotics.jargon.math.function.motionState
+import org.futurerobotics.jargon.math.*
 
 /** A [HeadingProvider] that maintains a constant `heading`. */
 class ConstantHeading(heading: Double) : HeadingProvider {

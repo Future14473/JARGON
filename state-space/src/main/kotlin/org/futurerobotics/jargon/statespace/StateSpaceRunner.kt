@@ -29,14 +29,14 @@ class StateSpaceRunner internal constructor(
     val period: Double get() = matricesProvider.period
 
     /** The signal, including all feed-forwards. */
-    var signal: Vec = zeroVec(matricesProvider.numInputs)
+    var signal: Vec = Vec(matricesProvider.numInputs)
         private set
 
     /**
      * The signal, only including [FeedForward]s in which [FeedForward.includeInObserver] is true.
      * This is what is used by the system.
      */
-    var observerSignal: Vec = zeroVec(matricesProvider.numInputs)
+    var observerSignal: Vec = Vec(matricesProvider.numInputs)
         private set
 
     /**
@@ -85,8 +85,8 @@ class StateSpaceRunner internal constructor(
      */
     fun reset(initialState: Vec) {
         lastMatrices = null
-        signal = zeroVec(matricesProvider.numInputs)
-        observerSignal = zeroVec(matricesProvider.numInputs)
+        signal = Vec(matricesProvider.numInputs)
+        observerSignal = Vec(matricesProvider.numInputs)
         observer.reset(augmentInitialState(initialState, true))
     }
 
@@ -109,8 +109,8 @@ class StateSpaceRunner internal constructor(
         val matrices = matricesProvider.getMatrices(x, uPrev, timeInNanos)
         this.lastMatrices = matrices
 
-        val uffExt = zeroVec(matrices.numInputs)
-        val uffInc = zeroVec(matrices.numInputs)
+        val uffExt = Vec(matrices.numInputs)
+        val uffInc = Vec(matrices.numInputs)
 
         var curR = r
         var curR1 = r1

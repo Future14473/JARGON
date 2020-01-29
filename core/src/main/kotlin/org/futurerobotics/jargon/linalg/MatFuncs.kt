@@ -1,4 +1,3 @@
-@file:JvmName("MatrixFuncs")
 
 package org.futurerobotics.jargon.linalg
 
@@ -6,7 +5,6 @@ import org.futurerobotics.jargon.math.EPSILON
 import org.futurerobotics.jargon.math.distTo
 import org.futurerobotics.jargon.math.epsEq
 import org.hipparchus.linear.*
-import java.text.DecimalFormat
 import kotlin.math.*
 
 /** Solves for x in `Ax=b`, with a = this matrix, and b = the given [vec]. */
@@ -48,10 +46,9 @@ infix fun Mat.setTo(mat: Mat) {
 /** Checks if all elements of this matrix match the other [mat], with a tolerance of [epsilon]. */
 fun Mat.epsEq(mat: Mat, epsilon: Double): Boolean {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
-    repeat(rows) { r ->
-        repeat(cols) { c ->
-            if (!this[r, c].epsEq(mat[r, c], epsilon)) return false
-        }
+    forEachIndexed { r, c, d ->
+        if (!d.epsEq(mat[r, c], epsilon)) return false
+
     }
     return true
 }
@@ -59,8 +56,8 @@ fun Mat.epsEq(mat: Mat, epsilon: Double): Boolean {
 /** Checks if all elements of this matrix match the other [vec], with a tolerance of [epsilon]. */
 fun Vec.epsEq(vec: Vec, epsilon: Double): Boolean {
     require(size == vec.size) { "Dimension mismatch" }
-    repeat(size) { i ->
-        if (!this[i].epsEq(vec[i], epsilon)) return false
+    forEachIndexed { i, d ->
+        if (!d.epsEq(vec[i], epsilon)) return false
     }
     return true
 }
@@ -79,29 +76,23 @@ fun Mat.isSymmetric(epsilon: Double = EPSILON): Boolean {
 /** Adds this matrix with the other [mat], in place. */
 infix fun Mat.addI(mat: Mat): Mat = apply {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
-    repeat(rows) { r ->
-        repeat(cols) { c ->
-            this.addToEntry(r, c, mat[r, c])
-        }
+    forEachIndexed { r, c, _ ->
+        this.addToEntry(r, c, mat[r, c])
     }
 }
 
 /** Subtracts this matrix with the other [mat], in place. */
 infix fun Mat.subI(mat: Mat): Mat = apply {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
-    repeat(rows) { r ->
-        repeat(cols) { c ->
-            this.addToEntry(r, c, -mat[r, c])
-        }
+    forEachIndexed { r, c, _ ->
+        this.addToEntry(r, c, -mat[r, c])
     }
 }
 
 /** Multiplies this matrix with the given [scalar], in place. */
 infix fun Mat.multI(scalar: Double): Mat = apply {
-    repeat(rows) { r ->
-        repeat(cols) { c ->
-            this.multiplyEntry(r, c, scalar)
-        }
+    forEachIndexed { r, c, _ ->
+        this.multiplyEntry(r, c, scalar)
     }
 }
 
@@ -141,10 +132,10 @@ infix fun Vec.multI(scalar: Double): Vec = apply { mapToSelf { it * scalar } }
 infix fun Vec.divI(scalar: Double): Vec = apply { mapToSelf { it / scalar } }
 
 /** Converts this vector to a column matrix. */
-fun Vec.toColumnMatrix(): Mat = createMat(Array(size) { doubleArrayOf(this[it]) }, false)
+fun Vec.toColumnMatrix(): Mat = matFrom(Array(size) { doubleArrayOf(this[it]) }, false)
 
 /** Converts this vector to a row matrix. */
-fun Vec.toRowMatrix(): Mat = createMat(arrayOf(toArray()), false)
+fun Vec.toRowMatrix(): Mat = matFrom(arrayOf(toArray()), false)
 
 /** Maps each element of this vector to its sign. */
 fun sign(vec: Vec): Vec = vec.map { sign(it) }
@@ -161,8 +152,11 @@ fun Mat.normMax(): Double = walkInOptimizedOrder(object : RealMatrixPreservingVi
     }
 })
 
-/** Returns a copy of this matrix if [copyMat] is true, else returns this. */
-fun Mat.copyIf(copyMat: Boolean): Mat = if (copyMat) copy() else this
+/** Returns a copy of this matrix if [copy] is true, else returns this. */
+fun Mat.copyIf(copy: Boolean): Mat = if (copy) copy() else this
+
+/** Returns a copy of this vector if [copy] is true, else returns this. */
+fun Vec.copyIf(copy: Boolean): Vec = if (copy) copy() else this
 
 /**
  * Computes the matrix exponential (`e^X`) of the given matrix [mat].
@@ -220,10 +214,10 @@ fun expm(mat: Mat): Mat {
 }
 
 /**
- * Gets a quadrant of the matrix in `[m11, m12; m21, m22]` order,
- * splitting square at [splitIndex]
+ * Gets a quadrant of the matrix indexed by [row] and [col] in the range 0..1,
+ * splitting at the given [splitIndex] so that the upper left quadrant has a size of [splitIndex].
  */
-fun Mat.getQuad(splitIndex: Int, row: Int, col: Int): Mat {
+fun Mat.getQuad(row: Int, col: Int, splitIndex: Int): Mat {
     require(isSquare) { "Matrix must be square" }
     val size = rows
     require(splitIndex < size) { "Split index must be less than size" }
@@ -239,21 +233,3 @@ fun Mat.getQuad(splitIndex: Int, row: Int, col: Int): Mat {
 
     return this[rows, cols]
 }
-
-/**
- * Formats this matrix in a more human readable format.
- */
-fun Mat.formatReadable(): String = buildString {
-    repeat(rows) { r ->
-        append("| ")
-        repeat(cols - 1) { c ->
-            append(this@formatReadable[r, c].format())
-            append(' ')
-        }
-        append(this@formatReadable[r, cols - 1].format())
-        appendln(" |")
-    }
-}
-
-private val decimalFormat = DecimalFormat(" 00.0000;-#")
-private fun Double.format(): String = "%-8s".format(decimalFormat.format(this))

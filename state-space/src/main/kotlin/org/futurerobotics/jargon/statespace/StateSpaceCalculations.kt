@@ -72,36 +72,38 @@ fun discreteLQR(matrices: DiscreteStateSpaceMatrices, qrCost: QRCost): Mat =
  * Discretizes the given continuous state-space system given by [matrices],
  * using zero-order hold over a given [period].
  */
-fun discretize(matrices: ContinuousStateSpaceMatrices, period: Double): DiscreteStateSpaceMatrices = with(matrices) {
-    val exp = expm(
-        concat2x2dynamic(
-            A, B,
-            0, 0
-        ) * period
-    )
-    val Ad = exp.getQuad(A.rows, 0, 0)
-    val Bd = exp.getQuad(A.rows, 0, 1)
-    return DiscreteStateSpaceMatrices(
-        Ad,
-        Bd,
-        C.copy(),
-        (period * 1e9).roundToLong()
-    )
-}
+fun discretizeZeroOrderHold(matrices: ContinuousStateSpaceMatrices, period: Double): DiscreteStateSpaceMatrices =
+    with(matrices) {
+        val exp = expm(
+            concat2x2dynamic(
+                A, B,
+                0, 0
+            ) * period
+        )
+        val Ad = exp.getQuad(0, 0, A.rows)
+        val Bd = exp.getQuad(0, 1, A.rows)
+        return DiscreteStateSpaceMatrices(
+            Ad,
+            Bd,
+            C.copy(),
+            (period * 1e9).roundToLong()
+        )
+    }
 
 /**
  * Discretizes a given [cost] in the context of a continuous state-space representation [matrices], using zero-order
  * hold over a given [period].
  */
-fun discretizeQRCost(matrices: ContinuousStateSpaceMatrices, cost: QRCost, period: Double): QRCost = with(matrices) {
-    val Qd = expm(
-        concat2x2dynamic(
-            -A.T, cost.Q,
-            0, A
-        ) * period
-    ).let { m ->
-        m.getQuad(A.rows, 1, 1) * m.getQuad(A.rows, 0, 1)
-    }.let { (it + it.T) / 2.0 }
-    val Rd = cost.R / period
-    return QRCost(Qd, Rd)
-}
+fun discretizeQRCostZeroOrderHold(matrices: ContinuousStateSpaceMatrices, cost: QRCost, period: Double): QRCost =
+    with(matrices) {
+        val Qd = expm(
+            concat2x2dynamic(
+                -A.T, cost.Q,
+                0, A
+            ) * period
+        ).let { m ->
+            m.getQuad(1, 1, A.rows) * m.getQuad(0, 1, A.rows)
+        }.let { (it + it.T) / 2.0 }
+        val Rd = cost.R / period
+        return QRCost(Qd, Rd)
+    }

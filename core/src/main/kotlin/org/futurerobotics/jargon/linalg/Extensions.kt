@@ -2,8 +2,7 @@
 
 package org.futurerobotics.jargon.linalg
 
-//get set
-
+//get, set
 inline operator fun Mat.get(row: Int, col: Int): Double = getEntry(row, col)
 inline operator fun Mat.get(rows: IntRange, cols: IntRange): Mat =
     getSubMatrix(rows.first, rows.last, cols.first, cols.last)
@@ -23,7 +22,7 @@ inline operator fun Vec.set(range: IntRange, subVec: Vec) {
     setSubVector(range.first, subVec)
 }
 
-//times
+//times, divide
 
 inline operator fun Mat.times(vec: Vec): Vec = operate(vec)
 inline operator fun Mat.times(mat: Mat): Mat = multiply(mat)
@@ -48,7 +47,7 @@ inline operator fun Double.invoke(vec: Vec): Vec = this * vec
 inline operator fun Mat.div(scalar: Double): Mat = this * (1 / scalar)
 inline operator fun Vec.div(scalar: Double): Vec = mapDivide(scalar)
 
-//plus/minus
+//plus, minus
 
 inline operator fun Mat.plus(mat: Mat): Mat = add(mat)
 inline operator fun Vec.plus(vec: Vec): Vec = add(vec)
@@ -59,25 +58,25 @@ inline operator fun Vec.minus(vec: Vec): Vec = subtract(vec)
 inline operator fun Mat.unaryMinus(): Mat = this * -1.0
 inline operator fun Vec.unaryMinus(): Vec = this * -1.0
 
-// +=, -=
-@PublishedApi
-internal inline fun go(block: () -> Unit): Unit = block()
+inline operator fun Mat.unaryPlus(): Mat = copy()
+inline operator fun Vec.unaryPlus(): Vec = copy()
 
-inline operator fun Mat.plusAssign(mat: Mat): Unit = go { this addI mat }
-inline operator fun Mat.minusAssign(mat: Mat): Unit = go { this subI mat }
-inline operator fun Mat.timesAssign(scalar: Double): Unit = go { this multI scalar }
-inline operator fun Mat.divAssign(scalar: Double): Unit = go { this divI scalar }
+// op assign
+inline operator fun Mat.plusAssign(mat: Mat): Unit = kotlin.run { this addI mat }
 
-inline operator fun Vec.plusAssign(mat: Vec): Unit = go { this addI mat }
-inline operator fun Vec.minusAssign(mat: Vec): Unit = go { this subI mat }
-inline operator fun Vec.timesAssign(scalar: Double): Unit = go { this multI scalar }
-inline operator fun Vec.divAssign(scalar: Double): Unit = go { this divI scalar }
+inline operator fun Mat.minusAssign(mat: Mat): Unit = kotlin.run { this subI mat }
+inline operator fun Mat.timesAssign(scalar: Double): Unit = kotlin.run { this multI scalar }
+inline operator fun Mat.divAssign(scalar: Double): Unit = kotlin.run { this divI scalar }
+
+inline operator fun Vec.plusAssign(mat: Vec): Unit = kotlin.run { this addI mat }
+inline operator fun Vec.minusAssign(mat: Vec): Unit = kotlin.run { this subI mat }
+inline operator fun Vec.timesAssign(scalar: Double): Unit = kotlin.run { this multI scalar }
+inline operator fun Vec.divAssign(scalar: Double): Unit = kotlin.run { this divI scalar }
 
 //other
 infix fun Vec.emul(other: Vec): Vec = ebeMultiply(other)
 
 inline val Mat.T: Mat get() = transpose()
-inline val Vec.T: Mat get() = toRowMatrix()
 
 inline val Mat.cols: Int get() = columnDimension
 inline val Mat.rows: Int get() = rowDimension

@@ -16,7 +16,7 @@ abstract class VaryingReferenceTrackingFeedForward : FeedForward {
         return if (r1 != null) {
             val Kff = getKff(matrices, r, r1)
             Kff(r1 - matrices.A * r)
-        } else zeroVec(matrices.numInputs)
+        } else Vec(matrices.numInputs)
     }
 
     /**

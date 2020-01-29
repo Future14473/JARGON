@@ -24,14 +24,14 @@ infix fun Assertion.Builder<Pose2d>.isEpsEqTo(expected: Pose2d): Assertion.Build
         else fail(actual = it)
     }
 
-/** Asserts that this [Mat] [epsEq] another. */
+/** Asserts that this [matFrom] [epsEq] another. */
 fun Assertion.Builder<Mat>.isEpsEqTo(expected: Mat, epsilon: Double = EPSILON): Assertion.Builder<Mat> =
     assert("is epsEq to %s", expected) {
         if (it.epsEq(expected, epsilon)) pass()
         else fail(actual = it)
     }
 
-/** Asserts that this [Vec] epsEq another. */
+/** Asserts that this [vecFrom] epsEq another. */
 fun Assertion.Builder<Vec>.isEpsEqTo(expected: Vec, epsilon: Double = EPSILON): Assertion.Builder<Vec> =
     assert("is epsEq to %s", expected) {
         if (it.epsEq(expected, epsilon)) pass()

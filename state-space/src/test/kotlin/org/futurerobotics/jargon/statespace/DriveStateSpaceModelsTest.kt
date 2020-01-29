@@ -1,6 +1,5 @@
 package org.futurerobotics.jargon.statespace
 
-import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.convert.*
 import org.futurerobotics.jargon.model.FixedWheelDriveModel
 import org.futurerobotics.jargon.model.MotorModel
@@ -37,10 +36,13 @@ internal class DriveStateSpaceModelsTest {
                 motorAccelFromMotorVel
             )
         }.forEach {
-            println(it.formatReadable())
+            println(it)
         }
-        discretize(DriveStateSpaceModels.decoupledMotorVelocityController(model, 0.0), 1 / 20.0).printlnMe()
-        discretize(DriveStateSpaceModels.poseVelocityController(model, model), 1 / 20.0).printlnMe()
+        discretizeZeroOrderHold(
+            DriveStateSpaceModels.decoupledMotorVelocityController(model, 0.0),
+            1 / 20.0
+        ).printlnMe()
+        discretizeZeroOrderHold(DriveStateSpaceModels.poseVelocityController(model, model), 1 / 20.0).printlnMe()
     }
 
     @Test
@@ -53,7 +55,7 @@ internal class DriveStateSpaceModelsTest {
             0.25 * A
         )
         val transmission = TransmissionModel.fromTorqueMultiplier(motor, 2.0, 50 * ozf * `in`, 0.9)
-        val mass = 20 * lbs
+        val mass = 20 * lbm
         val model = FixedWheelDriveModel.mecanum(
             mass,
             mass / 12 * (18 * `in`).pow(2),
@@ -70,8 +72,11 @@ internal class DriveStateSpaceModelsTest {
                 motorAccelFromMotorVel
             )
         }.forEach {
-            println(it.formatReadable())
+            println(it)
         }
-        discretize(DriveStateSpaceModels.decoupledMotorVelocityController(model, 1.0), 1 / 20.0).printlnMe()
+        discretizeZeroOrderHold(
+            DriveStateSpaceModels.decoupledMotorVelocityController(model, 1.0),
+            1 / 20.0
+        ).printlnMe()
     }
 }

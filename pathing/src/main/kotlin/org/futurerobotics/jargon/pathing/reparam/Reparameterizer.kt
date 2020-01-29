@@ -1,6 +1,6 @@
 package org.futurerobotics.jargon.pathing.reparam
 
-import org.futurerobotics.jargon.math.function.VectorFunction
+import org.futurerobotics.jargon.math.VectorFunction
 
 /**
  * Something that reparameterizes a [VectorFunction], from (0,1), to get a [ReparamMapping].

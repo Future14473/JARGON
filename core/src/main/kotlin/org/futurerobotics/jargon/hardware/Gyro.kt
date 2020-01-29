@@ -6,13 +6,12 @@ package org.futurerobotics.jargon.hardware
 interface Gyro {
 
     /**
-     * Gets the current measurement angle in radians. It is recommended to normalize the angle.
+     * Gets the current measurement angle in radians.
      */
     val angle: Double
+
     /**
      * Gets the current angular velocity in radians per second.
-     *
-     * If unknown, return 0.
      */
     val angularVelocity: Double
 }

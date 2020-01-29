@@ -34,15 +34,15 @@ fun concat(vararg elements: Any): Mat {
 }
 
 /**
- * Concatenates a 2d array of [Mat]rices with compatible sizes into a single matrix.
+ * Concatenates a 2d array of [matFrom]rices with compatible sizes into a single matrix.
  */
 fun concat(arr: Array<out Array<out Mat>>): Mat {
-    if (arr.isEmpty()) return zeroMat(0, 0)
+    if (arr.isEmpty()) return Mat(0, 0)
     val colSizes = arr.first().map { it.cols }
     val rowSizes = arr.map { it.first().rows }
     val rowResult = rowSizes.sum()
     val colResult = colSizes.sum()
-    val result = zeroMat(rowResult, colResult)
+    val result = Mat(rowResult, colResult)
     var curRow = 0
     arr.forEachIndexed { arrRowI, arrRow ->
         require(arrRow.size == colSizes.size) { "Even rows must be given" }
@@ -50,7 +50,7 @@ fun concat(arr: Array<out Array<out Mat>>): Mat {
         var currentCol = 0
         arrRow.forEachIndexed { arrColI, it ->
             val curMatCols = colSizes[arrColI]
-            if (it.cols != curMatCols || it.rows != curMatRows) throw IllegalArgumentException("Even rows/cols not given")
+            require(it.cols == curMatCols && it.rows == curMatRows) { "Even rows/cols not given" }
             result[curRow, currentCol] = it
             currentCol += curMatCols
         }
@@ -63,7 +63,7 @@ fun concat(arr: Array<out Array<out Mat>>): Mat {
 fun concatCol(m1: Mat, m2: Mat): Mat {
     require(m1.cols == m2.cols) { "All matrices must have sane number of columns." }
     val rows = m1.rows + m2.rows
-    return zeroMat(rows, m1.cols).apply {
+    return Mat(rows, m1.cols).apply {
         this[0, 0] = m1
         this[m1.rows, 0] = m2
     }
@@ -77,7 +77,7 @@ fun concatCol(vararg mats: Mat): Mat {
         require(it.cols == cols) { "All matrices must have sane number of columns." }
     }
     val rows = mats.sumBy { it.rows }
-    return zeroMat(rows, cols).apply {
+    return Mat(rows, cols).apply {
         var curRow = 0
         mats.forEach {
             this[curRow, 0] = it
@@ -90,7 +90,7 @@ fun concatCol(vararg mats: Mat): Mat {
 fun concatRow(m1: Mat, m2: Mat): Mat {
     require(m1.rows == m2.rows) { "Matrices must have same number of columns." }
     val cols = m1.cols + m2.cols
-    return zeroMat(m1.rows, cols).apply {
+    return Mat(m1.rows, cols).apply {
         this[0, 0] = m1
         this[0, m1.cols] = m2
     }
@@ -104,7 +104,7 @@ fun concatRow(vararg mats: Mat): Mat {
         require(it.rows == rows) { "All matrices must have sane number of rows." }
     }
     val cols = mats.sumBy { it.cols }
-    return zeroMat(rows, cols).apply {
+    return Mat(rows, cols).apply {
         var curCol = 0
         mats.forEach {
             this[0, curCol] = it
@@ -121,7 +121,7 @@ fun concat2x2(m11: Mat, m12: Mat, m21: Mat, m22: Mat): Mat {
     require(m12.cols == m22.cols) { "Size must match" }
     val row = m11.rows
     val col = m11.cols
-    return zeroMat(row + m21.rows, col + m12.cols).apply {
+    return Mat(row + m21.rows, col + m12.cols).apply {
         this[0, 0] = m11
         this[row, 0] = m21
         this[0, col] = m12
@@ -224,7 +224,7 @@ fun concatDynamic(arr: Array<out Array<out Any>>): Mat {
             }
         }
     }
-    val out = zeroMat(outRows, outCols)
+    val out = Mat(outRows, outCols)
     var currentRow = 0
     arr.forEachIndexed { rowInd, row ->
         val requiredRows = rowSizes[rowInd]

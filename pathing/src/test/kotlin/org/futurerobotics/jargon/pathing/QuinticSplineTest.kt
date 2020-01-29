@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.math.function
+package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.isEpsEqTo

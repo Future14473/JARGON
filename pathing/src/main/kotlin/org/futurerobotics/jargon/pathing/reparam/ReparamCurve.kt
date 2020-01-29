@@ -1,10 +1,6 @@
 package org.futurerobotics.jargon.pathing.reparam
 
-import org.futurerobotics.jargon.math.MotionState
-import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.function.VectorFunction
-import org.futurerobotics.jargon.math.ifNan
-import org.futurerobotics.jargon.math.zcross
+import org.futurerobotics.jargon.math.*
 import org.futurerobotics.jargon.pathing.Curve
 import org.futurerobotics.jargon.pathing.CurvePoint
 import org.futurerobotics.jargon.util.Stepper
@@ -33,10 +29,10 @@ class ReparamCurve(internal val func: VectorFunction, internal val mapping: Repa
     }
 
     internal inner class Point(t: Double) : CurvePoint {
-        private val p: Vector2d = func.vec(t)
-        private val v: Vector2d = func.vecDeriv(t)
-        private val a: Vector2d = func.vecSecondDeriv(t)
-        private val j: Vector2d = func.vecThirdDeriv(t)
+        private val p: Vector2d = func.value(t)
+        private val v: Vector2d = func.deriv(t)
+        private val a: Vector2d = func.secondDeriv(t)
+        private val j: Vector2d = func.thirdDeriv(t)
         override val originalLength: Double get() = this@ReparamCurve.length
         override val position: Vector2d get() = p
         private var _positionDeriv: Vector2d? = null

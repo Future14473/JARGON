@@ -5,11 +5,11 @@ import org.futurerobotics.jargon.of
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 
-internal class MatrixFuncsKtTest {
+internal class MatFuncsKtTest {
     @Test
     fun expm() {
         val aMat = expm(
-            Mat(
+            matOf(
                 of the
                         3, 2, -1, 3 to
                         4, -2, 0, -4 to
@@ -17,7 +17,7 @@ internal class MatrixFuncsKtTest {
                         0, 1, -1, 2
             )
         )
-        val expected = Mat(
+        val expected = matOf(
             of the
                     9.10682, 2.21611, -4.9011, 11.3573 to
                     15.6455, 4.16685, -4.24013, 8.00694 to

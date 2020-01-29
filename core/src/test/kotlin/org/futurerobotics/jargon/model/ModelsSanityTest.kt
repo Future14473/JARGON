@@ -41,8 +41,8 @@ internal class ModelsSanityTest {
             //transmission loss: 1/2
             //motor: unit
             //at output: 1, At transmission: 1/5. At motor: 2/5
-            get { voltsFromBotVel * forward }.isEpsEqTo(Vec(.4, .4))
-            get { voltsFromBotVel * turn }.isEpsEqTo(Vec(-7.0 / 5 * 2, 7.0 / 5 * 2))
+            get { voltsFromBotVel * forward }.isEpsEqTo(vecOf(.4, .4))
+            get { voltsFromBotVel * turn }.isEpsEqTo(vecOf(-7.0 / 5 * 2, 7.0 / 5 * 2))
         }
     }
 
@@ -62,7 +62,7 @@ internal class ModelsSanityTest {
                 motorAccelFromMotorVel
             )
         }.forEach {
-            println(it.formatReadable())
+            println(it)
         }
     }
 
@@ -76,7 +76,7 @@ internal class ModelsSanityTest {
             0.25 * A
         )
         val transmission = TransmissionModel.fromTorqueMultiplier(motor, 2.0, 50 * ozf * `in`, 0.9)
-        val mass = 10.8 * lbs
+        val mass = 10.8 * lbm
         val model = FixedWheelDriveModel.mecanum(
             mass,
             mass / 4 * (18 * `in`).pow(2),
@@ -94,7 +94,7 @@ internal class ModelsSanityTest {
                 motorAccelFromMotorVel
             )
         }.forEach {
-            println(it.formatReadable())
+            println(it)
         }
     }
 

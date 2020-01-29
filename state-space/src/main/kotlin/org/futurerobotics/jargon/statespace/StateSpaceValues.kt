@@ -34,6 +34,12 @@ abstract class StateSpaceMatrices(
         { "C matrix cols  (${B.cols}) must have same number of columns as state vector (${numStates})" }
     }
 
+    /**
+     * Returns either the next state or the state's derivative, modeled by these matrices,
+     * given the currents state [x] and signal [u].
+     */
+    fun getStateEvolution(x: Vec, u: Vec): Vec = A * x + B * u
+
     /** [A] */
     operator fun component1(): Mat = A
 
@@ -46,11 +52,11 @@ abstract class StateSpaceMatrices(
     override fun toString(): String {
         return """${javaClass.simpleName}:
 A
-${A.formatReadable()}
+$A
 B
-${B.formatReadable()}
+$B
 C
-${C.formatReadable()}
+$C
 """
     }
 }
@@ -69,13 +75,14 @@ class ContinuousStateSpaceMatrices(
 ) : StateSpaceMatrices(A, B, C) {
 
     /** Discretizes this state-space system using zero-order hold over a given [period]. */
-    fun discretize(period: Double): DiscreteStateSpaceMatrices = discretize(this, period)
+    fun discretizeZeroOrderHold(period: Double): DiscreteStateSpaceMatrices = discretizeZeroOrderHold(this, period)
 
     /**
      * Discretizes a given [cost] in the context of these state space matrices, using zero-order hold over a
      * given [period].
      */
-    fun discretizeQRCost(cost: QRCost, period: Double): QRCost = discretizeQRCost(this, cost, period)
+    fun discretizeQRCostZeroOrderHold(cost: QRCost, period: Double): QRCost =
+        discretizeQRCostZeroOrderHold(this, cost, period)
 }
 
 /**

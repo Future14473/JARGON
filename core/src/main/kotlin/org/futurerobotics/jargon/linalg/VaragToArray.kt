@@ -1,8 +1,13 @@
 package org.futurerobotics.jargon.linalg
 
+/**
+ * Converts vararg elements in the style of (a,b to c,d) to a 2d array.
+ *
+ * [init] is called when rows and cols is known, and [setElement] when element is set.
+ */
 internal inline fun <reified T> varargEndToArr(
     values: Array<out Any>,
-    initRowsCols: (rows: Int, cols: Int) -> Unit,
+    init: (rows: Int, cols: Int) -> Unit,
     setElement: (r: Int, c: Int, element: T) -> Unit
 ) {
     val pairs = values.count { it is Pair<*, *> }
@@ -10,7 +15,7 @@ internal inline fun <reified T> varargEndToArr(
     val rows = pairs + 1
     val cols = items / rows
     require(rows * cols == items) { "Even rows/cols not given" }
-    initRowsCols(rows, cols)
+    init(rows, cols)
     var curRow = 0
     var curCol = 0
     values.forEach {

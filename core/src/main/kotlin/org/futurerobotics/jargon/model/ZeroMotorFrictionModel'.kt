@@ -7,6 +7,6 @@ import org.futurerobotics.jargon.linalg.*
  */
 class ZeroMotorFrictionModel(override val numMotors: Int) : MotorFrictionModel {
 
-    override val motorAccelForMotorFriction: Mat = zeroMat(numMotors, numMotors)
-    override val voltsForMotorFriction: Mat = zeroMat(numMotors, numMotors)
+    override val motorAccelForMotorFriction: Mat = Mat(numMotors, numMotors)
+    override val voltsForMotorFriction: Mat = Mat(numMotors, numMotors)
 }
