@@ -2,25 +2,25 @@ package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.convert.*
-import org.futurerobotics.jargon.model.FixedWheelDriveModel
-import org.futurerobotics.jargon.model.MotorModel
-import org.futurerobotics.jargon.model.TransmissionModel
+import org.futurerobotics.jargon.model.DcMotorModel
+import org.futurerobotics.jargon.model.DriveModel
+import org.futurerobotics.jargon.model.OldTransmissionModel
 import org.junit.jupiter.api.Test
 import strikt.api.expectCatching
 import strikt.assertions.failed
 import strikt.assertions.succeeded
 import kotlin.math.pow
 
-private val motorModel = MotorModel.fromMotorData(
+private val motorModel = DcMotorModel.fromMotorData(
     12 * volts,
     260 * ozf * `in`,
     9.2 * A,
     435 * rev / mins,
     0.25 * A
 )
-private val transmissionModel = TransmissionModel.fromTorqueMultiplier(motorModel, 2.0, 0.0, 0.9)
+private val transmissionModel = OldTransmissionModel.fromTorqueMultiplier(motorModel, 2.0, 0.0, 0.9)
 private const val mass = 10.8 * lbm
-private val driveModel = FixedWheelDriveModel.mecanum(
+private val driveModel = DriveModel.mecanum(
     mass,
     mass / 6 * (18 * `in`).pow(2),
     transmissionModel,

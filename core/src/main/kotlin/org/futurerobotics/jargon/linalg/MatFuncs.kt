@@ -25,24 +25,6 @@ fun Mat.inv(): Mat = MatrixUtils.inverse(this)
 /** Finds the pseudo-inverse of this matrix. */
 fun Mat.pinv(): Mat = SingularValueDecomposition(this).solver.inverse
 
-/** Sets this vector to the given [vec]. */
-infix fun Vec.setTo(vec: Vec) {
-    require(size == vec.size) { "Dimension mismatch" }
-    repeat(size) {
-        this[it] = vec[it]
-    }
-}
-
-/** Sets this matrix to the given [mat]. */
-infix fun Mat.setTo(mat: Mat) {
-    require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
-    repeat(rows) { r ->
-        repeat(cols) { c ->
-            this[r, c] = mat[r, c]
-        }
-    }
-}
-
 /** Checks if all elements of this matrix match the other [mat], with a tolerance of [epsilon]. */
 fun Mat.epsEq(mat: Mat, epsilon: Double): Boolean {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }

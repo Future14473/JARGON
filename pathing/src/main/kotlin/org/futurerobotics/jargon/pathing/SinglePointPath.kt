@@ -12,7 +12,7 @@ sealed class PointGenericPath<Path : GenericPath<Point>, Point : CurvePoint>(pos
 
     private val point = object : PathPoint {
         override val originalLength: Double get() = 0.0
-        override val position: Vector2d get() = pose.vec
+        override val position: Vector2d get() = pose.vector2d
         override val positionDeriv: Vector2d get() = Vector2d.ZERO
         override val positionSecondDeriv: Vector2d get() = Vector2d.ZERO
         override val tanAngle: Double get() = pose.heading

@@ -6,7 +6,7 @@ import org.futurerobotics.jargon.linalg.*
 import java.io.Serializable
 
 /**
- * Represents a 2d pose, i.e., both position ([vec]) and [heading] angle.
+ * Represents a 2d pose, i.e., both position ([vector2d]) and [heading] angle.
  *
  * The standard is that +y is counterclockwise of +x, and positive angle is counter clockwise.
  * We recommend using NorthWestUp orientation where forward is +x, and left is +y.
@@ -32,7 +32,7 @@ data class Pose2d(
     constructor(vec: Vector2d, heading: Double) : this(vec.x, vec.y, heading)
 
     /** Extracts a [Vector2d] component from this pose. */
-    val vec: Vector2d get() = Vector2d(x, y)
+    val vector2d: Vector2d get() = Vector2d(x, y)
 
     operator fun plus(other: Pose2d): Pose2d = Pose2d(x + other.x, y + other.y, heading + other.heading)
     operator fun minus(other: Pose2d): Pose2d = Pose2d(x - other.x, y - other.y, heading - other.heading)
@@ -40,11 +40,14 @@ data class Pose2d(
     operator fun div(v: Double): Pose2d = Pose2d(x / v, y / v, heading / v)
     operator fun unaryMinus(): Pose2d = Pose2d(-x, -y, -heading)
 
-    /** Returns a new [Pose2d] with the _vector_ rotated by [angle] */
-    fun vecRotated(angle: Double): Pose2d = Pose2d(vec.rotated(angle), heading)
+    /** Returns a new [Pose2d] with the _vector_ rotated by [angle]. */
+    fun vecRotated(angle: Double): Pose2d = Pose2d(vector2d.rotated(angle), heading)
 
-    /** Returns a new [Pose2d] with the _angle_ rotated by [angle] */
-    fun angleRotated(angle: Double): Pose2d = Pose2d(vec, heading + angle)
+    /** Returns a new [Pose2d] with the _angle_ rotated by [angle]. Heading will not be normalized. */
+    fun angleRotated(angle: Double): Pose2d = Pose2d(x, y, heading + angle)
+
+    /** Returns a new [Pose2d] with _both the angle and vector_ rotated by [angle]. Heading will not be normalized. */
+    fun fullRotated(angle: Double): Pose2d = Pose2d(vector2d.rotated(angle), heading + angle)
 
     /** Returns a new [Pose2d] with the heading normalized. */
     fun angleNormalized(): Pose2d = angleNorm(heading).let {
@@ -53,10 +56,11 @@ data class Pose2d(
     }
 
     /** If this pose is equal to another with epsilon leniency. */
-    infix fun epsEq(other: Pose2d): Boolean = vec epsEq other.vec && angleNorm(heading - other.heading) epsEq 0.0
+    infix fun epsEq(other: Pose2d): Boolean = x epsEq other.x && y epsEq other.y &&
+            angleNorm(heading - other.heading) epsEq 0.0
 
     /** If all components are finite. */
-    fun isFinite(): Boolean = vec.isFinite() && heading.isFinite()
+    fun isFinite(): Boolean = x.isFinite() && y.isFinite() && heading.isFinite()
 
     /**
      * Converts this to a linear algebra vector, in the order of `[x, y, heading]`.
@@ -81,6 +85,7 @@ data class Pose2d(
          *
          * @see toVec
          */
+        @JvmStatic
         fun fromVec(vec: Vec): Pose2d {
             require(vec.size == 3) { "Given vector size (${vec.size} != 3" }
             return Pose2d(vec[0], vec[1], vec[2])

@@ -1,7 +1,7 @@
 package org.futurerobotics.jargon.pathing.reparam
 
 import org.futurerobotics.jargon.math.*
-import org.futurerobotics.jargon.math.function.QuinticSpline
+import org.futurerobotics.jargon.pathing.QuinticSpline
 import org.futurerobotics.jargon.reportError
 import org.futurerobotics.jargon.saveGraph
 import org.junit.Assert.assertTrue
@@ -163,7 +163,7 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
                 val toolTips = mutableListOf<String?>()
                 repeat(30 + 1) { i ->
                     val t = i.toDouble() / 30
-                    val v = spline.vec(t)
+                    val v = spline(t)
                     xs.add(v.x)
                     ys.add(v.y)
                     toolTips.add(null)

@@ -1,12 +1,12 @@
 package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.model.BotVelocityControllingModel
+import org.futurerobotics.jargon.model.BotVelocityModel
 import org.futurerobotics.jargon.model.MotorBotInteraction
-import org.futurerobotics.jargon.model.MotorVelocityControllingModel
+import org.futurerobotics.jargon.model.MotorVelocityDriveModel
 
 /**
- * Utilities for creating common initial [ContinuousStateSpaceMatrices]s from [BotVelocityControllingModel]s.
+ * Utilities for creating common initial [ContinuousStateSpaceMatrices]s from [BotVelocityModel]s.
  */
 object DriveStateSpaceModels {
 
@@ -14,7 +14,7 @@ object DriveStateSpaceModels {
      * Creates a [ContinuousStateSpaceMatrices] in which:
      *
      * - _state_: is bot's pose velocity in [x, y, heading],
-     * - _signal/input_: is a vector of motors' voltages in the same order as given in the [botVelocityControllingModel]
+     * - _signal/input_: is a vector of motors' voltages in the same order as given in the [botVelocityModel]
      * - _measurement/output_: is a vector of the motors' angular
      *    velocity in the same order as given in the [driveModel].
      *
@@ -26,11 +26,11 @@ object DriveStateSpaceModels {
      */
     @JvmStatic
     fun poseVelocityController(
-        botVelocityControllingModel: BotVelocityControllingModel,
+        botVelocityModel: BotVelocityModel,
         interaction: MotorBotInteraction
     ): ContinuousStateSpaceMatrices {
-        val a = botVelocityControllingModel.botAccelFromBotVel.copy()
-        val b = botVelocityControllingModel.botAccelFromVolts.copy()
+        val a = botVelocityModel.botAccelFromBotVel.copy()
+        val b = botVelocityModel.botAccelFromVolts.copy()
         val motorVelFromBotVel = interaction.motorVelFromBotVel
         val c = motorVelFromBotVel.copy()
         return ContinuousStateSpaceMatrices(a, b, c)
@@ -51,7 +51,7 @@ object DriveStateSpaceModels {
      * @see decoupledMotorVelocityController
      */
     @JvmStatic
-    fun motorVelocityController(motorVelocityControllingModel: MotorVelocityControllingModel): ContinuousStateSpaceMatrices {
+    fun motorVelocityController(motorVelocityControllingModel: MotorVelocityDriveModel): ContinuousStateSpaceMatrices {
         val motorAccelFromVolts = motorVelocityControllingModel.motorAccelFromVolts
         return getMotorVelocityController(motorVelocityControllingModel, motorAccelFromVolts)
     }
@@ -66,7 +66,7 @@ object DriveStateSpaceModels {
      */
     @JvmStatic
     fun decoupledMotorVelocityController(
-        driveModel: MotorVelocityControllingModel,
+        driveModel: MotorVelocityDriveModel,
         coupling: Double
     ): ContinuousStateSpaceMatrices {
         require(coupling in 0.0..1.0) { "coupling ($coupling) must be between 0 and 1, or else things don't make sense." }
@@ -81,7 +81,7 @@ object DriveStateSpaceModels {
     }
 
     private fun getMotorVelocityController(
-        motorVelocityControllingModel: MotorVelocityControllingModel,
+        motorVelocityControllingModel: MotorVelocityDriveModel,
         motorAccelFromVolts: Mat
     ): ContinuousStateSpaceMatrices {
         val size = motorVelocityControllingModel.numMotors

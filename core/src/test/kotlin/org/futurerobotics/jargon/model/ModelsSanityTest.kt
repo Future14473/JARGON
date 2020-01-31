@@ -1,32 +1,22 @@
 package org.futurerobotics.jargon.model
 
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.math.*
+import org.futurerobotics.jargon.math.Pose2d
+import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.convert.*
+import org.futurerobotics.jargon.math.zcross
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import kotlin.math.pow
 import kotlin.math.sqrt
-import kotlin.random.Random
 
 internal class ModelsSanityTest {
 
     @Test
-    fun `motor sanity check`() {
-        val random = Random("sanity check".hashCode())
-        repeat(100) {
-            val r1 = random.nextDouble(-100.0, 100.0)
-            val r2 = random.nextDouble(-100.0, 100.0)
-            expectThat(idealUnitMotor.getVoltage(r1, r2)).isEpsEqTo(r1 + r2)
-            expectThat(halfMotor.getVoltage(r1, r2)).isEpsEqTo(avg(r1, r2))
-        }
-    }
-
-    @Test
     fun `differential works`() {
-        val differential = FixedWheelDriveModel.differential(
+        val differential = DriveModel.differential(
             2.0, 3.0,
-            TransmissionModel.fromTorqueMultiplier(idealUnitMotor, 2.0, 0.0, 0.5),
+            OldTransmissionModel.fromTorqueMultiplier(idealUnitMotor, 2.0, 0.0, 0.5),
             5.0, 7.0
         )
         expectThat(differential) {
@@ -49,11 +39,11 @@ internal class ModelsSanityTest {
     @Test
     fun `inspect single wheel`() {
         val motor = idealUnitMotor
-        val transmission = TransmissionModel.fromTorqueMultiplier(motor, 2.0, 0.0, 1.0)
+        val transmission = OldTransmissionModel.fromTorqueMultiplier(motor, 2.0, 0.0, 1.0)
         val loc = Vector2d(1, 1) / sqrt(2.0)
-        val position = WheelPosition(loc, 1.0 zcross loc, 1.0)
+        val position = DriveWheelPosition(loc, 1.0 zcross loc, 1.0)
         val wheelModel = FixedWheelModel(position, transmission)
-        val model = FixedWheelDriveModel(1.0, 1.0, listOf(wheelModel))
+        val model = DriveModel(listOf(wheelModel), 1.0, 1.0)
         model.run {
             listOf(
                 motorVelFromBotVel,
@@ -68,16 +58,16 @@ internal class ModelsSanityTest {
 
     @Test
     fun `inspect holonomic`() {
-        val motor = MotorModel.fromMotorData(
+        val motor = DcMotorModel.fromMotorData(
             12 * volts,
             260 * ozf * `in`,
             9.2 * A,
             435 * rev / mins,
             0.25 * A
         )
-        val transmission = TransmissionModel.fromTorqueMultiplier(motor, 2.0, 50 * ozf * `in`, 0.9)
+        val transmission = OldTransmissionModel.fromTorqueMultiplier(motor, 2.0, 50 * ozf * `in`, 0.9)
         val mass = 10.8 * lbm
-        val model = FixedWheelDriveModel.mecanum(
+        val model = DriveModel.mecanum(
             mass,
             mass / 4 * (18 * `in`).pow(2),
             transmission,
@@ -99,8 +89,8 @@ internal class ModelsSanityTest {
     }
 
     companion object {
-        val idealUnitMotor = MotorModel.fromCoefficients(1.0, 1.0, 1.0, 0.0)
+        val idealUnitMotor = DcMotorModel.fromCoefficients(1.0, 1.0, 1.0, 0.0)
 
-        val halfMotor = MotorModel.fromCoefficients(2.0, 1.0, 2.0, 0.0)
+        val halfMotor = DcMotorModel.fromCoefficients(2.0, 1.0, 2.0, 0.0)
     }
 }

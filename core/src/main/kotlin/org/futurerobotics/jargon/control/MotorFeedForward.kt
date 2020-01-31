@@ -7,7 +7,7 @@ import kotlin.math.sign
 /**
  * Represents motor friction feed-forward based off of a [MotorFrictionModel].
  *
- * @param activationThreshold the minimum motor angular speed needed to activate the feed-forward. If your wheels are
+ * @param activationThreshold the minimum motor angular speed needed to activate the feed-forward. If motors are
  *                          jittering when they are supposed to be not moving, try increasing this value.
  *
  */

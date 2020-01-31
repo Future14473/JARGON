@@ -25,8 +25,8 @@ interface LoopSystem : InitStoppable {
 }
 
 /**
- * A loop system that is built up of a list of other [systems]. All will be inited, looped, and stopped in the order
- * they are added.
+ * A loop system that is built up of a list of other [systems]. All will be initialized, looped, and stopped in the
+ * order they are added.
  */
 class CompositeLoopSystem : LoopSystem {
 

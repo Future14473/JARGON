@@ -1,7 +1,8 @@
 package org.futurerobotics.jargon.math
 
 /**
- * Generic representation of just the motion of some quantity of type [T], meaning [deriv]ocity and [secondDeriv]eration.
+ * Generic representation of just the motion of some quantity of type [T], meaning [deriv] (velocity)
+ * and [secondDeriv] (acceleration).
  * @see MotionState
  * @see MotionOnly
  * @see RealMotionOnly

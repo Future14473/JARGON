@@ -41,4 +41,4 @@ infix fun Double.errorTo(that: Double): Double {
  * Gets a reasonable value for the error from this pose to that pose.
  */
 infix fun Pose2d.errorTo(that: Pose2d): Double =
-    kotlin.math.max(vec errorTo that.vec, angleNorm(heading distTo that.heading) / 3)
+    kotlin.math.max(vector2d errorTo that.vector2d, angleNorm(heading distTo that.heading) / 3)

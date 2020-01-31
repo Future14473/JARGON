@@ -66,6 +66,9 @@ fun diagMatFrom(values: Vec): Mat = Mat(values.size, values.size).apply {
     }
 }
 
+/** Creates a [Mat] with [this] vectors' values on its diagonal. */
+fun Vec.toDiagMat(): Mat = diagMatFrom(this)
+
 /**
  * Creates a zero vector with the given [size].
  */

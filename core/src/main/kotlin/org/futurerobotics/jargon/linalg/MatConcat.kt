@@ -88,7 +88,7 @@ fun concatCol(vararg mats: Mat): Mat {
 
 /** Concatenates two matrices side by side, in a row. */
 fun concatRow(m1: Mat, m2: Mat): Mat {
-    require(m1.rows == m2.rows) { "Matrices must have same number of columns." }
+    require(m1.rows == m2.rows) { "Matrices must have same number of rows." }
     val cols = m1.cols + m2.cols
     return Mat(m1.rows, cols).apply {
         this[0, 0] = m1

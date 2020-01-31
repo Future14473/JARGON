@@ -56,10 +56,10 @@ fun XYChart.graphPathWithHeading(
     lineSpacing: Int = 20, lineMagnitude: Double = 0.3, lineColor: Color = Color.CYAN
 ): XYSeries {
 
-    val graph = graphPath(name, pts.map { it.vec }, pathColor)
+    val graph = graphPath(name, pts.map { it.vector2d }, pathColor)
     pts.forEachIndexed { index, it ->
         if (index % lineSpacing == 0)
-            drawArrow(it.vec, it.heading, lineMagnitude, lineColor)
+            drawArrow(it.vector2d, it.heading, lineMagnitude, lineColor)
     }
     return graph
 }

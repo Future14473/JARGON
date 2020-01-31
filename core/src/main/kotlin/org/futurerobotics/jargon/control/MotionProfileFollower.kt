@@ -37,7 +37,7 @@ abstract class MotionProfileFollower<T>
 @JvmOverloads constructor(initialOutput: T? = null) {
 
     /** The current time traversed along the profile. */
-    var currentTime = 0.0
+    var currentTime: Double = 0.0
         private set
 
     private val profileQueue = ConcurrentLinkedQueue<TimeProfiled<T>>()

@@ -16,15 +16,15 @@ interface RealFunction {
 
     /** The function's third derivative at [t] */
     fun thirdDeriv(t: Double): Double
+
+    /**
+     * Gets a [RealMotionState] for the value and first and second derivatives at [t].
+     */
+    fun motionState(t: Double): RealMotionState = RealMotionState(value(t), deriv(t), secondDeriv(t))
 }
 
 /** [RealFunction.value] */
 operator fun RealFunction.invoke(t: Double): Double = value(t)
-
-/**
- * Gets a [RealMotionState] for the value and first and second derivatives at [t].
- */
-fun RealFunction.motionState(t: Double): RealMotionState = RealMotionState(value(t), deriv(t), secondDeriv(t))
 
 /**
  * Represents a vector-valued function with first, second, and third derivatives.
@@ -58,14 +58,14 @@ interface VectorFunction {
         val j = thirdDeriv(t)
         return (v cross j) / v.lengthPow(3.0) - 3 * (v cross a) * (v dot a) / v.lengthPow(5.0)
     }
+
+    /** Gets a [MotionState] for the value and first and second derivatives at [t]. */
+    fun motionState(t: Double): MotionState<Vector2d> =
+        MotionState(value(t), deriv(t), secondDeriv(t))
 }
 
 /** [VectorFunction.value] */
 operator fun VectorFunction.invoke(t: Double): Vector2d = value(t)
-
-/** Gets a [MotionState] for the value and first and second derivatives at [t]. */
-fun VectorFunction.motionState(t: Double): MotionState<Vector2d> =
-    MotionState(value(t), deriv(t), secondDeriv(t))
 
 /**
  * A vector function defined by separate [x] and [y] component functions.

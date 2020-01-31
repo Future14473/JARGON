@@ -3,206 +3,180 @@ package org.futurerobotics.jargon.model
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.convert.*
-import org.futurerobotics.jargon.util.zipForEachIndexed
 import kotlin.math.sqrt
 
 /**
- * From wheels about a center point, gets a matrix which both represents
- * the bot applied force from wheel applied force, and it's transpose is wheel velocity from bot velocity.
+ * Gets a matrix which represents:
+ * - the bot force from wheel force
+ * - it's transpose is wheel velocity from bot velocity.
  */
-private fun getWheelBotDynamicsMatrix(wheelsAboutCenter: List<FixedWheelModel>): Mat {
-    val velPerOmega = wheelsAboutCenter.map { it.wheelPosition.tangentVelPerBotVel }
-    return Mat(3, wheelsAboutCenter.size).also {
-        wheelsAboutCenter.zipForEachIndexed(velPerOmega) { i, (wheelPosition), c ->
-            val (fx, fy) = wheelPosition.orientation
-            it[0, i] = fx
-            it[1, i] = fy
-            it[2, i] = c
-        }
+private fun getWheelBotDynamicsMatrix(wheels: List<DriveWheelPosition>): Mat {
+    val mat = Mat(3, wheels.size)
+    wheels.forEachIndexed { i, wheel ->
+        val (wheelVelPerXVel, wheelVelPerYVel) = wheel.orientation
+        val wheelVelPerBotAngularVel = wheel.wheelVelPerBotAngularVel
+        mat[0, i] = wheelVelPerXVel
+        mat[1, i] = wheelVelPerYVel
+        mat[2, i] = wheelVelPerBotAngularVel
     }
+    return mat
 }
 
 /**
- * A drive model that only concerns with kinematics (velocity/acceleration), [MotorBotInteraction],
- * [MotorBotGyroInteraction], not mechanics/kinetics (actual forces). This is used when mass/inertia is not
- * known or not required.
+ * A drive model that only uses kinematics ([MotorBotInteraction]), but not with mechanics/kinetics (forces).
+ * This is used when there is no need to power the wheels.
  *
  * This only works with fixed wheels.
  *
- * @see FixedWheelDriveModel
+ * @see DriveModel
  */
 class KinematicsOnlyDriveModel(
-    wheelsAboutCenter: List<FixedWheelModel>
-) : MotorBotInteraction, MotorBotGyroInteraction {
+    wheels: List<DriveWheelPosition>
+) : MotorBotInteraction {
 
-    private val wheelsAboutCenter = wheelsAboutCenter.toList()
-    private val wheelBotDynamicsMatrix: Mat = getWheelBotDynamicsMatrix(wheelsAboutCenter)
-
-    override val numMotors: Int
-        get() = wheelsAboutCenter.size
-    override val motorVelFromBotVel: Mat =
-        diagMatFrom(wheelsAboutCenter.mapToVec { it.motorVelPerOutputVel }) * wheelBotDynamicsMatrix.T
-
-    override val botVelFromMotorVel: Mat =
-        motorVelFromBotVel.pinv()
-    override val botVelFromMotorAndGyroVel: Mat = kotlin.run {
-        val motorVelAndGyroFromBotVel = concatCol(motorVelFromBotVel, matOf(0, 0, 1))
-        motorVelAndGyroFromBotVel.pinv()
-    }
+    override val numMotors: Int = wheels.size
+    override val motorVelFromBotVel: Mat = getWheelBotDynamicsMatrix(wheels).T
+    override val botVelFromMotorVel: Mat = motorVelFromBotVel.pinv()
 }
 
 /**
- * An implementation of [MotorVelocityControllingModel], [BotVelocityControllingModel], [MotorBotInteraction],
- * [MotorWheelInteraction], [MotorFrictionModel], that models a robot with [FixedWheelModel] (motors fixed in place
- * on the robot). This is valid for mecanum, holonomic, differential, h-drives, and other weird drives you might come
+ * An drive model that models a vehicle/drive using using [PoweredDriveWheelModel]s, where the wheels are fixed in
+ * place). This is suitable for mecanum, holonomic, differential, h-drives, and some other weird drives you might come
  * up with.
+ * Swerve drive is not yet supported.
  *
- * **More importantly**, This model relies on an assumption that the wheels have perfect traction and are perfectly
- * fixed to the drive body (so moving one wheel may affect all the others). This may not be completely true when
- * wheels slip a lot.
+ * Measurements in wheel position/moment of inertia should _ideally_ be relative to the center of mass.
  *
- * Todo: add documentation on alternatives to consider in this case.
+ * This implements [MotorVelocityDriveModel], [BotVelocityModel], [MotorBotInteraction], and [MotorFrictionModel].
  *
+ * This model relies on an assumption that the wheels have perfect traction and are perfectly
+ * fixed to the drive body (so moving one wheel may affect the motion of others). This may not be completely true
+ * when wheels slip a lot. In this case it might still be good for path planning, but a more decoupled
+ * approach to controlling wheels (such as a separate controller per wheel) may work better in this case, compared
+ * to a controller that controls both wheels at once.
+ *
+ * @param wheels the list of [PoweredDriveWheelModel]s relative to the center of mass of the robot
  * @param mass the mass of the bot
  * @param moi the moment of inertia of the bot
- * @param wheelsAboutCenter the list of [FixedWheelModel]s relative to the _center position_ of the robot
- * @param centerOfGravity the _center of mass_ of the bot relative to the center _position_. default <0, 0>.
  */
-class FixedWheelDriveModel
-@JvmOverloads constructor(
+class DriveModel(
+    wheels: List<PoweredDriveWheelModel>,
     val mass: Double,
-    val moi: Double,
-    wheelsAboutCenter: List<FixedWheelModel>,
-    centerOfGravity: Vector2d = Vector2d.ZERO
-) : MotorVelocityControllingModel, BotVelocityControllingModel,
-    MotorBotInteraction, MotorWheelInteraction, MotorBotGyroInteraction,
-    MotorFrictionModel {
+    val moi: Double
+) : MotorBotInteraction, MotorFrictionModel,
+    MotorVelocityDriveModel, BotVelocityModel {
+
+    constructor(wheelPositions: List<DriveWheelTransmission>, power: TorquePowerModel, mass: Double, moi: Double)
+            : this(wheelPositions.map { PoweredDriveWheelModel.fromTransmission(it, power) }, mass, moi)
+
+    constructor(wheelPositions: List<DriveWheelPosition>, power: PoweredWheelModel, mass: Double, moi: Double)
+            : this(wheelPositions.map { PoweredDriveWheelModel.fromPoweredWheel(it, power) }, mass, moi)
 
     init {
-        require(wheelsAboutCenter.isNotEmpty()) { "Drive model needs to have at least one wheel" }
+        require(wheels.isNotEmpty()) { "Drive model needs to have at least one wheel" }
         require(mass > 0) { "mass ($mass) should be > 0" }
         require(moi > 0) { "moi ($moi) should be > 0" }
     }
 
-    //com = center of mass
-    private val wheelsAboutCom: List<FixedWheelModel> = wheelsAboutCenter.map { (l, t) ->
-        FixedWheelModel(l.copy(locationAboutCenter = l.locationAboutCenter - centerOfGravity), t)
+    private val wheelBotDynamicsMatrix: Mat = getWheelBotDynamicsMatrix(wheels)
+    //interaction
+    override val numMotors: Int = wheels.size
+    override val motorVelFromBotVel: Mat = kotlin.run {
+        val wheelVelFromBotVel = wheelBotDynamicsMatrix.T
+        val motorVelFromWheelVel = wheels.mapToVec { it.inputVelPerOutputVel }.toDiagMat()
+        motorVelFromWheelVel * wheelVelFromBotVel
     }
-    private val wheelBotDynamicsMatrix: Mat = getWheelBotDynamicsMatrix(wheelsAboutCom)
-
-    private val botVelFromComVel = idenMat(3).also {
-        //insert <0,0,1> cross radius (radius = -centerOfGravity)
-        it[0, 2] = centerOfGravity.y
-        it[1, 2] = -centerOfGravity.x
+    override val botVelFromMotorVel: Mat = motorVelFromBotVel.pinv()
+    //motor model
+    private val botAccelFromWheelForce = kotlin.run {
+        val botAccelFromBotForce = diagMatOf(1 / mass, 1 / mass, 1 / moi)
+        val botForceFromWheelForce = wheelBotDynamicsMatrix
+        botAccelFromBotForce * botForceFromWheelForce
     }
-    private val comVelFromBotVel = botVelFromComVel.pinv()
-
-    private val comAccelFromWheelForce = kotlin.run {
-        val comAccelFromBotForce = diagMatOf(1 / mass, 1 / mass, 1 / moi)
-        comAccelFromBotForce * wheelBotDynamicsMatrix
-    }
-
-    private val comAccelFromVolts: Mat = kotlin.run {
-        val wheelForceFromVolts = diagMatFrom(wheelsAboutCom.mapToVec { 1 / it.voltsPerOutputForce })
-        comAccelFromWheelForce * wheelForceFromVolts
+    //needed by motor velocity model
+    override val botAccelFromVolts: Mat = kotlin.run {
+        val wheelForceFromVolts = wheels.mapToVec { it.voltsPerForce }.toDiagMat()
+        botAccelFromWheelForce * wheelForceFromVolts
     }
 
-    private val motorVelFromComVel: Mat = kotlin.run {
-        val wheelVelFromComVel = wheelBotDynamicsMatrix.T
-        diagMatFrom(wheelsAboutCom.mapToVec { it.motorVelPerOutputVel }) * wheelVelFromComVel
-    }
-
-    override val numMotors: Int get() = wheelsAboutCom.size
     //motor velocity
-    //from motor models.
-    override val voltsFromMotorVel: Mat = diagMatFrom(wheelsAboutCom.mapToVec { it.transmission.motor.voltsPerAngVel })
-    //from com.
-    override val motorAccelFromVolts: Mat = motorVelFromComVel * comAccelFromVolts
+    override val voltsFromMotorVel: Mat =
+        wheels.mapToVec { it.voltsPerVel * it.outputVelPerInputVel }
+            .toDiagMat()
+
+    override val motorAccelFromVolts: Mat = (motorVelFromBotVel) * botAccelFromVolts
     override val voltsFromMotorAccel: Mat = motorAccelFromVolts.pinv()
 
     override val motorAccelFromMotorVel: Mat = -motorAccelFromVolts * voltsFromMotorVel
 
-    override val motorAccelForMotorFriction: Mat = kotlin.run {
-        val wheelForceForMotorFriction = diagMatFrom(wheelsAboutCom.mapToVec { it.forceForFriction })
-        -motorVelFromComVel * comAccelFromWheelForce * wheelForceForMotorFriction
-    }
-
-    override val voltsForMotorFriction: Mat = voltsFromMotorAccel * -motorAccelForMotorFriction
     //bot velocity
-    override val botAccelFromVolts: Mat = botVelFromComVel * comAccelFromVolts
     override val voltsFromBotAccel: Mat = botAccelFromVolts.pinv()
-
-    //interaction
-    override val motorVelFromBotVel: Mat = motorVelFromComVel * comVelFromBotVel
-    override val botVelFromMotorVel: Mat = motorVelFromBotVel.pinv()
-
     override val voltsFromBotVel: Mat = voltsFromMotorVel * motorVelFromBotVel
     override val botAccelFromBotVel: Mat = -botAccelFromVolts * voltsFromBotVel
 
-    override val motorVelFromWheelVel: Mat = diagMatFrom(wheelsAboutCom.mapToVec { it.motorVelPerOutputVel })
-    override val wheelVelFromMotorVel: Mat = diagMatFrom(wheelsAboutCom.mapToVec { 1 / it.motorVelPerOutputVel })
+    //motor friction
+    override val voltsForMotorFriction: Mat = wheels.mapToVec { it.additionalVoltsForFriction }.toDiagMat()
 
-    override val botVelFromMotorAndGyroVel: Mat = kotlin.run {
-        val motorVelAndGyroFromBotVel = concatCol(motorVelFromBotVel, matOf(0, 0, 1))
-        motorVelAndGyroFromBotVel.pinv()
+    override val motorAccelForMotorFriction: Mat = -motorAccelFromVolts * voltsForMotorFriction
+}
+
+object DriveModels {
+    /**
+     * Creates a drive model for a mecanum drive, with wheels in
+     * `[front left, front right, back left, back right]` order. All wheels are oriented diagonally
+     * forward, and the center of the bot is in the center of the wheels.
+     *
+     * The gear ratio will be multiplied by sqrt(2) since the wheels actually move diagonally.
+     *
+     * @param wheelRadius the wheel's radius
+     * @param gearRatio the output:input gear ratio, used for both localization and power modeling. 1.0 if none.
+     * @param horizontalDistance the distance between wheels on opposite sides of the bot
+     * @param verticalDistance the distance between wheels on the same side of the bot
+     */
+    @JvmStatic
+    fun mecanum(
+        wheelRadius: Double,
+        gearRatio: Double,
+        horizontalDistance: Double,
+        verticalDistance: Double
+    ): List<DriveWheelTransmission> {
+        val angles = arrayOf(
+            -45 * deg, 45 * deg,
+            45 * deg, -45 * deg
+        )
+        val verticalRadius = verticalDistance / 2
+        val horizontalRadius = horizontalDistance / 2
+        val locations = arrayOf(
+            Vector2d(verticalRadius, horizontalRadius), Vector2d(verticalRadius, -horizontalRadius),
+            Vector2d(-verticalRadius, horizontalRadius), Vector2d(-verticalRadius, -horizontalRadius)
+        )
+        val gearRatioSqrt2 = gearRatio * sqrt(2.0)
+        return angles.zip(locations) { angle, location ->
+            DriveWheelTransmission.of(location, angle, wheelRadius, gearRatioSqrt2)
+        }
     }
 
-    companion object {
-
-        /**
-         * Creates a drive model for a mecanum drive, with wheels in
-         * `[`front left, front right, back left, back right`]` order, using NWU orientation.
-         *
-         * The wheel radius will be multiplied by a factor of sqrt(2) since they are actually effectively facing
-         * diagonally.
-         */
-        @JvmStatic
-        @JvmOverloads
-        fun mecanum(
-            mass: Double,
-            moi: Double,
-            transmission: TransmissionModel,
-            wheelRadius: Double,
-            horizontalRadius: Double,
-            verticalRadius: Double,
-            centerOfGravity: Vector2d = Vector2d.ZERO
-        ): FixedWheelDriveModel {
-            val orientations = listOf(
-                -45 * deg, 44.99 * deg, //problems with singular matrices...
-                45 * deg, -45 * deg
-            ).map { Vector2d.polar(1.0, it) }
-            val locations = listOf(
-                Vector2d(verticalRadius, horizontalRadius), Vector2d(verticalRadius, -horizontalRadius),
-                Vector2d(-verticalRadius, horizontalRadius), Vector2d(-verticalRadius, -horizontalRadius)
+    /**
+     * Creates a drive model for a differential drive, with wheels in [left, right] order.
+     * Wheels face forward, and the center of the two wheels is the center of the bot.
+     *
+     * @param wheelRadius the wheel's radius
+     * @param gearRatio the output:input gear ratio, used for both localization and power modeling. 1.0 if none.
+     * @param horizontalDistance the distance between wheels on opposite sides of the bot
+     */
+    @JvmStatic
+    fun differential(
+        wheelRadius: Double,
+        gearRatio: Double,
+        horizontalDistance: Double
+    ): List<DriveWheelTransmission> {
+        return arrayOf(0.5, -0.5).map { factor ->
+            DriveWheelTransmission.of(
+                location = Vector2d(0.0, factor * horizontalDistance),
+                angle = 0.0,
+                wheelRadius = wheelRadius,
+                gearRatio = gearRatio
             )
-            val wheels = orientations.zip(locations) { o, l ->
-                val location = WheelPosition(l, o, wheelRadius * sqrt(2.0))
-                FixedWheelModel(location, transmission)
-            }
-            return FixedWheelDriveModel(mass, moi, wheels, centerOfGravity)
-        }
-
-        /**
-         * Creates a drive model for a differential supplied, wheels in [left, right] order, using NWU orientation.
-         */
-        @JvmStatic
-        @JvmOverloads
-        fun differential(
-            mass: Double,
-            moi: Double,
-            transmission: TransmissionModel,
-            wheelRadius: Double,
-            horizontalRadius: Double,
-            centerOfGravity: Vector2d = Vector2d.ZERO
-        ): FixedWheelDriveModel {
-            val wheels = listOf(1, -1).map {
-                val wheelLocation = WheelPosition(
-                    Vector2d(0.0, it * horizontalRadius),
-                    Vector2d.polar(1.0, 0.0), wheelRadius
-                )
-                FixedWheelModel(wheelLocation, transmission)
-            }
-            return FixedWheelDriveModel(mass, moi, wheels, centerOfGravity)
         }
     }
 }

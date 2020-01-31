@@ -30,8 +30,8 @@ object GlobalToBot {
         val (v, a) = globalMotion
         val rv = v.vecRotated(-globalHeading)
         val ra = Pose2d(
-            a.vec.rotated(-globalHeading) +
-                    v.vec.rotated(-globalHeading + PI / 2) * -v.heading,
+            a.vector2d.rotated(-globalHeading) +
+                    v.vector2d.rotated(-globalHeading + PI / 2) * -v.heading,
             a.heading
         )
         return MotionOnly(rv, ra)
@@ -48,8 +48,8 @@ object GlobalToBot {
         val rs = (s - globalPose).vecRotated(-globalHeading)
         val rv = v.vecRotated(-globalHeading)
         val ra = Pose2d(
-            a.vec.rotated(-globalHeading) -
-                    v.vec.rotated(-globalHeading + PI / 2) * v.heading,
+            a.vector2d.rotated(-globalHeading) -
+                    v.vector2d.rotated(-globalHeading + PI / 2) * v.heading,
             a.heading
         )
         return MotionState(rs, rv, ra)

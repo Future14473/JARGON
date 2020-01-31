@@ -68,7 +68,7 @@ class PathGraph
     fun addNode(x: Double, y: Double): Node = addNode(Vector2d(x, y))
 
     /** Creates a node at the given [pose], with the constraint that it must face the given pose's heading. */
-    fun addNode(pose: Pose2d): Node = addNode(pose.vec).addConstraint(WaypointConstraint(heading = pose.heading))
+    fun addNode(pose: Pose2d): Node = addNode(pose.vector2d).addConstraint(WaypointConstraint(heading = pose.heading))
 
     /** Removes a node and all it's connected edges from this graph. */
     fun removeNode(node: Node) {
@@ -348,7 +348,7 @@ class PathGraph
             splineTo(waypoint.position).addOutConstraint(waypoint.constraint)
 
         override fun splineTo(pose: Pose2d): FreeEdge =
-            splineTo(pose.vec).addConstraint(WaypointConstraint(heading = pose.heading))
+            splineTo(pose.vector2d).addConstraint(WaypointConstraint(heading = pose.heading))
 
         override fun lineTo(node: Node): CurveEdge =
             CurveEdge(this, node, Line(location, node.location), defaultInterpolator)

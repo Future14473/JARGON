@@ -1,9 +1,9 @@
 package org.futurerobotics.jargon.statespace
 
 import org.futurerobotics.jargon.math.convert.*
-import org.futurerobotics.jargon.model.FixedWheelDriveModel
-import org.futurerobotics.jargon.model.MotorModel
-import org.futurerobotics.jargon.model.TransmissionModel
+import org.futurerobotics.jargon.model.DcMotorModel
+import org.futurerobotics.jargon.model.DriveModel
+import org.futurerobotics.jargon.model.OldTransmissionModel
 import org.futurerobotics.jargon.printlnMe
 import org.junit.jupiter.api.Test
 import kotlin.math.pow
@@ -11,16 +11,16 @@ import kotlin.math.pow
 internal class DriveStateSpaceModelsTest {
     @Test
     fun `inspect nice numbers`() {
-        val motor = MotorModel.fromMotorData(
+        val motor = DcMotorModel.fromMotorData(
             1 * volts,
             1.0 / 4, // 1/4 Nm/V
             1.0, //1 Ohm
             10.0, //.1 V/ (rad/s)
             0.0
         )
-        val transmission = TransmissionModel.ideal(motor, 1.0)
+        val transmission = OldTransmissionModel.ideal(motor, 1.0)
         val mass = 5.0
-        val model = FixedWheelDriveModel.mecanum(
+        val model = DriveModel.mecanum(
             mass,
             0.5,
             transmission,
@@ -47,16 +47,16 @@ internal class DriveStateSpaceModelsTest {
 
     @Test
     fun `inspect real holonomic`() {
-        val motor = MotorModel.fromMotorData(
+        val motor = DcMotorModel.fromMotorData(
             12 * volts,
             260 * ozf * `in`,
             9.2 * A,
             435 * rev / mins,
             0.25 * A
         )
-        val transmission = TransmissionModel.fromTorqueMultiplier(motor, 2.0, 50 * ozf * `in`, 0.9)
+        val transmission = OldTransmissionModel.fromTorqueMultiplier(motor, 2.0, 50 * ozf * `in`, 0.9)
         val mass = 20 * lbm
-        val model = FixedWheelDriveModel.mecanum(
+        val model = DriveModel.mecanum(
             mass,
             mass / 12 * (18 * `in`).pow(2),
             transmission,

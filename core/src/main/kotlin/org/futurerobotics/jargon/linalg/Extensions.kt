@@ -58,9 +58,6 @@ inline operator fun Vec.minus(vec: Vec): Vec = subtract(vec)
 inline operator fun Mat.unaryMinus(): Mat = this * -1.0
 inline operator fun Vec.unaryMinus(): Vec = this * -1.0
 
-inline operator fun Mat.unaryPlus(): Mat = copy()
-inline operator fun Vec.unaryPlus(): Vec = copy()
-
 // op assign
 inline operator fun Mat.plusAssign(mat: Mat): Unit = kotlin.run { this addI mat }
 
@@ -74,8 +71,10 @@ inline operator fun Vec.timesAssign(scalar: Double): Unit = kotlin.run { this mu
 inline operator fun Vec.divAssign(scalar: Double): Unit = kotlin.run { this divI scalar }
 
 //other
+/** Element by element multiplication */
 infix fun Vec.emul(other: Vec): Vec = ebeMultiply(other)
 
+/** Matrix transpose */
 inline val Mat.T: Mat get() = transpose()
 
 inline val Mat.cols: Int get() = columnDimension

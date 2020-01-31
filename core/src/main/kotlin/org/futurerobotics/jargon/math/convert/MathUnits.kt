@@ -13,12 +13,12 @@ const val minutes: Double = 60.0
 const val mins: Double = minutes //not min to confuse with min function
 const val milliseconds: Double = 1e-3
 const val millis: Double = milliseconds
-const val ms = milliseconds
+const val ms: Double = milliseconds
 const val microseconds: Double = 1e-6
 const val micros: Double = microseconds
 const val nanoseconds: Double = 1e-9
 const val nanos: Double = nanoseconds
-const val ns = nanoseconds
+const val ns: Double = nanoseconds
 //Distance
 const val meters: Double = 1.0
 const val m: Double = meters

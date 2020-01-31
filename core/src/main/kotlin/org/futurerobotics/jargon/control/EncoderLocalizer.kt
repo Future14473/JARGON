@@ -4,20 +4,18 @@ import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.angleNorm
 import org.futurerobotics.jargon.math.toPose
-import org.futurerobotics.jargon.model.MotorBotGyroInteraction
 import org.futurerobotics.jargon.model.MotorBotInteraction
+import org.futurerobotics.jargon.util.replaceIf
 
 /** Common components of [EncoderLocalizer] and [EncoderGyroLocalizer]. */
-abstract class BaseEncoderBasedLocalizer(protected val numMotors: Int, initialPose: Pose2d = Pose2d.ZERO) {
+abstract class BaseEncoderBasedLocalizer(private val numMotors: Int, initialPose: Pose2d = Pose2d.ZERO) {
 
     /**
-     * The currently tracked pose.
+     * The current localized pose.
      */
     var pose: Pose2d = initialPose
         protected set
-    /**
-     * The previously tracked motor positions.
-     */
+    /** The previously given motor positions. */
     protected var pastPositions: Vec = Vec(numMotors)
 
     /**
@@ -35,16 +33,17 @@ abstract class BaseEncoderBasedLocalizer(protected val numMotors: Int, initialPo
     }
 
     /**
-     * Resets this previously tracked [motorPositions], as a vector.
+     * Resets the [motorPositions], as a vector.
      */
     fun resetMotorPositions(motorPositions: Vec) {
         require(motorPositions.size == numMotors)
         { "Motor positions given (${motorPositions.size}) does not reflect model (${numMotors})" }
+        this.pastPositions = motorPositions
     }
 }
 
 /**
- * A localizer to track global pose based only on encoder measurements.
+ * A localizer to track global pose based only on encoder measurements on wheels.
  *
  * A [MotorBotInteraction] must be supplied.
  *
@@ -57,38 +56,49 @@ class EncoderLocalizer
 ) : BaseEncoderBasedLocalizer(motorBotInteraction.numMotors, initialPose) {
 
     /**
-     * Given new [motorPositions], uses the delta in motor position to update the currently tracked global [pose]
-     * and return it.
+     * Given new [motorPositions], uses the delta in motor position to update the currently tracked global [pose],
+     * and returns it.
      */
     fun update(motorPositions: Vec): Pose2d {
-        val diff = motorPositions - pastPositions
-        val delta = (motorBotInteraction.botVelFromMotorVel * diff).toPose()
+        val motorDelta = motorPositions - pastPositions
         pastPositions = motorPositions
-        return GlobalToBot.trackGlobalPose(delta, pose)
+        val botDelta = (motorBotInteraction.botVelFromMotorVel * motorDelta).toPose()
+        return GlobalToBot.trackGlobalPose(botDelta, pose)
             .also { pose = it }
     }
 }
 
 /**
- * A localizer to track global pose based only on encoder measurements.
+ * A localizer to track global pose based on both encoder measurements on wheels and gyroscope readings.
  *
  * A [MotorBotInteraction] must be supplied.
  *
- * @param useAbsoluteHeading If true, the heading is treated as _the_ global heading, otherwise relative
+ * @param useRelativeHeading If true, the heading is treated as _the_ global heading, otherwise relative
  *                           differences in heading between [heading] is used.
+ * @param treatGyroAsActualHeading If true, the gyroscope's values will always be used as the heading measurement,
+ *                          as opposed to also using the encoder measurements to estimate heading.
  * @see EncoderLocalizer
  */
 class EncoderGyroLocalizer
 @JvmOverloads constructor(
-    private val motorBotGyroInteraction: MotorBotGyroInteraction,
+    motorBotInteraction: MotorBotInteraction,
     initialPose: Pose2d = Pose2d.ZERO,
-    private val useAbsoluteHeading: Boolean = true
-) : BaseEncoderBasedLocalizer(motorBotGyroInteraction.numMotors, initialPose) {
+    private val useRelativeHeading: Boolean = false,
+    private val treatGyroAsActualHeading: Boolean = true
+) : BaseEncoderBasedLocalizer(motorBotInteraction.numMotors, initialPose) {
 
     private var lastHeading: Double = 0.0
 
+    private val botVelFromMotorAndGyroVel = kotlin.run {
+        val motorAndGyroVelFromBotVel = concatCol(
+            motorBotInteraction.motorVelFromBotVel,
+            matOf(0, 0, 1)
+        )
+        motorAndGyroVelFromBotVel.pinv()
+    }
+
     /**
-     * Resets the heading measurement. This has no effect if [useAbsoluteHeading] is false.
+     * Resets the heading measurement. This has no effect if [useRelativeHeading] is false.
      */
     fun resetHeadingMeasurement(heading: Double) {
         lastHeading = angleNorm(heading)
@@ -98,20 +108,22 @@ class EncoderGyroLocalizer
      * Given new [motorPositions] and new [heading] measurement, uses the delta in motor position to update the
      * currently tracked global [pose] and return it.
      *
-     * @see [useAbsoluteHeading]
+     * @see [useRelativeHeading]
      */
     fun update(motorPositions: Vec, heading: Double): Pose2d {
         val normHeading = angleNorm(heading)
         val motorDelta = motorPositions - pastPositions
-        val gyroDelta = if (useAbsoluteHeading) {
-            angleNorm(normHeading - pose.heading)
-        } else {
+        pastPositions = motorPositions
+        val gyroDelta = if (useRelativeHeading) {
             angleNorm(normHeading - lastHeading)
                 .also { lastHeading = normHeading }
+        } else {
+            angleNorm(normHeading - pose.heading)
         }
-        val botPoseDelta = (motorBotGyroInteraction.botVelFromMotorAndGyroVel * motorDelta.append(gyroDelta)).toPose()
-        lastHeading = normHeading
-        pastPositions = motorPositions
-        return GlobalToBot.trackGlobalPose(botPoseDelta, pose).also { pose = it }
+        val botPoseDelta = (botVelFromMotorAndGyroVel * motorDelta.append(gyroDelta)).toPose()
+        return GlobalToBot.trackGlobalPose(botPoseDelta, pose).replaceIf(treatGyroAsActualHeading) {
+            val actualHeading = angleNorm(pose.heading + gyroDelta)
+            it.copy(heading = actualHeading)
+        }.also { pose = it }
     }
 }
