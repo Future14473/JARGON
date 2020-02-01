@@ -1,8 +1,6 @@
-package org.futurerobotics.jargon.pathing.reparam
+package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.*
-import org.futurerobotics.jargon.pathing.Curve
-import org.futurerobotics.jargon.pathing.CurvePoint
 import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.replaceIf
 

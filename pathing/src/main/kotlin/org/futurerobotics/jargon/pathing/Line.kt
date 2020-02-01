@@ -5,8 +5,7 @@ import org.futurerobotics.jargon.math.Vector2d
 /**
  * A [Curve] that is traveling along a straight Line, starting at [startPos] and ending at `endPos.`
  */
-class Line(private val startPos: Vector2d, endPos: Vector2d) :
-    Curve {
+class Line(private val startPos: Vector2d, endPos: Vector2d) : Curve {
 
     override val length: Double = startPos distTo endPos
     private val diffNorm = (endPos - startPos).normalized()

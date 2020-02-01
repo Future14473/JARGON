@@ -1,4 +1,7 @@
-package org.futurerobotics.jargon.pathing.reparam
+@file:JvmMultifileClass
+@file:JvmName("Paths")
+
+package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.VectorFunction
 

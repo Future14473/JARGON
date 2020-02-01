@@ -1,8 +1,6 @@
 package org.futurerobotics.jargon.pathing
 
-import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.isEpsEqTo
-import org.futurerobotics.jargon.math.nextVector2d
+import org.futurerobotics.jargon.math.*
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
@@ -21,19 +19,19 @@ class QuinticSplineTest {
         p2: Vector2d,
         p2Deriv: Vector2d,
         p2SecondDeriv: Vector2d,
-        spline: QuinticSpline
+        spline: VectorFunction
     ) {
-        expectThat(p1) isEpsEqTo spline.vec(0.0)
+        expectThat(p1) isEpsEqTo spline(0.0)
 
-        expectThat(p1Deriv) isEpsEqTo spline.vecDeriv(0.0)
+        expectThat(p1Deriv) isEpsEqTo spline.deriv(0.0)
 
-        expectThat(p1SecondDeriv) isEpsEqTo spline.vecSecondDeriv(0.0)
+        expectThat(p1SecondDeriv) isEpsEqTo spline.secondDeriv(0.0)
 
-        expectThat(p2) isEpsEqTo spline.vec(1.0)
+        expectThat(p2) isEpsEqTo spline(1.0)
 
-        expectThat(p2Deriv) isEpsEqTo spline.vecDeriv(1.0)
+        expectThat(p2Deriv) isEpsEqTo spline.deriv(1.0)
 
-        expectThat(p2SecondDeriv) isEpsEqTo spline.vecSecondDeriv(1.0)
+        expectThat(p2SecondDeriv) isEpsEqTo spline.secondDeriv(1.0)
     }
 
     companion object {

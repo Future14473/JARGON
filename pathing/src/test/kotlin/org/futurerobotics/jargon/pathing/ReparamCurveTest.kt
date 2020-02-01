@@ -1,7 +1,6 @@
-package org.futurerobotics.jargon.pathing.reparam
+package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.*
-import org.futurerobotics.jargon.pathing.QuinticSpline
 import org.futurerobotics.jargon.reportError
 import org.futurerobotics.jargon.saveGraph
 import org.junit.Assert.assertTrue

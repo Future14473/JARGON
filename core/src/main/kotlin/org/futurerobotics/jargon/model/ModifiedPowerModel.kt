@@ -47,7 +47,7 @@ class ModifiedPowerModel private constructor(
             { "factorForTorque ($factorForTorque) must be finite and > 0" }
             require(factorForVel.isFinite() && factorForVel > 0)
             { "factorForVel ($factorForVel) must be finite and > 0" }
-            require(additionalVoltsForFriction.isFinite() && additionalVoltsForFriction > 0)
+            require(additionalVoltsForFriction.isFinite() && additionalVoltsForFriction >= 0)
             { "moreAdditionalVolts ($additionalVoltsForFriction) must be finite and > 0" }
             return if (model is ModifiedPowerModel) {
                 ModifiedPowerModel(

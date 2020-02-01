@@ -42,6 +42,7 @@ class CurveHeadingPath(internal val curve: Curve, private val heading: HeadingPr
     }
 
     internal class Point(
+        @JvmField
         internal val curvePoint: CurvePoint, heading: RealMotionState
     ) : PathPoint, CurvePoint by curvePoint {
 

@@ -39,17 +39,17 @@ interface GenericPath<out Point : CurvePoint> : Steppable<Point> {
      */
     val requiredPoints: Set<Double>
         get() = stopPoints
+
+    /**
+     * Gets the point at the start of this curve/path.
+     */
+    fun startPoint(): Point = pointAt(0.0)
+
+    /**
+     * Gets the point at the end of this curve/path.
+     */
+    fun endPoint(): Point = pointAt(length)
 }
-
-/**
- * Gets the first point of this Curve/Path.
- */
-fun <Point : CurvePoint> GenericPath<Point>.startPoint(): Point = pointAt(0.0)
-
-/**
- * Gets the last point of this Curve/Path.
- */
-fun <Point : CurvePoint> GenericPath<Point>.endPoint(): Point = pointAt(length)
 
 /**
  * Represents a parametric curve. ***parameterized by arc length***, without heading. This is essentially a [Path] but

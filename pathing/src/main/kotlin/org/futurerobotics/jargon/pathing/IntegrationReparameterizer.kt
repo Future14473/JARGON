@@ -1,4 +1,4 @@
-package org.futurerobotics.jargon.pathing.reparam
+package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.VectorFunction
 

@@ -4,7 +4,8 @@ import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.convert.*
 import org.futurerobotics.jargon.model.DcMotorModel
 import org.futurerobotics.jargon.model.DriveModel
-import org.futurerobotics.jargon.model.OldTransmissionModel
+import org.futurerobotics.jargon.model.DriveModels
+import org.futurerobotics.jargon.model.ModifiedPowerModel
 import org.junit.jupiter.api.Test
 import strikt.api.expectCatching
 import strikt.assertions.failed
@@ -18,16 +19,20 @@ private val motorModel = DcMotorModel.fromMotorData(
     435 * rev / mins,
     0.25 * A
 )
-private val transmissionModel = OldTransmissionModel.fromTorqueMultiplier(motorModel, 2.0, 0.0, 0.9)
+private val powerModel = ModifiedPowerModel.of(motorModel, 0.9)
 private const val mass = 10.8 * lbm
-private val driveModel = DriveModel.mecanum(
-    mass,
-    mass / 6 * (18 * `in`).pow(2),
-    transmissionModel,
-    2 * `in`,
-    16 * `in`,
-    14 * `in`
-)
+private val driveModel =
+    DriveModel(
+        DriveModels.mecanum(
+            2 * `in`,
+            2.0,
+            16 * `in`,
+            14 * `in`
+        ),
+        powerModel,
+        mass,
+        mass / 6 * (18 * `in`).pow(2)
+    )
 
 internal class DecoupledTest {
     @Test

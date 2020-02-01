@@ -1,14 +1,11 @@
 @file:JvmName("CurveGen")
 
-package org.futurerobotics.jargon.pathing.graph
+package org.futurerobotics.jargon.pathing.builder
 
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.math.angleNorm
-import org.futurerobotics.jargon.math.function.QuinticSpline
 import org.futurerobotics.jargon.math.times
-import org.futurerobotics.jargon.pathing.Curve
-import org.futurerobotics.jargon.pathing.reparam.Reparameterizer
-import org.futurerobotics.jargon.pathing.reparam.reparameterizeToCurve
+import org.futurerobotics.jargon.pathing.*
 import kotlin.math.min
 
 /**
@@ -34,7 +31,8 @@ data class CurveGenParams @JvmOverloads constructor(
     companion object {
         /** Default [CurveGenParams]. */
         @JvmField
-        val DEFAULT: CurveGenParams = CurveGenParams()
+        val DEFAULT: CurveGenParams =
+            CurveGenParams()
     }
 }
 
@@ -43,15 +41,22 @@ data class CurveGenParams @JvmOverloads constructor(
  *
  * [curveGenParams] provides additional options.
  */
-fun heuristicSplineCurves(waypoints: List<Waypoint>, curveGenParams: CurveGenParams): List<Curve> {
-    return resolveWaypoints(waypoints, curveGenParams).asSequence()
+fun heuristicSplineCurves(waypoints: List<Waypoint>, curveGenParams: CurveGenParams): List<Curve> =
+    resolveWaypoints(waypoints, curveGenParams).resolvedWaypointsToCurves(curveGenParams)
+
+internal fun List<Waypoint>.resolvedWaypointsToCurves(curveGenParams: CurveGenParams): List<ReparamCurve> =
+    asSequence()
         .map { it.toMotionState() }
         .zipWithNext { a, b -> QuinticSpline.fromDerivatives(a, b) }
-        .map { it.reparameterizeToCurve(curveGenParams.reparameterizer) }
-        .toList()
-}
+        .mapTo(mutableListOf()) {
+            it.reparameterizeToCurve(curveGenParams.reparameterizer)
+        }
 
-private fun resolveWaypoints(
+/**
+ * Waypoints, connected by splines, and also with _no_ null elements. Heading will be filled with tan angle
+ * if none.
+ */
+internal fun resolveWaypoints(
     waypoints: List<Waypoint>,
     curveGenParams: CurveGenParams
 ): List<Waypoint> {
@@ -61,13 +66,13 @@ private fun resolveWaypoints(
         val fromDirection = fromVec?.angle
         val toDirection = toVec?.angle
 
-        val direction = cur.constraint.direction
+        val direction = cur.direction
             ?: if (fromDirection != null && toDirection != null) {
                 fromDirection + 0.5 * angleNorm(toDirection - fromDirection)
             } else {
                 fromDirection ?: toDirection!!
             }
-        val magnitude = cur.constraint.derivMagnitude
+        val magnitude = cur.derivMagnitude
             ?: curveGenParams.derivMagnitudeMultiplier * 0.5 * if (fromVec != null && toVec != null) {
                 min(fromVec.length, toVec.length)
             } else {
@@ -77,7 +82,7 @@ private fun resolveWaypoints(
         Vector2d.polar(magnitude, direction)
     }
     val secondDerivs = waypoints.mapIndexed { i, cur ->
-        cur.constraint.secondDeriv?.let { return@mapIndexed it }
+        cur.secondDeriv?.let { return@mapIndexed it }
         val (fromVec, toVec) = getVecs(waypoints, i, cur)
 
         val prevDeriv = derivs.getOrNull(i - 1)
@@ -97,15 +102,16 @@ private fun resolveWaypoints(
             a * prevSplineSecondDeriv!! + b * nextSplineSecondDeriv!!
         } else prevSplineSecondDeriv ?: nextSplineSecondDeriv!!
     }
-    return waypoints.mapIndexed { index, (position, c) ->
+    return waypoints.mapIndexed { index, c ->
         val deriv = derivs[index]
         val secondDeriv = secondDerivs[index]
+        val direction = deriv.angle
         Waypoint(
-            position = position,
-            direction = deriv.angle,
+            position = c.position,
+            direction = direction,
             derivMagnitude = deriv.length,
             secondDeriv = secondDeriv,
-            heading = c.heading
+            heading = c.heading ?: direction
         )
     }
 }

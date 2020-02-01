@@ -7,7 +7,7 @@ import org.futurerobotics.jargon.util.uncheckedCast
 /**
  * Common superclass of both [SinglePointCurve] and [SinglePointPath]
  */
-sealed class PointGenericPath<Path : GenericPath<Point>, Point : CurvePoint>(pose: Pose2d) :
+sealed class PointGenericPath<Path : GenericPath<Point>, out Point : CurvePoint>(pose: Pose2d) :
     GenericPath<Point> {
 
     private val point = object : PathPoint {

@@ -4,9 +4,6 @@ package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.math.DoubleProgression
 import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.function.QuinticSpline
-import org.futurerobotics.jargon.math.randomVectorDerivatives
-import org.futurerobotics.jargon.pathing.reparam.reparameterizeToCurve
 import org.futurerobotics.jargon.pathing.trajectory.*
 import org.futurerobotics.jargon.profile.ForwardMotionProfile
 import org.futurerobotics.jargon.profile.MotionProfileGenParams

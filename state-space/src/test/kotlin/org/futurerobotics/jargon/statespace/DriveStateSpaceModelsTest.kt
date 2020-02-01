@@ -3,10 +3,9 @@ package org.futurerobotics.jargon.statespace
 import org.futurerobotics.jargon.math.convert.*
 import org.futurerobotics.jargon.model.DcMotorModel
 import org.futurerobotics.jargon.model.DriveModel
-import org.futurerobotics.jargon.model.OldTransmissionModel
+import org.futurerobotics.jargon.model.DriveModels
 import org.futurerobotics.jargon.printlnMe
 import org.junit.jupiter.api.Test
-import kotlin.math.pow
 
 internal class DriveStateSpaceModelsTest {
     @Test
@@ -18,16 +17,15 @@ internal class DriveStateSpaceModelsTest {
             10.0, //.1 V/ (rad/s)
             0.0
         )
-        val transmission = OldTransmissionModel.ideal(motor, 1.0)
         val mass = 5.0
-        val model = DriveModel.mecanum(
-            mass,
-            0.5,
-            transmission,
+        val model = DriveModels.mecanum(
             0.05,
+            0.5,
             .5,
             .5
-        )
+        ).let {
+            DriveModel(it, motor, mass, mass)
+        }
         model.run {
             listOf(
                 motorVelFromBotVel,
@@ -54,25 +52,14 @@ internal class DriveStateSpaceModelsTest {
             435 * rev / mins,
             0.25 * A
         )
-        val transmission = OldTransmissionModel.fromTorqueMultiplier(motor, 2.0, 50 * ozf * `in`, 0.9)
-        val mass = 20 * lbm
-        val model = DriveModel.mecanum(
-            mass,
-            mass / 12 * (18 * `in`).pow(2),
-            transmission,
-            2 * `in`,
-            16 * `in`,
-            14 * `in`
-        )
-        model.run {
-            listOf(
-                motorVelFromBotVel,
-                motorAccelFromVolts,
-                voltsFromMotorVel,
-                motorAccelFromMotorVel
-            )
-        }.forEach {
-            println(it)
+        val mass = 5.0
+        val model = DriveModels.mecanum(
+            0.05,
+            0.5,
+            .5,
+            .5
+        ).let {
+            DriveModel(it, motor, mass, mass)
         }
         discretizeZeroOrderHold(
             DriveStateSpaceModels.decoupledMotorVelocityController(model, 1.0),

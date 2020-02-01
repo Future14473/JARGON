@@ -116,7 +116,7 @@ if (!doPublish) {
     logger.warn("Bintray user or key not found; NOT configuring upload publications")
 } else {
     if (isSnapshot) {
-        apply(from = rootProject.file("configureArtifactory.gradle"))
+        apply(from = "configureArtifactory.gradle")
     }
     subprojects {
         if (parent != rootProject) return@subprojects
@@ -127,8 +127,9 @@ if (!doPublish) {
         //if snapshot, artifactory on root, else bintray
         if (isSnapshot) {
             apply(plugin = "com.jfrog.artifactory")
-        } else
+        } else {
             apply(from = rootProject.file("configureBintray.gradle"))
+        }
     }
 }
 

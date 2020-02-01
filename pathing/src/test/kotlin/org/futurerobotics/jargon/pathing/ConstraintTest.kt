@@ -3,9 +3,6 @@ package org.futurerobotics.jargon.pathing
 import org.futurerobotics.jargon.Debug
 import org.futurerobotics.jargon.math.DoubleProgression
 import org.futurerobotics.jargon.math.distTo
-import org.futurerobotics.jargon.math.function.QuinticSpline
-import org.futurerobotics.jargon.math.randomVectorDerivatives
-import org.futurerobotics.jargon.pathing.reparam.reparameterizeToCurve
 import org.futurerobotics.jargon.pathing.trajectory.*
 import org.futurerobotics.jargon.util.extendingDoubleSearch
 import org.futurerobotics.jargon.util.stepToAll

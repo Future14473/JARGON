@@ -30,10 +30,14 @@ inline fun <T> Any?.uncheckedCast(): T = this as T
 /**
  * Runs the block, then returns [this] as [S].
  *
- * Intended for use in builders that return self.
+ * Intended for use in builder methods that return itself.
+ *
+ * If [this] is a final/non-open class, type inference is smart enough to put the return
+ * type as this. However one must be careful when doing explicit types as it will cast
+ * to any type you give it.
  */
 @UseExperimental(ExperimentalContracts::class)
-inline fun <S> Any.builder(block: () -> Unit): S {
+inline fun <T, S : T> T.builder(block: () -> Unit): S {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }

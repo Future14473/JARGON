@@ -3,8 +3,7 @@ package org.futurerobotics.jargon.pathing
 import org.futurerobotics.jargon.Debug
 import org.futurerobotics.jargon.errorTo
 import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.math.function.QuinticSpline
-import org.futurerobotics.jargon.math.randomQuinticSpline
+import org.futurerobotics.jargon.math.VectorFunction
 import org.futurerobotics.jargon.reportError
 import org.junit.Assert
 import org.junit.Test
@@ -13,21 +12,21 @@ import org.junit.runners.Parameterized
 import kotlin.random.Random
 
 @RunWith(Parameterized::class)
-internal class VectorFunctionTest(private val curve: QuinticSpline) {
+internal class VectorFunctionTest(private val curve: VectorFunction) {
 
     @Test
     fun `deriv inspect`() {
-        testVecDeriv(curve::vec, curve::vecDeriv)
+        testVecDeriv(curve::value, curve::deriv)
     }
 
     @Test
     fun `secondDeriv inspect`() {
-        testVecDeriv(curve::vecDeriv, curve::vecSecondDeriv)
+        testVecDeriv(curve::deriv, curve::secondDeriv)
     }
 
     @Test
     fun `thirdDeriv inspect`() {
-        testVecDeriv(curve::vecSecondDeriv, curve::vecThirdDeriv)
+        testVecDeriv(curve::secondDeriv, curve::thirdDeriv)
     }
 
     @Test

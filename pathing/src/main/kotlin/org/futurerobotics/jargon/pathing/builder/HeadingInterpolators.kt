@@ -1,6 +1,18 @@
-package org.futurerobotics.jargon.pathing.graph
+package org.futurerobotics.jargon.pathing.builder
 
 import org.futurerobotics.jargon.pathing.*
+
+/**
+ * An [HeadingInterpolator] that simply provides another given [interpolator].
+ */
+class ProviderInterpolator(private val interpolator: HeadingProvider) : HeadingInterpolator {
+
+    override fun getHeadingProvider(
+        curve: Curve,
+        startHeading: Double,
+        endHeading: Double
+    ): HeadingProvider = interpolator
+}
 
 /**
  * A [HeadingInterpolator] only outputs tangent heading.
