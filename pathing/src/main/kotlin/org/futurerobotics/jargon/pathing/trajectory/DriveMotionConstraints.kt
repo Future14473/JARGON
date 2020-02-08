@@ -3,10 +3,7 @@ package org.futurerobotics.jargon.pathing.trajectory
 import org.futurerobotics.jargon.linalg.*
 import org.futurerobotics.jargon.math.Interval
 import org.futurerobotics.jargon.math.Pose2d
-import org.futurerobotics.jargon.model.DriveModel
-import org.futurerobotics.jargon.model.MotorBotInteraction
-import org.futurerobotics.jargon.model.MotorFrictionModel
-import org.futurerobotics.jargon.model.MotorVelocityDriveModel
+import org.futurerobotics.jargon.model.*
 import org.futurerobotics.jargon.pathing.PathPoint
 import kotlin.math.*
 
@@ -53,7 +50,7 @@ class MaxMotorVoltage(
     private val maxes: Vec,
     private val interaction: MotorBotInteraction,
     private val motorVelocity: MotorVelocityDriveModel,
-    private val motorFriction: MotorFrictionModel
+    private val motorFriction: MotorFrictionModel = ZeroMotorFrictionModel(interaction.numMotors)
 ) : AccelerationConstraint {
 
     init {

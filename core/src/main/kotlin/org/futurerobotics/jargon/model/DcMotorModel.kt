@@ -1,17 +1,15 @@
 package org.futurerobotics.jargon.model
 
 /**
- * A simple, linear, first-order approximation model of a DC motor, based off the given model:
+ * A simple, linear, first-order approximation model of a DC motor, based off the model that torque
+ * is proportional to current, and that a motor velocity creates a voltage, or:
  *
  * V = torque/kt*r + angvel/kv + sign(angvel) * i0 * r
  *
  * All units should be SI units; and values can also be derived off of a motor data sheet.
  *
- * See static factory methods for construction.
- *
- * This is based off of section 14.2 of
- * [calcmogul's state space guide][https://file.tavsys.net/control/state-space-guide.pdf], with an added `i0` term.
- * term for friction.
+ * This is based off of section 14.2 of [calcmogul's state space guide][https://file.tavsys.net/control/state-space-guide.pdf],
+ * with an added `i0` term. term for friction.
  */
 class DcMotorModel
 private constructor(
@@ -31,10 +29,10 @@ private constructor(
         /**
          * Constructs a [DcMotorModel] with the given coefficients.
          *
-         * @param kt the kt term
-         * @param r the r term
-         * @param kv the kv term
-         * @param i0 the i0 term
+         * @param kt
+         * @param r
+         * @param kv
+         * @param i0
          */
         @JvmStatic
         fun fromCoefficients(kt: Double, r: Double, kv: Double, i0: Double = 0.0): DcMotorModel {
@@ -47,6 +45,12 @@ private constructor(
 
         /**
          * Constructs a model based on data given on a motor data sheet.
+         *
+         * All units should be in SI units, see [org.futurerobotics.jargon.math.convert]
+         *
+         * @param voltage the voltage the data is based on
+         * @param stallTorque the stall torque, in SI units
+         * @param stallCurrent the stall current, in
          */
         @JvmStatic
         fun fromMotorData(

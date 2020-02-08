@@ -5,7 +5,7 @@ import org.futurerobotics.jargon.math.epsEq
 import org.futurerobotics.jargon.model.DriveWheelTransmission.Companion.fromPosition
 
 /**
- * Represents the position and orientation of a wheel that is fixed in place (not a swerve wheel or similar)
+ * Represents the position and orientation of a wheel that is fixed in place on a drive train.
  *
  * @see DriveWheelTransmission
  * @see PoweredDriveWheelModel
@@ -60,14 +60,18 @@ protected constructor(
  *
  * This can be created using [fromPosition] factory function.
  */
-abstract class DriveWheelTransmission
+open class DriveWheelTransmission
 internal constructor(
     location: Vector2d,
-    orientation: Vector2d
+    orientation: Vector2d,
+    gearRatioOverWheelRadius: Double
 ) : DriveWheelPosition(location, orientation), Gearing {
 
     /** The ratio of the inputted velocity with the bot's angular velocity, assuming the wheel does not slip. */
     val inputVelPerBotAngularVel: Double get() = inputVelPerOutputVel * wheelVelPerBotAngularVel
+
+    override val outputVelPerInputVel: Double get() = 1 / inputVelPerOutputVel
+    override val inputVelPerOutputVel: Double = gearRatioOverWheelRadius
 
     companion object {
         /**
@@ -102,13 +106,11 @@ internal constructor(
             gearRatio: Double
         ): DriveWheelTransmission {
             val gearRatioOverWheelRadius = checkWG(wheelRadius, gearRatio)
-            return object : DriveWheelTransmission(
+            return DriveWheelTransmission(
                 wheelModel.location,
-                wheelModel.orientation
-            ) {
-                override val outputVelPerInputVel: Double get() = 1 / inputVelPerOutputVel
-                override val inputVelPerOutputVel: Double = gearRatioOverWheelRadius
-            }
+                wheelModel.orientation,
+                gearRatioOverWheelRadius
+            )
         }
     }
 }
@@ -123,9 +125,14 @@ class PoweredDriveWheelModel
 private constructor(
     location: Vector2d,
     orientation: Vector2d,
-    poweredWheelModel: PoweredWheelModel
-) : DriveWheelTransmission(location, orientation),
+    private val poweredWheelModel: PoweredWheelModel
+) : DriveWheelTransmission(location, orientation, 0.0),
     ForcePowerModel by poweredWheelModel {
+
+    override val inputVelPerOutputVel: Double
+        get() = poweredWheelModel.inputVelPerOutputVel
+    override val outputVelPerInputVel: Double
+        get() = poweredWheelModel.outputVelPerInputVel
 
     companion object {
         /**

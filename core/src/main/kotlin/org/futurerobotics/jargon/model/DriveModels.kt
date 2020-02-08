@@ -23,7 +23,7 @@ private fun getWheelBotDynamicsMatrix(wheels: List<DriveWheelPosition>): Mat {
 }
 
 /**
- * A drive model that only uses kinematics ([MotorBotInteraction]), but not with mechanics/kinetics (forces).
+ * A drive model that only uses kinematics, but not mechanics/kinetics (only ([MotorBotInteraction])
  * This is used when there is no need to power the wheels.
  *
  * This only works with fixed wheels.
@@ -40,24 +40,27 @@ class KinematicsOnlyDriveModel(
 }
 
 /**
- * An drive model that models a vehicle/drive using using [PoweredDriveWheelModel]s, where the wheels are fixed in
- * place). This is suitable for mecanum, holonomic, differential, h-drives, and some other weird drives you might come
+ * Models a vehicle/drive using using [PoweredDriveWheelModel]s, where the wheels are fixed in
+ * place. This is suitable for mecanum, holonomic, differential, h-drives, and some other weird drives you might come
  * up with.
- * Swerve drive is not yet supported.
  *
  * Measurements in wheel position/moment of inertia should _ideally_ be relative to the center of mass.
  *
  * This implements [MotorVelocityDriveModel], [BotVelocityModel], [MotorBotInteraction], and [MotorFrictionModel].
  *
- * This model relies on an assumption that the wheels have perfect traction and are perfectly
- * fixed to the drive body (so moving one wheel may affect the motion of others). This may not be completely true
- * when wheels slip a lot. In this case it might still be good for path planning, but a more decoupled
- * approach to controlling wheels (such as a separate controller per wheel) may work better in this case, compared
- * to a controller that controls both wheels at once.
+ * This model relies on the assumption that the wheels have perfect traction and are fixed to the drive body
+ * (so moving one wheel moves the bot, which may affect the motion of other wheels). This may not be completely true
+ * when wheels slip a lot or there are a lot of wheels. So while this model still be good for path planning, but a more
+ * decoupled approach to controlling wheels (such as a separate controller per wheel) may work better in some cases,
+ * compared to a controller that controls both wheels at once.
+ *
+ * Swerve drive is not yet supported.
  *
  * @param wheels the list of [PoweredDriveWheelModel]s relative to the center of mass of the robot
  * @param mass the mass of the bot
  * @param moi the moment of inertia of the bot
+ *
+ * @see KinematicsOnlyDriveModel
  */
 class DriveModel(
     wheels: List<PoweredDriveWheelModel>,
@@ -66,9 +69,25 @@ class DriveModel(
 ) : MotorBotInteraction, MotorFrictionModel,
     MotorVelocityDriveModel, BotVelocityModel {
 
-    constructor(wheelPositions: List<DriveWheelTransmission>, power: TorquePowerModel, mass: Double, moi: Double)
-            : this(wheelPositions.map { PoweredDriveWheelModel.fromTransmission(it, power) }, mass, moi)
+    /**
+     * Creates a [DriveModel].
+     *
+     * @param wheelTransmissions the [DriveWheelTransmission]s
+     * @param power the [TorquePowerModel] used to power each wheel
+     * @param mass the mass of hte bot
+     * @param moi the moment of inertia of the bot
+     */
+    constructor(wheelTransmissions: List<DriveWheelTransmission>, power: TorquePowerModel, mass: Double, moi: Double)
+            : this(wheelTransmissions.map { PoweredDriveWheelModel.fromTransmission(it, power) }, mass, moi)
 
+    /**
+     * Creates a [DriveModel].
+     *
+     * @param wheelPositions the [DriveWheelPosition]s
+     * @param power the [PoweredWheelModel] used to power each wheel
+     * @param mass the mass of hte bot
+     * @param moi the moment of inertia of the bot
+     */
     constructor(wheelPositions: List<DriveWheelPosition>, power: PoweredWheelModel, mass: Double, moi: Double)
             : this(wheelPositions.map { PoweredDriveWheelModel.fromPoweredWheel(it, power) }, mass, moi)
 
@@ -157,7 +176,7 @@ object DriveModels {
     }
 
     /**
-     * Creates a drive model for a differential drive, with wheels in [left, right] order.
+     * Creates a drive model for a differential drive, with wheels in `[left, right]` order.
      * Wheels face forward, and the center of the two wheels is the center of the bot.
      *
      * @param wheelRadius the wheel's radius
