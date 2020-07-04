@@ -9,10 +9,10 @@ version = "0.2.0-SNAPSHOT"
 //---
 val hipparchusVersion by extra("1.6")
 val striktVersion by extra("0.23.2")
-val xchartVersion by extra("3.6.0")
+val xchartVersion by extra("3.6.4")
 val junitVersion by extra("4.12")
-val junit5Version by extra("5.5.2")
-val coroutinesVersion by extra("1.3.3")
+val junit5Version by extra("5.6.2")
+val coroutinesVersion by extra("1.3.7")
 
 val hipparchus by extra<(String) -> String> { { "org.hipparchus:hipparchus-$it:$hipparchusVersion" } }
 
@@ -26,14 +26,14 @@ val junit5vintage by extra("org.junit.vintage:junit-vintage-engine:$junit5Versio
 val strikt by extra("io.strikt:strikt-core:$striktVersion")
 
 buildscript {
-    val kotlinVersion by extra("1.3.61")
-    val atomicfuVersion by extra("0.14.1")
+    val kotlinVersion = "1.3.72"
+    val atomicfuVersion = "0.14.3"
     repositories {
         mavenCentral()
     }
     dependencies {
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicfuVersion")
         classpath(kotlin("gradle-plugin", version = kotlinVersion))
+        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicfuVersion")
     }
 }
 
@@ -43,8 +43,8 @@ repositories {
 }
 
 plugins {
-    kotlin("jvm") version "1.3.61"
-    id("org.jetbrains.dokka") version "0.10.0"
+    kotlin("jvm") version "1.3.72"
+    id("org.jetbrains.dokka") version "0.10.1"
     `maven-publish`
     id("com.jfrog.bintray") version "1.8.4" apply false
     id("com.jfrog.artifactory") version "4.13.0" apply false
