@@ -1,13 +1,14 @@
 # WELCOME TO JARGON
 
 JARGON stands For **J**ARGON: **A** **R**obot **G**uidance **O**peratio**N**,
-a robotics library for creating more advanced control systems with a easy to use and extendable framework.
+a robotics library for creating control systems with an easy to use and extendable framework.
 
-We hope that this will help inspire people to delve into more advanced mechanisms for control; to squeeze as much
-functionality they can out of a few sensors and actuators. We encourage people to experiment with new ideas, and
-dare to take steps into the more complex.
+This is specifically targeted towards middle to high school level robotics users, such as in FTC, with a focus on ease of use and deepness of comprehension.
 
-Version 0.1.0 has been released!!!
+We hope that this will help inspire people to delve into more advanced mechanisms for control to squeeze as much functionality they can out of a few sensors and actuators. We encourage people to experiment with new ideas.
+
+Version 0.1.0 has been released. Being the very first version, it may be buggy. We suggest waiting for
+version 0.2.0.
 To play around,
 ```groovy
 dependencies {
@@ -22,11 +23,9 @@ dependencies {
 }
 ```
 
-TODO, soon: more instructions on how to use. For now you can read documentation.
-
 
 #### Existing features includes:
-- Advanced pathing system
+- Path planning/profiling system
    - Dynamic trajectory generation
    - Path graphing system: once setup, all you need to say is "go to point B"
    - 2d geometry framework
@@ -38,33 +37,28 @@ TODO, soon: more instructions on how to use. For now you can read documentation.
 - Model based control systems
    - Model your drive systems instead of guessing for more accurate control
 - (Experimental) state-space based control systems
-   - Inspired by some people at FRC. Basically, lots of math to model and create control systems, but it's worth it.
-   - Basic framework providing basic functions and calculations, as well as an (experimental) runner class
+   - Inspired by some people at FRC. Basically, lots of math for lots of profit.
  #### Planned features include:
- - Module to integrate FTC SDK
+ - Module to integrate FTC SDK directly
  - Swerve drive support
- - Declarative-programming based control system design
-    - If you're interested in where this came from, go to the git history and see the "blocks" module that
-     has now been removed  
- 
+ - Tutorial-like documentation
+ - Declarative-programming based control system design using kotlin dsl
  
 #### Interested in contributing or giving feedback? See the [Contributing guidelines](CONTRIBUTING.md).
 
 ## JARGON is now open source
-We now wish to share our knowledge with the world, free of charge. JARGON will now be accepting feedback, discussion,
- and contributions. Feel free to experiment and test with anything and see the 
- [Contributing guidelines](CONTRIBUTING.md) for more details on how to contribute.
+JARGON will now be accepting feedback, discussion, and contributions. Feel free to experiment and test with anything and see the [Contributing guidelines](CONTRIBUTING.md).
  
 ## Other info
 ### Principles of design:
-- Intuitive, as well as advanced. Usable both by beginners and advanced users alike.
+- Gentle learning curve -- provide both basic and advanced versions of components.
 - Keep everything well documented.
-- Create with ease of use in mind -- "get to the point"
+- Create with ease of use in mind
 - Extensible and customizable. Easy to create your own implementations if you wish.
-- Adherence to good programming principles, like SOLID
-- Abstraction over performance without neglecting performance (another 10 ns is worth it, but not 3s)
+- Adherence to good programming principles
+- Abstraction over performance without neglecting performance
 
 ### JARGON is inspired by:
 - Pathing system inspired by [ACME robotics's roadrunner](https://github.com/acmerobotics/road-runner).
 - State-space is implemented nearly directly from [calcmogul's state-space-guide](https://github.com/calcmogul/state-space-guide)
-- Pathing and trajectory system adapted from this paper: <http://www2.informatik.uni-freiburg.de/~lau/students/Sprunk2008.pdf>
+- Pathing and trajectories adapted from concepts from this paper: <http://www2.informatik.uni-freiburg.de/~lau/students/Sprunk2008.pdf>
