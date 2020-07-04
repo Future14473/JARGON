@@ -20,6 +20,6 @@ dependencies {
 tasks.named("cleanTest") {
     doLast {
         delete("graphs")
+        delete("tmp")
     }
 }
-extra["publish"] = true

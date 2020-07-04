@@ -29,4 +29,3 @@ tasks.withType<KotlinCompile> {
         )
     }
 }
-extra["publish"] = true

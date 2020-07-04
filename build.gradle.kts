@@ -103,37 +103,34 @@ tasks.create("testAll") {
 }
 //publishing
 
-val githubURL = "https://github.com/Future14473/JARGON"
-
 val bintrayUser: String? by extra { System.getenv("BINTRAY_USER") }
 val bintrayKey: String? by extra { System.getenv("BINTRAY_KEY") }
 
-//may change later
 val isSnapshot = version.toString().contains(Regex("[a-zA-Z]"))
 
-val doPublish = !(bintrayUser == null || bintrayKey == null)
+val doPublish = bintrayUser != null && bintrayKey != null
 if (!doPublish) {
-    logger.warn("Bintray user or key not found; NOT configuring upload publications")
+    logger.warn("Bintray user or key not found; NOT configuring upload")
 } else {
     if (isSnapshot) {
         apply(from = "configureArtifactory.gradle")
     }
     subprojects {
-        if (parent != rootProject) return@subprojects
+        if (parent != rootProject) return@subprojects //only publish direct children of root
         apply<MavenPublishPlugin>()
         afterEvaluate {
             configurePublish()
         }
-        //if snapshot, artifactory on root, else bintray
-        if (isSnapshot) {
+        if (isSnapshot) { // apply artifactory plugin for snapshots
             apply(plugin = "com.jfrog.artifactory")
-        } else {
+        } else { // apply bintray configuration for releases
             apply(from = rootProject.file("configureBintray.gradle"))
         }
     }
 }
 
 fun Project.configurePublish() {
+    //documentation
     apply<DokkaPlugin>()
     tasks.dokka {
         outputFormat = "html"
@@ -144,7 +141,6 @@ fun Project.configurePublish() {
         archiveClassifier.v = "javadoc"
         from(tasks.dokka)
     }
-
     val sourcesJar by tasks.creating(Jar::class) {
         from(sourceSets.main.get().allSource)
         archiveClassifier.v = "sources"
@@ -158,7 +154,7 @@ fun Project.configurePublish() {
             artifactId = "jargon-${project.name}"
             from(components["java"])
             artifact(sourcesJar)
-            if (!isSnapshot) {
+            if (!isSnapshot) { //dokka only on non snapshot
                 artifact(dokkaJar)
             }
             this@configurePublish.configMavenPublication(this)
@@ -166,6 +162,9 @@ fun Project.configurePublish() {
     }
 }
 
+val githubURL = "https://github.com/Future14473/JARGON"
+
+//maven specific publication configure
 fun Project.configMavenPublication(pub: MavenPublication) {
     pub.versionMapping {
         usage("java-api") {

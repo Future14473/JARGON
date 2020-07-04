@@ -12,4 +12,3 @@ dependencies {
     api(project(":core"))
     api(hipparchus("filtering"))
 }
-extra["publish"] = true
