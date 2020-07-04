@@ -8,8 +8,9 @@ import org.futurerobotics.jargon.math.EPSILON
 import org.futurerobotics.jargon.math.distTo
 import org.futurerobotics.jargon.math.ifNan
 import org.futurerobotics.jargon.util.extendingDownDoubleSearch
-import org.futurerobotics.jargon.util.mapToSelf
 import org.futurerobotics.jargon.util.stepToAll
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 import kotlin.math.*
 
 /**
@@ -42,7 +43,7 @@ fun generateDynamicProfile(
         .toSortedSet()
         .also { it.addAll(constrainer.requiredPoints) }
         .toList()
-    val pointConstraints = constrainer.stepToAll(points)
+    val pointConstraints = constrainer.stepper().stepToAll(points)
     val maxVels = pointConstraints.mapIndexedTo(ArrayList(points.size)) { i, it ->
         it.maxVelocity.also {
             require(it >= 0) { "All maximum velocities given by constrainer should be >= 0, got $it at segment $i" }
@@ -66,6 +67,17 @@ fun generateDynamicProfile(
     )
     val pointVelPairs = points.zip(maxVels)
     return SegmentsForwardMotionProfile.fromPointVelPairs(pointVelPairs)
+}
+
+@OptIn(ExperimentalContracts::class)
+private inline fun <T> MutableList<T>.mapToSelf(mapping: (T) -> T) {
+    contract {
+        callsInPlace(mapping)
+    }
+    val iterator = listIterator()
+    while (iterator.hasNext()) {
+        iterator.set(mapping(iterator.next()))
+    }
 }
 
 private const val MAX_VEL = 10000.0
@@ -102,7 +114,7 @@ private fun accelerationPass(
 private fun getAMaxOrNaN(dx: Double, v: Double, accelGetter: PointConstraint, reversed: Boolean): Double {
     val aMin = -v.pow(2) / 2 / dx
     val interval = accelGetter.accelRange(v)
-    val aMaxMaybe = if (reversed) -interval.a else interval.b
+    val aMaxMaybe = if (reversed) -interval.start else interval.end
     return if (aMaxMaybe > aMin) aMaxMaybe else Double.NaN
 }
 
@@ -110,7 +122,7 @@ private fun throwBadAccelAtZeroVel(x1: Double, x2: Double, reversed: Boolean): N
     val (p1, p2) = if (reversed) x2 to x1 else x1 to x2
     throw RuntimeException(
         "On the interval from ($p1 to $p2, reversed = $reversed), constraints did not return a non-empty acceleration" +
-                " range even with a current velocity of 0.0."
+            " range even with a current velocity of 0.0."
     )
 }
 
@@ -147,3 +159,4 @@ data class MotionProfileGenParams(
         val DEFAULT: MotionProfileGenParams = MotionProfileGenParams()
     }
 }
+

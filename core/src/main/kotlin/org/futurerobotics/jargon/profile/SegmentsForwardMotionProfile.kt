@@ -3,8 +3,6 @@ package org.futurerobotics.jargon.profile
 import org.futurerobotics.jargon.math.RealMotionState
 import org.futurerobotics.jargon.math.avg
 import org.futurerobotics.jargon.util.Stepper
-import org.futurerobotics.jargon.util.isSortedBy
-import org.futurerobotics.jargon.util.replaceIf
 import kotlin.math.pow
 
 /**
@@ -35,17 +33,17 @@ class SegmentsForwardMotionProfile private constructor(private val segments: Lis
         return segments[i]
     }
 
-    override fun stepper(): Stepper<RealMotionState> = object : Stepper<RealMotionState> {
+    override fun timeStepper(): Stepper<RealMotionState> = object : Stepper<RealMotionState> {
         private var i = -1
 
         override fun stepTo(step: Double): RealMotionState {
-            //delegate extreme point behavior to the ends.
+            //delegate past-end behavior... to the ends segments.
             if (i == -1) {
                 i = when {
                     step <= 0 -> 0
                     step >= duration -> segments.lastIndex
                     else -> segments.binarySearchBy(step) { it.t }
-                        .replaceIf({ it < 0 }) { -it - 2 }
+                        .let { if (it < 0) -it - 2 else it }
                         .coerceIn(0, segments.lastIndex)
                 }
             } else {
@@ -96,6 +94,18 @@ class SegmentsForwardMotionProfile private constructor(private val segments: Lis
             }
             return SegmentsForwardMotionProfile(segs)
         }
-        //Other factory methods someday, probably not necessary.
+        //Other factory methods perhaps someday.
     }
+}
+
+/** @return true if the values of this iterator is sorted with values given by the [selector], inlined. */
+private inline fun <T, V : Comparable<V>> Iterable<T>.isSortedBy(selector: (T) -> V): Boolean {
+    val iterator = iterator()
+    var prev = if (iterator.hasNext()) selector(iterator.next()) else return true
+    while (iterator.hasNext()) {
+        val cur = selector(iterator.next())
+        if (cur < prev) return false
+        prev = cur
+    }
+    return true
 }

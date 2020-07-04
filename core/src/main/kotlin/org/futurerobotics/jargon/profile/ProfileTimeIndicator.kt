@@ -1,5 +1,6 @@
 package org.futurerobotics.jargon.profile
 
+//TODO: revise this to be better
 /**
  * Mechanism to indicate a specific time along [TimeProfiled],
  * that can possibly differ when different profiles are given.

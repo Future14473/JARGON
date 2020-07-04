@@ -2,19 +2,19 @@ package org.futurerobotics.jargon.control
 
 import org.futurerobotics.jargon.math.Pose2d
 import org.futurerobotics.jargon.math.angleNorm
-import org.futurerobotics.jargon.math.coerceIn
 
 /**
  * A PID controller that works with double values.
  *
- * If the passed coefficient is a [ExtendedPIDCoefficients], that is also supported.
+ * Note: if you are using a this to control heading, see [HeadingPIDController]
+ *
  * @see HeadingPIDController
  */
-open class PIDController(coefficients: PIDCoefficients) : SimpleController<Double, Double, Double> {
+open class PIDController(private val coefficients: PIDCoefficients) : SimpleController<Double, Double, Double> {
 
-    private val coefficients = coefficients.toExtendedCoefficients()
     private var prevError = 0.0
     private var errorSum = 0.0
+
     /**
      * The last outputted signal.
      */
@@ -41,29 +41,28 @@ open class PIDController(coefficients: PIDCoefficients) : SimpleController<Doubl
     }
 
     /** Does PID. Room for modification in here. */
-
     protected open fun doPID(elapsedTime: Double, curError: Double): Double {
-        val error = curError.coerceIn(coefficients.errorBounds)
+        val error = curError/*.coerceIn(coefficients.errorBounds)*/
         return if (elapsedTime == 0.0) {
             prevError = error
             0.0
         } else {
-            errorSum = if (error <= coefficients.integralActivationThreshold) {
-                val curI = (error + prevError) * (elapsedTime / 2)
-                (errorSum + curI).coerceIn(-coefficients.maxErrorSum, coefficients.maxErrorSum)
-            } else errorSum
+//            errorSum = if (error <= coefficients.integralActivationThreshold) {
+//                val curI = (error + prevError) * (elapsedTime / 2)
+//                (errorSum + curI).coerceIn(-coefficients.maxErrorSum, coefficients.maxErrorSum)
+//            } else errorSum
             val p = error * coefficients.p
             val i = errorSum * coefficients.i
             val d = (error - prevError) * (coefficients.d / elapsedTime)
             prevError = error
-            (p + i + d).coerceIn(coefficients.outputBounds)
+            (p + i + d)/*.coerceIn(coefficients.outputBounds)*/
         }
     }
 }
 
 /**
- * A [PIDController] that doesn't go haywire when it sees a heading error with magnitude greater
- * than PI -- it normalizes error.
+ * A [PIDController] that normalizes the error to between within -Pi to Pi, so it always
+ * turns in the closest direction.
  */
 class HeadingPIDController(coefficients: PIDCoefficients) : PIDController(coefficients) {
 

@@ -1,7 +1,8 @@
 package org.futurerobotics.jargon.control
 
 /**
- * Represents a simple signal that takes a [Reference] and a [State] to produce a [Signal].
+ * Represents a simple controller: takes some kind of [Reference] (target position) and a [State] (measured position) to
+ * produce a [Signal].
  *
  * When first created or [reset]ed, the [signal] should return a "zero" value.
  */
@@ -10,8 +11,9 @@ interface SimpleController<in Reference, in State, out Signal> {
     /**
      * Resets the controller.
      *
-     * The [signal] should now represent some "zero" value.
+     * The [signal] should now represent some zero value.
      */
+    @Deprecated("State bad", level = DeprecationLevel.WARNING)
     fun reset()
 
     /**
@@ -22,9 +24,8 @@ interface SimpleController<in Reference, in State, out Signal> {
     val signal: Signal
 
     /**
-     * Given the [reference], [currentState], and [elapsedTimeInNanos], updates and returns the current signal.
-     *
-     * This should also update [signal].
+     * Given the [reference], [currentState], and [elapsedTimeInNanos], updates the controller and returns the
+     * current signal, which should be the current [signal].
      */
     fun update(reference: Reference, currentState: State, elapsedTimeInNanos: Long): Signal
 }

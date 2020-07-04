@@ -5,15 +5,25 @@ import org.futurerobotics.jargon.math.Interval
 /**
  * Simple PID coefficients.
  *
- * @see [ExtendedPIDCoefficients]
  * @param p the proportional gain
  * @param i the integral gain
  * @param d the derivative gain
+ * @see [PIDFCoefficients]
  */
-open class PIDCoefficients(val p: Double, val i: Double, val d: Double)
+open class PIDCoefficients(@JvmField val p: Double, @JvmField val i: Double, @JvmField val d: Double)
+//
+///**
+// * Simple PIDF coefficients. The feed forward (F) is static.
+// *
+// * @param p the proportional gain
+// * @param i the integral gain
+// * @param d the derivative gain
+// * @param f the feed-forward.
+// */
+//open class PIDFCoefficients(p: Double, i: Double, d: Double, @JvmField val f: Double) : PIDCoefficients(p, i, d)
 
 /**
- * PID coefficients with more options like some regulation on that pesky [i] term.
+ * PID coefficients with more options with regulation on the pesky [i] term.
  *
  * @param p the proportional gain
  * @param i the integral gain
@@ -34,8 +44,6 @@ class ExtendedPIDCoefficients
     maxIntegralContribution: Double = Double.POSITIVE_INFINITY
 ) : PIDCoefficients(p, i, d) {
 
-    constructor(pidCoefficients: PIDCoefficients) : this(pidCoefficients.p, pidCoefficients.i, pidCoefficients.d)
-
     init {
         require(p >= 0) { "p term ($p) must be >= 0" }
         require(i >= 0) { "p term ($i) must be >= 0" }
@@ -51,12 +59,3 @@ class ExtendedPIDCoefficients
      */
     val maxErrorSum: Double = maxIntegralContribution / i
 }
-
-/**
- * Converts to [ExtendedPIDCoefficients].
- */
-fun PIDCoefficients.toExtendedCoefficients(): ExtendedPIDCoefficients = when (this) {
-    is ExtendedPIDCoefficients -> this
-    else -> ExtendedPIDCoefficients(this)
-}
-

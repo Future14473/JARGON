@@ -12,10 +12,10 @@ import org.futurerobotics.jargon.math.RealMotionState
 interface MotionProfile : TimeProfiled<RealMotionState>
 
 /**
- * A [TimeProfiled] in which the velocity is always non-negative (position is always increasing).
+ * A [MotionProfile] in which the velocity is always non-negative (so the position is always increasing).
  *
- * This way, it has a definite [distance] travelled, and the motion states can also be polled along [distance] as well
- * as time.
+ * As such, specific points in time can be uniquely determined from a given [distance] travelled, and hence
+ * the motion states can also be polled along [distance] as well as time.
  *
  * @see TimeDistanceProfiled
  * @see MotionProfile

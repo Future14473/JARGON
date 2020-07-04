@@ -4,10 +4,11 @@ import org.futurerobotics.jargon.util.Stepper
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentSkipListSet
 
+//TODO: revise this?
 /**
  * A wrapper around another [profiled] object that also provides callbacks via [addCallback].
  *
- * The callbacks will be triggered whenever [atTime] or [stepper] is called with a time greater than the
+ * The callbacks will be triggered whenever [atTime] or [timeStepper] is called with a time greater than the
  * callback's time.
  *
  * Callbacks will only be triggered if the time called happens _after_ the callback is added. So add your callbacks
@@ -76,8 +77,8 @@ class TimeProfiledWithCallbacks<out T, out P : TimeProfiled<T>>(private val prof
         return profiled.atTime(time)
     }
 
-    override fun stepper(): Stepper<T> {
-        val stepper = profiled.stepper()
+    override fun timeStepper(): Stepper<T> {
+        val stepper = profiled.timeStepper()
         return Stepper { t ->
             runCallbacks(t)
             stepper.stepTo(t)
