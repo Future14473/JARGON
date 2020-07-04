@@ -1,22 +1,24 @@
 package org.futurerobotics.jargon.running
 
+import org.futurerobotics.jargon.running.Clock.SystemClock
+
 /**
  * Represents a time keeping device. This can use real time or be manually set.
  * It has one function, [nanoTime] that returns the current relative time in nanoseconds.
  *
- * [DEFAULT] implementation uses [System.nanoTime].
+ * [SystemClock] (companion object) implementation uses [System.nanoTime].
  */
 interface Clock {
 
-    /** Gets the current time in nanoseconds */
+    /** Gets the current (relative) time in nanoseconds */
     fun nanoTime(): Long
 
-    companion object {
-        /** The default clock that uses [System.nanoTime]. */
-        @JvmField
-        val DEFAULT: Clock = object : Clock {
-            override fun nanoTime(): Long = System.nanoTime()
-        }
+    /**
+     * The default implementation of a [Clock] which uses System.nanoTime
+     */
+    companion object SystemClock : Clock {
+
+        override fun nanoTime(): Long = System.nanoTime()
     }
 }
 
@@ -31,7 +33,7 @@ class ManualClock(var nanoTime: Long = 0) : Clock {
 }
 
 /**
- * A clock that always outputs a time [nanos] nanoseconds after the previous.
+ * A clock that always outputs a time a fixed number of [nanos] greater than the previous time.
  *
  * @param nanos The time in nanoseconds each step.
  */
