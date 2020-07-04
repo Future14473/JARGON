@@ -1,15 +1,14 @@
 package org.futurerobotics.jargon.util
 
 /**
- * A [Stepper] is similar to an [Iterator], except that on each iteration (called a "step"), a double value
- * must be specified as to where to "step" to.
+ * A [Stepper] is similar to an [Iterator], except that on each "step", a double value
+ * is specified for where to "step" to.
  *
- * _This is distinguished from a mapping function in that it is used to apply a heuristic that values between
- * steps are close together_, for example when traversing interpolated segments. Usually this should
- * be traversed linearly or close to linearly.
+ * This is distinguished from a simple function in that it is used to apply a heuristic/optimization that the values
+ * given between steps are close together. for example when traversing interpolated segments, which are traversed
+ * from one end to the other.
  *
- * This can be used, for example, to avoid doing binary search on every iteration when traversing over values, while
- * also not wasting memory on intermediary lists.
+ * This can be used to avoid doing binary search on every iteration while also not wasting memory on intermediary lists.
  */
 interface Stepper<out T> {
 
