@@ -1,5 +1,9 @@
 package org.futurerobotics.jargon.linalg
-
+/*
+ * Operations from converting between vectors and lists of doubles.
+ *
+ * Operations with vectors and double arrays already exist.
+ */
 /**
  * Returns this [vecFrom] as a list. Changes in the vector will be reflected in this list.
  */
@@ -41,5 +45,5 @@ fun Vec.toList(): List<Double> = toMutableList()
  */
 fun Vec.toMutableList(): MutableList<Double> = MutableList(size) { get(it) }
 
-/** Converts this list of doubles to a [vecFrom]. */
+/** Converts this list of doubles to a vector. */
 fun List<Double>.toVec(): Vec = vecFrom(toDoubleArray(), false)

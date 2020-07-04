@@ -2,7 +2,12 @@
 
 package org.futurerobotics.jargon.linalg
 
+/*
+ * Kotlin operator extension functions on vectors and matrices.
+ */
+
 //get, set
+
 inline operator fun Mat.get(row: Int, col: Int): Double = getEntry(row, col)
 inline operator fun Mat.get(rows: IntRange, cols: IntRange): Mat =
     getSubMatrix(rows.first, rows.last, cols.first, cols.last)
@@ -34,16 +39,6 @@ inline operator fun Vec.times(scalar: Double): Vec = mapMultiply(scalar)
 inline operator fun Double.times(mat: Mat): Mat = mat.scalarMultiply(this)
 inline operator fun Double.times(vec: Vec): Vec = vec.mapMultiply(this)
 
-inline operator fun Mat.invoke(mat: Mat): Mat = this * mat
-inline operator fun Mat.invoke(vec: Vec): Vec = this * vec
-inline operator fun Mat.invoke(vec: DoubleArray): DoubleArray = this * vec
-inline operator fun Mat.invoke(scalar: Double): Mat = this * scalar
-
-inline operator fun Vec.invoke(scalar: Double): Vec = this * scalar
-
-inline operator fun Double.invoke(mat: Mat): Mat = this * mat
-inline operator fun Double.invoke(vec: Vec): Vec = this * vec
-
 inline operator fun Mat.div(scalar: Double): Mat = this * (1 / scalar)
 inline operator fun Vec.div(scalar: Double): Vec = mapDivide(scalar)
 
@@ -59,8 +54,8 @@ inline operator fun Mat.unaryMinus(): Mat = this * -1.0
 inline operator fun Vec.unaryMinus(): Vec = this * -1.0
 
 // op assign
-inline operator fun Mat.plusAssign(mat: Mat): Unit = kotlin.run { this addI mat }
 
+inline operator fun Mat.plusAssign(mat: Mat): Unit = kotlin.run { this addI mat }
 inline operator fun Mat.minusAssign(mat: Mat): Unit = kotlin.run { this subI mat }
 inline operator fun Mat.timesAssign(scalar: Double): Unit = kotlin.run { this multI scalar }
 inline operator fun Mat.divAssign(scalar: Double): Unit = kotlin.run { this divI scalar }
@@ -71,8 +66,6 @@ inline operator fun Vec.timesAssign(scalar: Double): Unit = kotlin.run { this mu
 inline operator fun Vec.divAssign(scalar: Double): Unit = kotlin.run { this divI scalar }
 
 //other
-/** Element by element multiplication */
-infix fun Vec.emul(other: Vec): Vec = ebeMultiply(other)
 
 /** Matrix transpose */
 inline val Mat.T: Mat get() = transpose()

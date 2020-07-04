@@ -3,84 +3,73 @@ package org.futurerobotics.jargon.math
 import kotlin.math.abs
 
 /**
- * Represents an Interval on the number line, represented by two endpoints.
- * May have endpoints of NaN if empty.
+ * Represents an interval of real numbers, represented by two endpoints, inclusive.
+ *
+ * Endpoints can be infinite, but cannot be NaN.
+ *
+ * An empty interval is represented by a start endpoint [start] greater than the end endpoint [end].
  *
  * See factory methods.
  *
- * @param a The lower bound of this interval.
- * @param b The upper bound of this interval. Can be [Double.POSITIVE_INFINITY]
+ * @param start The lower bound of this interval.
+ * @param end The upper bound of this interval.
  */
-class Interval(val a: Double, val b: Double) {
+class Interval(val start: Double, val end: Double) {
 
     constructor(range: ClosedFloatingPointRange<Double>) : this(range.start, range.endInclusive)
 
     init {
-        require(!a.isNaN()) { "a is NaN" }
-        require(!b.isNaN()) { "b is NaN" }
+        require(!start.isNaN()) { "start is NaN" }
+        require(!end.isNaN()) { "end is NaN" }
     }
 
-    /** If this interval is empty (contains no values) */
-    fun isEmpty(): Boolean = a > b
+    /** If this interval is empty (has a [start] greater than [end])*/
+    fun isEmpty(): Boolean = start > end
 
     /** If this interval is not empty. */
     fun isNotEmpty(): Boolean = !isEmpty()
 
-    /** Gets the size of this interval. Is always >= 0. */
-    val size: Double get() = if (isEmpty()) 0.0 else b - a
-
-    /** If this interval consists of a single point. */
-    fun isPoint(): Boolean = a == b
+    /** Gets the size of this interval. This is always non-negative; is 0 if the interval is empty. */
+    val size: Double get() = if (isEmpty()) 0.0 else end - start
 
     /**
      * If this interval is finite.
      *
      * Will return true if [isEmpty].
      */
-    fun isFinite(): Boolean = isEmpty() || (a.isFinite() && b.isFinite())
+    fun isFinite(): Boolean = isEmpty() || (start.isFinite() && end.isFinite())
 
-    /**
-     * Gets a bound by [index], which must be 0 or 1.
-     *
-     * An index of 0 will return the lower bound
-     * An index of 1 will return the upper bound.
-     */
-    operator fun get(index: Int): Double = when (index) {
-        0 -> a
-        1 -> b
-        else -> throw IndexOutOfBoundsException("Interval index must be 0 or 1, got $index")
-    }
-
-    /** @return if [v] is contained in the interval. */
-    operator fun contains(v: Double): Boolean = v in a..b //includes empty case
+    /** @return if a value [v] is contained in the interval. */
+    operator fun contains(v: Double): Boolean = v in start..end //includes empty case
 
     /** @return the intersection of this interval with another. */
     infix fun intersect(other: Interval): Interval {
-        if (this.isEmpty() || other.isEmpty() || other.a > b || a > other.b) return EMPTY
+        //if we ever get value types, replace this
+        if (this.isEmpty() || other.isEmpty() || other.start > end || start > other.end) return EMPTY
         val gta: Interval
         val lta: Interval
-        if (a < other.a) {
+        if (start < other.start) {
             gta = other
             lta = this
         } else {
             gta = this
             lta = other
         }
-        if (gta.b <= lta.b) return gta //lta[ gta(--) ]
-        return Interval(gta.a, lta.b)  //lta[ gta(--] )
+        if (gta.end <= lta.end) return gta //lta[ gta(--) ]
+        return Interval(gta.start, lta.end)  //lta[ gta(--] )
     }
 
     override fun equals(other: Any?): Boolean = when {
         this === other -> true
         other !is Interval -> false
-        else -> (isEmpty() && other.isEmpty()) || (a == other.a && b == other.b)
+        else -> (isEmpty() && other.isEmpty()) || (start == other.start && end == other.end)
     }
 
-    override fun hashCode(): Int = if (isEmpty()) -1 else 31 * a.hashCode() + b.hashCode()
+    override fun hashCode(): Int = if (isEmpty()) -1 else 31 * start.hashCode() + end.hashCode()
 
     override fun toString(): String = when {
-        isEmpty() -> "Interval [Empty]"
-        else -> "Interval [$a, $b]"
+        isEmpty() -> "Interval[Empty]"
+        else -> "Interval[$start, $end]"
     }
 
     companion object {
@@ -92,12 +81,11 @@ class Interval(val a: Double, val b: Double) {
         val REAL: Interval = Interval(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)
 
         /**
-         * Returns an interval by endpoints [a] and [b].
-         *
-         * Will swap endpoints if b < a.
+         * Returns an interval by two endpoints [a] and [b], swapping endpoints if necessary so that
+         * [b] is always greater than or equal to [a].
          */
         @JvmStatic
-        fun ofRegular(a: Double, b: Double): Interval = if (b > a) Interval(a, b) else Interval(b, a)
+        fun between(a: Double, b: Double): Interval = if (b > a) Interval(a, b) else Interval(b, a)
 
         /**
          * Returns an interval using a [center] and a [radius].
@@ -118,7 +106,7 @@ class Interval(val a: Double, val b: Double) {
          */
         @JvmOverloads
         @JvmStatic
-        fun symmetricRegular(radius: Double, center: Double = 0.0): Interval = symmetric(abs(radius), center)
+        fun symmetricBetween(radius: Double, center: Double = 0.0): Interval = symmetric(abs(radius), center)
     }
 }
 
@@ -129,16 +117,16 @@ infix fun Double.intervalTo(b: Double): Interval = Interval(this, b)
 
 /**
  * Constructs an regular [Interval] from [this] to [b].
- * @see Interval.ofRegular
+ * @see Interval.between
  */
-infix fun Double.regularIntervalTo(b: Double): Interval = Interval.ofRegular(this, b)
+infix fun Double.regularIntervalTo(b: Double): Interval = Interval.between(this, b)
 
 /**
  * Ensures that this value lies in the specified [Interval] i.
  * Will return [Double.NaN] if the interval is empty.
  */
 fun Double.coerceIn(i: Interval): Double =
-    if (i.isEmpty()) throw IllegalArgumentException("Cannot coerce to empty interval") else coerceIn(i.a, i.b)
+    if (i.isEmpty()) throw IllegalArgumentException("Cannot coerce to empty interval") else coerceIn(i.start, i.end)
 
 /**
  * Returns this Double range as an interval.

@@ -8,9 +8,11 @@ import java.io.Serializable
 /**
  * Represents a 2d pose, i.e., both position ([vector2d]) and [heading] angle.
  *
- * The standard is that +y is counterclockwise of +x, and positive angle is counter clockwise.
+ * This should follow the standard that +y is counterclockwise of +x, and positive angle is counter
+ * clockwise.
+ *
  * We recommend using NorthWestUp orientation where forward is +x, and left is +y.
- * This way math still checks out, and 0 degrees is forward.
+ * This way calculations still follows standards, and a heading of 0 is intuitively forward.
  *
  * Sometimes it is more useful to work with a linear algebra vector, so [toVec] can convert this pose into a
  * vector in (x, y, heading) order.
@@ -43,10 +45,10 @@ data class Pose2d(
     /** Returns a new [Pose2d] with the _vector_ rotated by [angle]. */
     fun vecRotated(angle: Double): Pose2d = Pose2d(vector2d.rotated(angle), heading)
 
-    /** Returns a new [Pose2d] with the _angle_ rotated by [angle]. Heading will not be normalized. */
-    fun angleRotated(angle: Double): Pose2d = Pose2d(x, y, heading + angle)
+    /** Returns a new [Pose2d] with the _heading_ rotated by [angle]. Heading will not be normalized. */
+    fun headingRotated(angle: Double): Pose2d = Pose2d(x, y, heading + angle)
 
-    /** Returns a new [Pose2d] with _both the angle and vector_ rotated by [angle]. Heading will not be normalized. */
+    /** Returns a new [Pose2d] with _both the heading and vector_ rotated by [angle]. Heading will not be normalized. */
     fun fullRotated(angle: Double): Pose2d = Pose2d(vector2d.rotated(angle), heading + angle)
 
     /** Returns a new [Pose2d] with the heading normalized. */
@@ -55,9 +57,20 @@ data class Pose2d(
         else Pose2d(x, y, it)
     }
 
-    /** If this pose is equal to another with epsilon leniency. */
-    infix fun epsEq(other: Pose2d): Boolean = x epsEq other.x && y epsEq other.y &&
+    /** If this pose is equal to another with a leniency of [EPSILON]. to account for floating point errors. Heading
+     * will be normalized when compared. */
+    infix fun epsEq(other: Pose2d): Boolean =
+        x epsEq other.x &&
+            y epsEq other.y &&
             angleNorm(heading - other.heading) epsEq 0.0
+
+    /** If this pose is equal to another with a leniency of a given [EPSILON]. to account for floating point errors.
+     * Heading
+     * will be normalized when compared. */
+    fun epsEq(other: Pose2d, epsilon: Double): Boolean =
+        x.epsEq(other.x, epsilon) &&
+            y.epsEq(other.y, epsilon) &&
+            angleNorm(heading - other.heading).epsEq(0.0, epsilon)
 
     /** If all components are finite. */
     fun isFinite(): Boolean = x.isFinite() && y.isFinite() && heading.isFinite()
@@ -75,6 +88,7 @@ data class Pose2d(
 
     companion object {
         private const val serialVersionUID: Long = -1480830446990142354
+
         /** Pose with all components equal to zero. */
         @JvmField
         val ZERO: Pose2d = Pose2d(Vector2d.ZERO, 0.0)
@@ -94,6 +108,7 @@ data class Pose2d(
 }
 
 operator fun Double.times(p: Pose2d): Pose2d = p * this
+
 /**
  * Constructs a pose from values a linear algebra [vecFrom], which should have three values in [x], [y], [heading]
  * order.

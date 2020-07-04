@@ -1,7 +1,11 @@
 package org.futurerobotics.jargon.linalg
 
+/*
+ * Kotlin extension functions to provide for-each operations on vectors and matrices.
+ */
+
 /**
- * Runs an action on every element in [this] vector.
+ * Runs an action on every component of [this] vector.
  */
 inline fun Vec.forEach(action: (Double) -> Unit) {
     repeat(size) { i ->
@@ -10,7 +14,7 @@ inline fun Vec.forEach(action: (Double) -> Unit) {
 }
 
 /**
- * Runs an action on every element in [this] vector, indexed.
+ * Runs an action on every component of [this] vector, with index.
  */
 inline fun Vec.forEachIndexed(action: (Int, Double) -> Unit) {
     repeat(size) { i ->
@@ -19,7 +23,7 @@ inline fun Vec.forEachIndexed(action: (Int, Double) -> Unit) {
 }
 
 /**
- * Runs an action on every element in [this] matrix, row-wise first..
+ * Runs an action on every element in [this] matrix.
  */
 inline fun Mat.forEach(action: (Double) -> Unit) {
     repeat(rows) { r ->
@@ -30,7 +34,7 @@ inline fun Mat.forEach(action: (Double) -> Unit) {
 }
 
 /**
- * Runs an action on every element in [this] vector, indexed.
+ * Runs an action on every element in [this] matrix, with row and column index.
  */
 inline fun Mat.forEachIndexed(action: (r: Int, c: Int, Double) -> Unit) {
     repeat(rows) { r ->

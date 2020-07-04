@@ -1,11 +1,12 @@
-//todo: potential package doc
 @file:JvmName("MathUnits")
 @file:Suppress("KDocMissingDocumentation", "MemberVisibilityCanBePrivate", "unused")
 
 package org.futurerobotics.jargon.math.convert
 
 import org.futurerobotics.jargon.math.TAU
-
+/*
+Expressions of units in terms of SI units.
+ */
 //Time
 const val seconds: Double = 1.0
 const val s: Double = seconds

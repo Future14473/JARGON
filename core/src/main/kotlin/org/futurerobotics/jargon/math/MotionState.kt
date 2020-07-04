@@ -16,7 +16,8 @@ interface AnyMotionOnly<out T> {
 }
 
 /**
- * Generic representation of the motion state of some quantity of type [T], meaning [value], [deriv], and [secondDeriv].
+ * Generic representation of the motion state of some quantity of type [T], meaning [value], [deriv] (velocity), and
+ * [secondDeriv] (acceleration).
  * @see MotionState
  * @see MotionOnly
  * @see RealMotionState
@@ -32,7 +33,7 @@ interface AnyMotionState<out T> {
 }
 
 /**
- * Represents just the motion of some quantity of type [T], meaning [deriv]ocity and [secondDeriv]eration.
+ * Represents just the motion of some quantity of type [T], meaning [deriv] (velocity) and [secondDeriv] (acceleration).
  * @see MotionState
  * @see MotionOnly
  * @see RealMotionOnly
@@ -41,14 +42,17 @@ data class MotionOnly<T>(
     override val deriv: T, override val secondDeriv: T
 ) : AnyMotionOnly<T> {
 
-    /** The velocity, a.k.a [deriv] */
+    /** The velocity, [deriv] */
     inline val velocity: T get() = deriv
-    /** The velocity, a.k.a [deriv] */
+
+    /** The velocity, [deriv] */
     inline val v: T get() = deriv
-    /** The acceleration, a.k.a [deriv] */
-    inline val acceleration: T get() = deriv
-    /** The acceleration, a.k.a [deriv] */
-    inline val a: T get() = deriv
+
+    /** The acceleration, [secondDeriv] */
+    inline val acceleration: T get() = secondDeriv
+
+    /** The acceleration, [secondDeriv] */
+    inline val a: T get() = secondDeriv
 
     /**
      * Maps all elements of this motion only through the given [transform] function.
@@ -68,18 +72,18 @@ data class MotionOnly<T>(
     )
 
     /**
-     * Converts this motion only into a velocity motion state, where the value of the returned
-     * motion state is this's velocity, and the deriv of the motion state is this's acceleration.
+     * Converts this motion only into a velocity motion state, where the returned state is this's velocity, and the
+     * returned velocity is this's acceleration.
      *
-     * A [secondDeriv] still needs to be supplied to fill in values.
+     * The returned acceleration will be the given [secondDeriv].
      */
     fun toVelocityMotionState(secondDeriv: T): MotionState<T> =
         MotionState(deriv, this.secondDeriv, secondDeriv)
 }
 
 /**
- * Representation of the motion state of some quantity of type [T], meaning [value], [deriv], and [secondDeriv].
- * @see MotionState
+ * Representation of the motion state of some quantity of type [T], meaning [value], [deriv] (velocity), and
+ * [secondDeriv] (acceleration).
  * @see MotionOnly
  * @see RealMotionState
  */
@@ -89,12 +93,15 @@ data class MotionState<T>(
 
     /** The velocity, [deriv] */
     inline val velocity: T get() = deriv
+
     /** The velocity, [deriv] */
     inline val v: T get() = deriv
+
     /** The acceleration, [secondDeriv] */
-    inline val acceleration: T get() = deriv
+    inline val acceleration: T get() = secondDeriv
+
     /** The acceleration, [secondDeriv] */
-    inline val a: T get() = deriv
+    inline val a: T get() = secondDeriv
 
     /** Creates a [MotionOnly] with same [deriv] and [secondDeriv] as this [MotionState]. */
     fun toMotionOnly(): MotionOnly<T> = MotionOnly(deriv, secondDeriv)

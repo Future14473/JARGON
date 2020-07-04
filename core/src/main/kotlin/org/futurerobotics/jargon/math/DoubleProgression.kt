@@ -1,6 +1,5 @@
 package org.futurerobotics.jargon.math
 
-import org.futurerobotics.jargon.util.replaceIf
 import kotlin.math.ceil
 
 /**
@@ -29,7 +28,7 @@ class DoubleProgression private constructor(
      */
     fun reversed(): DoubleProgression = DoubleProgression(last, first, -step, segments)
 
-    override operator fun iterator(): DoubleIterator = object : DoubleIterator() {
+    override fun iterator(): DoubleIterator = object : DoubleIterator() {
         private val it = (0..segments).iterator()
         override fun hasNext() = it.hasNext()
         override fun nextDouble() = first + it.nextInt() * step
@@ -66,7 +65,9 @@ class DoubleProgression private constructor(
             require(endInclusive.isFinite()) { "endInclusive ($endInclusive) should be finite" }
             require(step.isFinite()) { "step ($step) should be finite" }
             require(step != 0.0) { "step ($step) must be non-zero" }
-            val segments = (ceilIfClose((endInclusive - start) / step)).replaceIf({ it < 0 }) { -1 }
+            val segments =
+                ceilIfClose((endInclusive - start) / step)
+                    .let { if (it < 0) -1 else it }
             return DoubleProgression(start, start + step * segments, step, segments)
         }
 

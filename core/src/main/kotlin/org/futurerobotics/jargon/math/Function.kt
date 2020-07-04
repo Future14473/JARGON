@@ -29,7 +29,7 @@ operator fun RealFunction.invoke(t: Double): Double = value(t)
 /**
  * Represents a vector-valued function with first, second, and third derivatives.
  *
- * Includes curvature (with default implementations) too.
+ * Includes curvature in default implementations too.
  */
 interface VectorFunction {
 

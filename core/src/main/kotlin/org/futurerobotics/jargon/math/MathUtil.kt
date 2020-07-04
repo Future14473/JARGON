@@ -1,5 +1,3 @@
-@file:JvmName("MathUtil")
-
 package org.futurerobotics.jargon.math
 
 import kotlin.math.*
@@ -38,9 +36,6 @@ fun avg(a: Double, b: Double): Double = (a + b) / 2
 /** Returns the average of [a], [b], and [c] */
 fun avg(a: Double, b: Double, c: Double): Double = (a + b + c) / 3
 
-/** Returns the maximum difference between [a], [b] and [c]. If any value is `NaN`, the result is 'NaN` */
-fun maxDiff(a: Double, b: Double, c: Double): Double = maxOf(abs((a - b)), abs((b - c)), abs((c - a)))
-
 /** The distance from this value to another value. Equal to `abs(this-v)` */
 infix fun Double.distTo(v: Double): Double = abs(this - v)
 
@@ -48,17 +43,17 @@ infix fun Double.distTo(v: Double): Double = abs(this - v)
 fun angleNorm(angle: Double): Double = angle - TAU * round(angle / TAU)
 
 /**
- * Performs the common operation `sin(x)/x`.
+ * The function `sin(x)/x`, working well with numbers near zero.
  */
 fun sinc(x: Double): Double = when {
-    x.epsEq(0.0, 1e-150) -> 1 - x.pow(2) / 6
+    x.epsEq(0.0, 1e-100) -> 1 - x * x / 6
     else -> sin(x) / x
 }
 
 /**
- * Performs the common operation `(1-cos x)/x`
+ * The function `sin(x)/x`, working well with numbers near zero.
  */
 fun cosc(x: Double): Double = when {
-    x.epsEq(0.0, 1e-150) -> x / 2
+    x.epsEq(0.0, 1e-100) -> x / 2
     else -> (1 - cos(x)) / x
 }

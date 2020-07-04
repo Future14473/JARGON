@@ -1,9 +1,7 @@
 package org.futurerobotics.jargon.linalg
 
-import org.futurerobotics.jargon.util.uncheckedCast
-
 /**
- * Concatenates a matrix using the given matrices.
+ * Concatenates matrices, using a similar syntax as [matOf].
  *
  * Matrices should be separated by commas, and rows separated using the
  * infix function [to].
@@ -16,52 +14,56 @@ import org.futurerobotics.jargon.util.uncheckedCast
  * )
  * ```
  *
- * In java, use [createMat] instead with a 2d array literal.
+ * In java, use [concat] instead with a 2d array literal of matrices.
  */
 @JvmSynthetic
 fun concat(vararg elements: Any): Mat {
-    lateinit var arr: Array<Array<Mat>>
-    varargEndToArr<Mat>(
+    val mats = varargBuilderToArray<Mat, Array<Array<Mat>>>(
         elements,
         { rows, cols ->
-            arr = Array(rows) {
-                arrayOfNulls<Mat>(cols).uncheckedCast<Array<Mat>>()
+            Array(rows) {
+                @Suppress("UNCHECKED_CAST")
+                arrayOfNulls<Mat>(cols) as Array<Mat>
             }
         },
-        { r, c, e -> arr[r][c] = e }
+        { r, c, e -> this[r][c] = e }
     )
-    return concat(arr)
+    return concat(mats)
 }
 
 /**
- * Concatenates a 2d array of [matFrom]rices with compatible sizes into a single matrix.
+ * Concatenates a 2d array of matrices with compatible sizes into a single matrix.
  */
 fun concat(arr: Array<out Array<out Mat>>): Mat {
-    if (arr.isEmpty()) return Mat(0, 0)
+    require(arr.isNotEmpty()) { "Non empty array must be given" }
     val colSizes = arr.first().map { it.cols }
     val rowSizes = arr.map { it.first().rows }
-    val rowResult = rowSizes.sum()
-    val colResult = colSizes.sum()
-    val result = Mat(rowResult, colResult)
+
+    val resultRows = rowSizes.sum()
+    val resultCols = colSizes.sum()
+    val result = Mat(resultRows, resultCols)
+
     var curRow = 0
-    arr.forEachIndexed { arrRowI, arrRow ->
-        require(arrRow.size == colSizes.size) { "Even rows must be given" }
-        val curMatRows = rowSizes[arrRowI]
-        var currentCol = 0
-        arrRow.forEachIndexed { arrColI, it ->
-            val curMatCols = colSizes[arrColI]
-            require(it.cols == curMatCols && it.rows == curMatRows) { "Even rows/cols not given" }
-            result[curRow, currentCol] = it
-            currentCol += curMatCols
+    arr.forEachIndexed { arrRowInd, arrRow ->
+        require(arrRow.size == colSizes.size) { "Array has uneven rows" }
+        val curMatRows = rowSizes[arrRowInd]
+        var curCol = 0
+        arrRow.forEachIndexed { arrCollInd, mat ->
+            val curMatCols = colSizes[arrCollInd]
+            require(mat.cols == curMatCols && mat.rows == curMatRows)
+            { "Matrices do not have compatible dimensions to concatenate" }
+            result[curRow, curCol] = mat
+            curCol += curMatCols
         }
         curRow += curMatRows
     }
+
     return result
 }
 
 /** Concatenates two matrices on top of each other, in a column. */
 fun concatCol(m1: Mat, m2: Mat): Mat {
-    require(m1.cols == m2.cols) { "All matrices must have sane number of columns." }
+    require(m1.cols == m2.cols) { "All matrices must have same number of columns." }
     val rows = m1.rows + m2.rows
     return Mat(rows, m1.cols).apply {
         this[0, 0] = m1
@@ -74,10 +76,10 @@ fun concatCol(vararg mats: Mat): Mat {
     require(mats.isNotEmpty()) { "At least one matrix must be provided." }
     val cols = mats[0].cols
     mats.forEach {
-        require(it.cols == cols) { "All matrices must have sane number of columns." }
+        require(it.cols == cols) { "All matrices must have same number of columns." }
     }
-    val rows = mats.sumBy { it.rows }
-    return Mat(rows, cols).apply {
+    val resultRows = mats.sumBy { it.rows }
+    return Mat(resultRows, cols).apply {
         var curRow = 0
         mats.forEach {
             this[curRow, 0] = it
@@ -101,7 +103,7 @@ fun concatRow(vararg mats: Mat): Mat {
     require(mats.isNotEmpty()) { "At least one matrix must be provided." }
     val rows = mats[0].rows
     mats.forEach {
-        require(it.rows == rows) { "All matrices must have sane number of rows." }
+        require(it.rows == rows) { "All matrices must have same number of rows." }
     }
     val cols = mats.sumBy { it.cols }
     return Mat(rows, cols).apply {
@@ -115,17 +117,19 @@ fun concatRow(vararg mats: Mat): Mat {
 
 /** Concatenating 4 matrices of compatible sizes in a 2x2 pattern. */
 fun concat2x2(m11: Mat, m12: Mat, m21: Mat, m22: Mat): Mat {
-    require(m11.rows == m12.rows) { "Size must match" }
-    require(m21.rows == m22.rows) { "Size must match" }
-    require(m11.cols == m21.cols) { "Size must match" }
-    require(m12.cols == m22.cols) { "Size must match" }
-    val row = m11.rows
-    val col = m11.cols
-    return Mat(row + m21.rows, col + m12.cols).apply {
+    require(
+        m11.rows == m12.rows &&
+            m21.rows == m22.rows &&
+            m11.cols == m21.cols &&
+            m12.cols == m22.cols
+    ) { "Matrices do not have compatible dimensions to concatenate" }
+    val mrow = m11.rows
+    val mcol = m11.cols
+    return Mat(mrow + m21.rows, mcol + m12.cols).apply {
         this[0, 0] = m11
-        this[row, 0] = m21
-        this[0, col] = m12
-        this[row, col] = m22
+        this[mrow, 0] = m21
+        this[0, mcol] = m12
+        this[mrow, mcol] = m22
     }
 }
 
@@ -134,59 +138,64 @@ fun concat2x2dynamic(m11: Any, m12: Any, m21: Any, m22: Any): Mat =
     concatDynamic(arrayOf(arrayOf(m11, m12), arrayOf(m21, m22)))
 
 /**
- * Combination of [concat] with vararg and [concatDynamic]
+ * Concatenating matrices into a single matrix, but 0's and 1's can be substituted as zero matrices and identity
+ * matrices respectively instead of matrices if there is enough information from other matrices to infer their size.
+ *
+ * This uses the same syntax as ([concat] with vararg).
+ *
+ * Also, if only one dimension of the resulting matrix is known, then the resulting matrix is assumed to be square
+ * and have their dimensions matched.
  */
 @JvmSynthetic
 fun concatDynamic(vararg elements: Any): Mat {
-    lateinit var arr: Array<Array<Any>>
-    varargEndToArr<Any>(
+    val array = varargBuilderToArray<Any, Array<Array<Any>>>(
         elements,
         { rows, cols ->
-            arr = Array(rows) {
-                arrayOfNulls<Any>(cols).uncheckedCast<Array<Any>>()
+            Array(rows) {
+                @Suppress("UNCHECKED_CAST")
+                arrayOfNulls<Any>(cols) as Array<Any>
             }
         },
-        { r, c, e -> arr[r][c] = e }
+        { r, c, e -> this[r][c] = e }
     )
-    return concatDynamic(arr)
+    return concatDynamic(array)
 }
 
 /**
- * Concatenating matrices into a single matrix, where sizes of some matrices can be inferred if there is enough
- * information.
- *
- * **Also,** a value of 0 substitutes in a zero matrix, while a value of 1 substitutes an identity
- * matrix. The sizes of these matrices can be inferred from other matrices provided.
- *
- * If only one dimension of the resulting matrix is known, the matrix is assume to be square, and the other
- * dimensions will then attempt to be inferred.
+ * Concatenating matrices into a single matrix, but additionally:
+ * - 0's and 1's can be substituted as zero matrices and identity matrices respectively
+ * - The above can only be done if there is enough information from other matrices to infer their sizes.
+ * - If only one dimension of the resulting matrix can be inferred, then the resulting matrix is assumed to be a square
+ *  matrix.
  */
 fun concatDynamic(arr: Array<out Array<out Any>>): Mat {
     val rowSizes = IntArray(arr.size)
     val colSizes = IntArray(arr[0].size)
 
     arr.forEachIndexed { rowI, row ->
-        require(row.size == colSizes.size) { "Uneven matrix array given." }
+        require(row.size == colSizes.size) { "Uneven array of matrices given." }
         row.forEachIndexed { colI, it ->
-            when (it) {
-                is Mat -> {
+            when {
+                it is Mat -> {
+                    //known row size
                     if (rowSizes[rowI] == 0) rowSizes[rowI] = it.rows
                     else require(it.rows == rowSizes[rowI]) { "Row size at ${rowI + 1} must match" }
+                    //known col size
                     if (colSizes[colI] == 0) colSizes[colI] = it.cols
                     else require(it.cols == colSizes[colI]) { "Col size at ${colI + 1} must match" }
                 }
-                !is Number -> throw IllegalArgumentException("Invalid value given")
-                0, 1 -> Unit
-                else -> throw IllegalArgumentException("Invalid value given")
+                it is Int && it == 0 || it == 1 -> Unit
+                else -> throw IllegalArgumentException("Invalid value &it given")
             }
         }
     }
+    //make sure identity matrices are square, and infer other dimensions with it
     arr.forEachIndexed { rowI, row ->
         row.forEachIndexed inner@{ colI, it ->
             if (it != 1) return@inner
             if (rowSizes[rowI] != 0) { //row size known
                 if (colSizes[colI] != 0) { //col size known
-                    require(rowSizes[rowI] == colSizes[colI]) { "Size around identity matrix must be square." }
+                    require(rowSizes[rowI] == colSizes[colI]) { "Identity matrix must be square. " }
                 } else { //col size unknown
                     colSizes[colI] = rowSizes[rowI]
                 }
@@ -199,52 +208,52 @@ fun concatDynamic(arr: Array<out Array<out Any>>): Mat {
             }
         }
     }
-    val unknownRowsCount = rowSizes.count { it == -1 }
-    val unknownColsCount = rowSizes.count { it == -1 }
-    require(unknownRowsCount <= 1 && unknownColsCount <= 1) { "Not enough information to deduce size of matrix" }
+    val unknownRows = rowSizes.count { it == 0 }
+    val unknownCols = colSizes.count { it == 0 }
+    require(unknownRows <= 1 && unknownCols <= 1) { "Not enough information to deduce size of matrix" }
     var outRows = rowSizes.sum() //including 0s
     var outCols = colSizes.sum() //including 0s
     repeat(rowSizes.size) { rowI ->
         repeat(colSizes.size) { colI ->
             if (rowSizes[rowI] == 0) {
-                require(unknownColsCount == 0) {
+                require(unknownCols == 0) {
                     "Not enough information to deduce size of zero matrix, even if " +
-                            "assuming resulting matrix is square."
+                        "assuming resulting matrix is square."
                 }
                 rowSizes[rowI] = outCols - outRows
                 outRows = outCols
             }
             if (colSizes[colI] == 0) {
-                require(unknownRowsCount == 0) {
+                require(unknownRows == 0) {
                     "Not enough information to deduce size of zero matrix, even if " +
-                            "assuming resulting matrix is square."
+                        "assuming resulting matrix is square."
                 }
                 colSizes[colI] = outRows - outCols
                 outCols = outRows
             }
         }
     }
-    val out = Mat(outRows, outCols)
+    val result = Mat(outRows, outCols)
     var currentRow = 0
     arr.forEachIndexed { rowInd, row ->
         val requiredRows = rowSizes[rowInd]
         var currentCol = 0
         row.forEachIndexed { colInd, it ->
             val requiredCols = colSizes[colInd]
-            if (it != 0)
-                out[currentRow, currentCol] = convertToMat(it, requiredRows, requiredCols)
+            when (it) {
+                is Mat -> {
+                    result[currentRow, currentCol] = it
+                }
+                1 -> {
+                    assert(requiredRows == requiredCols)
+                    result[currentRow, currentCol] = idenMat(requiredRows)
+                }
+//              0 -> { }
+            }
             currentCol += requiredCols
         }
         currentRow += requiredRows
     }
-    return out
+    return result
 }
 
-private fun convertToMat(any: Any, rows: Int, cols: Int): Mat = when (any) {
-    is Mat -> any
-    1 -> {
-        assert(rows == cols) { "Rows must equal cols for identity matrix" }
-        idenMat(rows)
-    }
-    else -> throw AssertionError()
-}

@@ -8,12 +8,12 @@ import kotlin.math.*
 /**
  * Represents a 2d vector in the plane with values [x] and [y].
  *
- * The standard is that +y is counterclockwise of +x, and positive angle is counter clockwise.
  * We recommend using NorthWestUp orientation where forward is +x, and left is +y.
- * This way math still checks out, and 0 degrees is forward.
+ * This way calculations still follows standards, and a angle of 0 is intuitively forward.
  *
- * Some calculations use cross products ([cross],[crossz]), in which it is calculated with interpreting vectors as 3d
- * vectors with a z component of 0, and only a portion of the result (that is not zero) is returned.
+ * Some calculations use cross products ([cross], [crossz]). In these, it is calculated by interpreting
+ * vectors as 3d vectors with a z component of 0, and only a portion of the result (that is not zero) is returned.
+ * @see
  */
 data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : Serializable {
 
@@ -24,16 +24,19 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : Serializ
      *  @see length
      */
     val norm: Double get() = hypot(x, y)
+
     /**
      * `||this||`, or the norm of this vector
      *  @see norm
      */
     val length: Double get() = hypot(x, y)
+
     /**
      * `||this||^2`: the length of this vector squared.
      *  @see norm
      */
     val lengthSquared: Double get() = x * x + y * y
+
     /**
      *  `atan2(y,x)`, or the angle this vector makes with the positive x-axis from [-PI,PI]
      */
@@ -54,7 +57,7 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : Serializ
 
     /**
      * Returns the z component of the cross product between `this` and [other],
-     * interpreted as 3d vectors with a z component of 0.
+     * when the vectors are interpreted as 3d vectors with a z component of 0.
      *
      * @see crossz
      */
@@ -77,8 +80,8 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : Serializ
     fun isNaN(): Boolean = x.isNaN() || y.isNaN()
 
     /**
-     * Returns the cross product of (this interpreted as a 3d vector with a z component of 0), and the 3d vector
-     *  <0,0,[z]>`, as a 2d vector, ignoring the resulting z component of 0.
+     * Computes the cross product of (this interpreted as a 3d vector with a z component of 0), and the 3d vector
+     *  `<0,0,[z]>`, and returns as a 2d vector, ignoring the resulting z component of 0.
      *
      *  This is mainly used to chain 3d - cross products while still only using 2d vectors.
      *  @see cross
@@ -87,7 +90,7 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : Serializ
     infix fun crossz(z: Double): Vector2d = Vector2d(y * z, -x * z)
 
     /** `||this||^power`, or length of this vector to the specified power. */
-    fun lengthPow(power: Double): Double = lengthSquared.pow(power / 2)
+    fun lengthPow(pow: Double): Double = lengthSquared.pow(pow / 2)
 
     /** `this / ||this||`, or this vector normalized. May result in NaN components if is a zero vector. */
     fun normalized(): Vector2d = this / norm
@@ -112,17 +115,26 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : Serializ
         else -> throw IndexOutOfBoundsException("Vector index ($index) must be 0 or 1.")
     }
 
+    /**
+     * Ensure's a [Vector2d]'s length is less than or equal to [maximumLength].
+     */
+    infix fun coerceLengthAtMost(maximumLength: Double): Vector2d {
+        require(maximumLength >= 0.0) { "maximumLength ($maximumLength) must be >= 0 as negative vector lengths are impossible" }
+        return when {
+            maximumLength == 0.0 -> ZERO
+            length > maximumLength -> this * (maximumLength / length)
+            else -> this
+        }
+    }
+
     override fun toString(): String = "Vector2d(%.6f, %.6f)".format(x, y)
 
     companion object {
         private const val serialVersionUID: Long = -6820664735430027415
+
         /** The zero vector <0, 0> */
         @JvmField
         val ZERO: Vector2d = Vector2d(0, 0)
-        /**
-         * A vector with [Double.NaN] components, usually used to signify some calculation went wrong.
-         */
-        val NAN: Vector2d = Vector2d(Double.NaN, Double.NaN)
 
         /**
          * Creates a vector from polar coordinates.
@@ -136,19 +148,9 @@ data class Vector2d(@JvmField val x: Double, @JvmField val y: Double) : Serializ
 
 operator fun Double.times(v: Vector2d): Vector2d = v * this
 operator fun Int.times(v: Vector2d): Vector2d = v * this
+
 /**
- * [Vector2d.crossz] but with operands switched.
+ * Like [Vector2d.crossz] but with operands switched (resulting cross product is negative of [Vector2d.crossz].
  */
 infix fun Double.zcross(v: Vector2d): Vector2d = v crossz -this
 
-/**
- * Ensure's a [Vector2d]'s length is less than or equal to [maximumLength].
- */
-infix fun Vector2d.coerceLengthAtMost(maximumLength: Double): Vector2d {
-    require(maximumLength >= 0.0) { "maximumLength ($maximumLength) must be >= 0 as negative vector lengths are impossible" }
-    return when {
-        maximumLength == 0.0 -> Vector2d.ZERO
-        length > maximumLength -> this * (maximumLength / length)
-        else -> this
-    }
-}

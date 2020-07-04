@@ -1,4 +1,3 @@
-
 package org.futurerobotics.jargon.linalg
 
 import org.futurerobotics.jargon.math.EPSILON
@@ -7,10 +6,14 @@ import org.futurerobotics.jargon.math.epsEq
 import org.hipparchus.linear.*
 import kotlin.math.*
 
-/** Solves for x in `Ax=b`, with a = this matrix, and b = the given [vec]. */
+/*
+ * Functional-programming style functions for operations on matrices and vectors.
+ */
+
+/** Solves for x in `Ax=b`, with A = this matrix, and b = the given [vec]. */
 fun Mat.solve(vec: Vec): Vec = getSolver().solve(vec)
 
-/** Solves for X in `AX = B`, with a = this matrix, and B = the given [mat]. */
+/** Solves for X in `AX = B`, with A = this matrix, and B = the given [mat]. */
 fun Mat.solve(mat: Mat): Mat = getSolver().solve(mat)
 
 /** Gets a general [DecompositionSolver] for the given matrix. */
@@ -30,7 +33,6 @@ fun Mat.epsEq(mat: Mat, epsilon: Double): Boolean {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
     forEachIndexed { r, c, d ->
         if (!d.epsEq(mat[r, c], epsilon)) return false
-
     }
     return true
 }
@@ -44,7 +46,7 @@ fun Vec.epsEq(vec: Vec, epsilon: Double): Boolean {
     return true
 }
 
-/** Returns true if this matrix is square and symmetric with a tolerance of [epsilon]. */
+/** Returns true if this matrix is square and symmetric, with a tolerance of [epsilon]. */
 fun Mat.isSymmetric(epsilon: Double = EPSILON): Boolean {
     if (!isSquare) return false
     for (r in 0 until rows) {
@@ -55,7 +57,7 @@ fun Mat.isSymmetric(epsilon: Double = EPSILON): Boolean {
     return true
 }
 
-/** Adds this matrix with the other [mat], in place. */
+/** Adds In place this matrix with another [mat], and returns this. */
 infix fun Mat.addI(mat: Mat): Mat = apply {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
     forEachIndexed { r, c, _ ->
@@ -63,7 +65,7 @@ infix fun Mat.addI(mat: Mat): Mat = apply {
     }
 }
 
-/** Subtracts this matrix with the other [mat], in place. */
+/** Subtracts In place this matrix with the other [mat], and returns this. */
 infix fun Mat.subI(mat: Mat): Mat = apply {
     require(rows == mat.rows && cols == mat.cols) { "Dimension mismatch" }
     forEachIndexed { r, c, _ ->
@@ -71,21 +73,17 @@ infix fun Mat.subI(mat: Mat): Mat = apply {
     }
 }
 
-/** Multiplies this matrix with the given [scalar], in place. */
+/** Multiplies In place this matrix by the given [scalar], and returns this. */
 infix fun Mat.multI(scalar: Double): Mat = apply {
     forEachIndexed { r, c, _ ->
         this.multiplyEntry(r, c, scalar)
     }
 }
 
-/**
- * Divides this matrix with the given [scalar], in place.
- */
+/** Divides In place this matrix by the given [scalar], and returns this. */
 infix fun Mat.divI(scalar: Double): Mat = multI(1 / scalar)
 
-/**
- * Adds this vector with the other [vec], in place.
- */
+/** Adds In place this vector with another [vec], and returns this. */
 infix fun Vec.addI(vec: Vec): Vec = apply {
     require(size == vec.size) { "Dimension mismatch" }
     repeat(size) {
@@ -93,9 +91,7 @@ infix fun Vec.addI(vec: Vec): Vec = apply {
     }
 }
 
-/**
- * Subtracts this vector with the other [vec], in place.
- */
+/** Subtracts In place this vector with another [vec], and returns this. */
 infix fun Vec.subI(vec: Vec): Vec = apply {
     require(size == vec.size) { "Dimension mismatch" }
     repeat(size) {
@@ -103,14 +99,10 @@ infix fun Vec.subI(vec: Vec): Vec = apply {
     }
 }
 
-/**
- * Multiplies this vector with the given [scalar], in place.
- */
+/** Multiplies In place this vector by the given [scalar], and returns this. */
 infix fun Vec.multI(scalar: Double): Vec = apply { mapToSelf { it * scalar } }
 
-/**
- * Divides this vector with the given [scalar], in place.
- */
+/** Divides In place this vector by the given [scalar], and returns this. */
 infix fun Vec.divI(scalar: Double): Vec = apply { mapToSelf { it / scalar } }
 
 /** Converts this vector to a column matrix. */
@@ -122,7 +114,7 @@ fun Vec.toRowMatrix(): Mat = matFrom(arrayOf(toArray()), false)
 /** Maps each element of this vector to its sign. */
 fun sign(vec: Vec): Vec = vec.map { sign(it) }
 
-/** Gets the maximum magnitude entry in this matrix. */
+/** Gets the (absolute value) of the entry in this matrix with the largest magnitude. */
 fun Mat.normMax(): Double = walkInOptimizedOrder(object : RealMatrixPreservingVisitor {
     private var m = 0.0
     override fun visit(row: Int, column: Int, value: Double) {
@@ -144,7 +136,7 @@ fun Vec.copyIf(copy: Boolean): Vec = if (copy) copy() else this
  * Computes the matrix exponential (`e^X`) of the given matrix [mat].
  *
  * This implementation is translated from `MatrixFunctions.expm(DoubleMatrix)` in [jBlas][http://jblas.org/], which is
- * licensed under a [BSD - style license][https://raw.githubusercontent.com/jblas-project/jblas/jblas-1.2.4/COPYING]
+ * licensed under a [BSD-style license][https://raw.githubusercontent.com/jblas-project/jblas/jblas-1.2.4/COPYING]
  */
 @Suppress("LocalVariableName")
 fun expm(mat: Mat): Mat {
@@ -197,7 +189,7 @@ fun expm(mat: Mat): Mat {
 
 /**
  * Gets a quadrant of the matrix indexed by [row] and [col] in the range 0..1,
- * splitting at the given [splitIndex] so that the upper left quadrant has a size of [splitIndex].
+ * splitting at the given [splitIndex] so that the upper left quadrant has a square size of [splitIndex].
  */
 fun Mat.getQuad(row: Int, col: Int, splitIndex: Int): Mat {
     require(isSquare) { "Matrix must be square" }
