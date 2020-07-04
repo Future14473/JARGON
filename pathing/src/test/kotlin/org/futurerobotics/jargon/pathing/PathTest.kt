@@ -1,36 +1,36 @@
 package org.futurerobotics.jargon.pathing
 
-import org.futurerobotics.jargon.Debug
 import org.futurerobotics.jargon.math.DoubleProgression
 import org.futurerobotics.jargon.math.TAU
 import org.futurerobotics.jargon.math.nextVector2d
-import org.futurerobotics.jargon.util.mapAllPairs
 import org.futurerobotics.jargon.util.stepToAll
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import strikt.api.expectThat
 import kotlin.random.Random
 
 @RunWith(Parameterized::class)
 internal class PathTest(private val path: Path, private val allS: List<Double>) {
 
     @Test
-    fun `Bulk get (getAllPointInfo) and single get (getPointInfo) are same`() {
+    fun `pointAt and stepTo return the same`() {
         val singleGet = allS.map { path.pointAt(it) }
         val bulkGet = path.stepToAll(allS)
         Assert.assertTrue("Size differs", bulkGet.size == singleGet.size)
 
-        bulkGet.zip(singleGet).forEachIndexed { index, (first, second) ->
-            val b = first contentEquals second
-            Debug.breakIf(!b)
-            if (!b) Assert.fail("Content differs at $index")
+        bulkGet.zip(singleGet).forEachIndexed { index, (bulk, single) ->
+            expectThat(bulk) {
+                assertThat("Matches at $index") { it contentEquals single }
+            }
         }
     }
 
     companion object {
         private val random = Random(2346)
         private const val range = 10.0
+
         @JvmStatic
         @Parameterized.Parameters
         fun getParams(): List<Array<Any>> {
@@ -68,9 +68,8 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
                     0.0, random.nextDouble(30.0), random.nextInt(10_000, 80_000)
                 ).toList()
             }
-            val paths = mapAllPairs(curves, headings)
-                .mapTo(ArrayList()) { it.first.addHeading(it.second) }
-            return mapAllPairs(paths, progressions).map { arrayOf(it.first, it.second) }
+            val paths = mapAllPairs(curves, headings) { c, h -> c.addHeading(h) }
+            return mapAllPairs(paths, progressions) { p, g -> arrayOf(p, g) }
         }
     }
 }

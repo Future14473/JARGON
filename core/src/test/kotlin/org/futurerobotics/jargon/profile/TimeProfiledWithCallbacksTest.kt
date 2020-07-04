@@ -42,7 +42,7 @@ internal class TimeProfiledWithCallbacksTest {
             }
         }
         withCallbacks
-            .stepper()
+            .timeStepper()
             .stepToAll(DoubleProgression.fromNumSegments(0.0, 1.0, 100))
     }
 }

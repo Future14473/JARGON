@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 class StateSpaceDesignTest {
 
 
-    @UseExperimental(ExperimentalStateSpace::class)
+    @OptIn(ExperimentalStateSpace::class)
     @Test
     fun `sanity check`() {
 

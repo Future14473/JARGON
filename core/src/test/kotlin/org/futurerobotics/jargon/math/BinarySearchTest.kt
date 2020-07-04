@@ -13,7 +13,7 @@ internal class BinarySearchTest {
     @Test
     fun `double binary search`() {
         val random = Random(82487234)
-        repeat(1_000_000) {
+        repeat(1_000) {
             val partitionPoint = random.nextDouble(-300.0, 300.0)
             val tolerance = random.nextDouble(0.00001, 0.1)
             val upperExtend = random.nextDouble(300.0)
@@ -30,7 +30,7 @@ internal class BinarySearchTest {
     @Test
     fun `extending binary search`() {
         val random = Random(82487234)
-        repeat(1_000_000) {
+        repeat(1_000) {
             val partitionPoint = random.nextDouble(-300.0, 300.0)
             val tolerance = random.nextDouble(0.00001, 0.1)
             val upperExtend = random.nextDouble(300.0)
@@ -47,7 +47,7 @@ internal class BinarySearchTest {
     @Test
     fun `extending down search`() {
         val random = Random(82487234)
-        repeat(1_000_000) {
+        repeat(1_000) {
             val partitionPoint = random.nextDouble(-300.0, 300.0)
             val tolerance = random.nextDouble(0.00001, 0.1)
             val upperExtend = random.nextDouble(300.0)

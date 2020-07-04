@@ -1,6 +1,5 @@
 package org.futurerobotics.jargon.pathing.trajectory
 
-import org.futurerobotics.jargon.Debug
 import org.futurerobotics.jargon.errorTo
 import org.futurerobotics.jargon.math.MotionState
 import org.futurerobotics.jargon.math.Pose2d
@@ -35,7 +34,6 @@ class TrajectoryTest(private val trajectory: Trajectory) {
         }.also {
             println(it.report())
             val errorOk = it.averageError < maxError
-            Debug.breakIf(!errorOk)
             Assert.assertTrue(errorOk)
         }
     }

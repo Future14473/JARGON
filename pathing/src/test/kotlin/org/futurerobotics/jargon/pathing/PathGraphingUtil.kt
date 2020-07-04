@@ -11,7 +11,7 @@ import org.knowm.xchart.style.markers.Circle
 import org.knowm.xchart.style.markers.None
 import java.awt.Color
 
-fun XYChart.graphPath(name: String, curve: GenericPath<*>, points: Int = 200, color: Color = Color.GREEN): XYSeries {
+fun XYChart.graphPath(name: String, curve: AnyPath<*>, points: Int = 200, color: Color = Color.GREEN): XYSeries {
     val progression = DoubleProgression.fromNumSegments(0.0, curve.length, points)
     return graphPath(name, curve.stepToAll(progression).map { it.position }, color)
 }

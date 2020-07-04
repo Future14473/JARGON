@@ -1,7 +1,6 @@
 package org.futurerobotics.jargon
 
 import org.futurerobotics.jargon.math.Vector2d
-import org.futurerobotics.jargon.util.replaceIf
 import org.knowm.xchart.BitmapEncoder
 import org.knowm.xchart.XYChart
 import org.knowm.xchart.style.markers.None
@@ -33,7 +32,7 @@ fun XYChart.drawVec(
     normalize: Boolean = true,
     color: Color
 ) {
-    val end = pos + vec.replaceIf(normalize) { it.normalized() }
+    val end = pos + vec.let { if (normalize) it.normalized() else it }
     val x = doubleArrayOf(pos.x, end.x)
     val y = doubleArrayOf(pos.y, end.y)
     var name: String

@@ -1,15 +1,15 @@
-package org.futurerobotics.jargon.pathing
+package org.futurerobotics.jargon.pathing.trajectory
 
-import org.futurerobotics.jargon.Debug
+import junit.framework.AssertionFailedError
 import org.futurerobotics.jargon.math.DoubleProgression
 import org.futurerobotics.jargon.math.distTo
-import org.futurerobotics.jargon.pathing.trajectory.*
+import org.futurerobotics.jargon.pathing.*
 import org.futurerobotics.jargon.util.extendingDoubleSearch
 import org.futurerobotics.jargon.util.stepToAll
 import org.junit.Test
 import kotlin.random.Random
 
-internal class ConstraintTest {
+internal class MotionConstraintTest {
     private val range = 12.0
     private val random = Random(2349)
     private val path = List(10) {
@@ -18,7 +18,9 @@ internal class ConstraintTest {
             range
         )
     }.zipWithNext { start, end ->
-        QuinticSpline.fromDerivatives(start, end).reparameterizeToCurve().addHeading(TangentHeading)
+        QuinticSpline.fromDerivatives(start, end).reparameterizeToCurve().addHeading(
+            TangentHeading
+        )
     }.let { multiplePath(it) }
     private val motionConstraints = MotionConstraintSet(
         MaxTangentVelocity(10.0),
@@ -27,22 +29,21 @@ internal class ConstraintTest {
     )
     private val constraint = TrajectoryConstrainer(path, motionConstraints)
     private val steps = 1_000
+
     @Test
-    fun `Something Fishy About Angular Accel Constraint`() {
+    fun `acceleration constraints have partition point`() {
         val points = DoubleProgression.fromNumSegments(0.0, path.length, steps).toList()
-        val pointConstraints = constraint.stepToAll(points)
+        val pointConstraints = constraint.stepper().stepToAll(points)
         val vels = DoubleProgression.fromNumSegments(0.0, 5.0, steps)
         val step = vels.step
         repeat(steps + 1) { i ->
-            Debug.breakIf(i == 16)
             val pointConstraint = pointConstraints[i]
             var wasValid = true
             var partitionPoint = 5.0
             vels.forEach { v ->
                 val valid = !pointConstraint.accelRange(v).isEmpty()
                 if (!wasValid && valid) {
-                    println("ISSUES")
-                    Debug.breakpoint()
+                    throw AssertionFailedError("Partition point failed")
                 }
                 if (wasValid && !valid) {
                     partitionPoint = v
