@@ -12,7 +12,7 @@ interface NoiseCovarianceProvider {
      * [matrices], predicted state [x], past signal [u], measurement [y], and current time [timeInNanos].
      */
     fun getNoiseCovariance(
-        matrices: StateSpaceMatrices,
+        matrices: DiscreteStateSpaceMatrices,
         x: Vec,
         u: Vec,
         y: Vec,
@@ -23,15 +23,13 @@ interface NoiseCovarianceProvider {
 /**
  * A [NoiseCovarianceProvider] that always returns the given [noiseCovariance].
  */
-@ExperimentalStateSpace
 class ConstantNoiseCovariance(private val noiseCovariance: NoiseCovariance) : NoiseCovarianceProvider {
 
     override fun getNoiseCovariance(
-        matrices: StateSpaceMatrices,
+        matrices: DiscreteStateSpaceMatrices,
         x: Vec,
         u: Vec,
         y: Vec,
         timeInNanos: Long
-    ): NoiseCovariance =
-        noiseCovariance
+    ): NoiseCovariance = noiseCovariance
 }

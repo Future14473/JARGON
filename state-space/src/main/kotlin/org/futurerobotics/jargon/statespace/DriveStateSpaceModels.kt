@@ -8,6 +8,7 @@ import org.futurerobotics.jargon.model.MotorVelocityDriveModel
 /**
  * Utilities for creating common initial [ContinuousStateSpaceMatrices]s from [BotVelocityModel]s.
  */
+//TODO: Cleanup
 object DriveStateSpaceModels {
 
     /**

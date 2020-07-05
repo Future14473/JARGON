@@ -5,5 +5,5 @@ package org.futurerobotics.jargon.statespace
  *
  * This means it is not fully supported.
  */
-@Experimental(Experimental.Level.WARNING)
+@RequiresOptIn(level = RequiresOptIn.Level.WARNING)
 annotation class ExperimentalStateSpace

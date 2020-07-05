@@ -19,11 +19,10 @@ private val DECOMPOSITION = LUDecomposer(1e-11)
  * @param initialCovariance the initial process covariance
  */
 class LinearKalmanFilter(
+    initialState: Vec,
     private val noiseCovarianceProvider: NoiseCovarianceProvider,
     private val initialCovariance: Mat
-) : StateSpaceObserver {
-
-    private var initialized: Boolean = false
+) {
 
     private var lastNanos = 0L
     private var filter: InnerKalmanFilter<Measurement>? = null
@@ -35,7 +34,7 @@ class LinearKalmanFilter(
         lateinit var noise: NoiseCovariance
         private var time: Double = 0.0
         fun update(
-            matrices: StateSpaceMatrices,
+            matrices: DiscreteStateSpaceMatrices,
             x: Vec,
             u: Vec,
             y: Vec,
@@ -56,26 +55,20 @@ class LinearKalmanFilter(
         override fun getEvolution(measurement: Measurement?): LinearEvolution = evolution
     }
 
-    private var stateOverride: Vec? = null
+    private var stateOverride: Vec? = initialState
 
-    override var currentState: Vec
-        get() = filter?.corrected?.state ?: stateOverride
-        ?: throw IllegalStateException("Initial state must be provided.")
+    var currentState: Vec
+        get() = filter?.corrected?.state ?: stateOverride!!
         set(value) {
             stateOverride = value
         }
 
-    override fun reset(initialState: Vec) {
-        stateOverride = initialState
-        filter = null
-    }
-
-    override fun update(matrices: DiscreteStateSpaceMatrices, u: Vec, y: Vec, timeInNanos: Long): Vec {
+    fun update(matrices: DiscreteStateSpaceMatrices, u: Vec, y: Vec, timeInNanos: Long): Vec {
         val filter = filter
         val stateOverride = stateOverride
         return if (stateOverride != null || filter == null) {
             //first time
-            val x = stateOverride ?: throw IllegalStateException("Initial state must be provided.")
+            val x = stateOverride!!
             this.stateOverride = null
             data.update(matrices, x, u, y, timeInNanos)
 
@@ -85,7 +78,7 @@ class LinearKalmanFilter(
         } else {
             var curNanos = lastNanos
             var x: Vec = filter.corrected.state
-            val periodNanos = matrices.periodInNanos
+            val periodNanos = matrices.periodNanos
             while (curNanos + periodNanos / 2 <= timeInNanos) {
                 curNanos += periodNanos
                 data.update(matrices, x, u, y, timeInNanos)

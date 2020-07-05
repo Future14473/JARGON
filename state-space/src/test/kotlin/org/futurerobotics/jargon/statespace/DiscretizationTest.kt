@@ -24,7 +24,7 @@ internal class DiscretizationTest {
             val model = ContinuousStateSpaceMatrices(A, B, Mat(3, 3))
             val discrete = discretizeZeroOrderHold(model, period)
             expectThat(discrete.A).isEpsEqTo(expm(A * period))
-            val expectedB = A.inv()(discrete.A - idenMat(3)) * B
+            val expectedB = A.inv() * (discrete.A - idenMat(3)) * B
             expectThat(discrete.B).isEpsEqTo(expectedB)
         }
     }
