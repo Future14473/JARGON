@@ -3,7 +3,6 @@
 import org.jetbrains.dokka.gradle.DokkaPlugin
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-//will later be applied to all subprojects
 group = "org.futurerobotics.jargon"
 version = "0.2.0-SNAPSHOT"
 //---
@@ -26,9 +25,9 @@ val junit5vintage by extra("org.junit.vintage:junit-vintage-engine:$junit5Versio
 val strikt by extra("io.strikt:strikt-core:$striktVersion")
 
 buildscript {
-    val kotlinVersion = "1.3.72"
-    val atomicfuVersion = "0.14.3"
+    val kotlinVersion = "1.4-M3"
     repositories {
+        maven("https://dl.bintray.com/kotlin/kotlin-eap")
         mavenCentral()
     }
     dependencies {
@@ -40,10 +39,11 @@ buildscript {
 repositories {
     mavenCentral()
     jcenter()
+    maven("https://dl.bintray.com/kotlin/kotlin-eap")
 }
 
 plugins {
-    kotlin("jvm") version "1.3.72"
+    kotlin("jvm") version "1.4-M3"
     id("org.jetbrains.dokka") version "0.10.1"
     `maven-publish`
     id("com.jfrog.bintray") version "1.8.4" apply false
@@ -56,12 +56,12 @@ subprojects {
     repositories {
         mavenCentral()
         jcenter()
+        maven("https://dl.bintray.com/kotlin/kotlin-eap")
     }
     plugins.withId("org.jetbrains.kotlin.jvm") {
         configureKotlin()
         configureTests()
     }
-
 }
 
 fun Project.configureKotlin() {
