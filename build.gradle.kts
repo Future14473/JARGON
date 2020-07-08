@@ -4,7 +4,7 @@ import org.jetbrains.dokka.gradle.DokkaPlugin
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "org.futurerobotics.jargon"
-version = "0.2.0-SNAPSHOT"
+version = "0.2.0"
 //---
 val hipparchusVersion by extra("1.6")
 val striktVersion by extra("0.23.2")
