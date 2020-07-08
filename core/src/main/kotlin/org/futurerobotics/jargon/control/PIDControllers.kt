@@ -22,15 +22,6 @@ open class PIDController(private val coefficients: PIDCoefficients) : SimpleCont
         private set
 
     /**
-     * Resets this pose controller.
-     */
-    override fun reset() {
-        errorSum = 0.0
-        prevError = 0.0
-        signal = 0.0
-    }
-
-    /**
      * Given the [reference] value, [currentState] value, and the [elapsedTimeInNanos],
      * updates the controller and returns the [signal].
      */
@@ -85,12 +76,6 @@ class PosePIDController(xCoeff: PIDCoefficients, yCoeff: PIDCoefficients, hCoeff
     private val hController = HeadingPIDController(hCoeff)
 
     override val signal: Pose2d get() = Pose2d(xController.signal, yController.signal, hController.signal)
-
-    override fun reset() {
-        xController.reset()
-        yController.reset()
-        hController.reset()
-    }
 
     override fun update(reference: Pose2d, currentState: Pose2d, elapsedTimeInNanos: Long): Pose2d {
         val (rx, ry, rh) = reference

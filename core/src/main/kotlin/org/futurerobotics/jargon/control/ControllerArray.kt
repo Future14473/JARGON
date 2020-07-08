@@ -21,11 +21,6 @@ class ControllerArray(
     override var signal: Vec = Vec(size)
         private set
 
-    override fun reset() {
-        //can remove
-        controllers.forEach { it.reset() }
-    }
-
     override fun update(reference: Vec, currentState: Vec, elapsedTimeInNanos: Long): Vec {
         return Vec(size) { i ->
             controllers[i].update(reference[i], currentState[i], elapsedTimeInNanos)

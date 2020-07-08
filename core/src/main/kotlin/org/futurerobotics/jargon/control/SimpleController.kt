@@ -9,17 +9,7 @@ package org.futurerobotics.jargon.control
 interface SimpleController<in Reference, in State, out Signal> {
 
     /**
-     * Resets the controller.
-     *
-     * The [signal] should now represent some zero value.
-     */
-    @Deprecated("State bad", level = DeprecationLevel.WARNING)
-    fun reset()
-
-    /**
      * Gets the last outputted signal of this controller.
-     *
-     * If just [reset]ed or just created, the signal should be a "zero" value.
      */
     val signal: Signal
 

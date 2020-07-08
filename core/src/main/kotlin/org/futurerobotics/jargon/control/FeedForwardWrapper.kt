@@ -30,13 +30,6 @@ open class FeedForwardWrapper<State>(
     final override var signal: MotionOnly<State> = MotionOnly(velocityController.signal, velocityController.signal)
         private set
 
-    override fun reset() {
-        //can reset
-        velocityController.reset()
-        val zero = velocityController.signal
-        signal = MotionOnly(zero, zero)
-    }
-
     override fun update(
         reference: MotionState<State>,
         currentState: State,
