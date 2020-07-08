@@ -11,7 +11,6 @@ val striktVersion by extra("0.23.2")
 val xchartVersion by extra("3.6.4")
 val junitVersion by extra("4.12")
 val junit5Version by extra("5.6.2")
-val coroutinesVersion by extra("1.3.7")
 
 val hipparchus by extra<(String) -> String> { { "org.hipparchus:hipparchus-$it:$hipparchusVersion" } }
 
@@ -32,7 +31,6 @@ buildscript {
     }
     dependencies {
         classpath(kotlin("gradle-plugin", version = kotlinVersion))
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicfuVersion")
     }
 }
 
