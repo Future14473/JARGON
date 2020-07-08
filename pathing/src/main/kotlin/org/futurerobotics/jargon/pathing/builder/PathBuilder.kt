@@ -1,135 +1,138 @@
 package org.futurerobotics.jargon.pathing.builder
 
+import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.pathing.*
 import org.futurerobotics.jargon.util.builder
 
 /**
- * Utility for making paths, with easy spline and line creation.
+ * Common parts of [CurveBuilder] and [PathBuilder]
  */
-class PathBuilder(
-    start: Waypoint,
-    var defaultHeadingInterpolator: HeadingInterpolator = LinearOffsetInterpolator
-) {
+abstract class AnyPathBuilder<Self : AnyPathBuilder<Self>>
+constructor(start: Vector2d) {
 
-    private val _edges = mutableListOf<Edge>(StartEdge(start))
-    private val pastWaypoint get() = _edges.last().endWaypoint
+    private val edges = mutableListOf<Edge>(StartEdge(CurveWaypoint(start)))
+    private val lastWaypoint get() = edges.last().toWaypoint
+
+    private fun splineTo(waypoint: CurveWaypoint): Self = builder { edges += SplineEdge(waypoint) }
 
     /**
-     * Continues the path by using a spline to the given [waypoint].
-     *
-     * If a [headingInterpolator] is not supplied, the [defaultHeadingInterpolator] will be used.
+     * Continues the path with a spline to the given [location].
      */
-    @JvmOverloads
-    fun splineTo(
-        waypoint: Waypoint,
-        headingInterpolator: HeadingInterpolator = defaultHeadingInterpolator
-    ) = builder {
-        _edges += SplineEdge(pastWaypoint, waypoint, headingInterpolator)
+    fun splineTo(location: Vector2d): Self = splineTo(CurveWaypoint(location))
+
+    /**
+     * Continues the path with a spline to the given location.
+     */
+    fun splineTo(x: Double, y: Double): Self = splineTo(Vector2d(x, y))
+
+//    private fun lineTo(waypoint: Waypoint): Self = builder {
+//        addCurve(Line(lastWaypoint.position, waypoint.position))
+//        constrainLastWaypoint(waypoint)
+//    }
+
+    /**
+     * Continues the path by using a spline to the given [location].
+     */
+    fun lineTo(location: Vector2d): Self = builder {
+        addCurve(Line(lastWaypoint.position, location))
     }
 
     /**
-     * Continues the path by using a line to the given [waypoint]
-     *
-     * If a [headingInterpolator] is not supplied, the [defaultHeadingInterpolator] will be used.
+     * Continues the path with a line to the given location.
      */
-    fun lineTo(
-        waypoint: Waypoint,
-        headingInterpolator: HeadingInterpolator = defaultHeadingInterpolator
-    ) = addCurve(Line(pastWaypoint.position, waypoint.position), headingInterpolator)
+    fun lineTo(x: Double, y: Double): Self = lineTo(Vector2d(x, y))
 
     /**
-     * Continues the path by using a given [curve].
-     *
-     * If a [headingInterpolator] is not supplied, the [defaultHeadingInterpolator] will be used.
+     * Continues the path by using any given [curve]. The start of the curve must meet with the previous point.
      */
-    @JvmOverloads
-    fun addCurve(
-        curve: Curve,
-        headingInterpolator: HeadingInterpolator = defaultHeadingInterpolator
-    ) = builder {
-        checkStartPosition(curve)
-        _edges += CurveEdge(curve, headingInterpolator)
+    fun addCurve(curve: Curve): Self = builder {
+        checkMatchingStart(curve)
+        changeLastPoint { copy(direction = direction ?: curve.startPoint().tanAngle) }
+        edges += CurveEdge(curve)
     }
 
     /**
-     * Continues the path by using a given [path].
+     * Sets a [direction][CurveWaypoint.direction] at the last waypoint. This has no effect if neither adjacent
+     * connections are splines.
      */
-    fun addPath(path: Path) = builder {
-        checkStartPosition(path)
-        _edges += PathEdge(path)
+    fun direction(direction: Double): Self = builder {
+        changeLastPoint { copy(direction = direction) }
     }
 
-    private fun checkStartPosition(path: GenericPath<*>) {
+    /**
+     * Sets a [roundness][CurveWaypoint.roundness] at the last waypoint. This has no effect if neither adjacent
+     * connections are splines.
+     */
+    fun roundness(roundness: Double): Self = builder {
+        changeLastPoint { copy(roundness = roundness) }
+    }
+
+    private fun checkMatchingStart(path: AnyPath<*>) {
         val startPos = path.startPoint().position
-        require(startPos epsEq pastWaypoint.position) {
-            "Previous end position ${pastWaypoint.position} must match " +
+        require(startPos epsEq lastWaypoint.position) {
+            "Previous end location ${lastWaypoint.position} must match " +
                 "new curve's start point $startPos"
         }
     }
 
-    fun build(curveGenParams: CurveGenParams): Path {
-        if (_edges.size == 1) {
-            val pastWaypoint = pastWaypoint
-            return SinglePointPath(
-                pastWaypoint.position,
-                pastWaypoint.heading ?: pastWaypoint.direction ?: 0.0
-            )
-        }
-
-        val paths = ArrayList<Path>()
-
-        val sweeper = Sweeper(_edges)
-        lateinit var previousEndWaypoint: Waypoint
-        while (sweeper.hasNext()) {
-            val curEdge = sweeper.next()
-            when (curEdge) {
-                is SplineEdge -> {
-                    @Suppress("UNCHECKED_CAST")
-                    val splineEdges = sweeper.takeWhile { it is SplineEdge } as List<SplineEdge>
-
-                    val nextEdge = sweeper.peek()
-
-                    val firstWaypoint = splineEdges.first().startWaypoint + previousEndWaypoint
-                    val rawWaypoints = splineEdges.mapTo(mutableListOf(firstWaypoint)) { it.endWaypoint }
-                    if (nextEdge != null) {
-                        val lastIndex = rawWaypoints.size - 1
-                        rawWaypoints[lastIndex] = rawWaypoints[lastIndex] + nextEdge.startWaypoint
-                    }
-
-                    //decomposed, so that we can get the resolved waypoints (naming to be finalized)
-                    //todo: add public function to facilitate this
-                    val waypoints = resolveWaypoints(rawWaypoints, curveGenParams)
-                    val curves = waypoints.resolvedWaypointsToCurves(curveGenParams)
-
-                    curves.mapIndexedTo(paths) { i, curve ->
-                        val interpolator = splineEdges[i].headingInterpolator
-                        val curWaypoint = waypoints[i]
-                        val nextWaypoint = waypoints[i + 1]
-                        interpolator.addHeadingTo(curve, curWaypoint.heading!!, nextWaypoint.heading!!)
-                    }
-                }
-                is CurveEdge -> {
-                    val startWaypoint = curEdge.startWaypoint + previousEndWaypoint
-                    val nextEdge = sweeper.peek()
-                    val endWaypoint = curEdge.endWaypoint.let {
-                        if (nextEdge != null) it + nextEdge.startWaypoint
-                        else it
-                    }
-                    val startHeading = startWaypoint.aHeading()
-                    val endHeading = endWaypoint.aHeading()
-                    paths += curEdge.curve.addHeading(curEdge.headingInterpolator, startHeading, endHeading)
-                }
-                is PathEdge -> {
-                    paths += curEdge.path
-                }
-                is StartEdge -> {
-                }
-            }
-            previousEndWaypoint = curEdge.endWaypoint
-        }
-        return multiplePath(paths)
+    private inline fun changeLastPoint(newWaypoint: CurveWaypoint.() -> CurveWaypoint) {
+        val lastEdge = edges.last()
+        lastEdge.toWaypoint = lastEdge.toWaypoint.newWaypoint()
     }
 
-    private fun Waypoint.aHeading() = heading ?: direction!!
+    @OptIn(ExperimentalStdlibApi::class)
+    protected fun buildCurves(curveGenParams: CurveGenParams = CurveGenParams.DEFAULT): List<Curve> {
+        check(edges.size > 1) { "Only 1 point given; there is no path" }
+
+        val curves = ArrayList<Curve>()
+
+        val iterator = edges.listIterator()
+
+        var lastPoint: CurveWaypoint = (iterator.next() as StartEdge).toWaypoint
+
+        while (iterator.hasNext()) {
+            val edge = iterator.next()
+            when (edge) {
+                is SplineEdge -> {
+                    val splineWaypoints = buildList {
+                        //first point
+                        add(lastPoint)
+                        //this edge point
+                        add(edge.toWaypoint)
+                        while (iterator.hasNext()) {
+                            val next = iterator.next()
+                            if (next is SplineEdge) add(next.toWaypoint)
+                            else iterator.previous()
+                        }
+                    }
+                    curves += connectWaypoints(splineWaypoints, curveGenParams)
+                }
+                is CurveEdge -> {
+                    curves += edge.curve
+                }
+                else -> throw AssertionError()
+            }
+            lastPoint = edge.toWaypoint
+        }
+        return curves
+    }
 }
 
+/**
+ * A utility to build a multi-part curve.
+ */
+class CurveBuilder(start: Vector2d) : AnyPathBuilder<CurveBuilder>(start) {
+
+    fun build(params: CurveGenParams, sharpTurnBehavior: DiscontinuityBehavior) =
+        joinCurves(buildCurves(curveGenParams = params), sharpTurnBehavior)
+}
+
+/**
+ * A utility to build a multi-part path.
+ */
+class PathBuilder(start: Vector2d) : AnyPathBuilder<CurveBuilder>(start) {
+
+    private val interpolator = mutableListOf<HeadingInterpolator>()
+
+    fun build(params: CurveGenParams) = joinCurves(buildCurves(curveGenParams = params))
+}

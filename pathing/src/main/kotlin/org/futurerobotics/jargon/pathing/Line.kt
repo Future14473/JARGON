@@ -3,7 +3,7 @@ package org.futurerobotics.jargon.pathing
 import org.futurerobotics.jargon.math.Vector2d
 
 /**
- * A [Curve] that is traveling along a straight Line, starting at [startPos] and ending at `endPos.`
+ * A [Curve] that is a straight line among the given endpoints.
  */
 class Line(private val startPos: Vector2d, endPos: Vector2d) : Curve {
 
@@ -12,7 +12,7 @@ class Line(private val startPos: Vector2d, endPos: Vector2d) : Curve {
     override fun pointAt(s: Double): CurvePoint = Point(s)
 
     private inner class Point(s: Double) : CurvePoint {
-        override val originalLength: Double get() = this@Line.length
+        override val curveLength: Double get() = this@Line.length
         override val position: Vector2d = startPos + diffNorm * s //not get
         override val positionDeriv: Vector2d get() = diffNorm
         override val positionSecondDeriv: Vector2d get() = Vector2d.ZERO

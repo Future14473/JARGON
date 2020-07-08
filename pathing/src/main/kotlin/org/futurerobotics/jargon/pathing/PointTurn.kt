@@ -19,7 +19,7 @@ class PointTurn(private val location: Vector2d, private val startHeading: Double
 
     private inner class Point(s: Double) : PathPoint {
         private val theHeading = startHeading + s * turnAngle
-        override val originalLength: Double get() = 1.0
+        override val curveLength: Double get() = 1.0
         override val heading: Double get() = theHeading
         override val headingDeriv: Double get() = turnAngle
         override val headingSecondDeriv: Double get() = 0.0

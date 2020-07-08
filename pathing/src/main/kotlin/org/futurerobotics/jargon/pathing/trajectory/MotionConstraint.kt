@@ -24,7 +24,7 @@ interface SingleConstraint : MotionConstraint {
      * Compares this constraint to another constraint, and if it is known that this constraint is always
      * more or equally restrictive compared to [other] constraint (other constraint is redundant).
      *
-     * If not known or not same class, return false.
+     * If not known or don't care, return false.
      */
     fun otherIsRedundant(other: SingleConstraint): Boolean = false
 }
@@ -78,6 +78,7 @@ interface MultipleConstraint : MotionConstraint {
 
     /** The [VelocityConstraint] components of this multiple constraint */
     val velocityConstraints: Collection<VelocityConstraint>
+
     /** The [AccelerationConstraint] components of this multiple constraint */
     val accelerationConstraints: Collection<AccelerationConstraint>
 }
@@ -106,10 +107,12 @@ abstract class MaxBasedConstraint(@JvmField protected val max: Double) : SingleC
     }
 
     override fun toString(): String {
-        val name = javaClass.simpleName ?: when (this) {
-            is VelocityConstraint -> "anonymous VelConstraint"
-            is AccelerationConstraint -> "anonymous AccelConstraint"
-            else -> "anonymous SingleConstraint"
+        val name = javaClass.simpleName.ifEmpty {
+            when (this) {
+                is VelocityConstraint -> "anonymous VelConstraint"
+                is AccelerationConstraint -> "anonymous AccelConstraint"
+                else -> "anonymous SingleConstraint"
+            }
         }
         return "$name(max=$max)"
     }

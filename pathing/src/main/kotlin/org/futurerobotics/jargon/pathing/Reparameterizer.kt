@@ -6,7 +6,7 @@ package org.futurerobotics.jargon.pathing
 import org.futurerobotics.jargon.math.VectorFunction
 
 /**
- * Something that reparameterizes a [VectorFunction], from (0,1), to get a [ReparamMapping].
+ * Something that reparameterizes a [VectorFunction] on th domain from (0,1) to a [ReparamMapping].
  */
 interface Reparameterizer {
 
@@ -14,13 +14,13 @@ interface Reparameterizer {
      * Reparameterizes the given [function] on the interval (0,1), by arc length, and gets
      * a [ReparamMapping].
      */
-    fun reparameterize(function: VectorFunction): ReparamMapping
+    fun getReparamMappingFor(function: VectorFunction): ReparamMapping
 
     companion object {
         /**
          * The default [Reparameterizer]
          */
-        @JvmStatic
+        @JvmField
         val DEFAULT: Reparameterizer = IntegrationReparameterizer()
     }
 }
@@ -29,5 +29,5 @@ interface Reparameterizer {
  * Reparameterize a [VectorFunction] into a [ReparamCurve] using a the given [reparameterizer].
  */
 @JvmOverloads
-fun VectorFunction.reparameterizeToCurve(reparameterizer: Reparameterizer = Reparameterizer.DEFAULT): ReparamCurve =
+fun VectorFunction.toCurve(reparameterizer: Reparameterizer = Reparameterizer.DEFAULT): ReparamCurve =
     ReparamCurve(this, reparameterizer)

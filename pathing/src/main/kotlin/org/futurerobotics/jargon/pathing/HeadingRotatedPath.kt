@@ -9,7 +9,7 @@ import org.futurerobotics.jargon.math.epsEq
 import org.futurerobotics.jargon.util.Stepper
 import kotlin.math.PI
 
-private class HeadingRotatedPath(internal val path: Path, internal val angle: Double) : Path by path {
+private class HeadingRotatedPath(val path: Path, val angle: Double) : Path by path {
 
     override fun pointAt(s: Double): PathPoint = Point(path.pointAt(s), angle)
 
@@ -27,20 +27,20 @@ private class HeadingRotatedPath(internal val path: Path, internal val angle: Do
 }
 
 /**
- * Returns this path with the heading rotated PI radians (backwards).
+ * Returns a new path with the heading rotated by the given [angleRadians].
  */
-fun Path.backwards(): Path = headingRotated(PI)
-
-/**
- * Returns this path with the heading rotated by the given [angle].
- */
-tailrec fun Path.headingRotated(angle: Double): Path {
-    require(angle.isFinite()) { "Angle ($angle) must be finite" }
-    val normAngle = angleNorm(angle)
+tailrec fun Path.headingRotated(angleRadians: Double): Path {
+    require(angleRadians.isFinite()) { "Angle ($angleRadians) must be finite" }
+    val normAngle = angleNorm(angleRadians)
     return when {
-        this is HeadingRotatedPath -> path.headingRotated(this.angle + normAngle)
+        this is HeadingRotatedPath -> this.path.headingRotated(this.angle + normAngle)
         normAngle epsEq 0.0 -> this
         else -> HeadingRotatedPath(this, normAngle)
     }
 }
+
+/**
+ * Returns this path with the heading rotated 180 degrees/PI radians (traversed backwards).
+ */
+fun Path.backwards(): Path = headingRotated(PI)
 

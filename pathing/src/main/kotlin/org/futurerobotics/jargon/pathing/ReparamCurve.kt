@@ -1,19 +1,21 @@
 package org.futurerobotics.jargon.pathing
 
-import org.futurerobotics.jargon.math.*
+import org.futurerobotics.jargon.math.Vector2d
+import org.futurerobotics.jargon.math.VectorFunction
+import org.futurerobotics.jargon.math.ifNan
+import org.futurerobotics.jargon.math.zcross
 import org.futurerobotics.jargon.util.Stepper
-import org.futurerobotics.jargon.util.replaceIf
 
 /**
- * A [Curve] that works by reparameterizing an arbitrary continuous [VectorFunction] ([func]), using a
- * [ReparamMapping] ([mapping]) that maps arc length to the original function parameter.
+ * A [Curve] that works by reparameterizing an arbitrary continuous [function][VectorFunction], using a
+ * [mapping][ReparamMapping] that maps arc length to the original function parameter.
  *
- * If you want to create your own re-parameterization, make a implementation [ReparamMapping].
+ * If you want to create your own re-parameterization, implementation [ReparamMapping].
  */
-class ReparamCurve(internal val func: VectorFunction, internal val mapping: ReparamMapping) : Curve {
+class ReparamCurve(private val function: VectorFunction, val mapping: ReparamMapping) : Curve {
 
     constructor(function: VectorFunction, reparameterizer: Reparameterizer) :
-            this(function, reparameterizer.reparameterize(function))
+        this(function, reparameterizer.getReparamMappingFor(function))
 
     override val length: Double get() = mapping.length
 
@@ -26,17 +28,17 @@ class ReparamCurve(internal val func: VectorFunction, internal val mapping: Repa
         }
     }
 
-    internal inner class Point(t: Double) : CurvePoint {
-        private val p: Vector2d = func.value(t)
-        private val v: Vector2d = func.deriv(t)
-        private val a: Vector2d = func.secondDeriv(t)
-        private val j: Vector2d = func.thirdDeriv(t)
-        override val originalLength: Double get() = this@ReparamCurve.length
+    private inner class Point(t: Double) : CurvePoint {
+        private val p: Vector2d = function.value(t)
+        private val v: Vector2d = function.deriv(t)
+        private val a: Vector2d = function.secondDeriv(t)
+        private val j: Vector2d = function.thirdDeriv(t)
+        override val curveLength: Double get() = this@ReparamCurve.length
         override val position: Vector2d get() = p
         private var _positionDeriv: Vector2d? = null
         override val positionDeriv: Vector2d
             get() = _positionDeriv ?: v.normalized()
-                .replaceIf({ it.isNaN() }) { Vector2d.ZERO }
+                .let { if (it.isNaN()) Vector2d.ZERO else it }
                 .also { _positionDeriv = it }
         override val positionSecondDeriv: Vector2d
             get() = tanAngleDeriv zcross positionDeriv
@@ -56,7 +58,5 @@ class ReparamCurve(internal val func: VectorFunction, internal val mapping: Repa
                     .ifNan { 0.0 }
                     .also { _tanAngleSecondDeriv = it }
             }
-
-        internal fun motionState() = MotionState(p, v, a)
     }
 }

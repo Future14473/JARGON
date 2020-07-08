@@ -84,7 +84,7 @@ class MaxMotorVoltage(
         val maFmv = motorVelocity.motorAccelFromMotorVel
         val mv = interaction.motorVelFromBotVel * bv
         val maFf = motorFriction.motorAccelForMotorFriction
-        val addend = vFma(maFmv * mv + maFf * sign(mv))
+        val addend = vFma * (maFmv * mv + maFf * sign(mv))
 
         val maFba = interaction.motorAccelFromBotAccel
         val vFba = vFma * maFba
@@ -182,7 +182,7 @@ fun accelRangeFromBotAccelTransform(
         val max = maxes[i]
         val mult = mults[i]
         val add = fullAddend[i]
-        val interval = Interval.symmetricRegular(max / mult, add / mult)
+        val interval = Interval.symmetricBetween(max / mult, add / mult)
         result = result.intersect(interval)
         if (result.isEmpty()) return Interval.EMPTY
     }

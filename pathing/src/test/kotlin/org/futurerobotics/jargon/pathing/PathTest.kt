@@ -38,15 +38,15 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
                 randomQuinticSpline(random, range)
             }.flatMap {
                 listOf(
-                    it.reparameterizeToCurve(),
-                    it.reparameterizeToCurve(),
-                    it.reparameterizeToCurve(
+                    it.toCurve(),
+                    it.toCurve(),
+                    it.toCurve(
                         IntegrationReparameterizer(
                             10,
                             100
                         )
                     ),
-                    it.reparameterizeToCurve()
+                    it.toCurve()
                 )
             }.let {
                 it + List(2) {
@@ -57,7 +57,7 @@ internal class PathTest(private val path: Path, private val allS: List<Double>) 
                 listOf(
                     TangentHeading(random.nextDouble(TAU)),
                     ConstantHeading(random.nextDouble(10_000.0)),
-                    LinearlyInterpolatedHeading(
+                    LinInterpHeading(
                         random.nextDouble(-1000.0, 1000.0),
                         random.nextDouble(-1000.0, 1000.0)
                     )

@@ -37,8 +37,8 @@ internal class CurveTest(private val curve: Curve, private val allS: List<Double
                 randomQuinticSpline(random, range)
             }.flatMapTo(ArrayList<Curve>()) {
                 listOf(
-                    it.reparameterizeToCurve(),
-                    it.reparameterizeToCurve(
+                    it.toCurve(),
+                    it.toCurve(
                         IntegrationReparameterizer(
                             100,
                             20

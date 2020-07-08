@@ -3,16 +3,16 @@ package org.futurerobotics.jargon.pathing.builder
 import org.futurerobotics.jargon.pathing.*
 
 /**
- * Provider for a [HeadingProvider], that _may attempt to_ interpolate between two headings, given a curve.
+ * Given a curve and target start/end headings, creates [HeadingProvider]s for that curve.
  *
- * This is assumed to be immutable.
+ * It may also choose to ignore the target headings directly.
  *
  * This is separate from [HeadingProvider] so we can have those sweet immutable data structures.
  */
 interface HeadingInterpolator {
 
     /**
-     * Gets a [HeadingProvider] that _may_ interpolate heading for the given [curve] between the [startHeading] and
+     * Gets a [HeadingProvider] for the given [curve], that may interpolate between the [startHeading] and
      * [endHeading].
      */
     fun getHeadingProvider(
@@ -22,13 +22,14 @@ interface HeadingInterpolator {
     ): HeadingProvider
 
     /**
-     * Adds a [HeadingProvider] to the given [curve] that _may_ interpolate between [startHeading] and [endHeading].
+     * Gets a [HeadingProvider] for the given [curve], that may interpolate between the [startHeading] and
+     * [endHeading].
      */
     fun addHeadingTo(
         curve: Curve,
         startHeading: Double,
         endHeading: Double
-    ) = curve.addHeading(getHeadingProvider(curve, startHeading, endHeading))
+    ): CurveHeadingPath = curve.addHeading(getHeadingProvider(curve, startHeading, endHeading))
 }
 
 /** Convenience extension function for creating a [CurveHeadingPath] with this curve and a [HeadingInterpolator] */

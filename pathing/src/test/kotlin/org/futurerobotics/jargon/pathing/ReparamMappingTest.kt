@@ -37,15 +37,15 @@ internal class ReparamMappingTest(private val mapping: ReparamMapping, private v
                 )
             }.flatMap {
                 listOf(
-                    it.reparameterizeToCurve(),
-                    it.reparameterizeToCurve(),
-                    it.reparameterizeToCurve(
+                    it.toCurve(),
+                    it.toCurve(),
+                    it.toCurve(
                         IntegrationReparameterizer(
                             10,
                             100
                         )
                     ),
-                    it.reparameterizeToCurve()
+                    it.toCurve()
                 )
             }.map { it.mapping }
             val progressions = List(5) {

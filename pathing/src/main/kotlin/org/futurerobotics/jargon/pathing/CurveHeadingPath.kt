@@ -7,13 +7,14 @@ import org.futurerobotics.jargon.math.RealMotionState
 import org.futurerobotics.jargon.util.Stepper
 
 /**
- * Provides heading to a [Curve] to get a [Path].
+ * Provides heading to a [Curve] to form a [Path].
  * @see CurveHeadingPath
+ * @see addHeading
  */
 interface HeadingProvider {
 
     /**
-     * Gets a heading's derivatives at the point [s] units along the curve, using info provided by
+     * Gets a heading's value and derivatives at the point [s] units along the curve, using info provided by
      * the [CurvePoint] [point]
      */
     fun getHeading(point: CurvePoint, s: Double): RealMotionState
@@ -21,12 +22,14 @@ interface HeadingProvider {
 
 /**
  * A path that combines a [Curve] with a [HeadingProvider], to create a [Path].
+ *
+ * @param curve the curve used
+ * @param heading the heading used
  */
-class CurveHeadingPath(internal val curve: Curve, private val heading: HeadingProvider) : Path {
+class CurveHeadingPath(val curve: Curve, val heading: HeadingProvider) : Path {
 
     override val length: Double get() = curve.length
     override val stopPoints: Set<Double> get() = curve.stopPoints
-    override val requiredPoints: Set<Double> get() = curve.requiredPoints
 
     override fun pointAt(s: Double): PathPoint {
         val point = curve.pointAt(s)
@@ -41,9 +44,9 @@ class CurveHeadingPath(internal val curve: Curve, private val heading: HeadingPr
         }
     }
 
-    internal class Point(
-        @JvmField
-        internal val curvePoint: CurvePoint, heading: RealMotionState
+    private class Point(
+        curvePoint: CurvePoint,
+        heading: RealMotionState
     ) : PathPoint, CurvePoint by curvePoint {
 
         override val heading: Double = heading.value

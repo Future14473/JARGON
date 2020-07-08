@@ -3,7 +3,7 @@ package org.futurerobotics.jargon.pathing.builder
 import org.futurerobotics.jargon.pathing.*
 
 /**
- * An [HeadingInterpolator] that simply provides another given [interpolator].
+ * A [HeadingInterpolator] that simply yields a given [interpolator].
  */
 class ProviderInterpolator(private val interpolator: HeadingProvider) : HeadingInterpolator {
 
@@ -15,42 +15,42 @@ class ProviderInterpolator(private val interpolator: HeadingProvider) : HeadingI
 }
 
 /**
- * A [HeadingInterpolator] only outputs tangent heading.
+ * A [HeadingInterpolator] only outputs tangent heading, with an optional constant offset.
  *
  * This is the recommended heading for non-holonomic drives.
  */
-open class TangentInterpolator : HeadingInterpolator {
+class TangentInterpolator
+@JvmOverloads constructor(offset: Double = 0.0) :
+    HeadingInterpolator {
 
-    final override fun getHeadingProvider(
+    private val heading = TangentHeading(offset)
+
+    override fun getHeadingProvider(
         curve: Curve,
         startHeading: Double,
         endHeading: Double
-    ): HeadingProvider = TangentHeading
-
-    companion object : TangentInterpolator()
+    ): HeadingProvider = heading
 }
 
 /**
- * A [HeadingInterpolator] that provides quintic polynomial interpolated for the _offset_ to the tangent angle.
+ * A [HeadingInterpolator] that linearly interpolates the _offset to the tangent angle_.
  */
-open class LinearOffsetInterpolator : HeadingInterpolator {
+class LinearOffsetInterpolator : HeadingInterpolator {
 
-    final override fun getHeadingProvider(curve: Curve, startHeading: Double, endHeading: Double): HeadingProvider =
-        LinearlyInterpolatedTangentHeading(
+    override fun getHeadingProvider(curve: Curve, startHeading: Double, endHeading: Double): HeadingProvider =
+        LinInterpTangentHeading(
             startHeading - curve.startPoint().tanAngle,
             endHeading - curve.endPoint().tanAngle
         )
-
-    companion object : LinearOffsetInterpolator()
 }
 
 /**
- * A [HeadingInterpolator] that provides linearly interpolated headings.
+ * A [HeadingInterpolator] that linearly interpolates heading.
  */
 open class LinearInterpolator : HeadingInterpolator {
 
     final override fun getHeadingProvider(curve: Curve, startHeading: Double, endHeading: Double): HeadingProvider =
-        LinearlyInterpolatedHeading(startHeading, endHeading)
+        LinInterpHeading(startHeading, endHeading)
 
     companion object : LinearInterpolator()
 }

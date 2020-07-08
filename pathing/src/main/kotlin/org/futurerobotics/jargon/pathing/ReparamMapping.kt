@@ -3,10 +3,10 @@ package org.futurerobotics.jargon.pathing
 import org.futurerobotics.jargon.math.epsEq
 import org.futurerobotics.jargon.util.Steppable
 import org.futurerobotics.jargon.util.Stepper
-import org.futurerobotics.jargon.util.replaceIf
 
 /**
- * Represents a mapping of 's' (arc length) values to 't' (parameter on a parametric function) values.
+ * Represents a re-parametrization of arc length of some function. It mapping arc length values to input values on the
+ * original function using [tOfS].
  *
  * @see ReparamCurve
  */
@@ -87,7 +87,7 @@ internal constructor(
                     step <= 0 -> 0
                     step >= length -> sSamples.lastIndex - 1
                     else -> sSamples.binarySearch(step)
-                        .replaceIf({ it < 0 }) { -it - 2 }
+                        .let { if (it < 0) -it - 2 else it }
                         .coerceIn(0, sSamples.lastIndex - 1)
                 }
             } else {

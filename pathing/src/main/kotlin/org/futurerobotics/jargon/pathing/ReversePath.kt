@@ -6,10 +6,9 @@ package org.futurerobotics.jargon.pathing
 import org.futurerobotics.jargon.math.Vector2d
 import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.asUnmodifiableSet
-import org.futurerobotics.jargon.util.uncheckedCast
 
-private abstract class ReverseGeneric<Path : GenericPath<Point>, Point : CurvePoint>
-constructor(internal val path: Path) : GenericPath<Point> {
+private abstract class AnyReversePath<out Path : AnyPath<Point>, Point : CurvePoint>
+constructor(val path: Path) : AnyPath<Point> {
 
     final override val length: Double get() = path.length
     override val stopPoints: Set<Double> get() = path.stopPoints.mapTo(HashSet()) { length - it }.asUnmodifiableSet()
@@ -26,7 +25,7 @@ constructor(internal val path: Path) : GenericPath<Point> {
     abstract fun mapPoint(point: Point): Point
 }
 
-private class ReverseCurve(curve: Curve) : ReverseGeneric<Curve, CurvePoint>(curve), Curve {
+private class ReverseCurve(curve: Curve) : AnyReversePath<Curve, CurvePoint>(curve), Curve {
 
     override fun mapPoint(point: CurvePoint): CurvePoint = Point(point)
 
@@ -38,7 +37,7 @@ private class ReverseCurve(curve: Curve) : ReverseGeneric<Curve, CurvePoint>(cur
     }
 }
 
-private class ReversePath(path: Path) : ReverseGeneric<Path, PathPoint>(path), Path {
+private class ReversePath(path: Path) : AnyReversePath<Path, PathPoint>(path), Path {
 
     override fun mapPoint(point: PathPoint): PathPoint = Point(point)
 
@@ -65,16 +64,3 @@ fun Curve.reversed(): Curve =
 fun Path.reversed(): Path =
     if (this is ReversePath) this.path
     else ReversePath(this)
-
-/**
- * Returns this curve or path, but traversed in the reverse direction.
- *
- * If neither curve nor path, will attempt to make a [Curve] using [asCurve].
- */
-fun <T : GenericPath<*>> T.reversed(): T =
-    when (this) {
-        is Curve -> reversed()
-        is Path -> reversed()
-        else -> asCurve().reversed()
-    }.uncheckedCast() //may ClassCastException here
-

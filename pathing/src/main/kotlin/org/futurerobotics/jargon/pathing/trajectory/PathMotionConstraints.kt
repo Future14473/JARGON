@@ -80,7 +80,7 @@ class MaxAngularAcceleration(max: Double) : MaxBasedConstraint(max), Acceleratio
     override fun accelRange(point: PathPoint, curVelocity: Double): Interval {
         val deriv = point.headingDeriv
         return if (deriv == 0.0) Interval.REAL else
-            Interval.symmetricRegular(
+            Interval.symmetricBetween(
                 max / deriv,
                 -point.headingSecondDeriv * curVelocity.pow(2) / deriv
             )
@@ -104,7 +104,7 @@ class MaxPathAngularAcceleration(max: Double) : MaxBasedConstraint(max), Acceler
         //second derivative chain rule, solve for s''(t)
         val deriv = point.tanAngleDeriv
         return if (deriv == 0.0) Interval.REAL else
-            Interval.symmetricRegular(
+            Interval.symmetricBetween(
                 max / deriv,
                 -point.tanAngleSecondDeriv * curVelocity.pow(2) / deriv
             )

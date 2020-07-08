@@ -1,10 +1,7 @@
 package org.futurerobotics.jargon.pathing
 
 import org.futurerobotics.jargon.linalg.*
-import org.futurerobotics.jargon.math.ComponentVectorFunction
-import org.futurerobotics.jargon.math.MotionState
-import org.futurerobotics.jargon.math.RealFunction
-import org.futurerobotics.jargon.math.Vector2d
+import org.futurerobotics.jargon.math.*
 
 /** Creators for a Quintic Spline, defined by two quintic polynomials for the x and y components. */
 object QuinticSpline {
@@ -34,12 +31,12 @@ object QuinticSpline {
         end: Vector2d,
         endDeriv: Vector2d,
         endSecondDeriv: Vector2d
-    ) = ComponentVectorFunction(
+    ): ComponentVectorFunction = ComponentVectorFunction(
         QuinticPolynomial.fromDerivatives(
             start.x, startDeriv.x, startSecondDeriv.x, end.x, endDeriv.x, endSecondDeriv.x
         ), QuinticPolynomial.fromDerivatives(
-            start.y, startDeriv.y, startSecondDeriv.y, end.y, endDeriv.y, endSecondDeriv.y
-        )
+        start.y, startDeriv.y, startSecondDeriv.y, end.y, endDeriv.y, endSecondDeriv.y
+    )
     )
 
     /**
@@ -49,7 +46,7 @@ object QuinticSpline {
     @JvmStatic
     fun fromDerivatives(
         start: MotionState<Vector2d>, end: MotionState<Vector2d>
-    ) = fromDerivatives(
+    ): ComponentVectorFunction = fromDerivatives(
         start.value, start.deriv, start.secondDeriv, end.value, end.deriv, end.secondDeriv
     )
 }
@@ -129,7 +126,7 @@ class QuinticPolynomial(
          */
         @JvmStatic
         fun fromDerivatives(
-            start: MotionState<Double>, end: MotionState<Double>
+            start: AnyMotionState<Double>, end: AnyMotionState<Double>
         ): QuinticPolynomial =
             fromDerivatives(
                 start.value, start.deriv, start.secondDeriv, end.value, end.deriv, end.secondDeriv

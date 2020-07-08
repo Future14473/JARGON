@@ -151,11 +151,11 @@ class MotionProfileGraphs(
             val segs = List(5) {
                 randomVectorDerivatives(random, range)
             }.zipWithNext { a, b ->
-                QuinticSpline.fromDerivatives(a, b).reparameterizeToCurve()
+                QuinticSpline.fromDerivatives(a, b).toCurve()
             }
-            multipleCurve(segs).addHeading(TangentHeading)
+            joinCurves(segs).addHeading(TangentHeading)
         }.let {
-            it + multipleCurve(
+            it + joinCurves(
                 Line(Vector2d.ZERO, Vector2d(3, 4)),
                 Line(Vector2d(3, 4), Vector2d(2, -1))
             ).addHeading(ConstantHeading(0.0))

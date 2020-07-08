@@ -9,42 +9,39 @@ import org.futurerobotics.jargon.math.epsEq
 import org.futurerobotics.jargon.pathing.DiscontinuityBehavior.*
 import org.futurerobotics.jargon.util.Stepper
 import org.futurerobotics.jargon.util.asUnmodifiableSet
-import org.futurerobotics.jargon.util.replaceIf
-import org.futurerobotics.jargon.util.uncheckedCast
 
 /**
- * Creates a new [Curve] which contains the given [curves] chained end on end.
+ * Creates a new [Curve] which contains the given [curves] connected end on end.
  *
  * The curves must be continuous on position (no gaps between curves).
  *
  * @param sharpTurnBehavior behavior a sharp turn between two curves is found
  */
 @JvmOverloads
-fun multipleCurve(
+fun joinCurves(
     curves: List<Curve>,
     sharpTurnBehavior: DiscontinuityBehavior = Stop
 ): Curve = when (curves.size) {
     0 -> throw IllegalArgumentException("At least 1 curve must be given to multipleCurve")
     1 -> curves[0]
-    else -> MultipleCurve(curves, CurveDiscontinuityBehavior(sharpTurnBehavior))
+    else -> JoinedCurve(curves, CurveDiscontinuityBehavior(sharpTurnBehavior))
 }
 
 /**
- * Creates a new [Curve] which contains the given [curves] chained end on end.
+ * Creates a new [Curve] which contains the given [curves] connected end on end.
  *
  * The curves must be continuous on position (no gaps between curves).
  *
  * @param sharpTurnBehavior behavior a sharp turn between two curves is found
  */
 @JvmOverloads
-fun multipleCurve(
+fun joinCurves(
     vararg curves: Curve,
     sharpTurnBehavior: DiscontinuityBehavior = Stop
-): Curve =
-    multipleCurve(curves.asList(), sharpTurnBehavior)
+): Curve = joinCurves(curves.asList(), sharpTurnBehavior)
 
 /**
- * Creates a new [Path] which contains the given [paths] chained end on end.
+ * Creates a new [Path] which contains the given [paths] connected end on end.
  *
  * The paths must be continuous on position (no gaps between paths).
  *
@@ -53,7 +50,7 @@ fun multipleCurve(
  * @param headingDerivDiscontinuityBehavior the behavior when a discontinuity in heading derivative is found
  */
 @JvmOverloads
-fun multiplePath(
+fun joinPaths(
     paths: List<Path>,
     sharpTurnBehavior: DiscontinuityBehavior = Stop,
     headingDiscontinuityBehavior: HeadingDiscontinuityBehavior = HeadingDiscontinuityBehavior.Turn,
@@ -61,7 +58,7 @@ fun multiplePath(
 ): Path = when (paths.size) {
     0 -> throw IllegalArgumentException("At least 1 path must be given to multiplePath")
     1 -> paths[0]
-    else -> MultiplePath(
+    else -> JoinedPath(
         paths,
         PathDiscontinuityBehavior(
             sharpTurnBehavior,
@@ -81,12 +78,12 @@ fun multiplePath(
  * @param headingDerivDiscontinuityBehavior the behavior when a discontinuity in heading derivative is found
  */
 @JvmOverloads
-fun multiplePath(
+fun joinPaths(
     vararg paths: Path,
     sharpTurnBehavior: DiscontinuityBehavior = Stop,
     headingDiscontinuityBehavior: HeadingDiscontinuityBehavior = HeadingDiscontinuityBehavior.Turn,
     headingDerivDiscontinuityBehavior: DiscontinuityBehavior = Stop
-): Path = multiplePath(
+): Path = joinPaths(
     paths.asList(),
     sharpTurnBehavior,
     headingDiscontinuityBehavior,
@@ -94,7 +91,7 @@ fun multiplePath(
 )
 
 /**
- * The behavior of [multipleCurve] and [multiplePath] when it encounters a sharp turn between
+ * The behavior of [joinCurves] and [joinPaths] when it encounters a sharp turn between
  * curves/paths.
  */
 enum class DiscontinuityBehavior {
@@ -102,7 +99,7 @@ enum class DiscontinuityBehavior {
     /** Throws an exception. */
     Throw,
 
-    /** Adds a [GenericPath.stopPoints][stop point] to the curve/path. This is the default. */
+    /** Adds a stop point to the curve/path. This is the default. */
     Stop,
 
     /** Ignores the discontinuity.*/
@@ -110,7 +107,7 @@ enum class DiscontinuityBehavior {
 }
 
 /**
- * The behavior of [multipleCurve] and [multiplePath] when it encounters a discontinuity in heading.
+ * The behavior of [joinCurves] and [joinPaths] when it encounters a discontinuity in heading.
  */
 enum class HeadingDiscontinuityBehavior {
 
@@ -139,15 +136,14 @@ private class PathDiscontinuityBehavior(
     val headingDeriv: DiscontinuityBehavior
 ) : CurveDiscontinuityBehavior(direction)
 
-private abstract class MultipleGeneric<Path : GenericPath<Point>, Point : CurvePoint>
-constructor(paths: List<Path>, discBehavior: CurveDiscontinuityBehavior) : GenericPath<Point> {
+private abstract class AnyJoinedCurve<Path : AnyPath<Point>, Point : CurvePoint>
+constructor(paths: List<Path>, discBehavior: CurveDiscontinuityBehavior) : AnyPath<Point> {
 
     private val paths: List<Path>
     private val startLengths: DoubleArray
 
     final override val length: Double
     final override val stopPoints: Set<Double>
-    final override val requiredPoints: Set<Double>
 
     init {
         val realPaths = ArrayList<Path>()
@@ -155,18 +151,15 @@ constructor(paths: List<Path>, discBehavior: CurveDiscontinuityBehavior) : Gener
         var prevPath: Path? = null
         val startLengths = ArrayList<Double>(capacity)
         val stopPoints = HashSet<Double>(capacity)
-        val requiredPoints = HashSet<Double>(capacity)
         var curLen = 0.0
 
         fun addPath(path: Path) {
             realPaths += path
             startLengths += curLen
             stopPoints += path.stopPoints.asSequence().map { it + curLen }
-            requiredPoints += path.requiredPoints.asSequence().map { it + curLen }
 
             curLen += path.length
 
-            requiredPoints += curLen
             prevPath = path
         }
 
@@ -174,8 +167,8 @@ constructor(paths: List<Path>, discBehavior: CurveDiscontinuityBehavior) : Gener
             prevPath?.let { prevPath ->
                 when (val action = checkContinuity(prevPath, curPath, discBehavior)) {
                     is PathCorrection.AddPointTurn -> {
-                        val turn = action.getTurn().uncheckedCast<Path>()
-                        addPath(turn)
+                        @Suppress("UNCHECKED_CAST")
+                        addPath(action.getTurn() as Path)
                     }
                     PathCorrection.Stop -> stopPoints += curLen
                 }
@@ -187,13 +180,11 @@ constructor(paths: List<Path>, discBehavior: CurveDiscontinuityBehavior) : Gener
         this.startLengths = startLengths.toDoubleArray()
         this.length = curLen
         this.stopPoints = stopPoints.asUnmodifiableSet()
-        this.requiredPoints = (requiredPoints + stopPoints).asUnmodifiableSet()
     }
 
-    /** Gets a [Point] for a point [s] units along this path. */
     override fun pointAt(s: Double): Point {
         val i = startLengths.binarySearch(s)
-            .replaceIf({ it < 0 }) { -it - 2 }
+            .let { if (it < 0) -it - 2 else it }
             .coerceIn(0, paths.lastIndex)
         return paths[i].pointAt(s - startLengths[i])
     }
@@ -201,22 +192,22 @@ constructor(paths: List<Path>, discBehavior: CurveDiscontinuityBehavior) : Gener
     override fun stepper(): Stepper<Point> = object : Stepper<Point> {
         private var i = -1
         private lateinit var curStepper: Stepper<Point>
-        override fun stepTo(step: Double): Point = step.let { s ->
+        override fun stepTo(step: Double): Point {
             val pastI = i
             if (i == -1) {
-                i = startLengths.binarySearch(s)
-                    .replaceIf({ it < 0 }) { -it - 2 }
+                i = startLengths.binarySearch(step)
+                    .let { if (it < 0) -it - 2 else it }
                     .coerceIn(0, paths.lastIndex)
             } else {
-                while (i < paths.lastIndex && s >= startLengths[i + 1]) i++
+                while (i < paths.lastIndex && step >= startLengths[i + 1]) i++
 
-                while (i > 0 && s < startLengths[i]) i--
+                while (i > 0 && step < startLengths[i]) i--
             }
             if (i != pastI) {
                 curStepper = paths[i].stepper()
             }
 
-            return curStepper.stepTo(s - startLengths[i])
+            return curStepper.stepTo(step - startLengths[i])
         }
     }
 
@@ -266,11 +257,11 @@ private inline fun requireCont(value: Boolean, lazyMessage: () -> Any) {
     }
 }
 
-private class MultipleCurve(paths: List<Curve>, discBehavior: CurveDiscontinuityBehavior) :
-    MultipleGeneric<Curve, CurvePoint>(paths, discBehavior), Curve
+private class JoinedCurve(paths: List<Curve>, discBehavior: CurveDiscontinuityBehavior) :
+    AnyJoinedCurve<Curve, CurvePoint>(paths, discBehavior), Curve
 
-private class MultiplePath(paths: List<Path>, discBehavior: PathDiscontinuityBehavior) :
-    MultipleGeneric<Path, PathPoint>(paths, discBehavior), Path {
+private class JoinedPath(paths: List<Path>, discBehavior: PathDiscontinuityBehavior) :
+    AnyJoinedCurve<Path, PathPoint>(paths, discBehavior), Path {
 
     override fun checkPointContinuity(
         prev: PathPoint,

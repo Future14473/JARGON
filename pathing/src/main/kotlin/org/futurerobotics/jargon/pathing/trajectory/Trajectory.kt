@@ -29,11 +29,7 @@ class Trajectory(private val path: Path, private val profile: ForwardMotionProfi
     }
 
     /**
-     * The duration of time to traverse this [Trajectory] (ideally)
-     *
-     * _in a perfect world where friction and entropy and floating-point errors and capacitance and noise and delay
-     * and approximation errors and internal resistance and model error and unmodeled dynamics
-     * and time and space and life don't exist._
+     * The duration of time to traverse this [Trajectory]
      * */
     override val duration: Double get() = profile.duration
 
@@ -60,9 +56,9 @@ class Trajectory(private val path: Path, private val profile: ForwardMotionProfi
         return getState(state, point)
     }
 
-    override fun stepper(): Stepper<MotionState<Pose2d>> {
+    override fun timeStepper(): Stepper<MotionState<Pose2d>> {
         val pathStepper = path.stepper()
-        val profileStepper = profile.stepper()
+        val profileStepper = profile.timeStepper()
         return Stepper { t ->
             val state = profileStepper.stepTo(t)
             val point = pathStepper.stepTo(state.s)

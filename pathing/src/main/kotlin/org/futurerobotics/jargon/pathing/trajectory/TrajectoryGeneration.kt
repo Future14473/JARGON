@@ -82,16 +82,16 @@ class TrajectoryConstrainer(
     private val velConstraints = motionConstraintSet.velocityConstraints
     private val accelConstrains = motionConstraintSet.accelerationConstraints
 
-    override val requiredPoints: Set<Double> get() = path.requiredPoints
+    override val requiredPoints: Set<Double> get() = path.stopPoints
 
     private fun getMaxVel(point: PathPoint): Double =
-        velConstraints.fold(Double.MAX_VALUE) { acc, it ->
-            min(acc, it.maxVelocity(point))
+        velConstraints.fold(Double.MAX_VALUE) { vel, it ->
+            min(vel, it.maxVelocity(point))
         }
 
     private fun getMaxAccel(point: PathPoint, curVelocity: Double): Interval =
-        accelConstrains.fold(Interval.REAL) { acc, it ->
-            acc.intersect(it.accelRange(point, curVelocity))
+        accelConstrains.fold(Interval.REAL) { accel, it ->
+            accel.intersect(it.accelRange(point, curVelocity))
         }
 
     override fun stepper(): Stepper<PointConstraint> {
@@ -118,9 +118,9 @@ fun generateTrajectory(
     constraints: MotionConstraintSet,
     params: MotionProfileGenParams
 ): Trajectory {
-    val profileConstraint = TrajectoryConstrainer(path, constraints)
-    val profile = generateDynamicProfile( //checks done here...
-        profileConstraint, path.length, params
+    val constrainer = TrajectoryConstrainer(path, constraints)
+    val profile = generateDynamicProfile(
+        constrainer, path.length, params
     )
     return Trajectory(path, profile)
 }

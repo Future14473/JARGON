@@ -18,10 +18,10 @@ internal class MotionConstraintTest {
             range
         )
     }.zipWithNext { start, end ->
-        QuinticSpline.fromDerivatives(start, end).reparameterizeToCurve().addHeading(
+        QuinticSpline.fromDerivatives(start, end).toCurve().addHeading(
             TangentHeading
         )
-    }.let { multiplePath(it) }
+    }.let { joinPaths(it) }
     private val motionConstraints = MotionConstraintSet(
         MaxTangentVelocity(10.0),
         MaxTotalAcceleration(1.0),

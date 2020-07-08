@@ -9,14 +9,14 @@ import org.futurerobotics.jargon.math.VectorFunction
  * @param stepsPerSample the total number of integration steps to take per sample.
  */
 class IntegrationReparameterizer(
-    val numSamples: Int = 250,
-    val stepsPerSample: Int = 4
+    private val numSamples: Int = 250,
+    private val stepsPerSample: Int = 4
 ) : Reparameterizer {
 
-    override fun reparameterize(function: VectorFunction): ReparamMapping {
+    override fun getReparamMappingFor(function: VectorFunction): ReparamMapping {
         var s = 0.0
         val totalStepsLong = ((numSamples - 1).toLong() * stepsPerSample)
-        require(totalStepsLong <= Int.MAX_VALUE) { "Too many total steps!!!" }
+        require(totalStepsLong <= Int.MAX_VALUE) { "Number of total steps exceeds Int.MAX_VALUE" }
         val totalSteps = totalStepsLong.toInt()
         val sSamples = DoubleArray(numSamples)
         val tSamples = DoubleArray(numSamples)

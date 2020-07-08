@@ -70,10 +70,10 @@ class TrajectoryTest(private val trajectory: Trajectory) {
                 )
             }.take(6).zipWithNext { a, b ->
                 QuinticSpline.fromDerivatives(a, b)
-                    .reparameterizeToCurve()
+                    .toCurve()
                     .addHeading(TangentHeading)
             }.let {
-                multiplePath(it.toList())
+                joinPaths(it.toList())
             }.let {
                 constraints.generateTrajectory(it, MotionProfileGenParams())
             }.let {

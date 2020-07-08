@@ -184,7 +184,7 @@ internal class ReparamCurveTest(private val func: VectorFunction, private val cu
                 chart.saveGraph("RandomSpline/$it")
                 val func = QuinticSpline.fromControlPoints(p0, p1, p2, p3, p4, p5)
 
-                list.add(arrayOf(func, func.reparameterizeToCurve()))
+                list.add(arrayOf(func, func.toCurve()))
             }
             return list
         }
